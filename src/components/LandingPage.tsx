@@ -1,9 +1,33 @@
-import { Gift, Heart, Sparkles, Zap, UserRound } from 'lucide-react';
+import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
 import { BrandLockup } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
 
 const FOUNDER_SUBTITLE =
   '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
+
+const VALUES = [
+  {
+    id: 'confiance',
+    title: 'Confiance & Vérification',
+    description:
+      'Un espace sécurisé où chaque profil est authentifié.',
+    Icon: ShieldCheck,
+  },
+  {
+    id: 'bienveillance',
+    title: 'Bienveillance & Respect',
+    description:
+      'Une communauté fondée sur la compréhension mutuelle et l’écoute.',
+    Icon: HeartHandshake,
+  },
+  {
+    id: 'vecu-commun',
+    title: 'Un vécu commun',
+    description:
+      'Un environnement dédié au partage d’un même mode de vie ou d’un vécu commun.',
+    Icon: Sparkles,
+  },
+] as const;
 
 const OFFERS = [
   {
@@ -271,6 +295,33 @@ export default function LandingPage({
             )}
           </div>
         </div>
+      </section>
+
+      {/* Valeurs */}
+      <section className="max-w-3xl mx-auto w-full px-4 pb-14 sm:pb-16">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+            Valeurs
+          </h2>
+          <p className="mt-2 text-sm text-gray-500 leading-relaxed">
+            Les piliers d’une communauté claire, sereine et respectueuse.
+          </p>
+        </div>
+        <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6">
+          {VALUES.map(({ id, title, description, Icon }) => (
+            <li key={id} className="text-center sm:text-left">
+              <div className="mx-auto sm:mx-0 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+                <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 tracking-tight leading-snug">
+                {title}
+              </h3>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed text-pretty">
+                {description}
+              </p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Offres */}
