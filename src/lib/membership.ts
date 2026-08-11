@@ -1,0 +1,186 @@
+export type MembershipPlan = 'free' | 'premium' | 'founder';
+
+export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
+
+export interface MembershipStatus {
+  user_id?: string;
+  plan: MembershipPlan;
+  is_founder: boolean;
+  founder_number: number | null;
+  founder_premium_until: string | null;
+  premium_until: string | null;
+  has_premium: boolean;
+  has_boost: boolean;
+  boost_ends_at: string | null;
+  founders_taken: number;
+  founders_max: number;
+  founders_remaining: number;
+  free_daily_likes: number;
+  likes_used_today: number;
+  likes_remaining_today: number | null;
+  can_see_who_liked: boolean;
+  can_use_advanced_filters: boolean;
+  unlimited_likes: boolean;
+  /** Tarif Premium de référence (centimes), ex. 1999 = 19,99 € */
+  premium_price_cents: number;
+  premium_currency: string;
+  premium_interval: string;
+  /** Prix pendant la période fondateur (0 = gratuit) */
+  founder_trial_price_cents: number;
+  founder_premium_months: number;
+  /** True si actuellement en période fondateur à 0 € */
+  on_founder_trial: boolean;
+  /** Prix effectivement facturé maintenant (0 en période fondateur) */
+  effective_price_cents: number;
+}
+
+export const DEFAULT_MEMBERSHIP: MembershipStatus = {
+  plan: 'free',
+  is_founder: false,
+  founder_number: null,
+  founder_premium_until: null,
+  premium_until: null,
+  has_premium: false,
+  has_boost: false,
+  boost_ends_at: null,
+  founders_taken: 0,
+  founders_max: 500,
+  founders_remaining: 500,
+  free_daily_likes: 10,
+  likes_used_today: 0,
+  likes_remaining_today: 10,
+  can_see_who_liked: false,
+  can_use_advanced_filters: false,
+  unlimited_likes: false,
+  premium_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
+  premium_currency: 'EUR',
+  premium_interval: 'month',
+  founder_trial_price_cents: 0,
+  founder_premium_months: 6,
+  on_founder_trial: false,
+  effective_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
+};
+
+export function parseMembershipStatus(raw: unknown): MembershipStatus {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_MEMBERSHIP };
+  const d = raw as Record<string, unknown>;
+
+  const premium_price_cents =
+    typeof d.premium_price_cents === 'number'
+      ? d.premium_price_cents
+      : DEFAULT_PREMIUM_PRICE_CENTS;
+
+  const is_founder = Boolean(d.is_founder);
+  const founder_premium_until =
+    typeof d.founder_premium_until === 'string'
+      ? d.founder_premium_until
+      : null;
+  const founderUntilActive =
+    !!founder_premium_until &&
+    new Date(founder_premium_until).getTime() > Date.now();
+
+  // Filet client : si la date fondateur est encore valide, on force le flag
+  // (évite un bandeau invisible quand le RPC / migration est incomplet).
+  const on_founder_trial =
+    Boolean(d.on_founder_trial) || (is_founder && founderUntilActive);
+
+  const has_premium = Boolean(d.has_premium) || on_founder_trial;
+
+  return {
+    user_id: typeof d.user_id === 'string' ? d.user_id : undefined,
+    plan: (d.plan as MembershipPlan) || 'free',
+    is_founder,
+    founder_number:
+      typeof d.founder_number === 'number' ? d.founder_number : null,
+    founder_premium_until,
+    premium_until:
+      typeof d.premium_until === 'string' ? d.premium_until : null,
+    has_premium,
+    has_boost: Boolean(d.has_boost),
+    boost_ends_at:
+      typeof d.boost_ends_at === 'string' ? d.boost_ends_at : null,
+    founders_taken:
+      typeof d.founders_taken === 'number' ? d.founders_taken : 0,
+    founders_max: typeof d.founders_max === 'number' ? d.founders_max : 500,
+    founders_remaining:
+      typeof d.founders_remaining === 'number' ? d.founders_remaining : 500,
+    free_daily_likes:
+      typeof d.free_daily_likes === 'number' ? d.free_daily_likes : 10,
+    likes_used_today:
+      typeof d.likes_used_today === 'number' ? d.likes_used_today : 0,
+    likes_remaining_today:
+      d.likes_remaining_today === null
+        ? null
+        : typeof d.likes_remaining_today === 'number'
+          ? d.likes_remaining_today
+          : 10,
+    can_see_who_liked: Boolean(d.can_see_who_liked) || has_premium,
+    can_use_advanced_filters:
+      Boolean(d.can_use_advanced_filters) || has_premium,
+    unlimited_likes: Boolean(d.unlimited_likes) || has_premium,
+    premium_price_cents,
+    premium_currency:
+      typeof d.premium_currency === 'string' ? d.premium_currency : 'EUR',
+    premium_interval:
+      typeof d.premium_interval === 'string' ? d.premium_interval : 'month',
+    founder_trial_price_cents:
+      typeof d.founder_trial_price_cents === 'number'
+        ? d.founder_trial_price_cents
+        : 0,
+    founder_premium_months:
+      typeof d.founder_premium_months === 'number'
+        ? d.founder_premium_months
+        : 6,
+    on_founder_trial,
+    effective_price_cents: on_founder_trial
+      ? typeof d.founder_trial_price_cents === 'number'
+        ? d.founder_trial_price_cents
+        : 0
+      : typeof d.effective_price_cents === 'number'
+        ? d.effective_price_cents
+        : premium_price_cents,
+  };
+}
+
+/** Formate des centimes en prix FR, ex. 1999 → « 19,99 € » */
+export function formatPriceCents(
+  cents: number,
+  currency: string = 'EUR'
+): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+  }).format(cents / 100);
+}
+
+/** Ex. « 19,99 € / mois » */
+export function formatPremiumPriceLabel(
+  cents: number,
+  currency: string = 'EUR',
+  interval: string = 'month'
+): string {
+  const amount = formatPriceCents(cents, currency);
+  const period =
+    interval === 'month' || interval === 'mois' ? 'mois' : interval;
+  return `${amount} / ${period}`;
+}
+
+export function formatDateFr(iso: string | null | undefined): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+export function daysUntil(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+/** True tant qu’il reste des places Membre Fondateur (numerus clausus). */
+export function isFounderOfferOpen(status: MembershipStatus): boolean {
+  return status.founders_remaining > 0;
+}
