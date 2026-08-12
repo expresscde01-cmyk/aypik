@@ -477,12 +477,12 @@ export default function ProfileSetup({
               Inscription · Étape 1/2
             </p>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Votre offre
+              Offre Fondateur
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               {offerChosen
-                ? 'Votre offre est active. Validez cette étape pour configurer votre profil.'
-                : 'Choisissez une offre pour continuer votre inscription.'}
+                ? 'Votre place Fondateur est réservée. Validez cette étape pour configurer votre profil.'
+                : 'Rejoignez l’offre Fondateur pour continuer votre inscription.'}
             </p>
           </div>
 
@@ -494,7 +494,6 @@ export default function ProfileSetup({
             offerSelected={offerChosen}
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
-            onClaimFreemium={() => void handleClaimOffer('free')}
             onPaidOfferSuccess={handlePaidOfferSuccess}
           />
 

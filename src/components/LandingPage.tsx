@@ -346,7 +346,11 @@ export default function LandingPage({
   const founderBadge = founderOfferBadgeLabel(availability);
   const founderSubtitle = founderOfferSubtitle(availability);
 
-  const visibleOffers = OFFERS.filter(() => true).map((offer) => {
+  const visibleOffers = OFFERS.filter((offer) => {
+    // Lancement Fondateur : une seule offre mise en avant tant qu’il reste des places.
+    if (availability.founder_open) return offer.id === 'founder';
+    return offer.id !== 'freemium';
+  }).map((offer) => {
     if (offer.id === 'founder') {
       return {
         ...offer,
@@ -494,7 +498,7 @@ export default function LandingPage({
             </h2>
             <p className="mt-2 text-sm text-gray-500">
               {availability.founder_open
-                ? 'Offre Fondateur à 0 € (accès complet) — Premium et Boost prêts pour la suite.'
+                ? 'Une seule offre : Fondateur — accès complet à 0 €.'
                 : 'Une entrée libre, des options pour aller plus loin.'}
             </p>
           </div>

@@ -100,7 +100,7 @@ function FounderActiveBanner({
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
               {exhausted
-                ? 'Les 500 places ont été attribuées. Choisissez l’offre Freemium ou Premium pour continuer.'
+                ? 'Les 500 places ont été attribuées. L’offre Fondateur n’est plus disponible.'
                 : lockedReason}
             </p>
           </div>
@@ -429,8 +429,6 @@ export function MembershipPanel({
       ? FREEMIUM_ACTIVE_UNSELECTED_LABEL
       : undefined;
 
-  const showFreemiumClaim =
-    signupGate && !offerChosen && Boolean(onClaimFreemium);
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
   const showFreemiumLocked = onFounderBenefits;
   /**
@@ -479,15 +477,17 @@ export function MembershipPanel({
   if (signupGate && !offerChosen) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-rose-100 bg-white/80 p-4 text-center">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-500 mb-2">
-            <Heart className="w-5 h-5" />
+        <div className="rounded-2xl border border-amber-100 bg-white/80 p-4 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 text-amber-600 mb-2">
+            <Gift className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-            Choisissez votre offre
+            Offre Fondateur
           </h2>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            Une offre doit être validée avant de créer votre profil.
+            {founderAvailable
+              ? 'Rejoignez les 500 premiers membres — accès complet à 0 €.'
+              : 'Les places Fondateur sont épuisées pour le moment.'}
           </p>
         </div>
 
@@ -502,44 +502,18 @@ export function MembershipPanel({
         {showFounderExhausted && (
           <FounderActiveBanner status={status} exhausted />
         )}
-
-        <div className="space-y-3">
-          {showFreemiumClaim && (
-            <FreemiumClaimCard
-              onActivate={onClaimFreemium!}
-              activating={claimingOffer}
-              primary={!founderAvailable}
-            />
-          )}
-
-          {/* Premium / Boost : visibles mais non prioritaires tant que Fondateur est ouvert */}
-          {showPremiumOfferCard && !founderAvailable && (
-            <PremiumConversionCard
-              status={status}
-              founderExpired={founderExpired}
-              onPaymentSuccess={handlePaidSuccess}
-              tone={premiumTone}
-              disabled={premiumDisabled}
-              disabledReason={premiumDisabledReason}
-            />
-          )}
-        </div>
       </div>
     );
   }
 
-  // Tunnel inscription : offre déjà choisie — vue courte (CTA d’étape hors panel).
+  // Tunnel inscription : offre Fondateur déjà choisie — vue courte.
   if (signupGate && offerChosen) {
     return (
       <div className="space-y-4">
-        {onFounderBenefits || status.is_founder ? (
-          <FounderActiveBanner status={status} onActivate={undefined} />
-        ) : (
-          <FreemiumActiveBanner />
-        )}
+        <FounderActiveBanner status={status} onActivate={undefined} />
         <p className="text-sm text-center text-gray-600 leading-relaxed px-1">
-          Offre active. Utilisez le bouton ci-dessous pour continuer vers votre
-          profil.
+          Offre Fondateur active. Utilisez le bouton ci-dessous pour continuer
+          vers votre profil.
         </p>
       </div>
     );
