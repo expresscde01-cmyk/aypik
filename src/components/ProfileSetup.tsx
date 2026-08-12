@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Heart, AlertCircle, Check, Baby, Camera, ArrowRight, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Heart,
+  AlertCircle,
+  Check,
+  Baby,
+  Camera,
+  ArrowRight,
+  Trash2,
+  ImagePlus,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/deleteAccount';
 import { useMembership } from '@/lib/useMembership';
+import {
+  uploadProfilePhoto,
+  validateProfilePhoto,
+} from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { LegalLink } from '@/components/LegalTerms';
@@ -56,6 +69,10 @@ export default function ProfileSetup({
   const [location, setLocation] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFileName, setPhotoFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -85,12 +102,44 @@ export default function ProfileSetup({
     })();
   }, [user]);
 
+  useEffect(() => {
+    if (!photoFile) {
+      setPhotoPreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(photoFile);
+    setPhotoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [photoFile]);
+
   const toggleInterest = (interest: string) => {
     setInterests((prev) =>
       prev.includes(interest)
         ? prev.filter((i) => i !== interest)
         : [...prev, interest]
     );
+  };
+
+  const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    if (!file) return;
+
+    const validationError = validateProfilePhoto(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError(null);
+    setPhotoFile(file);
+    setPhotoFileName(file.name);
+  };
+
+  const clearSelectedPhoto = () => {
+    setPhotoFile(null);
+    setPhotoFileName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const isSignup = !allowAccountDeletion;
@@ -131,6 +180,18 @@ export default function ProfileSetup({
         );
       }
 
+      let nextPhotoUrl = photoUrl;
+      if (photoFile) {
+        const { url, error: uploadError } = await uploadProfilePhoto(
+          user.id,
+          photoFile
+        );
+        if (uploadError || !url) {
+          throw new Error(uploadError || "Échec de l'envoi de la photo.");
+        }
+        nextPhotoUrl = url;
+      }
+
       const payload = {
         id: user.id,
         display_name: displayName,
@@ -139,7 +200,7 @@ export default function ProfileSetup({
         has_children: hasChildren,
         location,
         interests,
-        photo_url: photoUrl,
+        photo_url: nextPhotoUrl,
       };
 
       const { error: upsertError } = await supabase
@@ -153,6 +214,9 @@ export default function ProfileSetup({
         throw new Error(membership.error || MEMBERSHIP_REQUIRED_ERROR);
       }
 
+      setPhotoUrl(nextPhotoUrl);
+      setPhotoFile(null);
+      setPhotoFileName(null);
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -234,23 +298,53 @@ export default function ProfileSetup({
           {/* Photo */}
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-rose-100">
-              {photoUrl ? (
-                <img src={photoUrl} alt="Aperçu" className="w-full h-full object-cover" />
+              {photoPreview || photoUrl ? (
+                <img
+                  src={photoPreview || photoUrl}
+                  alt="Aperçu"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <Camera className="w-7 h-7 text-rose-300" />
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                URL de votre photo
+                Votre photo
               </label>
               <input
-                type="url"
-                value={photoUrl}
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
-                placeholder="https://..."
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handlePhotoPick}
               />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-rose-600 text-sm font-semibold hover:bg-rose-50 transition-colors"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {photoPreview || photoUrl
+                    ? 'Changer de photo'
+                    : 'Choisir une photo'}
+                </button>
+                {photoFile && (
+                  <button
+                    type="button"
+                    onClick={clearSelectedPhoto}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-400 truncate">
+                {photoFileName
+                  ? photoFileName
+                  : 'JPEG, PNG ou WebP · 5 Mo max'}
+              </p>
             </div>
           </div>
 
@@ -399,7 +493,11 @@ export default function ProfileSetup({
             disabled={saving || hasChildren}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {saving ? 'Sauvegarde...' : 'Enregistrer mon profil'}
+            {saving
+              ? photoFile
+                ? 'Envoi de la photo…'
+                : 'Sauvegarde...'
+              : 'Enregistrer mon profil'}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
