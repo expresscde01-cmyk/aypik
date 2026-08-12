@@ -12,13 +12,22 @@ import {
   AlertCircle,
   Check,
   Loader2,
+  Zap,
 } from 'lucide-react';
 import {
+  activatePaidBoost,
+  BOOST_PRICE_CENTS,
+  createPayPalBoostOrder,
   createPayPalSubscription,
+  createStripeBoostPayment,
   createStripeSubscription,
+  ENABLE_PAYMENTS,
+  requiresPaidCheckout,
   getStripe,
   isPayPalConfigured,
   isStripeConfigured,
+  markPaymentReturn,
+  type CheckoutProduct,
   type PaymentMethodChoice,
 } from '@/lib/payments';
 import {
@@ -34,11 +43,13 @@ export function PaymentCheckoutModal({
   open,
   onClose,
   status,
+  product = 'premium',
   onSuccess,
 }: {
   open: boolean;
   onClose: () => void;
   status: MembershipStatus;
+  product?: CheckoutProduct;
   onSuccess?: () => void;
 }) {
   const [method, setMethod] = useState<PaymentMethodChoice>('card');
@@ -47,15 +58,16 @@ export function PaymentCheckoutModal({
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  const amount = formatPriceCents(
-    status.premium_price_cents,
-    status.premium_currency
-  );
-  const priceLabel = formatPremiumPriceLabel(
-    status.premium_price_cents,
-    status.premium_currency,
-    status.premium_interval
-  );
+  const isBoost = product === 'boost';
+  const amountCents = isBoost ? BOOST_PRICE_CENTS : status.premium_price_cents;
+  const amount = formatPriceCents(amountCents, status.premium_currency);
+  const priceLabel = isBoost
+    ? `${formatPriceCents(BOOST_PRICE_CENTS, 'EUR')} · une fois`
+    : formatPremiumPriceLabel(
+        status.premium_price_cents,
+        status.premium_currency,
+        status.premium_interval
+      );
 
   useEffect(() => {
     if (!open) {
@@ -67,18 +79,35 @@ export function PaymentCheckoutModal({
     }
   }, [open]);
 
-  if (!open) return null;
+  // Checkout Stripe/PayPal : désactivé si flag off ou Fondateur (0 € déjà validé).
+  if (!open || !ENABLE_PAYMENTS || !requiresPaidCheckout(status, product)) {
+    return null;
+  }
+
+  const finishSuccess = async () => {
+    if (isBoost) {
+      const boostErr = await activatePaidBoost('stripe');
+      if (boostErr) {
+        setError(boostErr);
+        return;
+      }
+    }
+    setStep('success');
+    onSuccess?.();
+  };
 
   const startCard = async () => {
     setError(null);
     if (!isStripeConfigured()) {
       setError(
-        'Paiement par carte non configuré. Ajoutez VITE_STRIPE_PUBLISHABLE_KEY et déployez la fonction create-stripe-subscription.'
+        'Paiement par carte non configuré. Ajoutez VITE_STRIPE_PUBLISHABLE_KEY et déployez les fonctions Stripe.'
       );
       return;
     }
     setLoading(true);
-    const result = await createStripeSubscription();
+    const result = isBoost
+      ? await createStripeBoostPayment()
+      : await createStripeSubscription();
     setLoading(false);
     if ('error' in result) {
       setError(result.error);
@@ -92,22 +121,35 @@ export function PaymentCheckoutModal({
     setError(null);
     if (!isPayPalConfigured()) {
       setError(
-        'PayPal non configuré. Ajoutez VITE_PAYPAL_CLIENT_ID et déployez create-paypal-subscription.'
+        'PayPal non configuré. Ajoutez VITE_PAYPAL_CLIENT_ID et déployez les fonctions PayPal.'
       );
       return;
     }
     setLoading(true);
     setStep('paypal_redirect');
     const origin = window.location.origin;
-    const result = await createPayPalSubscription({
-      returnUrl: `${origin}/?paypal=success`,
-      cancelUrl: `${origin}/?paypal=cancel`,
-    });
+    markPaymentReturn(product);
+    const result = isBoost
+      ? await createPayPalBoostOrder({
+          returnUrl: `${origin}/?paypal=success&product=boost`,
+          cancelUrl: `${origin}/?paypal=cancel&product=boost`,
+        })
+      : await createPayPalSubscription({
+          returnUrl: `${origin}/?paypal=success&product=premium`,
+          cancelUrl: `${origin}/?paypal=cancel&product=premium`,
+        });
     setLoading(false);
     if ('error' in result) {
       setError(result.error);
       setStep('choose');
       return;
+    }
+    if ('orderId' in result) {
+      try {
+        sessionStorage.setItem('aypik_paypal_boost_order', result.orderId);
+      } catch {
+        // ignore
+      }
     }
     window.location.href = result.approveUrl;
   };
@@ -116,6 +158,11 @@ export function PaymentCheckoutModal({
     if (method === 'card') await startCard();
     else await startPayPal();
   };
+
+  const title = isBoost ? 'Paiement Boost 24 h' : 'Paiement Premium';
+  const subtitle = isBoost
+    ? 'Achat ponctuel sécurisé · sans abonnement'
+    : 'Tunnel sécurisé · sans engagement · résiliable à tout moment';
 
   return (
     <div
@@ -138,11 +185,9 @@ export function PaymentCheckoutModal({
               id="checkout-title"
               className="text-base font-bold text-gray-900"
             >
-              Paiement Premium
+              {title}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Tunnel sécurisé · sans engagement caché
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
           </div>
           <button
             type="button"
@@ -155,28 +200,39 @@ export function PaymentCheckoutModal({
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Récapitulatif */}
           <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
             <div className="flex items-baseline justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Abonnement Premium
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                  {isBoost && <Zap className="w-4 h-4 text-amber-600" />}
+                  {isBoost ? 'Boost 24 h' : 'Abonnement Premium'}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Renouvellement mensuel
+                  {isBoost
+                    ? 'Mise en avant de votre profil pendant 24 heures'
+                    : 'Mensuel, sans engagement — résiliable en un clic'}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-gray-900">{amount}</p>
-                <p className="text-xs text-gray-500">/ mois</p>
+                <p className="text-xs text-gray-500">
+                  {isBoost ? 'une fois' : '/ mois'}
+                </p>
               </div>
             </div>
             <ul className="mt-3 space-y-1.5">
-              {[
-                'Voir qui a liké votre profil',
-                'Filtres avancés',
-                'Likes illimités',
-              ].map((item) => (
+              {(isBoost
+                ? [
+                    'Visibilité renforcée 24 h',
+                    'Achat unique, sans abonnement',
+                    'Activation immédiate après paiement',
+                  ]
+                : [
+                    'Voir qui a liké votre profil',
+                    'Filtres avancés',
+                    'Likes illimités',
+                  ]
+              ).map((item) => (
                 <li
                   key={item}
                   className="flex items-center gap-2 text-xs text-gray-600"
@@ -186,18 +242,18 @@ export function PaymentCheckoutModal({
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-gray-600 leading-relaxed border-t border-gray-200 pt-3">
-              <strong className="font-semibold text-gray-800">
-                Résiliable à tout moment en un clic
-              </strong>{' '}
-              depuis votre profil. Aucun frais de résiliation. Vous gardez
-              l’accès jusqu’à la fin de la période déjà payée. En continuant,
-              vous acceptez les{' '}
-              <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium">
-                CGU / CGV
-              </LegalLink>
-              .
-            </p>
+            {!isBoost && (
+              <p className="mt-3 text-xs text-gray-600 leading-relaxed border-t border-gray-200 pt-3">
+                <strong className="font-semibold text-gray-800">
+                  Résiliable à tout moment en un clic
+                </strong>{' '}
+                depuis votre profil. En continuant, vous acceptez les{' '}
+                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium">
+                  CGU / CGV
+                </LegalLink>
+                .
+              </p>
+            )}
           </div>
 
           {step === 'success' && (
@@ -206,7 +262,9 @@ export function PaymentCheckoutModal({
                 Paiement confirmé
               </p>
               <p className="text-xs text-green-700">
-                Votre Premium ({priceLabel}) est actif. Merci pour votre soutien.
+                {isBoost
+                  ? 'Votre Boost 24 h est actif. Poursuivez la configuration de votre profil.'
+                  : `Votre Premium (${priceLabel}) est actif. Poursuivez la configuration de votre profil.`}
               </p>
               <button
                 type="button"
@@ -216,7 +274,7 @@ export function PaymentCheckoutModal({
                 }}
                 className="mt-2 w-full py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold"
               >
-                Continuer
+                Continuer vers mon profil
               </button>
             </div>
           )}
@@ -232,19 +290,27 @@ export function PaymentCheckoutModal({
                     selected={method === 'card'}
                     onSelect={() => setMethod('card')}
                     title="Carte bancaire"
-                    subtitle="Visa, Mastercard, etc. via Stripe"
+                    subtitle="Visa, Mastercard, Amex via Stripe"
                     icon={<CreditCard className="w-5 h-5" />}
                     disabled={!isStripeConfigured()}
                     badge={!isStripeConfigured() ? 'À configurer' : undefined}
+                    brands={
+                      <span className="flex items-center gap-1 mt-1">
+                        <CardBrand label="Visa" />
+                        <CardBrand label="MC" />
+                        <CardBrand label="Amex" />
+                      </span>
+                    }
                   />
                   <PaymentOption
                     selected={method === 'paypal'}
                     onSelect={() => setMethod('paypal')}
                     title="PayPal"
-                    subtitle="Redirection sécurisée vers PayPal"
+                    subtitle="Paiement sécurisé sur PayPal"
                     icon={<PayPalMark />}
                     disabled={!isPayPalConfigured()}
                     badge={!isPayPalConfigured() ? 'À configurer' : undefined}
+                    highlight
                   />
                 </div>
               </div>
@@ -256,23 +322,42 @@ export function PaymentCheckoutModal({
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={continuePayment}
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:opacity-95 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Préparation...
-                  </>
-                ) : method === 'card' ? (
-                  `Continuer · ${priceLabel}`
-                ) : (
-                  `Continuer avec PayPal · ${priceLabel}`
-                )}
-              </button>
+              {method === 'paypal' ? (
+                <button
+                  type="button"
+                  onClick={continuePayment}
+                  disabled={loading || !isPayPalConfigured()}
+                  className="w-full py-3.5 rounded-xl bg-[#ffc439] text-[#003087] font-bold shadow-md hover:brightness-95 transition disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Redirection PayPal…
+                    </>
+                  ) : (
+                    <>
+                      <PayPalMark />
+                      Payer avec PayPal · {priceLabel}
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={continuePayment}
+                  disabled={loading || !isStripeConfigured()}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:opacity-95 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Préparation...
+                    </>
+                  ) : (
+                    `Continuer · ${priceLabel}`
+                  )}
+                </button>
+              )}
 
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -298,14 +383,12 @@ export function PaymentCheckoutModal({
             >
               <StripeCardForm
                 priceLabel={priceLabel}
+                oneShot={isBoost}
                 onBack={() => {
                   setStep('choose');
                   setClientSecret(null);
                 }}
-                onSuccess={() => {
-                  setStep('success');
-                  onSuccess?.();
-                }}
+                onSuccess={() => void finishSuccess()}
                 onError={setError}
               />
             </Elements>
@@ -313,13 +396,13 @@ export function PaymentCheckoutModal({
 
           {step === 'paypal_redirect' && (
             <div className="py-8 text-center space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-rose-500 mx-auto" />
+              <Loader2 className="w-8 h-8 animate-spin text-[#003087] mx-auto" />
               <p className="text-sm text-gray-700 font-medium">
                 Redirection vers PayPal…
               </p>
               <p className="text-xs text-gray-500">
-                Vous allez confirmer l’abonnement {priceLabel} sur le site
-                PayPal, puis revenir ici.
+                Confirmez {priceLabel} sur PayPal, puis vous reviendrez
+                automatiquement pour finaliser votre inscription.
               </p>
             </div>
           )}
@@ -331,11 +414,13 @@ export function PaymentCheckoutModal({
 
 function StripeCardForm({
   priceLabel,
+  oneShot,
   onBack,
   onSuccess,
   onError,
 }: {
   priceLabel: string;
+  oneShot?: boolean;
   onBack: () => void;
   onSuccess: () => void;
   onError: (msg: string | null) => void;
@@ -353,10 +438,14 @@ function StripeCardForm({
     setLocalError(null);
     onError(null);
 
+    markPaymentReturn(oneShot ? 'boost' : 'premium');
+
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/?stripe=success`,
+        return_url: `${window.location.origin}/?stripe=success&product=${
+          oneShot ? 'boost' : 'premium'
+        }`,
       },
       redirect: 'if_required',
     });
@@ -378,7 +467,7 @@ function StripeCardForm({
       <p className="text-sm font-semibold text-gray-900">
         Saisie sécurisée de la carte
       </p>
-      <div className="rounded-xl border border-gray-200 p-3 bg-white">
+      <div className="rounded-xl border border-gray-200 p-3 bg-white shadow-sm">
         <PaymentElement
           options={{
             layout: 'tabs',
@@ -387,7 +476,7 @@ function StripeCardForm({
         />
       </div>
 
-      {(localError) && (
+      {localError && (
         <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-xs">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{localError}</span>
@@ -420,8 +509,9 @@ function StripeCardForm({
       </div>
 
       <p className="text-[11px] text-center text-gray-400 leading-relaxed">
-        En confirmant, vous acceptez un prélèvement récurrent de {priceLabel}.
-        Résiliable à tout moment en un clic.
+        {oneShot
+          ? 'Paiement unique sécurisé via Stripe. Aucun abonnement.'
+          : `En confirmant, vous acceptez un prélèvement récurrent de ${priceLabel}. Résiliable à tout moment.`}
       </p>
     </form>
   );
@@ -435,6 +525,8 @@ function PaymentOption({
   icon,
   disabled,
   badge,
+  brands,
+  highlight,
 }: {
   selected: boolean;
   onSelect: () => void;
@@ -443,6 +535,8 @@ function PaymentOption({
   icon: React.ReactNode;
   disabled?: boolean;
   badge?: string;
+  brands?: React.ReactNode;
+  highlight?: boolean;
 }) {
   return (
     <button
@@ -451,13 +545,21 @@ function PaymentOption({
       disabled={disabled}
       className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center gap-3 disabled:opacity-55 disabled:cursor-not-allowed ${
         selected
-          ? 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-100'
-          : 'border-gray-200 bg-white hover:border-gray-300'
+          ? highlight
+            ? 'border-[#003087] bg-[#003087]/[0.04] ring-2 ring-[#003087]/20'
+            : 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-100'
+          : highlight
+            ? 'border-[#ffc439]/80 bg-[#ffc439]/10 hover:border-[#ffc439]'
+            : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
     >
       <span
         className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          selected ? 'bg-white text-rose-600' : 'bg-gray-50 text-gray-600'
+          selected
+            ? highlight
+              ? 'bg-white text-[#003087]'
+              : 'bg-white text-rose-600'
+            : 'bg-gray-50 text-gray-600'
         }`}
       >
         {icon}
@@ -472,15 +574,26 @@ function PaymentOption({
           )}
         </span>
         <span className="block text-xs text-gray-500 mt-0.5">{subtitle}</span>
+        {brands}
       </span>
       <span
         className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
           selected
-            ? 'border-rose-500 bg-rose-500 shadow-[inset_0_0_0_2px_white]'
+            ? highlight
+              ? 'border-[#003087] bg-[#003087] shadow-[inset_0_0_0_2px_white]'
+              : 'border-rose-500 bg-rose-500 shadow-[inset_0_0_0_2px_white]'
             : 'border-gray-300'
         }`}
       />
     </button>
+  );
+}
+
+function CardBrand({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-white border border-gray-200 text-gray-600">
+      {label}
+    </span>
   );
 }
 

@@ -2,8 +2,17 @@ export type MembershipPlan = 'free' | 'premium' | 'founder';
 
 export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
 
+/**
+ * Affiche l’offre Freemium sur la sélection d’offres / landing.
+ * - `false` : lancement Fondateur exclusif (code Freemium conservé).
+ * - `true`  : réaffiche « Continuer en Freemium » et la carte marketing.
+ */
+export const SHOW_FREEMIUM = false;
+
 export interface MembershipStatus {
   user_id?: string;
+  /** True si une ligne memberships existe en base pour cet utilisateur */
+  membership_linked: boolean;
   plan: MembershipPlan;
   is_founder: boolean;
   founder_number: number | null;
@@ -35,6 +44,7 @@ export interface MembershipStatus {
 }
 
 export const DEFAULT_MEMBERSHIP: MembershipStatus = {
+  membership_linked: false,
   plan: 'free',
   is_founder: false,
   founder_number: null,
@@ -88,6 +98,8 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
 
   return {
     user_id: typeof d.user_id === 'string' ? d.user_id : undefined,
+    membership_linked:
+      d.membership_linked === true || typeof d.user_id === 'string',
     plan: (d.plan as MembershipPlan) || 'free',
     is_founder,
     founder_number:
@@ -181,11 +193,102 @@ export function daysUntil(iso: string | null | undefined): number | null {
 }
 
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */
-export function isFounderOfferOpen(status: MembershipStatus): boolean {
+export function isFounderOfferOpen(status: {
+  founders_remaining: number;
+}): boolean {
   return status.founders_remaining > 0;
 }
 
 /** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
-export function isFounderAvailable(status: MembershipStatus): boolean {
+export function isFounderAvailable(status: {
+  founders_remaining: number;
+}): boolean {
   return isFounderOfferOpen(status);
+}
+
+/**
+ * Accès Fondateur « déjà payé » à 0 € : période Premium offerte encore active.
+ * Toutes les fonctionnalités Premium sont ouvertes sans checkout.
+ */
+export function isFounderComplimentaryAccess(status: {
+  is_founder: boolean;
+  on_founder_trial?: boolean;
+  has_premium?: boolean;
+  founder_premium_until?: string | null;
+}): boolean {
+  if (!status.is_founder) return false;
+  if (status.on_founder_trial) return true;
+  if (status.has_premium && status.founder_premium_until) {
+    return new Date(status.founder_premium_until).getTime() > Date.now();
+  }
+  if (status.founder_premium_until) {
+    return new Date(status.founder_premium_until).getTime() > Date.now();
+  }
+  return false;
+}
+
+/**
+ * Seuil psychologique : compteur visible seulement quand ≤ 200 places
+ * restantes (à partir du 301e inscrit sur 500).
+ */
+export const FOUNDER_SCARCITY_REMAINING_THRESHOLD = 200;
+
+export function shouldShowFounderScarcityCounter(status: {
+  founders_remaining: number;
+}): boolean {
+  return (
+    status.founders_remaining > 0 &&
+    status.founders_remaining <= FOUNDER_SCARCITY_REMAINING_THRESHOLD
+  );
+}
+
+/** Badge Fondateur (sans chiffres tant que > 200 places restantes). */
+export function founderOfferBadgeLabel(status: {
+  founders_remaining: number;
+  founders_max: number;
+}): string {
+  if (status.founders_remaining <= 0) return 'Offre Fondateur épuisée';
+  if (shouldShowFounderScarcityCounter(status)) {
+    return `Plus que ${status.founders_remaining} places disponibles sur ${status.founders_max}`;
+  }
+  return 'Offre Fondateur - Accès 100% gratuit';
+}
+
+/** Sous-titre Fondateur adapté au mode silencieux / rareté. */
+export function founderOfferSubtitle(status: {
+  founders_remaining: number;
+  founders_max: number;
+}): string {
+  if (status.founders_remaining <= 0) {
+    return 'Les places Fondateur ont toutes été attribuées.';
+  }
+  if (shouldShowFounderScarcityCounter(status)) {
+    return `6 mois offerts — plus que ${status.founders_remaining} places sur ${status.founders_max}.`;
+  }
+  return '6 mois offerts — accès 100 % gratuit, sans carte bancaire.';
+}
+
+export const MEMBERSHIP_REQUIRED_ERROR =
+  "Impossible de finaliser l'inscription : aucune offre valide n'est liée à votre profil. Veuillez d'abord choisir une offre.";
+
+/** Liberté de choix à l’échéance des mois Fondateur (aucune reconduction forcée). */
+export const AFTER_FOUNDER_TITLE = "À l'échéance de vos 6 mois";
+
+export const AFTER_FOUNDER_PERIOD_COPY =
+  "Vous pourrez aussi bien interrompre votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium : il n'y a pas d'engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.";
+
+const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
+
+export function isValidLinkedOffer(status: {
+  membership_linked?: boolean;
+  linked?: boolean;
+  plan?: string | null;
+  user_id?: string;
+}): boolean {
+  const linked =
+    status.membership_linked === true ||
+    status.linked === true ||
+    typeof status.user_id === 'string';
+  if (!linked) return false;
+  return VALID_PLANS.includes((status.plan as MembershipPlan) || 'free');
 }

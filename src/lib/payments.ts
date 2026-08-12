@@ -1,7 +1,44 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
+import {
+  isFounderComplimentaryAccess,
+  type MembershipStatus,
+} from '@/lib/membership';
 
 export type PaymentMethodChoice = 'card' | 'paypal';
+export type CheckoutProduct = 'premium' | 'boost';
+
+export const BOOST_PRICE_CENTS = 299;
+
+/**
+ * Interrupteur des systèmes de paiement Stripe / PayPal (code intact).
+ * - `true`  : checkout opérationnel pour Freemium / Premium / Boost payants.
+ * - `false` : CTAs de paiement masqués (mode maintenance).
+ *
+ * Les Membres Fondateurs ne passent jamais par la caisse : accès Premium
+ * à 0 € via `isFounderComplimentaryAccess` (auto-validé côté membership).
+ */
+export const ENABLE_PAYMENTS = true;
+
+/** @deprecated Préférer `!ENABLE_PAYMENTS`. Conservé pour compatibilité. */
+export const PAYMENTS_TEMPORARILY_DISABLED = !ENABLE_PAYMENTS;
+
+/**
+ * True si l’utilisateur doit passer par Stripe/PayPal pour ce produit.
+ * Les Fondateurs en période offerte sont considérés comme déjà réglés (0 €).
+ */
+export function requiresPaidCheckout(
+  status: Pick<
+    MembershipStatus,
+    'is_founder' | 'on_founder_trial' | 'has_premium' | 'founder_premium_until'
+  >,
+  product: CheckoutProduct = 'premium'
+): boolean {
+  void product;
+  if (!ENABLE_PAYMENTS) return false;
+  if (isFounderComplimentaryAccess(status)) return false;
+  return true;
+}
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
@@ -51,6 +88,34 @@ export async function createStripeSubscription(): Promise<{
   };
 }
 
+export async function createStripeBoostPayment(): Promise<{
+  clientSecret: string;
+  paymentIntentId: string;
+} | { error: string }> {
+  const { data, error } = await supabase.functions.invoke(
+    'create-stripe-boost-payment',
+    { body: {} }
+  );
+
+  if (error) {
+    return {
+      error:
+        error.message ||
+        "Impossible de démarrer le paiement Boost. Déployez create-stripe-boost-payment.",
+    };
+  }
+
+  if (data?.error) return { error: String(data.error) };
+  if (!data?.clientSecret) {
+    return { error: 'Réponse Stripe Boost incomplète (clientSecret manquant).' };
+  }
+
+  return {
+    clientSecret: data.clientSecret,
+    paymentIntentId: data.paymentIntentId,
+  };
+}
+
 export async function createPayPalSubscription(urls: {
   returnUrl: string;
   cancelUrl: string;
@@ -79,6 +144,66 @@ export async function createPayPalSubscription(urls: {
   };
 }
 
+export async function createPayPalBoostOrder(urls: {
+  returnUrl: string;
+  cancelUrl: string;
+}): Promise<{ approveUrl: string; orderId: string } | { error: string }> {
+  const { data, error } = await supabase.functions.invoke(
+    'create-paypal-boost-order',
+    { body: urls }
+  );
+
+  if (error) {
+    return {
+      error:
+        error.message ||
+        "Impossible de démarrer PayPal Boost. Déployez create-paypal-boost-order.",
+    };
+  }
+
+  if (data?.error) return { error: String(data.error) };
+  if (!data?.approveUrl || !data?.orderId) {
+    return { error: 'Réponse PayPal Boost incomplète.' };
+  }
+
+  return {
+    approveUrl: data.approveUrl,
+    orderId: data.orderId,
+  };
+}
+
+export async function capturePayPalBoostOrder(
+  orderId: string
+): Promise<string | null> {
+  const { data, error } = await supabase.functions.invoke(
+    'capture-paypal-boost-order',
+    { body: { orderId } }
+  );
+  if (error) return error.message || 'Capture PayPal Boost impossible.';
+  if (data?.error) return String(data.error);
+  return null;
+}
+
+/** Active le boost côté base après confirmation client (Stripe Elements). */
+export async function activatePaidBoost(
+  provider: 'stripe' | 'paypal' = 'stripe'
+): Promise<string | null> {
+  const { error } = await supabase.rpc('activate_paid_boost', {
+    p_provider: provider,
+  });
+  if (error) {
+    if (
+      error.code === '42883' ||
+      /activate_paid_boost/i.test(error.message)
+    ) {
+      const { error: fallback } = await supabase.rpc('purchase_boost');
+      return fallback?.message ?? null;
+    }
+    return error.message;
+  }
+  return null;
+}
+
 export async function cancelPremiumSubscription(): Promise<string | null> {
   const { data, error } = await supabase.functions.invoke('cancel-premium', {
     body: {},
@@ -92,5 +217,33 @@ export async function cancelPremiumSubscription(): Promise<string | null> {
   }
 
   if (data?.error) return String(data.error);
+  return null;
+}
+
+export const PAYMENT_RETURN_FLAG = 'aypik_payment_return';
+
+export function markPaymentReturn(product: CheckoutProduct) {
+  try {
+    sessionStorage.setItem(
+      PAYMENT_RETURN_FLAG,
+      JSON.stringify({ product, at: Date.now() })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function consumePaymentReturn(): CheckoutProduct | null {
+  try {
+    const raw = sessionStorage.getItem(PAYMENT_RETURN_FLAG);
+    sessionStorage.removeItem(PAYMENT_RETURN_FLAG);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { product?: string };
+    if (parsed.product === 'premium' || parsed.product === 'boost') {
+      return parsed.product;
+    }
+  } catch {
+    // ignore
+  }
   return null;
 }

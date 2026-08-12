@@ -74,6 +74,19 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (event.type === "payment_intent.succeeded") {
+    const pi = event.data.object as Stripe.PaymentIntent;
+    const userId = pi.metadata?.supabase_user_id;
+    const product = pi.metadata?.product;
+    if (userId && product === "boost_24h") {
+      await admin.rpc("activate_paid_boost", {
+        p_user_id: userId,
+        p_provider: "stripe",
+        p_payment_ref: pi.id,
+      });
+    }
+  }
+
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     const userId = sub.metadata?.supabase_user_id;

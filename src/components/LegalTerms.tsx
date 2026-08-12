@@ -132,9 +132,13 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>
-                  À l&apos;issue des 6 mois, le compte fait l&apos;objet d&apos;un
-                  retour automatique à l&apos;offre gratuite, sans tacite
-                  reconduction et sans prélèvement automatique.
+                  À l&apos;échéance de vos 6 mois, vous pourrez aussi bien
+                  interrompre votre adhésion, migrer vers l&apos;offre Freemium
+                  que passer à l&apos;offre Premium : il n&apos;y a pas
+                  d&apos;engagement. Aucune reconduction automatique, aucun
+                  prélèvement forcé : vous choisissez en toute liberté. Le
+                  compte bascule par défaut vers l&apos;offre Freemium, sauf
+                  choix explicite d&apos;une autre option.
                 </li>
                 <li>
                   Aucune carte bancaire n&apos;est requise pour en bénéficier.
@@ -155,7 +159,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Cet abonnement optionnel apporte du confort supplémentaire
                 (filtrage avancé, voir qui a liké, likes illimités). Il est
                 souscrit sans engagement et est résiliable à tout moment en un
-                clic depuis l&apos;espace personnel.
+                clic depuis l&apos;espace personnel. Aucune reconduction
+                automatique forcée : le renouvellement n&apos;intervient que
+                tant que l&apos;abonnement n&apos;a pas été résilié, et
+                l&apos;utilisateur peut ensuite migrer vers Freemium ou
+                interrompre son adhésion.
               </p>
             </div>
             <div>

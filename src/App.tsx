@@ -8,6 +8,7 @@ import LegalTermsPage, {
   closeLegalTerms,
   isLegalTermsOpen,
 } from '@/components/LegalTerms';
+import { PAYMENT_RETURN_FLAG } from '@/lib/payments';
 
 function AppContent() {
   const { session, loading } = useAuth();
@@ -24,10 +25,29 @@ function AppContent() {
     const params = new URLSearchParams(window.location.search);
     const paypal = params.get('paypal');
     const stripe = params.get('stripe');
+    const product = params.get('product');
     if (paypal || stripe) {
+      if (
+        (paypal === 'success' || stripe === 'success') &&
+        (product === 'premium' || product === 'boost')
+      ) {
+        try {
+          sessionStorage.setItem(
+            PAYMENT_RETURN_FLAG,
+            JSON.stringify({ product, at: Date.now() })
+          );
+        } catch {
+          // ignore
+        }
+      }
       const url = new URL(window.location.href);
       url.searchParams.delete('paypal');
       url.searchParams.delete('stripe');
+      url.searchParams.delete('product');
+      url.searchParams.delete('token');
+      url.searchParams.delete('PayerID');
+      url.searchParams.delete('ba_token');
+      url.searchParams.delete('subscription_id');
       window.history.replaceState({}, '', url.pathname + url.search);
     }
   }, []);

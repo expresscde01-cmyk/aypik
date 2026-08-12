@@ -6,6 +6,12 @@ import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
 import LandingPage from '@/components/LandingPage';
 import type { Profile } from '@/components/ProfileSetup';
+import { MIN_INTERESTS } from '@/lib/interests';
+import {
+  isSignupPaused,
+  pauseSignup,
+  resumeSignup,
+} from '@/lib/signupDraft';
 
 type Tab = 'home' | 'matches' | 'profile';
 
@@ -14,6 +20,45 @@ export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const signupOkKey = user ? `aypik_signup_ok_${user.id}` : null;
+  const [signupValidated, setSignupValidated] = useState<boolean | null>(null);
+  const [signupPaused, setSignupPaused] = useState(false);
+
+  useEffect(() => {
+    if (!signupOkKey) {
+      setSignupValidated(false);
+      return;
+    }
+    setSignupValidated(localStorage.getItem(signupOkKey) === '1');
+  }, [signupOkKey]);
+
+  useEffect(() => {
+    if (!user) {
+      setSignupPaused(false);
+      return;
+    }
+    setSignupPaused(isSignupPaused(user.id));
+  }, [user]);
+
+  const markSignupValidated = () => {
+    if (signupOkKey) localStorage.setItem(signupOkKey, '1');
+    if (user) resumeSignup(user.id);
+    setSignupPaused(false);
+    setSignupValidated(true);
+  };
+
+  const continueSignup = () => {
+    if (!user) return;
+    resumeSignup(user.id);
+    setSignupPaused(false);
+  };
+
+  const handlePauseSignup = () => {
+    if (!user) return;
+    pauseSignup(user.id);
+    setSignupPaused(true);
+    setTab('home');
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -34,13 +79,25 @@ export default function AppShell() {
     };
   }, [user]);
 
-  const needsProfile = !profileLoading && !profile;
+  const profileComplete = (p: Profile | null) =>
+    Boolean(
+      p?.display_name?.trim() &&
+        p.birth_date &&
+        p.location?.trim() &&
+        Array.isArray(p.interests) &&
+        p.interests.length >= MIN_INTERESTS
+    );
+
+  const needsProfile = !profileLoading && !profileComplete(profile);
+  const mustFinalizeSignup =
+    !profileLoading && signupValidated === false;
+  const incompleteSignup = needsProfile || mustFinalizeSignup;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
     'Membre';
 
-  if (profileLoading) {
+  if (profileLoading || signupValidated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
@@ -48,18 +105,64 @@ export default function AppShell() {
     );
   }
 
-  if (needsProfile) {
+  // Tunnel d’inscription : ProfileSetup reste monté même en pause
+  // pour ne jamais perdre la saisie (état React + brouillon local).
+  if (incompleteSignup) {
     return (
-      <ProfileSetup
-        onDone={async () => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user!.id)
-            .maybeSingle();
-          setProfile(data as Profile);
-        }}
-      />
+      <>
+        <div className={signupPaused ? 'hidden' : undefined}>
+          <ProfileSetup
+            onDone={async () => {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user!.id)
+                .maybeSingle();
+              setProfile(data as Profile);
+              markSignupValidated();
+              setTab('home');
+            }}
+            onPauseSignup={handlePauseSignup}
+          />
+        </div>
+
+        {signupPaused && (
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <main className="flex-1 min-h-0">
+              <LandingPage
+                displayName={displayName}
+                onSignOut={signOut}
+                onLogoClick={() => setTab('home')}
+                onPrimaryCta={continueSignup}
+                primaryCtaLabel="Continuer mon inscription"
+                signupIncomplete
+              />
+            </main>
+            <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
+              <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-around">
+                <NavButton
+                  icon={<Home className="w-5 h-5" />}
+                  label="Accueil"
+                  active
+                  onClick={() => undefined}
+                />
+                <NavButton
+                  icon={<Heart className="w-5 h-5" />}
+                  label="Matchs"
+                  active={false}
+                  onClick={continueSignup}
+                />
+                <NavButton
+                  icon={<User className="w-5 h-5" />}
+                  label="Profil"
+                  active={false}
+                  onClick={continueSignup}
+                />
+              </div>
+            </nav>
+          </div>
+        )}
+      </>
     );
   }
 

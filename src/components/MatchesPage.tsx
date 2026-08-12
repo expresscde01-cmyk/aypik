@@ -175,7 +175,7 @@ export default function MatchesPage() {
         </div>
         <SoftPremiumBanner
           title="Messages illimités après match"
-          description="Dès qu’il y a réciprocité, vous pouvez échanger librement — c’est inclus dans le freemium."
+          description="Dès qu’il y a réciprocité, vous pouvez échanger librement — c’est inclus pour tous les membres."
         />
       </div>
     );
