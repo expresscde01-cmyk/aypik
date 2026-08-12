@@ -134,9 +134,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 <li>
                   À l&apos;échéance de vos 6 mois, vous pourrez aussi bien
                   interrompre votre adhésion, migrer vers l&apos;offre Freemium
-                  que passer à l&apos;offre Premium : ce sont des options
-                  entièrement sans engagement. Aucune reconduction automatique,
-                  aucun prélèvement forcé : vous choisissez en toute liberté. Le
+                  que passer à l&apos;offre Premium : il n&apos;y a pas
+                  d&apos;engagement. Aucune reconduction automatique, aucun
+                  prélèvement forcé : vous choisissez en toute liberté. Le
                   compte bascule par défaut vers l&apos;offre Freemium, sauf
                   choix explicite d&apos;une autre option.
                 </li>

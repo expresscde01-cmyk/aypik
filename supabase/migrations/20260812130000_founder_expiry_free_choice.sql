@@ -30,7 +30,7 @@ BEGIN
     user_id,
     'founder_expiring_soon',
     'À l''échéance de vos 6 mois',
-    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.'
+    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : il n''y a pas d''engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.'
   FROM due;
 
   GET DIAGNOSTICS n_warned = ROW_COUNT;
@@ -50,7 +50,7 @@ BEGIN
     user_id,
     'founder_expired',
     'À l''échéance de vos 6 mois',
-    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté. Votre badge Fondateur reste visible.'
+    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : il n''y a pas d''engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté. Votre badge Fondateur reste visible.'
   FROM expired;
 
   GET DIAGNOSTICS n_expired = ROW_COUNT;
