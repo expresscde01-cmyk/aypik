@@ -1,31 +1,53 @@
 # E-mails & authentification
 
-## Principes
+## Séparation claire
 
-1. **Auth ≠ e-mails produit**  
-   L’inscription / connexion passent par Supabase Auth (`src/lib/authApi.ts`).  
-   Aucun fournisseur mail ne doit bloquer `signUp` / `signIn`.
+| Type | Qui envoie | Où |
+|------|------------|-----|
+| Auth (confirm, reset) | Supabase Auth / SMTP Resend dashboard | Projet Supabase |
+| Produit (welcome, alertes, communauté) | App → Edge Function `send-email` → Resend API | `src/lib/email/` |
 
-2. **Couche modulaire** (`src/lib/email/`)  
-   - `noop` (défaut) : n’envoie rien, parfait en local / lancement Fondateur.  
-   - `edge` : relais vers une Edge Function `send-email` (Resend, SendGrid, etc.).
+Le flux d’inscription / login **ne dépend jamais** de Resend.
 
-3. **E-mails Auth** (confirmation, reset password)  
-   Se configurent côté projet Supabase (SMTP dashboard, Auth Hooks).  
-   Pas dans le frontend React.
+## Activation Resend (e-mails applicatifs)
 
-## Réactiver / brancher un provider
+1. Secrets Edge Function (Supabase Dashboard → Edge Functions → Secrets) :
+   ```
+   RESEND_API_KEY=re_...
+   RESEND_FROM_EMAIL=Aypik <bonjour@votredomaine.fr>
+   ```
+2. Déployer :
+   ```bash
+   supabase functions deploy send-email
+   ```
+3. Client (`.env`) :
+   ```bash
+   VITE_EMAIL_PROVIDER=edge
+   ```
+   (`noop` uniquement pour tests sans envoi)
 
-```bash
-# .env
-VITE_EMAIL_PROVIDER=noop   # défaut
-# VITE_EMAIL_PROVIDER=edge  # quand send-email est déployée
+## API applicative
+
+```ts
+import {
+  notifyWelcomeAfterProfile,
+  notifyProductAlert,
+  notifyCommunityAlert,
+  sendTransactionalEmail,
+} from '@/lib/email';
+
+// Accueil après validation profil (déjà branché dans ProfileSetup)
+notifyWelcomeAfterProfile({ email, displayName, isFounder: true });
+
+// Alertes produit / communauté (prêtes à l’emploi)
+notifyProductAlert({ email, title: '…', body: '…' });
+notifyCommunityAlert({ email, title: '…', body: '…' });
 ```
 
-Implémentez le vrai envoi dans `supabase/functions/send-email` (clés API serveur uniquement).
+Changer de fournisseur plus tard : remplacer l’implémentation dans
+`supabase/functions/send-email` (ou un autre `EmailProvider`) — le reste
+de l’app continue d’appeler `src/lib/email`.
 
 ## Paiements
 
-`ENABLE_PAYMENTS` dans `src/lib/payments.ts` (indépendant des e-mails).
-Les Fondateurs ont l’accès Premium à 0 € via `isFounderComplimentaryAccess`
-— le checkout Stripe/PayPal reste pour Freemium → Premium / Boost payants.
+Indépendant : `ENABLE_PAYMENTS` dans `src/lib/payments.ts`.

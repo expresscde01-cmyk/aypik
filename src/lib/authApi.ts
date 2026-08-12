@@ -1,24 +1,23 @@
 import { supabase } from '@/lib/supabase';
-import { notifySignupEmailHook } from '@/lib/email';
 
 export type AuthCredentialsResult = {
   error: Error | null;
 };
 
 /**
- * API d’auth découplée de l’UI et de l’envoi d’e-mails.
+ * API d’auth découplée de l’UI et de l’envoi d’e-mails produit.
  *
  * - Source de vérité : Supabase Auth (email / mot de passe).
- * - Aucune confirmation e-mail forcée côté client.
- * - Aucun await sur un fournisseur mail externe.
- * - Les e-mails Auth (confirm / reset) restent configurables
- *   dans le dashboard Supabase ou via SMTP / Auth Hooks amont.
+ * - E-mails Auth (confirm / reset) : Supabase / SMTP amont.
+ * - E-mails produit (welcome Resend) : après validation profil, via src/lib/email.
+ * - Aucun await mail ici — l’auth n’est jamais bridée.
  */
 export async function signUpWithEmailPassword(
   email: string,
   password: string,
-  options?: { founderOpen?: boolean }
+  _options?: { founderOpen?: boolean }
 ): Promise<AuthCredentialsResult> {
+  void _options;
   const trimmed = email.trim();
   const { error } = await supabase.auth.signUp({
     email: trimmed,
@@ -26,13 +25,6 @@ export async function signUpWithEmailPassword(
   });
 
   if (error) return { error };
-
-  // Fire-and-forget uniquement : ne bloque pas l’inscription.
-  notifySignupEmailHook({
-    email: trimmed,
-    founderOpen: options?.founderOpen,
-  });
-
   return { error: null };
 }
 

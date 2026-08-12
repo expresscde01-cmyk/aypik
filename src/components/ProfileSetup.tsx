@@ -39,6 +39,7 @@ import {
   capturePayPalBoostOrder,
   consumePaymentReturn,
 } from '@/lib/payments';
+import { notifyWelcomeAfterProfile } from '@/lib/email';
 
 const CITY_SELECTION_ERROR =
   'Veuillez sélectionner une ville valide dans la liste déroulante';
@@ -382,6 +383,19 @@ export default function ProfileSetup({
       setPhotoFile(null);
       setPhotoFileName(null);
       if (user) clearSignupDraft(user.id);
+
+      // E-mail d’accueil Resend (fire-and-forget) — après validation profil uniquement.
+      if (isSignup && user.email) {
+        notifyWelcomeAfterProfile({
+          email: user.email,
+          displayName,
+          isFounder:
+            membership.is_founder ||
+            status.is_founder ||
+            status.plan === 'founder',
+        });
+      }
+
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
