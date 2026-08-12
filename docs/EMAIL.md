@@ -26,4 +26,6 @@ Implémentez le vrai envoi dans `supabase/functions/send-email` (clés API serve
 
 ## Paiements
 
-Indépendant : `ENABLE_PAYMENTS` dans `src/lib/payments.ts`.
+`ENABLE_PAYMENTS` dans `src/lib/payments.ts` (indépendant des e-mails).
+Les Fondateurs ont l’accès Premium à 0 € via `isFounderComplimentaryAccess`
+— le checkout Stripe/PayPal reste pour Freemium → Premium / Boost payants.

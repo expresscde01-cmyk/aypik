@@ -200,6 +200,27 @@ export function isFounderAvailable(status: {
 }
 
 /**
+ * Accès Fondateur « déjà payé » à 0 € : période Premium offerte encore active.
+ * Toutes les fonctionnalités Premium sont ouvertes sans checkout.
+ */
+export function isFounderComplimentaryAccess(status: {
+  is_founder: boolean;
+  on_founder_trial?: boolean;
+  has_premium?: boolean;
+  founder_premium_until?: string | null;
+}): boolean {
+  if (!status.is_founder) return false;
+  if (status.on_founder_trial) return true;
+  if (status.has_premium && status.founder_premium_until) {
+    return new Date(status.founder_premium_until).getTime() > Date.now();
+  }
+  if (status.founder_premium_until) {
+    return new Date(status.founder_premium_until).getTime() > Date.now();
+  }
+  return false;
+}
+
+/**
  * Seuil psychologique : compteur visible seulement quand ≤ 200 places
  * restantes (à partir du 301e inscrit sur 500).
  */

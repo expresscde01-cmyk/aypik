@@ -9,6 +9,7 @@ import {
   daysUntil,
   formatPremiumPriceLabel,
   isFounderAvailable,
+  isFounderComplimentaryAccess,
   founderOfferBadgeLabel,
   founderOfferSubtitle,
   AFTER_FOUNDER_TITLE,
@@ -143,7 +144,7 @@ function FounderActiveBanner({
             <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             </span>
-            Inscription sans carte bancaire
+            Inscription sans carte bancaire — accès complet inclus
           </li>
         </ul>
 
@@ -327,6 +328,7 @@ function PostFounderChoicePanel() {
 
 export function MembershipPanel({
   status,
+  onPurchaseBoost,
   onRefresh,
   onClaimFounder,
   onClaimFreemium,
@@ -339,7 +341,7 @@ export function MembershipPanel({
   onPaidOfferSuccess,
 }: {
   status: MembershipStatus;
-  /** Conservé pour compatibilité API (Boost payant via PaymentCheckoutModal). */
+  /** Boost gratuit Fondateur ou filet local (`purchase_boost`). */
   onPurchaseBoost?: () => Promise<string | null>;
   onRefresh?: () => void;
   onClaimFounder?: () => void;
@@ -351,6 +353,7 @@ export function MembershipPanel({
 }) {
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+  const [boostActivating, setBoostActivating] = useState(false);
   const daysLeft = daysUntil(status.founder_premium_until);
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
@@ -364,7 +367,9 @@ export function MembershipPanel({
       ? offerSelected
       : status.membership_linked;
   /** Bénéficie déjà de l’offre Fondateur (période 6 mois en cours). */
-  const onFounderBenefits = periodActive && status.is_founder;
+  const onFounderBenefits =
+    isFounderComplimentaryAccess(status) ||
+    (periodActive && status.is_founder);
   /**
    * Offre Freemium active : offre liée, hors Fondateur / Premium.
    * Détection large pour éviter qu’une carte Fondateur colorée réapparaisse.
@@ -419,7 +424,7 @@ export function MembershipPanel({
       ? 'primary'
       : 'secondary';
   const premiumDisabledReason = onFounderBenefits
-    ? 'Inaccessible : votre offre Fondateur inclut déjà les avantages Premium'
+    ? 'Inclus — offre Fondateur à 0 € (accès Premium déjà validé, sans paiement)'
     : premiumLockedByFreemium
       ? FREEMIUM_ACTIVE_UNSELECTED_LABEL
       : undefined;
@@ -429,14 +434,22 @@ export function MembershipPanel({
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
   const showFreemiumLocked = onFounderBenefits;
   /**
-   * Boost : coloré seulement s’il a déjà été acheté (page précédente),
-   * sinon grisé quand Freemium est l’offre active.
-   * Paiements masqués tant que ENABLE_PAYMENTS === false (code conservé).
+   * Paiements opérationnels (ENABLE_PAYMENTS) : Fondateurs = Premium auto-validé
+   * à 0 € + Boost offert via purchase_boost (sans Stripe).
    */
   const showBoost = ENABLE_PAYMENTS;
   const boostPurchaseDisabled = onFreemium && !status.has_boost;
   const boostDisabledReason = FREEMIUM_ACTIVE_UNSELECTED_LABEL;
   const showPremiumOfferCard = showPremiumOffer && ENABLE_PAYMENTS;
+
+  const handleComplimentaryBoost = async () => {
+    if (!onPurchaseBoost) return 'Activation Boost indisponible.';
+    setBoostActivating(true);
+    const err = await onPurchaseBoost();
+    setBoostActivating(false);
+    if (!err) onRefresh?.();
+    return err;
+  };
 
   const handleCancel = async () => {
     if (
@@ -522,7 +535,7 @@ export function MembershipPanel({
             />
           )}
 
-          {showBoost && (
+          {showBoost && !(signupGate && !offerChosen) && (
             <BoostPurchaseCard
               status={status}
               hasBoost={status.has_boost}
@@ -530,6 +543,10 @@ export function MembershipPanel({
               purchaseDisabled={boostPurchaseDisabled}
               purchaseDisabledReason={boostDisabledReason}
               onPaymentSuccess={handlePaidSuccess}
+              onComplimentaryActivate={
+                onFounderBenefits ? handleComplimentaryBoost : undefined
+              }
+              complimentaryActivating={boostActivating}
             />
           )}
         </div>
@@ -656,6 +673,10 @@ export function MembershipPanel({
             purchaseDisabled={boostPurchaseDisabled}
             purchaseDisabledReason={boostDisabledReason}
             onPaymentSuccess={handlePaidSuccess}
+            onComplimentaryActivate={
+              onFounderBenefits ? handleComplimentaryBoost : undefined
+            }
+            complimentaryActivating={boostActivating}
           />
         )}
       </div>

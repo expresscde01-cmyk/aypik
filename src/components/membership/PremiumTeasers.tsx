@@ -97,10 +97,14 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
   );
 
   if (status.unlimited_likes) {
+    const label =
+      status.on_founder_trial || status.is_founder
+        ? 'Fondateur · 0 €'
+        : 'Premium';
     return (
       <p className="text-center text-xs text-gray-400">
         Likes illimités ·{' '}
-        <span className="text-rose-500 font-medium">Premium</span>
+        <span className="text-rose-500 font-medium">{label}</span>
       </p>
     );
   }

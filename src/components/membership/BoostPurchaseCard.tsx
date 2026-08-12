@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Zap } from 'lucide-react';
 import { SoftLock } from '@/components/membership/SoftPremium';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
-import type { MembershipStatus } from '@/lib/membership';
-import { ENABLE_PAYMENTS } from '@/lib/payments';
+import {
+  isFounderComplimentaryAccess,
+  type MembershipStatus,
+} from '@/lib/membership';
+import { ENABLE_PAYMENTS, requiresPaidCheckout } from '@/lib/payments';
 
 export function BoostPurchaseCard({
   status,
@@ -12,6 +15,9 @@ export function BoostPurchaseCard({
   purchaseDisabled = false,
   purchaseDisabledReason = 'Non sélectionné - votre offre Freemium est active',
   onPaymentSuccess,
+  /** Activation gratuite (Fondateur) — sans Stripe/PayPal. */
+  onComplimentaryActivate,
+  complimentaryActivating = false,
 }: {
   status: MembershipStatus;
   hasBoost: boolean;
@@ -20,8 +26,21 @@ export function BoostPurchaseCard({
   purchaseDisabled?: boolean;
   purchaseDisabledReason?: string;
   onPaymentSuccess?: () => void;
+  onComplimentaryActivate?: () => Promise<string | null> | void;
+  complimentaryActivating?: boolean;
 }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const complimentary = isFounderComplimentaryAccess(status);
+  const canPay = requiresPaidCheckout(status, 'boost');
+
+  const handleComplimentary = async () => {
+    if (!onComplimentaryActivate) return;
+    setLocalError(null);
+    const err = await onComplimentaryActivate();
+    if (err) setLocalError(err);
+    else onPaymentSuccess?.();
+  };
 
   return (
     <>
@@ -30,7 +49,9 @@ export function BoostPurchaseCard({
         className={
           purchaseDisabled
             ? 'rounded-2xl border border-gray-200 bg-gray-50 p-4 opacity-55 grayscale pointer-events-none select-none'
-            : 'rounded-2xl border border-amber-100 bg-white p-4'
+            : complimentary
+              ? 'rounded-2xl border border-amber-200 bg-amber-50/40 p-4'
+              : 'rounded-2xl border border-amber-100 bg-white p-4'
         }
       >
         <div className="flex items-start gap-3">
@@ -53,8 +74,9 @@ export function BoostPurchaseCard({
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-gray-900">Boost 24 h</h3>
             <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-              Mettez votre profil en avant pendant une journée. Achat ponctuel,
-              sans abonnement — paiement carte ou PayPal.
+              {complimentary
+                ? 'Mettez votre profil en avant pendant une journée — offert avec votre statut Fondateur (0 €).'
+                : 'Mettez votre profil en avant pendant une journée. Achat ponctuel, sans abonnement — paiement carte ou PayPal.'}
             </p>
 
             {hasBoost && boostEndsAt && (
@@ -81,18 +103,35 @@ export function BoostPurchaseCard({
               </p>
             )}
 
+            {localError && (
+              <p className="text-xs text-red-600 mt-2">{localError}</p>
+            )}
+
             <div className="flex items-center gap-3 mt-3">
-              {purchaseDisabled || !ENABLE_PAYMENTS ? (
+              {purchaseDisabled ? (
                 <div
                   role="presentation"
                   aria-hidden="true"
                   className="px-3.5 py-2 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-semibold cursor-not-allowed"
                 >
-                  {!ENABLE_PAYMENTS
-                    ? 'Paiement bientôt disponible'
+                  {hasBoost ? 'Prolonger 24 h · 2,99 €' : 'Activer 24 h · 2,99 €'}
+                </div>
+              ) : complimentary ? (
+                <button
+                  type="button"
+                  onClick={() => void handleComplimentary()}
+                  disabled={complimentaryActivating || !onComplimentaryActivate}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-60"
+                >
+                  {complimentaryActivating
+                    ? 'Activation…'
                     : hasBoost
-                      ? 'Prolonger 24 h · 2,99 €'
-                      : 'Activer 24 h · 2,99 €'}
+                      ? 'Prolonger 24 h · offert'
+                      : 'Activer 24 h · offert'}
+                </button>
+              ) : !ENABLE_PAYMENTS || !canPay ? (
+                <div className="px-3.5 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-semibold">
+                  Paiement bientôt disponible
                 </div>
               ) : (
                 <button
@@ -107,9 +146,11 @@ export function BoostPurchaseCard({
               )}
               <SoftLock
                 label={
-                  !ENABLE_PAYMENTS
-                    ? 'Bientôt'
-                    : 'Carte ou PayPal'
+                  complimentary
+                    ? 'Fondateur · 0 €'
+                    : !ENABLE_PAYMENTS
+                      ? 'Bientôt'
+                      : 'Carte ou PayPal'
                 }
               />
             </div>
@@ -117,7 +158,7 @@ export function BoostPurchaseCard({
         </div>
       </div>
 
-      {!purchaseDisabled && ENABLE_PAYMENTS && (
+      {!purchaseDisabled && canPay && (
         <PaymentCheckoutModal
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}

@@ -1,5 +1,9 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
+import {
+  isFounderComplimentaryAccess,
+  type MembershipStatus,
+} from '@/lib/membership';
 
 export type PaymentMethodChoice = 'card' | 'paypal';
 export type CheckoutProduct = 'premium' | 'boost';
@@ -7,17 +11,34 @@ export type CheckoutProduct = 'premium' | 'boost';
 export const BOOST_PRICE_CENTS = 299;
 
 /**
- * Interrupteur unique pour Stripe / PayPal (Premium + Boost).
- * - `false` : lancement Fondateur gratuit — les CTAs de paiement sont masqués,
- *   le code Stripe/PayPal reste intact et prêt à servir.
- * - `true`  : réactive immédiatement les boutons et le modal de checkout.
+ * Interrupteur des systèmes de paiement Stripe / PayPal (code intact).
+ * - `true`  : checkout opérationnel pour Freemium / Premium / Boost payants.
+ * - `false` : CTAs de paiement masqués (mode maintenance).
  *
- * Ne pas supprimer le code de paiement : basculez uniquement ce drapeau.
+ * Les Membres Fondateurs ne passent jamais par la caisse : accès Premium
+ * à 0 € via `isFounderComplimentaryAccess` (auto-validé côté membership).
  */
-export const ENABLE_PAYMENTS = false;
+export const ENABLE_PAYMENTS = true;
 
 /** @deprecated Préférer `!ENABLE_PAYMENTS`. Conservé pour compatibilité. */
 export const PAYMENTS_TEMPORARILY_DISABLED = !ENABLE_PAYMENTS;
+
+/**
+ * True si l’utilisateur doit passer par Stripe/PayPal pour ce produit.
+ * Les Fondateurs en période offerte sont considérés comme déjà réglés (0 €).
+ */
+export function requiresPaidCheckout(
+  status: Pick<
+    MembershipStatus,
+    'is_founder' | 'on_founder_trial' | 'has_premium' | 'founder_premium_until'
+  >,
+  product: CheckoutProduct = 'premium'
+): boolean {
+  void product;
+  if (!ENABLE_PAYMENTS) return false;
+  if (isFounderComplimentaryAccess(status)) return false;
+  return true;
+}
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
