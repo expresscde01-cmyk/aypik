@@ -141,15 +141,6 @@ function FounderActiveBanner({
           </li>
         </ul>
 
-        <div className="rounded-2xl bg-white/75 border border-white/90 px-4 py-3.5 space-y-1.5">
-          <p className="text-sm sm:text-base font-bold text-amber-950 tracking-tight">
-            {AFTER_FOUNDER_TITLE}
-          </p>
-          <p className="text-sm font-medium text-amber-950/85 leading-relaxed">
-            {AFTER_FOUNDER_PERIOD_COPY}
-          </p>
-        </div>
-
         {showCta && (
           <div className="flex justify-end pt-1">
             <button
@@ -412,10 +403,12 @@ export function MembershipPanel({
   const showFreemiumLocked = onFounderBenefits;
   /**
    * Boost toujours visible à titre d’info.
-   * Achat désactivé pendant l’onboarding (signupGate) pour éviter un boost sur profil vide.
+   * Achat désactivé pendant l’onboarding ; actif une fois l’inscription finalisée.
    */
   const showBoost = true;
   const boostPurchaseDisabled = signupGate;
+  const boostDisabledReason =
+    'Disponible une fois l’inscription complètement finalisée.';
 
   const handleCancel = async () => {
     if (
@@ -494,6 +487,7 @@ export function MembershipPanel({
               boostEndsAt={status.boost_ends_at}
               onPurchase={onPurchaseBoost}
               purchaseDisabled={boostPurchaseDisabled}
+              purchaseDisabledReason={boostDisabledReason}
             />
           )}
         </div>
@@ -627,6 +621,7 @@ export function MembershipPanel({
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
             purchaseDisabled={boostPurchaseDisabled}
+            purchaseDisabledReason={boostDisabledReason}
           />
         )}
       </div>
