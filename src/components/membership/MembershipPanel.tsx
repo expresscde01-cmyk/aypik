@@ -534,8 +534,8 @@ export function MembershipPanel({
       <div className="space-y-4">
         <FounderActiveBanner status={status} onActivate={undefined} />
         <p className="text-sm text-center text-gray-600 leading-relaxed px-1">
-          Offre Fondateur active. Utilisez le bouton ci-dessous pour continuer
-          vers votre profil.
+          Offre Fondateur active. Utilisez le bouton ci-dessus pour continuer
+          à compléter votre profil.
         </p>
       </div>
     );
