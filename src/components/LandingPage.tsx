@@ -1,9 +1,13 @@
-import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
+import { Check, Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
+import { useMembership } from '@/lib/useMembership';
 
 const FOUNDER_SUBTITLE =
   '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
+
+const FREEMIUM_ACTIVE_UNSELECTED_LABEL =
+  'Non sélectionné - votre offre Freemium est active';
 
 const VALUES = [
   {
@@ -29,36 +33,47 @@ const VALUES = [
   },
 ] as const;
 
-const OFFERS = [
+type OfferAccent = 'founder' | 'premium' | 'boost' | 'freemium';
+
+type OfferDef = {
+  id: OfferAccent;
+  title: string;
+  badge?: string;
+  description: string;
+  point?: string;
+  accent: OfferAccent;
+};
+
+const OFFERS: OfferDef[] = [
   {
     id: 'founder',
     title: 'Membre Fondateur',
     badge: 'Offre limitée',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
-    accent: 'founder' as const,
+    accent: 'founder',
   },
   {
     id: 'premium',
     title: 'Offre Premium',
     description:
       '19,99 € / mois pour un confort d’utilisation, sans engagement.',
-    accent: 'premium' as const,
+    accent: 'premium',
   },
   {
     id: 'boost',
     title: 'Boost 24h',
     description:
       'Visibilité maximale pendant 24 h. Achat ponctuel, disponible à tout moment.',
-    accent: 'boost' as const,
+    accent: 'boost',
   },
   {
     id: 'freemium',
     title: 'Offre Freemium',
     description: 'Notre offre standard gratuite, sans engagement.',
-    accent: 'freemium' as const,
+    accent: 'freemium',
   },
-] as const;
+];
 
 export function SiteHeader({
   displayName,
@@ -129,30 +144,20 @@ function OfferCard({
   badge,
   description,
   point,
-  point2,
+  note,
   accent,
+  highlighted = false,
+  locked = false,
 }: {
   title: string;
   badge?: string;
   description: string;
   point?: string;
-  point2?: string;
-  accent: 'founder' | 'premium' | 'boost' | 'freemium';
+  note?: string;
+  accent: OfferAccent;
+  highlighted?: boolean;
+  locked?: boolean;
 }) {
-  const shell =
-    accent === 'founder'
-      ? 'border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300'
-      : accent === 'premium'
-        ? 'border-rose-200 bg-white'
-        : accent === 'boost'
-          ? 'border-amber-200 bg-white'
-          : 'border-gray-200 bg-white';
-
-  const titleColor =
-    accent === 'founder' ? 'text-amber-950' : 'text-gray-900';
-  const bodyColor =
-    accent === 'founder' ? 'text-amber-950/85' : 'text-gray-600';
-
   const Icon =
     accent === 'founder'
       ? Gift
@@ -162,6 +167,81 @@ function OfferCard({
           ? Zap
           : Heart;
 
+  if (highlighted && accent === 'freemium') {
+    return (
+      <article className="relative overflow-hidden rounded-3xl border-2 border-cyan-200 bg-gradient-to-br from-sky-500 via-cyan-400 to-sky-200 shadow-lg shadow-cyan-200/50 p-5 sm:p-6 sm:col-span-2 animate-fadeIn">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-45"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 88% 14%, rgba(255,255,255,0.55) 0%, transparent 42%), radial-gradient(circle at 12% 80%, rgba(224,242,254,0.65) 0%, transparent 48%), radial-gradient(circle at 45% 35%, rgba(34,211,238,0.25) 0%, transparent 45%)',
+          }}
+        />
+        <div className="relative space-y-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-900 border border-white/80 shadow-sm">
+            <Check className="w-3.5 h-3.5" />
+            Offre active
+          </span>
+          <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-sky-950">
+            {title}
+          </h3>
+          <p className="text-sm sm:text-base font-semibold text-sky-950/85 leading-snug">
+            {description}
+          </p>
+          {point && (
+            <p className="flex items-start gap-2 text-sm font-semibold text-sky-950">
+              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/85">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              </span>
+              {point}
+            </p>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  if (locked) {
+    return (
+      <article
+        aria-disabled="true"
+        className="relative overflow-hidden rounded-3xl border-2 border-gray-200 bg-gray-50 p-5 sm:p-6 opacity-55 grayscale pointer-events-none select-none animate-fadeIn"
+      >
+        <div className="relative space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gray-200 text-gray-500">
+              <Icon className="w-4 h-4" />
+            </span>
+          </div>
+          <h3 className="text-xl font-extrabold tracking-tight text-gray-700">
+            {title}
+          </h3>
+          <p className="text-sm font-medium leading-snug text-gray-500">
+            {description}
+          </p>
+          {note && (
+            <p className="text-xs font-medium text-gray-700 leading-relaxed bg-white/70 border border-gray-200 rounded-xl px-3 py-2">
+              {note}
+            </p>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  const shell =
+    accent === 'founder'
+      ? 'border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300'
+      : accent === 'premium'
+        ? 'border-rose-200 bg-white'
+        : accent === 'boost'
+          ? 'border-amber-200 bg-white'
+          : 'border-cyan-200 bg-white';
+
+  const titleColor =
+    accent === 'founder' ? 'text-amber-950' : 'text-gray-900';
+  const bodyColor =
+    accent === 'founder' ? 'text-amber-950/85' : 'text-gray-600';
   const pointClass =
     accent === 'founder' ? 'text-amber-950' : 'text-gray-800';
   const bulletClass =
@@ -195,7 +275,7 @@ function OfferCard({
                   ? 'bg-rose-50 text-rose-500'
                   : accent === 'boost'
                     ? 'bg-amber-50 text-amber-600'
-                    : 'bg-gray-100 text-rose-400'
+                    : 'bg-cyan-50 text-cyan-600'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -208,29 +288,15 @@ function OfferCard({
         <p className={`text-sm sm:text-base font-medium leading-snug ${bodyColor}`}>
           {description}
         </p>
-        {(point || point2) && (
-          <ul className="space-y-2">
-            {point && (
-              <li className={`flex items-start gap-2 text-sm font-semibold ${pointClass}`}>
-                <span
-                  className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${bulletClass}`}
-                >
-                  ✓
-                </span>
-                {point}
-              </li>
-            )}
-            {point2 && (
-              <li className={`flex items-start gap-2 text-sm font-semibold ${pointClass}`}>
-                <span
-                  className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${bulletClass}`}
-                >
-                  ✓
-                </span>
-                {point2}
-              </li>
-            )}
-          </ul>
+        {point && (
+          <p className={`flex items-start gap-2 text-sm font-semibold ${pointClass}`}>
+            <span
+              className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${bulletClass}`}
+            >
+              ✓
+            </span>
+            {point}
+          </p>
         )}
       </div>
     </article>
@@ -252,6 +318,60 @@ export default function LandingPage({
   onPrimaryCta?: () => void;
 }) {
   const connected = Boolean(displayName);
+  const { status } = useMembership();
+
+  const onFounderBenefits =
+    status.on_founder_trial ||
+    (status.is_founder &&
+      !!status.founder_premium_until &&
+      new Date(status.founder_premium_until).getTime() > Date.now());
+
+  const onFreemium =
+    connected &&
+    status.membership_linked &&
+    !status.is_founder &&
+    !onFounderBenefits &&
+    status.plan !== 'premium' &&
+    status.plan !== 'founder';
+
+  const boostPurchased = status.has_boost;
+
+  const visibleOffers = onFreemium
+    ? [
+        {
+          ...OFFERS.find((o) => o.id === 'freemium')!,
+          description: 'Gratuit — l’essentiel d’Aypik, sans engagement.',
+          point: 'Sans carte bancaire',
+          highlighted: true,
+          locked: false,
+        },
+        {
+          ...OFFERS.find((o) => o.id === 'founder')!,
+          highlighted: false,
+          locked: true,
+          note: FREEMIUM_ACTIVE_UNSELECTED_LABEL,
+        },
+        {
+          ...OFFERS.find((o) => o.id === 'premium')!,
+          highlighted: false,
+          locked: true,
+          note: FREEMIUM_ACTIVE_UNSELECTED_LABEL,
+        },
+        {
+          ...OFFERS.find((o) => o.id === 'boost')!,
+          highlighted: false,
+          locked: !boostPurchased,
+          note: boostPurchased
+            ? undefined
+            : FREEMIUM_ACTIVE_UNSELECTED_LABEL,
+        },
+      ]
+    : OFFERS.map((offer) => ({
+        ...offer,
+        highlighted: false,
+        locked: false,
+        note: undefined as string | undefined,
+      }));
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
@@ -344,12 +464,24 @@ export default function LandingPage({
             Nos offres
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Une entrée libre, des options pour aller plus loin.
+            {onFreemium
+              ? 'Votre offre Freemium est active. Les autres options restent visibles à titre d’information.'
+              : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {OFFERS.map((offer) => (
-            <OfferCard key={offer.id} {...offer} />
+          {visibleOffers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              title={offer.title}
+              badge={offer.locked ? undefined : offer.badge}
+              description={offer.description}
+              point={offer.locked ? undefined : offer.point}
+              note={offer.note}
+              accent={offer.accent}
+              highlighted={offer.highlighted}
+              locked={offer.locked}
+            />
           ))}
         </div>
       </section>
