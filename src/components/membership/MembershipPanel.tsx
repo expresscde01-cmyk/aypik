@@ -331,7 +331,6 @@ export function MembershipPanel({
   onPurchaseBoost,
   onRefresh,
   onClaimFounder,
-  onClaimFreemium,
   claimingOffer = false,
   /** Tunnel inscription : choix d’offre obligatoire avant le profil */
   signupGate = false,
@@ -345,6 +344,7 @@ export function MembershipPanel({
   onPurchaseBoost?: () => Promise<string | null>;
   onRefresh?: () => void;
   onClaimFounder?: () => void;
+  /** Conservé pour compatibilité API (plus proposé à l’inscription). */
   onClaimFreemium?: () => void;
   claimingOffer?: boolean;
   signupGate?: boolean;
