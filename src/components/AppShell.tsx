@@ -7,6 +7,11 @@ import ProfileSetup from '@/components/ProfileSetup';
 import LandingPage from '@/components/LandingPage';
 import type { Profile } from '@/components/ProfileSetup';
 import { MIN_INTERESTS } from '@/lib/interests';
+import {
+  isSignupPaused,
+  pauseSignup,
+  resumeSignup,
+} from '@/lib/signupDraft';
 
 type Tab = 'home' | 'matches' | 'profile';
 
@@ -17,6 +22,7 @@ export default function AppShell() {
   const [profileLoading, setProfileLoading] = useState(true);
   const signupOkKey = user ? `aypik_signup_ok_${user.id}` : null;
   const [signupValidated, setSignupValidated] = useState<boolean | null>(null);
+  const [signupPaused, setSignupPaused] = useState(false);
 
   useEffect(() => {
     if (!signupOkKey) {
@@ -26,9 +32,32 @@ export default function AppShell() {
     setSignupValidated(localStorage.getItem(signupOkKey) === '1');
   }, [signupOkKey]);
 
+  useEffect(() => {
+    if (!user) {
+      setSignupPaused(false);
+      return;
+    }
+    setSignupPaused(isSignupPaused(user.id));
+  }, [user]);
+
   const markSignupValidated = () => {
     if (signupOkKey) localStorage.setItem(signupOkKey, '1');
+    if (user) resumeSignup(user.id);
+    setSignupPaused(false);
     setSignupValidated(true);
+  };
+
+  const continueSignup = () => {
+    if (!user) return;
+    resumeSignup(user.id);
+    setSignupPaused(false);
+  };
+
+  const handlePauseSignup = () => {
+    if (!user) return;
+    pauseSignup(user.id);
+    setSignupPaused(true);
+    setTab('home');
   };
 
   useEffect(() => {
@@ -58,11 +87,13 @@ export default function AppShell() {
         Array.isArray(p.interests) &&
         p.interests.length >= MIN_INTERESTS
     );
-  // Inscription non finalisée → formulaire + « Validez votre inscription »
-  // (évite l’accueil « Nos offres » sans bouton de validation).
+  // Inscription non finalisée → tunnel obligatoire,
+  // sauf pause volontaire (Retour) : compte + brouillon conservés.
   const needsProfile = !profileLoading && !profileComplete(profile);
   const mustFinalizeSignup =
     !profileLoading && signupValidated === false;
+  const incompleteSignup = needsProfile || mustFinalizeSignup;
+  const forceSignupTunnel = incompleteSignup && !signupPaused;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
@@ -76,7 +107,7 @@ export default function AppShell() {
     );
   }
 
-  if (needsProfile || mustFinalizeSignup) {
+  if (forceSignupTunnel) {
     return (
       <ProfileSetup
         onDone={async () => {
@@ -89,6 +120,7 @@ export default function AppShell() {
           markSignupValidated();
           setTab('home');
         }}
+        onPauseSignup={handlePauseSignup}
       />
     );
   }
@@ -101,7 +133,12 @@ export default function AppShell() {
             displayName={displayName}
             onSignOut={signOut}
             onLogoClick={() => setTab('home')}
-            onPrimaryCta={() => setTab('matches')}
+            onPrimaryCta={() =>
+              incompleteSignup ? continueSignup() : setTab('matches')
+            }
+            primaryCtaLabel={
+              incompleteSignup ? 'Continuer mon inscription' : undefined
+            }
           />
         )}
         {tab === 'matches' && (
@@ -120,23 +157,52 @@ export default function AppShell() {
                 </span>
               </div>
             </div>
-            <MatchesPage />
+            {incompleteSignup ? (
+              <div className="flex-1 flex flex-col items-center justify-center px-4 text-center gap-4 py-16">
+                <p className="text-sm text-gray-600 max-w-sm">
+                  Finalisez votre inscription Fondateur pour accéder aux matchs.
+                </p>
+                <button
+                  type="button"
+                  onClick={continueSignup}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200"
+                >
+                  Continuer mon inscription
+                </button>
+              </div>
+            ) : (
+              <MatchesPage />
+            )}
           </div>
         )}
-        {tab === 'profile' && (
-          <ProfileSetup
-            allowAccountDeletion
-            onDone={async () => {
-              const { data } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user!.id)
-                .maybeSingle();
-              setProfile(data as Profile);
-              setTab('home');
-            }}
-          />
-        )}
+        {tab === 'profile' &&
+          (incompleteSignup ? (
+            <div className="flex flex-col items-center justify-center px-4 text-center gap-4 py-20">
+              <p className="text-sm text-gray-600 max-w-sm">
+                Votre profil sera accessible après validation de l’inscription.
+              </p>
+              <button
+                type="button"
+                onClick={continueSignup}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200"
+              >
+                Continuer mon inscription
+              </button>
+            </div>
+          ) : (
+            <ProfileSetup
+              allowAccountDeletion
+              onDone={async () => {
+                const { data } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', user!.id)
+                  .maybeSingle();
+                setProfile(data as Profile);
+                setTab('home');
+              }}
+            />
+          ))}
       </main>
 
       <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
@@ -151,13 +217,17 @@ export default function AppShell() {
             icon={<Heart className="w-5 h-5" />}
             label="Matchs"
             active={tab === 'matches'}
-            onClick={() => setTab('matches')}
+            onClick={() =>
+              incompleteSignup ? continueSignup() : setTab('matches')
+            }
           />
           <NavButton
             icon={<User className="w-5 h-5" />}
             label="Profil"
             active={tab === 'profile'}
-            onClick={() => setTab('profile')}
+            onClick={() =>
+              incompleteSignup ? continueSignup() : setTab('profile')
+            }
           />
         </div>
       </nav>

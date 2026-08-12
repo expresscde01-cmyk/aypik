@@ -312,6 +312,7 @@ export default function LandingPage({
   onSignOut,
   onLogoClick,
   onPrimaryCta,
+  primaryCtaLabel,
 }: {
   displayName?: string | null;
   onAuthClick?: () => void;
@@ -319,6 +320,8 @@ export default function LandingPage({
   onLogoClick?: () => void;
   /** CTA principal (ex. aller aux matchs si déjà connecté) */
   onPrimaryCta?: () => void;
+  /** Libellé custom du CTA connecté (ex. reprendre l’inscription) */
+  primaryCtaLabel?: string;
 }) {
   const connected = Boolean(displayName);
   const { status } = useMembership();
@@ -446,7 +449,7 @@ export default function LandingPage({
               className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
             >
               {connected
-                ? 'Voir mes matchs'
+                ? primaryCtaLabel || 'Voir mes matchs'
                 : availability.founder_open
                   ? 'Rejoindre l’offre Fondateur'
                   : 'Rejoindre Aypik'}

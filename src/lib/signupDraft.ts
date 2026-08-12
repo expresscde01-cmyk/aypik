@@ -55,3 +55,32 @@ export function clearSignupDraft(userId: string) {
     // ignore
   }
 }
+
+function pauseKey(userId: string) {
+  return `aypik_signup_paused_${userId}`;
+}
+
+/** Met l’inscription en pause sans déconnecter (Retour depuis les offres). */
+export function pauseSignup(userId: string) {
+  try {
+    localStorage.setItem(pauseKey(userId), '1');
+  } catch {
+    // ignore
+  }
+}
+
+export function resumeSignup(userId: string) {
+  try {
+    localStorage.removeItem(pauseKey(userId));
+  } catch {
+    // ignore
+  }
+}
+
+export function isSignupPaused(userId: string): boolean {
+  try {
+    return localStorage.getItem(pauseKey(userId)) === '1';
+  } catch {
+    return false;
+  }
+}

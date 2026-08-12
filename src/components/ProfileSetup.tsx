@@ -57,9 +57,12 @@ export interface Profile {
 export default function ProfileSetup({
   onDone,
   allowAccountDeletion = false,
+  /** Retour depuis l’étape offres : pause sans déconnexion (conserve compte + brouillon). */
+  onPauseSignup,
 }: {
   onDone: () => void;
   allowAccountDeletion?: boolean;
+  onPauseSignup?: () => void;
 }) {
   const { user, signOut } = useAuth();
   const {
@@ -298,9 +301,13 @@ export default function ProfileSetup({
       void signOut();
       return;
     }
-    // Sauvegarde explicite avant déconnexion — les données restent au retour.
+    // Ne jamais déconnecter ici : on met en pause et on garde compte + brouillon.
     const draft = draftSnapshotRef.current ?? buildDraft();
     writeSignupDraft(user.id, draft);
+    if (onPauseSignup) {
+      onPauseSignup();
+      return;
+    }
     void signOut();
   };
 
