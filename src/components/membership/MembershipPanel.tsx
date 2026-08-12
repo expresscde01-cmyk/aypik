@@ -50,10 +50,16 @@ function FounderActiveBanner({
           className="rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none"
         >
           <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
-            <p className="text-xs font-medium text-gray-500">
-              {exhausted ? 'Offre épuisée' : 'Non disponible'}
-            </p>
-            <p className="text-lg font-bold tracking-tight text-gray-800 mt-0.5">
+            {exhausted && (
+              <p className="text-xs font-medium text-gray-500">Offre épuisée</p>
+            )}
+            <p
+              className={
+                exhausted
+                  ? 'text-lg font-bold tracking-tight text-gray-800 mt-0.5'
+                  : 'text-lg font-bold tracking-tight text-gray-800'
+              }
+            >
               Membre Fondateur
             </p>
           </div>
