@@ -3,6 +3,7 @@ import { Zap } from 'lucide-react';
 import { SoftLock } from '@/components/membership/SoftPremium';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 import type { MembershipStatus } from '@/lib/membership';
+import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
 
 export function BoostPurchaseCard({
   status,
@@ -81,13 +82,17 @@ export function BoostPurchaseCard({
             )}
 
             <div className="flex items-center gap-3 mt-3">
-              {purchaseDisabled ? (
+              {purchaseDisabled || PAYMENTS_TEMPORARILY_DISABLED ? (
                 <div
                   role="presentation"
                   aria-hidden="true"
                   className="px-3.5 py-2 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-xs font-semibold cursor-not-allowed"
                 >
-                  {hasBoost ? 'Prolonger 24 h · 2,99 €' : 'Activer 24 h · 2,99 €'}
+                  {PAYMENTS_TEMPORARILY_DISABLED
+                    ? 'Paiement bientôt disponible'
+                    : hasBoost
+                      ? 'Prolonger 24 h · 2,99 €'
+                      : 'Activer 24 h · 2,99 €'}
                 </div>
               ) : (
                 <button
@@ -100,13 +105,19 @@ export function BoostPurchaseCard({
                     : 'Activer 24 h · 2,99 €'}
                 </button>
               )}
-              <SoftLock label="Carte ou PayPal" />
+              <SoftLock
+                label={
+                  PAYMENTS_TEMPORARILY_DISABLED
+                    ? 'Bientôt'
+                    : 'Carte ou PayPal'
+                }
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {!purchaseDisabled && (
+      {!purchaseDisabled && !PAYMENTS_TEMPORARILY_DISABLED && (
         <PaymentCheckoutModal
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}

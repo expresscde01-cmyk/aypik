@@ -14,6 +14,8 @@ import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import { LegalLink } from '@/components/LegalTerms';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
+import { useFounderAvailability } from '@/lib/useFounderAvailability';
+import { founderOfferBadgeLabel } from '@/lib/membership';
 
 type Mode = 'signin' | 'signup';
 
@@ -24,6 +26,9 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { availability } = useFounderAvailability();
+  const founderOpen = availability.founder_open;
+  const founderBadge = founderOfferBadgeLabel(availability);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +107,18 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
         </div>
 
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
+          {mode === 'signup' && founderOpen && (
+            <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center">
+              <p className="text-sm font-semibold text-amber-950">
+                {founderBadge}
+              </p>
+              <p className="text-xs text-amber-900/80 mt-1 leading-relaxed">
+                Créez votre compte (e-mail et mot de passe) pour rejoindre
+                l’offre Fondateur — aucun paiement requis.
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-6">
             <button
               type="button"
@@ -202,7 +219,9 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
               {loading
                 ? 'Chargement...'
                 : mode === 'signup'
-                  ? 'Créer mon compte'
+                  ? founderOpen
+                    ? 'Créer mon compte Fondateur'
+                    : 'Créer mon compte'
                   : 'Se connecter'}
             </button>
           </form>

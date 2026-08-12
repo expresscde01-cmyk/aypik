@@ -9,10 +9,13 @@ import {
   daysUntil,
   formatPremiumPriceLabel,
   isFounderAvailable,
+  founderOfferBadgeLabel,
+  founderOfferSubtitle,
   AFTER_FOUNDER_TITLE,
   AFTER_FOUNDER_PERIOD_COPY,
   type MembershipStatus,
 } from '@/lib/membership';
+import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
 
 /** Libellé partagé quand Freemium est l’offre active (cartes secondaires grisées). */
 const FREEMIUM_ACTIVE_UNSELECTED_LABEL =
@@ -117,9 +120,9 @@ function FounderActiveBanner({
       />
       <div className="relative p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-900 border border-white/80 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold tracking-wide text-amber-900 border border-white/80 shadow-sm">
             <Gift className="w-3.5 h-3.5" />
-            Offre limitée
+            {founderOfferBadgeLabel(status)}
           </span>
           {status.is_founder && (
             <FounderBadge number={status.founder_number} />
@@ -132,7 +135,7 @@ function FounderActiveBanner({
             Membre Fondateur
           </h2>
           <p className="mt-2 text-base sm:text-lg font-semibold text-amber-950/90 leading-snug">
-            6 mois offerts — Offre exclusive réservée aux 500 premiers membres.
+            {founderOfferSubtitle(status)}
           </p>
         </div>
 
@@ -153,7 +156,7 @@ function FounderActiveBanner({
               disabled={activating}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-700 text-white text-sm sm:text-base font-bold shadow-lg shadow-emerald-900/35 ring-2 ring-white/70 hover:bg-emerald-800 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {activating ? 'Activation…' : 'Activer mon offre Fondateur'}
+              {activating ? 'Activation…' : 'Rejoindre en Fondateur'}
             </button>
           </div>
         )}
@@ -325,7 +328,6 @@ function PostFounderChoicePanel() {
 
 export function MembershipPanel({
   status,
-  onPurchaseBoost: _onPurchaseBoost,
   onRefresh,
   onClaimFounder,
   onClaimFreemium,
@@ -338,6 +340,7 @@ export function MembershipPanel({
   onPaidOfferSuccess,
 }: {
   status: MembershipStatus;
+  /** Conservé pour compatibilité API (Boost payant via PaymentCheckoutModal). */
   onPurchaseBoost?: () => Promise<string | null>;
   onRefresh?: () => void;
   onClaimFounder?: () => void;
@@ -429,10 +432,13 @@ export function MembershipPanel({
   /**
    * Boost : coloré seulement s’il a déjà été acheté (page précédente),
    * sinon grisé quand Freemium est l’offre active.
+   * Paiements temporairement masqués au lancement Fondateur.
    */
-  const showBoost = true;
+  const showBoost = !PAYMENTS_TEMPORARILY_DISABLED;
   const boostPurchaseDisabled = onFreemium && !status.has_boost;
   const boostDisabledReason = FREEMIUM_ACTIVE_UNSELECTED_LABEL;
+  const showPremiumOfferCard =
+    showPremiumOffer && !PAYMENTS_TEMPORARILY_DISABLED;
 
   const handleCancel = async () => {
     if (
@@ -491,7 +497,7 @@ export function MembershipPanel({
             {founderAvailable ? 'Autres options' : 'Offres disponibles'}
           </p>
 
-          {showPremiumOffer && (
+          {showPremiumOfferCard && (
             <PremiumConversionCard
               status={status}
               founderExpired={founderExpired}
@@ -500,6 +506,14 @@ export function MembershipPanel({
               disabled={premiumDisabled}
               disabledReason={premiumDisabledReason}
             />
+          )}
+
+          {PAYMENTS_TEMPORARILY_DISABLED && signupGate && !offerChosen && (
+            <p className="text-xs text-center text-gray-500 leading-relaxed px-1">
+              Les paiements Premium et Boost seront disponibles plus tard.
+              Rejoignez l’offre Fondateur gratuitement, ou continuez en
+              Freemium.
+            </p>
           )}
 
           {showFreemiumClaim && (
@@ -568,7 +582,7 @@ export function MembershipPanel({
           />
         )}
 
-        {showPremiumOffer && (
+        {showPremiumOfferCard && (
           <PremiumConversionCard
             status={status}
             founderExpired={founderExpired}

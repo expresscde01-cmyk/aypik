@@ -6,6 +6,12 @@ export type CheckoutProduct = 'premium' | 'boost';
 
 export const BOOST_PRICE_CENTS = 299;
 
+/**
+ * Lancement Fondateur : paiements Stripe/PayPal temporairement désactivés.
+ * Remettre à `false` pour réactiver Premium / Boost payants.
+ */
+export const PAYMENTS_TEMPORARILY_DISABLED = true;
+
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
 let stripePromise: Promise<Stripe | null> | null = null;

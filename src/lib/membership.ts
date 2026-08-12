@@ -186,13 +186,58 @@ export function daysUntil(iso: string | null | undefined): number | null {
 }
 
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */
-export function isFounderOfferOpen(status: MembershipStatus): boolean {
+export function isFounderOfferOpen(status: {
+  founders_remaining: number;
+}): boolean {
   return status.founders_remaining > 0;
 }
 
 /** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
-export function isFounderAvailable(status: MembershipStatus): boolean {
+export function isFounderAvailable(status: {
+  founders_remaining: number;
+}): boolean {
   return isFounderOfferOpen(status);
+}
+
+/**
+ * Seuil psychologique : compteur visible seulement quand ≤ 200 places
+ * restantes (à partir du 301e inscrit sur 500).
+ */
+export const FOUNDER_SCARCITY_REMAINING_THRESHOLD = 200;
+
+export function shouldShowFounderScarcityCounter(status: {
+  founders_remaining: number;
+}): boolean {
+  return (
+    status.founders_remaining > 0 &&
+    status.founders_remaining <= FOUNDER_SCARCITY_REMAINING_THRESHOLD
+  );
+}
+
+/** Badge Fondateur (sans chiffres tant que > 200 places restantes). */
+export function founderOfferBadgeLabel(status: {
+  founders_remaining: number;
+  founders_max: number;
+}): string {
+  if (status.founders_remaining <= 0) return 'Offre Fondateur épuisée';
+  if (shouldShowFounderScarcityCounter(status)) {
+    return `Plus que ${status.founders_remaining} places disponibles sur ${status.founders_max}`;
+  }
+  return 'Offre Fondateur - Accès 100% gratuit';
+}
+
+/** Sous-titre Fondateur adapté au mode silencieux / rareté. */
+export function founderOfferSubtitle(status: {
+  founders_remaining: number;
+  founders_max: number;
+}): string {
+  if (status.founders_remaining <= 0) {
+    return 'Les places Fondateur ont toutes été attribuées.';
+  }
+  if (shouldShowFounderScarcityCounter(status)) {
+    return `6 mois offerts — plus que ${status.founders_remaining} places sur ${status.founders_max}.`;
+  }
+  return '6 mois offerts — accès 100 % gratuit, sans carte bancaire.';
 }
 
 export const MEMBERSHIP_REQUIRED_ERROR =

@@ -2,9 +2,15 @@ import { Check, Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRou
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
 import { useMembership } from '@/lib/useMembership';
+import { useFounderAvailability } from '@/lib/useFounderAvailability';
+import {
+  founderOfferBadgeLabel,
+  founderOfferSubtitle,
+} from '@/lib/membership';
+import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
 
 const FOUNDER_SUBTITLE =
-  '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
+  '6 mois offerts — accès 100 % gratuit, sans carte bancaire.';
 
 const VALUES = [
   {
@@ -45,7 +51,7 @@ const OFFERS: OfferDef[] = [
   {
     id: 'founder',
     title: 'Membre Fondateur',
-    badge: 'Offre limitée',
+    badge: 'Offre Fondateur - Accès 100% gratuit',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
     accent: 'founder',
@@ -260,7 +266,7 @@ function OfferCard({
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {badge && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-900 border border-white/80 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold tracking-wide text-amber-900 border border-white/80 shadow-sm">
               <Gift className="w-3.5 h-3.5" />
               {badge}
             </span>
@@ -316,6 +322,7 @@ export default function LandingPage({
 }) {
   const connected = Boolean(displayName);
   const { status } = useMembership();
+  const { availability } = useFounderAvailability();
 
   const onFounderBenefits =
     status.on_founder_trial ||
@@ -337,12 +344,34 @@ export default function LandingPage({
   // Les offres se gèrent dans l’onglet Profil.
   const showMarketingOffers = !connected;
 
-  const visibleOffers = OFFERS.map((offer) => ({
-    ...offer,
-    highlighted: false,
-    locked: false,
-    note: undefined as string | undefined,
-  }));
+  const founderBadge = founderOfferBadgeLabel(availability);
+  const founderSubtitle = founderOfferSubtitle(availability);
+
+  const visibleOffers = OFFERS.filter((offer) => {
+    if (PAYMENTS_TEMPORARILY_DISABLED) {
+      return offer.id === 'founder' || offer.id === 'freemium';
+    }
+    return true;
+  }).map((offer) => {
+    if (offer.id === 'founder') {
+      return {
+        ...offer,
+        badge: founderBadge,
+        description: founderSubtitle,
+        highlighted: availability.founder_open,
+        locked: !availability.founder_open,
+        note: availability.founder_open
+          ? undefined
+          : 'Places Fondateur épuisées',
+      };
+    }
+    return {
+      ...offer,
+      highlighted: false,
+      locked: false,
+      note: undefined as string | undefined,
+    };
+  });
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
@@ -411,7 +440,11 @@ export default function LandingPage({
               onClick={connected ? onPrimaryCta : onAuthClick}
               className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
             >
-              {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
+              {connected
+                ? 'Voir mes matchs'
+                : availability.founder_open
+                  ? 'Rejoindre l’offre Fondateur'
+                  : 'Rejoindre Aypik'}
             </button>
             {!connected && (
               <button
@@ -423,6 +456,11 @@ export default function LandingPage({
               </button>
             )}
           </div>
+          {!connected && availability.founder_open && (
+            <p className="mt-4 text-sm font-medium text-amber-900/90 animate-fadeIn">
+              {founderBadge}
+            </p>
+          )}
         </div>
       </section>
 
@@ -461,7 +499,9 @@ export default function LandingPage({
               Nos offres
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              Une entrée libre, des options pour aller plus loin.
+              {PAYMENTS_TEMPORARILY_DISABLED
+                ? 'Offre Fondateur gratuite ou Freemium — sans paiement pour le moment.'
+                : 'Une entrée libre, des options pour aller plus loin.'}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
