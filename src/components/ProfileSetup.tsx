@@ -20,6 +20,7 @@ import {
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { LegalLink } from '@/components/LegalTerms';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
 
 import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
 
@@ -67,6 +68,7 @@ export default function ProfileSetup({
   const [bio, setBio] = useState('');
   const [hasChildren, setHasChildren] = useState(false);
   const [location, setLocation] = useState('');
+  const [locationSelected, setLocationSelected] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -94,7 +96,9 @@ export default function ProfileSetup({
         setBirthDate(data.birth_date || '');
         setBio(data.bio || '');
         setHasChildren(data.has_children ?? false);
-        setLocation(data.location || '');
+        const nextLocation = data.location || '';
+        setLocation(nextLocation);
+        setLocationSelected(Boolean(nextLocation.trim()));
         setInterests(data.interests || []);
         setPhotoUrl(data.photo_url || '');
       }
@@ -166,6 +170,13 @@ export default function ProfileSetup({
     if (isSignup && !status.membership_linked) {
       setError(
         'Veuillez d’abord choisir et activer une offre pour continuer l’inscription.'
+      );
+      return;
+    }
+
+    if (!location.trim() || !locationSelected) {
+      setError(
+        'Veuillez sélectionner une ville valide dans la liste déroulante'
       );
       return;
     }
@@ -382,16 +393,24 @@ export default function ProfileSetup({
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Ville / Région
+            <label
+              htmlFor="profile-city"
+              className="block text-sm font-semibold text-gray-700 mb-1.5"
+            >
+              Ville / Région <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="text"
+            <CityAutocomplete
+              id="profile-city"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-              placeholder="Paris, Lyon..."
+              onChange={setLocation}
+              selected={locationSelected}
+              onSelectedChange={setLocationSelected}
+              required
+              placeholder="Tapez une ville ou un code postal…"
             />
+            <p className="mt-1.5 text-xs text-gray-500">
+              Choisissez une suggestion dans la liste pour valider votre profil.
+            </p>
           </div>
 
           {/* Has children */}
