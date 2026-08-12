@@ -170,12 +170,12 @@ function FounderActiveBanner({
 /** Carte principale quand Freemium est l’offre active (même poids visuel que Fondateur). */
 function FreemiumActiveBanner() {
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-gradient-to-br from-sky-400 via-sky-300 to-[#f3e5a0] shadow-lg shadow-sky-200/50">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-gradient-to-br from-sky-400 via-sky-300 to-sky-100 shadow-lg shadow-sky-200/50">
       <div
-        className="pointer-events-none absolute inset-0 opacity-55"
+        className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 88% 18%, rgba(255,245,196,0.95) 0%, rgba(240,210,90,0.4) 22%, transparent 52%), radial-gradient(circle at 12% 78%, rgba(255,255,255,0.55) 0%, transparent 45%), radial-gradient(circle at 40% 10%, rgba(186,230,253,0.7) 0%, transparent 40%)',
+            'radial-gradient(circle at 90% 12%, #fff8d4 0%, #ffe97a 14%, rgba(255,248,220,0.75) 28%, rgba(255,255,255,0.35) 42%, transparent 58%), radial-gradient(circle at 12% 82%, rgba(255,255,255,0.55) 0%, transparent 45%)',
         }}
       />
       <div className="relative p-5 sm:p-6 space-y-4">
