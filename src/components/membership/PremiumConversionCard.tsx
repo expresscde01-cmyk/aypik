@@ -47,7 +47,7 @@ export function PremiumConversionCard({
   const secondary = tone === 'secondary';
 
   const activeLabel = founderExpired
-    ? `Reprendre Premium · ${priceLabel}`
+    ? `Choisir Premium · ${priceLabel}`
     : secondary
       ? `Soutenir plus tard · ${priceLabel}`
       : `Passer à Premium · ${priceLabel}`;
@@ -82,7 +82,7 @@ export function PremiumConversionCard({
             }
           >
             {founderExpired
-              ? 'Reconduction Premium (optionnelle)'
+              ? 'Premium optionnel — sans reconduction forcée'
               : disabled || secondary
                 ? 'Premium optionnel'
                 : 'Abonnement Premium'}
@@ -111,8 +111,9 @@ export function PremiumConversionCard({
 
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            Premium à 19,99 € / mois pour un confort d&apos;utilisation, sans
-            engagement.
+            {founderExpired
+              ? 'Choix volontaire uniquement : Freemium, Premium ou cesser votre adhésion — sans engagement ni reconduction automatique.'
+              : "Premium à 19,99 € / mois pour un confort d'utilisation, sans engagement."}
           </p>
 
           {disabled && (
@@ -165,7 +166,8 @@ export function PremiumConversionCard({
             {!disabled && (
               <>
                 <p className="text-xs text-center text-gray-500 leading-relaxed">
-                  Sans engagement · résiliable à tout moment en un clic
+                  Sans engagement · résiliable à tout moment · aucune
+                  reconduction forcée
                 </p>
                 <p className="text-[10px] text-center text-gray-400 leading-relaxed">
                   Paiement sécurisé par carte (Stripe) ou PayPal ·{' '}

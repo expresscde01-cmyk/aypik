@@ -36,6 +36,8 @@ const OFFERS = [
     badge: 'Offre limitée',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
+    point2:
+      'Après 6 mois : cessez, Freemium ou Premium — sans engagement ni reconduction forcée',
     accent: 'founder' as const,
   },
   {
@@ -54,7 +56,7 @@ const OFFERS = [
   {
     id: 'freemium',
     title: 'Offre Freemium',
-    description: 'Notre offre standard gratuite.',
+    description: 'Notre offre standard gratuite, sans engagement.',
     accent: 'freemium' as const,
   },
 ] as const;
@@ -128,12 +130,14 @@ function OfferCard({
   badge,
   description,
   point,
+  point2,
   accent,
 }: {
   title: string;
   badge?: string;
   description: string;
   point?: string;
+  point2?: string;
   accent: 'founder' | 'premium' | 'boost' | 'freemium';
 }) {
   const shell =
@@ -158,6 +162,11 @@ function OfferCard({
         : accent === 'boost'
           ? Zap
           : Heart;
+
+  const pointClass =
+    accent === 'founder' ? 'text-amber-950' : 'text-gray-800';
+  const bulletClass =
+    accent === 'founder' ? 'bg-white/80' : 'bg-rose-50';
 
   return (
     <article
@@ -200,21 +209,29 @@ function OfferCard({
         <p className={`text-sm sm:text-base font-medium leading-snug ${bodyColor}`}>
           {description}
         </p>
-        {point && (
-          <p
-            className={`flex items-center gap-2 text-sm font-semibold ${
-              accent === 'founder' ? 'text-amber-950' : 'text-gray-800'
-            }`}
-          >
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                accent === 'founder' ? 'bg-white/80' : 'bg-rose-50'
-              }`}
-            >
-              ✓
-            </span>
-            {point}
-          </p>
+        {(point || point2) && (
+          <ul className="space-y-2">
+            {point && (
+              <li className={`flex items-start gap-2 text-sm font-semibold ${pointClass}`}>
+                <span
+                  className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${bulletClass}`}
+                >
+                  ✓
+                </span>
+                {point}
+              </li>
+            )}
+            {point2 && (
+              <li className={`flex items-start gap-2 text-sm font-semibold ${pointClass}`}>
+                <span
+                  className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${bulletClass}`}
+                >
+                  ✓
+                </span>
+                {point2}
+              </li>
+            )}
+          </ul>
         )}
       </div>
     </article>

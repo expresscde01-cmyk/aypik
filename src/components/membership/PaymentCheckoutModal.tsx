@@ -141,7 +141,7 @@ export function PaymentCheckoutModal({
               Paiement Premium
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Tunnel sécurisé · sans engagement caché
+              Tunnel sécurisé · sans engagement · résiliable à tout moment
             </p>
           </div>
           <button
@@ -163,7 +163,8 @@ export function PaymentCheckoutModal({
                   Abonnement Premium
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Renouvellement mensuel
+                  Mensuel, sans engagement — résiliable en un clic, aucune
+                  reconduction forcée
                 </p>
               </div>
               <div className="text-right">
