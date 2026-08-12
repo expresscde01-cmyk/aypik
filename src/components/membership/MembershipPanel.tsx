@@ -14,6 +14,10 @@ import {
   type MembershipStatus,
 } from '@/lib/membership';
 
+/** Libellé partagé quand Freemium est l’offre active (cartes secondaires grisées). */
+const FREEMIUM_ACTIVE_UNSELECTED_LABEL =
+  'Non sélectionné - votre offre Freemium est active';
+
 /** True si la période fondateur à 0 € est encore en cours (sans exiger le flag RPC). */
 function isFounderPeriodActive(status: MembershipStatus): boolean {
   if (status.on_founder_trial) return true;
@@ -27,7 +31,7 @@ function FounderActiveBanner({
   activating = false,
   exhausted = false,
   locked = false,
-  lockedReason = 'Inaccessible : votre offre Freemium est déjà active',
+  lockedReason = FREEMIUM_ACTIVE_UNSELECTED_LABEL,
   /** Compact = carte secondaire (section « Autres options »). */
   compact = false,
 }: {
@@ -394,7 +398,7 @@ export function MembershipPanel({
   const premiumDisabledReason = onFounderBenefits
     ? 'Inaccessible : votre offre Fondateur inclut déjà les avantages Premium'
     : premiumLockedByFreemium
-      ? 'Non sélectionné : votre offre Freemium est active'
+      ? FREEMIUM_ACTIVE_UNSELECTED_LABEL
       : undefined;
 
   const showFreemiumClaim =
