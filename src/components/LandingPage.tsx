@@ -6,9 +6,6 @@ import { useMembership } from '@/lib/useMembership';
 const FOUNDER_SUBTITLE =
   '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
 
-const FREEMIUM_ACTIVE_UNSELECTED_LABEL =
-  'Non sélectionné - votre offre Freemium est active';
-
 const VALUES = [
   {
     id: 'confiance',
@@ -326,64 +323,26 @@ export default function LandingPage({
       !!status.founder_premium_until &&
       new Date(status.founder_premium_until).getTime() > Date.now());
 
-  const onFreemium =
-    connected &&
-    status.membership_linked &&
-    !status.is_founder &&
-    !onFounderBenefits &&
-    status.plan !== 'premium' &&
-    status.plan !== 'founder';
+  const membershipLabel = !connected
+    ? null
+    : onFounderBenefits || status.is_founder
+      ? 'Membre Fondateur'
+      : status.plan === 'premium'
+        ? 'Premium'
+        : status.membership_linked
+          ? 'Freemium'
+          : null;
 
-  const boostPurchased = status.has_boost;
+  // Accueil connecté = vraie home (pas la grille d’offres du tunnel d’inscription).
+  // Les offres se gèrent dans l’onglet Profil.
+  const showMarketingOffers = !connected;
 
-  type VisibleOffer = {
-    id: (typeof OFFERS)[number]['id'];
-    title: string;
-    badge?: string;
-    description: string;
-    point?: string;
-    accent: (typeof OFFERS)[number]['accent'];
-    highlighted: boolean;
-    locked: boolean;
-    note?: string;
-  };
-
-  const visibleOffers: VisibleOffer[] = onFreemium
-    ? [
-        {
-          ...OFFERS.find((o) => o.id === 'freemium')!,
-          description: 'Gratuit — l’essentiel d’Aypik, sans engagement.',
-          point: 'Sans carte bancaire',
-          highlighted: true,
-          locked: false,
-        },
-        {
-          ...OFFERS.find((o) => o.id === 'founder')!,
-          highlighted: false,
-          locked: true,
-          note: FREEMIUM_ACTIVE_UNSELECTED_LABEL,
-        },
-        {
-          ...OFFERS.find((o) => o.id === 'premium')!,
-          highlighted: false,
-          locked: true,
-          note: FREEMIUM_ACTIVE_UNSELECTED_LABEL,
-        },
-        {
-          ...OFFERS.find((o) => o.id === 'boost')!,
-          highlighted: false,
-          locked: !boostPurchased,
-          note: boostPurchased
-            ? undefined
-            : FREEMIUM_ACTIVE_UNSELECTED_LABEL,
-        },
-      ]
-    : OFFERS.map((offer) => ({
-        ...offer,
-        highlighted: false,
-        locked: false,
-        note: undefined,
-      }));
+  const visibleOffers = OFFERS.map((offer) => ({
+    ...offer,
+    highlighted: false,
+    locked: false,
+    note: undefined as string | undefined,
+  }));
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
@@ -405,9 +364,34 @@ export default function LandingPage({
         />
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
           <h1 className="max-w-xl sm:max-w-2xl mx-auto text-3xl sm:text-4xl md:text-[2.75rem] font-extrabold text-gray-900 tracking-tight leading-[1.2] text-balance animate-pop">
-            Un espace bienveillant réservé exclusivement aux personnes{' '}
-            <span className="whitespace-nowrap">sans enfants</span>
+            {connected ? (
+              <>
+                Bonjour
+                {displayName ? (
+                  <>
+                    , <span className="whitespace-nowrap">{displayName}</span>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>
+                Un espace bienveillant réservé exclusivement aux personnes{' '}
+                <span className="whitespace-nowrap">sans enfants</span>
+              </>
+            )}
           </h1>
+          {connected && (
+            <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">
+              Bienvenue sur Aypik
+              {membershipLabel ? (
+                <>
+                  {' '}
+                  — offre <strong>{membershipLabel}</strong> active
+                </>
+              ) : null}
+              .
+            </p>
+          )}
 
           {/* Signature de marque sous l’accroche */}
           <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">
@@ -469,34 +453,34 @@ export default function LandingPage({
         </ul>
       </section>
 
-      {/* Offres */}
-      <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            {onFreemium ? 'Votre offre' : 'Nos offres'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            {onFreemium
-              ? 'Votre offre Freemium est active. Les autres options restent visibles à titre d’information.'
-              : 'Une entrée libre, des options pour aller plus loin.'}
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {visibleOffers.map((offer) => (
-            <OfferCard
-              key={offer.id}
-              title={offer.title}
-              badge={offer.locked ? undefined : offer.badge}
-              description={offer.description}
-              point={offer.locked ? undefined : offer.point}
-              note={offer.note}
-              accent={offer.accent}
-              highlighted={offer.highlighted}
-              locked={offer.locked}
-            />
-          ))}
-        </div>
-      </section>
+      {/* Offres — uniquement pour les visiteurs (pas connectés) */}
+      {showMarketingOffers && (
+        <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              Nos offres
+            </h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Une entrée libre, des options pour aller plus loin.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {visibleOffers.map((offer) => (
+              <OfferCard
+                key={offer.id}
+                title={offer.title}
+                badge={offer.badge}
+                description={offer.description}
+                point={offer.point}
+                note={offer.note}
+                accent={offer.accent}
+                highlighted={offer.highlighted}
+                locked={offer.locked}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <footer className="mt-auto border-t border-rose-100/80 bg-white/60">
         <div className="max-w-3xl mx-auto px-4 py-6 text-center text-xs text-gray-400 leading-relaxed">
