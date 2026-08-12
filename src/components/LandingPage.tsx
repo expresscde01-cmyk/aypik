@@ -260,7 +260,7 @@ export default function LandingPage({
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
           <h1 className="max-w-xl sm:max-w-2xl mx-auto text-3xl sm:text-4xl md:text-[2.75rem] font-extrabold text-gray-900 tracking-tight leading-[1.2] text-balance animate-pop">
             Un espace bienveillant réservé exclusivement aux personnes{' '}
-            <span className="whitespace-nowrap">sans enfants.</span>
+            <span className="whitespace-nowrap">sans enfants</span>
           </h1>
 
           {/* Signature de marque sous l’accroche */}

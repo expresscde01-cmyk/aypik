@@ -4,7 +4,7 @@ type BrandLockupProps = {
 };
 
 const BRAND = 'Aypik';
-const BASELINE = 'Le site de rencontre entre personnes sans enfants';
+const BASELINE = 'Le site de rencontre destiné aux personnes sans enfants';
 
 export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProps) {
   if (variant === 'hero') {
