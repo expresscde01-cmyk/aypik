@@ -40,7 +40,7 @@ const OFFERS = [
     badge: 'Offre limitée',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
-    point2: `${AFTER_FOUNDER_TITLE}. ${AFTER_FOUNDER_PERIOD_COPY}`,
+    point2: `${AFTER_FOUNDER_TITLE} — ${AFTER_FOUNDER_PERIOD_COPY}`,
     accent: 'founder' as const,
   },
   {

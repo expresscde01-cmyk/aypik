@@ -98,11 +98,11 @@ function FounderActiveBanner({
           </li>
         </ul>
 
-        <div className="rounded-2xl bg-white/75 border border-white/90 px-4 py-3.5 space-y-1.5">
-          <p className="text-sm sm:text-base font-bold text-amber-950 tracking-tight">
+        <div className="rounded-xl bg-white/70 border border-white/80 px-3.5 py-2.5">
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-900/80">
             {AFTER_FOUNDER_TITLE}
           </p>
-          <p className="text-sm font-medium text-amber-950/85 leading-relaxed">
+          <p className="mt-1 text-xs sm:text-sm font-medium text-amber-950/80 leading-snug">
             {AFTER_FOUNDER_PERIOD_COPY}
           </p>
         </div>
@@ -128,40 +128,47 @@ function FreemiumClaimCard({
   onActivate,
   activating = false,
   primary = false,
+  disabled = false,
+  disabledReason = 'Inclus : vous bénéficiez déjà de l’offre Membre Fondateur',
 }: {
   onActivate: () => void;
   activating?: boolean;
   primary?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   return (
     <div
+      aria-disabled={disabled || undefined}
       className={
-        primary
-          ? 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
-          : 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
+        disabled
+          ? 'rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none'
+          : primary
+            ? 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+            : 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
       }
     >
       <div
         className={
-          primary
-            ? 'bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-white'
-            : 'bg-gray-100 px-4 py-3 border-b border-gray-200'
+          disabled || !primary
+            ? 'bg-gray-100 px-4 py-3 border-b border-gray-200'
+            : 'bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-white'
         }
       >
         <p
           className={
-            primary
-              ? 'text-xs font-medium text-white/90'
-              : 'text-xs font-medium text-gray-500'
+            disabled || !primary
+              ? 'text-xs font-medium text-gray-500'
+              : 'text-xs font-medium text-white/90'
           }
         >
           Offre Freemium
         </p>
         <p
           className={
-            primary
-              ? 'text-lg font-bold tracking-tight mt-0.5'
-              : 'text-lg font-bold tracking-tight text-gray-800 mt-0.5'
+            disabled || !primary
+              ? 'text-lg font-bold tracking-tight text-gray-800 mt-0.5'
+              : 'text-lg font-bold tracking-tight mt-0.5'
           }
         >
           Gratuit
@@ -171,71 +178,54 @@ function FreemiumClaimCard({
         <p className="text-xs text-gray-600 leading-relaxed">
           Accès à l’essentiel d’Aypik, sans engagement ni carte bancaire.
         </p>
-        <button
-          type="button"
-          onClick={onActivate}
-          disabled={activating}
-          className={
-            primary
-              ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-60'
-              : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
-          }
-        >
-          {activating ? 'Activation…' : 'Continuer en Freemium'}
-        </button>
+        {disabled ? (
+          <>
+            <p className="text-xs font-medium text-gray-700 leading-relaxed bg-white/70 border border-gray-200 rounded-xl px-3 py-2">
+              {disabledReason}
+            </p>
+            <div
+              role="presentation"
+              aria-hidden="true"
+              className="w-full py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-sm font-semibold text-center cursor-not-allowed"
+            >
+              Offre Freemium
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onActivate}
+            disabled={activating}
+            className={
+              primary
+                ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-60'
+                : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
+            }
+          >
+            {activating ? 'Activation…' : 'Continuer en Freemium'}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-const PAID_PREMIUM_LINE =
-  "Premium à 19,99 € / mois pour un confort d'utilisation, sans engagement.";
-
 function PostFounderChoicePanel() {
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3">
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-xl bg-white border border-emerald-100 flex items-center justify-center flex-shrink-0">
           <Heart className="w-4 h-4 text-emerald-600" />
         </div>
-        <div className="min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-1">
           <p className="text-sm font-semibold text-emerald-950">
             {AFTER_FOUNDER_TITLE}
           </p>
-          <p className="text-xs text-emerald-900/90 leading-relaxed">
+          <p className="text-xs text-emerald-900/90 leading-snug">
             {AFTER_FOUNDER_PERIOD_COPY}
           </p>
         </div>
       </div>
-
-      <ul className="space-y-2">
-        <li className="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5">
-          <p className="text-sm font-semibold text-gray-900">
-            Interrompre votre adhésion
-          </p>
-          <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-            Aucun prélèvement ne démarre. Vous pouvez quitter quand vous voulez,
-            sans frais ni parcours forcé.
-          </p>
-        </li>
-        <li className="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5">
-          <p className="text-sm font-semibold text-gray-900">
-            Migrer vers Freemium
-          </p>
-          <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-            Par défaut après l’échéance : accès à l’essentiel, gratuit et sans
-            engagement.
-          </p>
-        </li>
-        <li className="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5">
-          <p className="text-sm font-semibold text-gray-900">
-            Passer à Premium
-          </p>
-          <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-            Option volontaire uniquement — {PAID_PREMIUM_LINE}
-          </p>
-        </li>
-      </ul>
     </div>
   );
 }
@@ -269,6 +259,8 @@ export function MembershipPanel({
   const periodActive = isFounderPeriodActive(status);
   const founderAvailable = isFounderAvailable(status);
   const offerChosen = status.membership_linked;
+  /** Bénéficie déjà de l’offre Fondateur (période 6 mois en cours). */
+  const onFounderBenefits = periodActive && status.is_founder;
 
   const showFounderActive = founderAvailable || status.is_founder;
   const showFounderExhausted =
@@ -285,7 +277,8 @@ export function MembershipPanel({
   const canCancelPaid =
     status.has_premium && !periodActive && status.plan === 'premium';
 
-  const premiumLockedByFounder = founderAvailable && !offerChosen;
+  const premiumLockedByFounder =
+    (founderAvailable && !offerChosen) || onFounderBenefits;
   const showPaidPremiumActive =
     status.has_premium && !periodActive && !premiumLockedByFounder;
   const showPremiumOffer =
@@ -293,9 +286,16 @@ export function MembershipPanel({
     (premiumLockedByFounder || !status.has_premium || founderExpired);
   const premiumTone =
     !founderAvailable || founderExpired ? 'primary' : 'secondary';
+  const premiumDisabledReason = onFounderBenefits
+    ? 'Inaccessible : votre offre Fondateur inclut déjà les avantages Premium'
+    : undefined;
 
   const showFreemiumClaim =
     signupGate && !offerChosen && Boolean(onClaimFreemium);
+  /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
+  const showFreemiumLocked = onFounderBenefits;
+  /** Boost achetable dès qu’une offre est liée, y compris pendant les 6 mois. */
+  const showBoost = offerChosen || !signupGate;
 
   const handleCancel = async () => {
     if (
@@ -356,6 +356,7 @@ export function MembershipPanel({
               onPaymentSuccess={onRefresh}
               tone={premiumTone}
               disabled={premiumLockedByFounder}
+              disabledReason={premiumDisabledReason}
             />
           )}
 
@@ -399,9 +400,9 @@ export function MembershipPanel({
             <p className="text-sm font-semibold text-amber-900">
               {AFTER_FOUNDER_TITLE}
             </p>
-            <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, vos mois offerts
-              se terminent. {AFTER_FOUNDER_PERIOD_COPY}
+            <p className="text-xs text-amber-800 mt-0.5 leading-snug">
+              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''} —{' '}
+              {AFTER_FOUNDER_PERIOD_COPY}
             </p>
           </div>
         </div>
@@ -410,19 +411,25 @@ export function MembershipPanel({
       {founderExpired && <PostFounderChoicePanel />}
 
       <div className="space-y-3 pt-1">
-        {!signupGate && (
-          <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
-            Offres
-          </p>
-        )}
+        <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
+          Offres
+        </p>
 
-        {showPremiumOffer && !signupGate && (
+        {showPremiumOffer && (
           <PremiumConversionCard
             status={status}
             founderExpired={founderExpired}
             onPaymentSuccess={onRefresh}
             tone={premiumTone}
-            disabled={false}
+            disabled={premiumLockedByFounder}
+            disabledReason={premiumDisabledReason}
+          />
+        )}
+
+        {showFreemiumLocked && (
+          <FreemiumClaimCard
+            onActivate={() => undefined}
+            disabled
           />
         )}
 
@@ -472,7 +479,7 @@ export function MembershipPanel({
           </div>
         )}
 
-        {!signupGate && (
+        {showBoost && (
           <BoostPurchaseCard
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
