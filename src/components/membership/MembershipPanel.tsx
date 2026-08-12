@@ -170,46 +170,46 @@ function FounderActiveBanner({
 /** Carte principale quand Freemium est l’offre active (même poids visuel que Fondateur). */
 function FreemiumActiveBanner() {
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-sky-100 bg-gradient-to-br from-[#7ec8e8] via-[#b8dff0] to-[#ffd89b] shadow-lg shadow-sky-100/70">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-gradient-to-br from-sky-400 via-sky-300 to-[#f3e5a0] shadow-lg shadow-sky-200/50">
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-55"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse 70% 55% at 92% 8%, rgba(255,214,120,0.9) 0%, rgba(255,183,77,0.35) 28%, transparent 58%), radial-gradient(ellipse 55% 50% at 8% 92%, rgba(255,255,255,0.65) 0%, transparent 50%), linear-gradient(160deg, rgba(56,189,248,0.22) 0%, transparent 42%, rgba(251,191,36,0.18) 100%)',
+            'radial-gradient(circle at 88% 18%, rgba(255,245,196,0.95) 0%, rgba(240,210,90,0.4) 22%, transparent 52%), radial-gradient(circle at 12% 78%, rgba(255,255,255,0.55) 0%, transparent 45%), radial-gradient(circle at 40% 10%, rgba(186,230,253,0.7) 0%, transparent 40%)',
         }}
       />
       <div className="relative p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-800 border border-white/90 shadow-sm backdrop-blur-sm">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-sky-900 border border-white/80 shadow-sm">
+            <Check className="w-3.5 h-3.5" />
             Offre active
           </span>
         </div>
 
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-sky-950 tracking-tight leading-tight">
             Offre Freemium
           </h2>
-          <p className="mt-2 text-base sm:text-lg font-semibold text-slate-800/85 leading-snug">
+          <p className="mt-2 text-base sm:text-lg font-semibold text-sky-950/85 leading-snug">
             Gratuit — l’essentiel d’Aypik, sans engagement.
           </p>
         </div>
 
         <ul className="space-y-2">
-          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-slate-900">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80 shadow-sm">
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-sky-950">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/85">
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             </span>
             Sans carte bancaire
           </li>
-          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-slate-900">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80 shadow-sm">
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-sky-950">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/85">
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             </span>
             Profil, matching et messages inclus
           </li>
-          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-slate-900">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80 shadow-sm">
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-sky-950">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/85">
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             </span>
             Aucune reconduction ni prélèvement
