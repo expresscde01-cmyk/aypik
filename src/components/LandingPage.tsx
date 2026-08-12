@@ -461,11 +461,11 @@ export default function LandingPage({
       <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Nos offres
+            {onFreemium ? 'Votre offre' : 'Nos offres'}
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {onFreemium
-              ? 'Votre offre Freemium est active. Les autres options restent visibles à titre d’information.'
+              ? 'Inscription déjà active en Freemium — rien à valider sur cette page. Les autres options sont affichées à titre d’information.'
               : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
         </div>
