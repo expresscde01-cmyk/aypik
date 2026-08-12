@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Heart, Home, User } from 'lucide-react';
+import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
-import LandingPage from '@/components/LandingPage';
+import DiscoveryPage from '@/components/DiscoveryPage';
+import HomeDashboard from '@/components/HomeDashboard';
+import NotificationsBell from '@/components/NotificationsBell';
 import type { Profile } from '@/components/ProfileSetup';
 
-type Tab = 'home' | 'matches' | 'profile';
+type Tab = 'home' | 'discover' | 'matches' | 'profile';
+
+function initialTabFromQuery(): Tab {
+  if (typeof window === 'undefined') return 'home';
+  const open = new URLSearchParams(window.location.search).get('open');
+  if (open === 'preferences' || open === 'profile') return 'profile';
+  return 'home';
+}
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
-  const [tab, setTab] = useState<Tab>('home');
+  const [tab, setTab] = useState<Tab>(initialTabFromQuery);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -67,12 +76,33 @@ export default function AppShell() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 min-h-0">
         {tab === 'home' && (
-          <LandingPage
+          <HomeDashboard
             displayName={displayName}
             onSignOut={signOut}
-            onLogoClick={() => setTab('home')}
-            onPrimaryCta={() => setTab('matches')}
+            onOpenDiscover={() => setTab('discover')}
+            onOpenMatches={() => setTab('matches')}
+            onOpenProfile={() => setTab('profile')}
           />
+        )}
+        {tab === 'discover' && (
+          <div className="min-h-full flex flex-col">
+            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
+              <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTab('home')}
+                  className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+                >
+                  ← Accueil
+                </button>
+                <span className="text-sm font-semibold text-gray-800 truncate">
+                  Découvrir
+                </span>
+                <NotificationsBell />
+              </div>
+            </div>
+            <DiscoveryPage />
+          </div>
         )}
         {tab === 'matches' && (
           <div className="min-h-full flex flex-col">
@@ -88,6 +118,7 @@ export default function AppShell() {
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
+                <NotificationsBell />
               </div>
             </div>
             <MatchesPage />
@@ -110,12 +141,18 @@ export default function AppShell() {
       </main>
 
       <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-around">
+        <div className="max-w-2xl mx-auto px-2 h-16 flex items-center justify-around">
           <NavButton
             icon={<Home className="w-5 h-5" />}
             label="Accueil"
             active={tab === 'home'}
             onClick={() => setTab('home')}
+          />
+          <NavButton
+            icon={<Compass className="w-5 h-5" />}
+            label="Découvrir"
+            active={tab === 'discover'}
+            onClick={() => setTab('discover')}
           />
           <NavButton
             icon={<Heart className="w-5 h-5" />}
@@ -150,12 +187,12 @@ function NavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-6 py-2 rounded-lg transition-all ${
+      className={`flex flex-col items-center gap-0.5 px-3 sm:px-5 py-2 rounded-lg transition-all ${
         active ? 'text-rose-500' : 'text-gray-400 hover:text-gray-600'
       }`}
     >
       {icon}
-      <span className="text-xs font-medium">{label}</span>
+      <span className="text-[11px] sm:text-xs font-medium">{label}</span>
     </button>
   );
 }

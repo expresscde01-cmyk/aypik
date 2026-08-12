@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Heart, X, MapPin, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  Heart,
+  X,
+  MapPin,
+  Sparkles,
+  AlertCircle,
+  Zap,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { ageFromBirthDate, minPartnerAge } from '@/lib/dating';
@@ -12,6 +19,9 @@ import {
 } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { formatPremiumPriceLabel } from '@/lib/membership';
+import { flashErrorMessage, sendFlash } from '@/lib/flashes';
+import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
+import { rankProfileScore } from '@/lib/suggestions';
 
 interface Candidate extends Profile {
   age: number;
@@ -19,6 +29,8 @@ interface Candidate extends Profile {
   is_boosted?: boolean;
   is_founder?: boolean;
   founder_number?: number | null;
+  score: number;
+  same_city: boolean;
 }
 
 export default function DiscoveryPage() {
@@ -30,9 +42,13 @@ export default function DiscoveryPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
   const [showFiltersHint, setShowFiltersHint] = useState(false);
+  const [sameCityOnly, setSameCityOnly] = useState(false);
+  const [minOverlap, setMinOverlap] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -51,12 +67,13 @@ export default function DiscoveryPage() {
 
       setMyProfile(profile as Profile);
 
-      const { data: likes } = await supabase
-        .from('likes')
-        .select('to_user')
-        .eq('from_user', user.id);
+      const [{ data: likes }, { data: flashes }] = await Promise.all([
+        supabase.from('likes').select('to_user').eq('from_user', user.id),
+        supabase.from('flashes').select('to_user').eq('from_user', user.id),
+      ]);
 
       setLikedIds(new Set((likes || []).map((l) => l.to_user)));
+      setFlashedIds(new Set((flashes || []).map((f) => f.to_user)));
       setLoading(false);
     })();
   }, [user]);
@@ -104,42 +121,80 @@ export default function DiscoveryPage() {
 
       const myAge = ageFromBirthDate(myProfile.birth_date);
       const myMinAge = minPartnerAge(myAge);
+      const canFilter = status.can_use_advanced_filters;
 
       const filtered: Candidate[] = (data || [])
         .map((p) => {
           const profile = p as Profile;
+          const age = ageFromBirthDate(profile.birth_date);
+          const mutual_interests = (profile.interests || []).filter((i) =>
+            (myProfile.interests || []).includes(i)
+          );
+          const is_boosted = boostSet.has(profile.id);
+          const same_city =
+            Boolean(myProfile.location) &&
+            Boolean(profile.location) &&
+            (myProfile.location === profile.location ||
+              myProfile.location.split('(')[0].trim().toLowerCase() ===
+                profile.location.split('(')[0].trim().toLowerCase());
+
           return {
             ...profile,
-            age: ageFromBirthDate(profile.birth_date),
-            mutual_interests: (profile.interests || []).filter((i) =>
-              (myProfile.interests || []).includes(i)
-            ),
-            is_boosted: boostSet.has(profile.id),
+            age,
+            mutual_interests,
+            is_boosted,
             is_founder: founderMap.has(profile.id),
             founder_number: founderMap.get(profile.id) ?? null,
+            same_city,
+            score: rankProfileScore({
+              myAge,
+              theirAge: age,
+              myLocation: myProfile.location || '',
+              theirLocation: profile.location || '',
+              mutualInterestCount: mutual_interests.length,
+              isBoosted: is_boosted,
+            }),
           };
         })
         .filter((c) => {
           if (c.age < myMinAge) return false;
           if (myAge < minPartnerAge(c.age)) return false;
           if (likedIds.has(c.id)) return false;
+          if (canFilter && sameCityOnly && !c.same_city) return false;
+          if (canFilter && minOverlap > 0 && c.mutual_interests.length < minOverlap)
+            return false;
           return true;
         })
-        .sort((a, b) => Number(b.is_boosted) - Number(a.is_boosted));
+        .sort((a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted));
 
       setCandidates(filtered);
       setCurrentIndex(0);
     })();
-  }, [myProfile, user, likedIds]);
+  }, [
+    myProfile,
+    user,
+    likedIds,
+    status.can_use_advanced_filters,
+    sameCityOnly,
+    minOverlap,
+  ]);
 
   const current = candidates[currentIndex];
   const likesExhausted =
     !status.unlimited_likes && (status.likes_remaining_today ?? 0) <= 0;
+  const alreadyFlashed = current ? flashedIds.has(current.id) : false;
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
     status.premium_currency,
     status.premium_interval
   );
+
+  const advanceCard = useCallback(() => {
+    setTimeout(() => {
+      setCurrentIndex((i) => i + 1);
+      setSwipeDir(null);
+    }, 300);
+  }, []);
 
   const handleAction = useCallback(
     async (liked: boolean) => {
@@ -152,6 +207,7 @@ export default function DiscoveryPage() {
 
       setActionLoading(true);
       setSwipeDir(liked ? 'right' : 'left');
+      setError(null);
 
       try {
         if (liked) {
@@ -163,10 +219,7 @@ export default function DiscoveryPage() {
           await refresh();
         }
 
-        setTimeout(() => {
-          setCurrentIndex((i) => i + 1);
-          setSwipeDir(null);
-        }, 300);
+        advanceCard();
       } catch {
         setError('Une erreur est survenue');
         setSwipeDir(null);
@@ -174,8 +227,51 @@ export default function DiscoveryPage() {
         setActionLoading(false);
       }
     },
-    [user, current, actionLoading, likesExhausted, refresh]
+    [user, current, actionLoading, likesExhausted, refresh, advanceCard]
   );
+
+  const handleFlash = useCallback(async () => {
+    if (!user || !current || actionLoading || alreadyFlashed) return;
+
+    setActionLoading(true);
+    setError(null);
+
+    try {
+      const result = await sendFlash(current.id);
+
+      if (!result.ok) {
+        setError(flashErrorMessage(result.error));
+        return;
+      }
+
+      setFlashedIds((prev) => new Set(prev).add(current.id));
+      setToast(
+        result.already_flashed
+          ? 'Vous avez déjà flashé ce profil'
+          : `Coup de cœur envoyé à ${current.display_name} ✨`
+      );
+
+      if (
+        result.should_notify_email &&
+        result.notification_id &&
+        result.flash_id &&
+        result.to_user
+      ) {
+        void sendFlashReceivedEmail({
+          notificationId: result.notification_id,
+          flashId: result.flash_id,
+          toUserId: result.to_user,
+          fromDisplayName: result.from_display_name,
+        });
+      }
+
+      window.setTimeout(() => setToast(null), 2800);
+    } catch {
+      setError('Impossible d’envoyer le coup de cœur');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [user, current, actionLoading, alreadyFlashed]);
 
   if (loading) {
     return (
@@ -188,7 +284,7 @@ export default function DiscoveryPage() {
     );
   }
 
-  if (error) {
+  if (error && !current) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
@@ -229,8 +325,8 @@ export default function DiscoveryPage() {
     swipeDir === 'right'
       ? 'animate-slideOutRight'
       : swipeDir === 'left'
-      ? 'animate-slideOutLeft'
-      : 'animate-fadeIn';
+        ? 'animate-slideOutLeft'
+        : 'animate-fadeIn';
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-4">
@@ -240,12 +336,56 @@ export default function DiscoveryPage() {
         priceLabel={priceLabel}
       />
 
+      {status.can_use_advanced_filters && (
+        <div className="rounded-2xl border border-rose-100 bg-white p-3 space-y-2.5">
+          <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            Suggestions ciblées
+          </p>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={sameCityOnly}
+              onChange={(e) => setSameCityOnly(e.target.checked)}
+              className="rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+            />
+            Même ville uniquement
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            Centres d’intérêt en commun (min.)
+            <select
+              value={minOverlap}
+              onChange={(e) => setMinOverlap(Number(e.target.value))}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            >
+              <option value={0}>Tous</option>
+              <option value={1}>Au moins 1</option>
+              <option value={2}>Au moins 2</option>
+              <option value={3}>Au moins 3</option>
+            </select>
+          </label>
+        </div>
+      )}
+
       {showFiltersHint && !status.can_use_advanced_filters && (
         <SoftPremiumBanner
           title="Filtres avancés"
           description={`Ville, centres d’intérêt et affinage : disponibles avec Premium (${priceLabel}). La navigation de base reste libre.`}
           priceLabel={priceLabel}
         />
+      )}
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {toast && (
+        <div className="rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-sm px-3 py-2 text-center animate-pop">
+          {toast}
+        </div>
       )}
 
       <div className="relative">
@@ -285,26 +425,33 @@ export default function DiscoveryPage() {
           </div>
 
           <div className="p-5">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 gap-2">
               <h2 className="text-xl font-bold text-gray-900">
                 {current.display_name}
               </h2>
               {current.location && (
-                <span className="flex items-center gap-1 text-sm text-gray-500">
+                <span className="flex items-center gap-1 text-sm text-gray-500 shrink-0">
                   <MapPin className="w-4 h-4" />
                   {current.location}
                 </span>
               )}
             </div>
 
-            {current.mutual_interests.length > 0 && (
-              <div className="flex items-center gap-1.5 mb-3">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-sm text-amber-600 font-semibold">
-                  {current.mutual_interests.length} centre
-                  {current.mutual_interests.length > 1 ? 's' : ''} d'intérêt en
-                  commun
-                </span>
+            {(current.mutual_interests.length > 0 || current.same_city) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+                {current.mutual_interests.length > 0 && (
+                  <span className="flex items-center gap-1.5 text-sm text-amber-600 font-semibold">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    {current.mutual_interests.length} centre
+                    {current.mutual_interests.length > 1 ? 's' : ''} d'intérêt en
+                    commun
+                  </span>
+                )}
+                {current.same_city && (
+                  <span className="text-sm text-rose-600 font-semibold">
+                    Même ville
+                  </span>
+                )}
               </div>
             )}
 
@@ -336,31 +483,53 @@ export default function DiscoveryPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-6 mt-6">
+        <div className="flex items-center justify-center gap-5 mt-6">
           <button
+            type="button"
             onClick={() => handleAction(false)}
             disabled={actionLoading}
-            className="w-16 h-16 rounded-full bg-white shadow-lg shadow-gray-200 border border-gray-200 flex items-center justify-center hover:scale-110 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-50"
+            className="w-14 h-14 rounded-full bg-white shadow-lg shadow-gray-200 border border-gray-200 flex items-center justify-center hover:scale-110 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-50"
+            title="Passer"
           >
-            <X className="w-7 h-7 text-gray-400" />
+            <X className="w-6 h-6 text-gray-400" />
           </button>
+
           <button
+            type="button"
+            onClick={() => void handleFlash()}
+            disabled={actionLoading || alreadyFlashed}
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-lg shadow-amber-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
+            title={
+              alreadyFlashed
+                ? 'Déjà flashé'
+                : 'Envoyer un coup de cœur'
+            }
+          >
+            <Zap className="w-7 h-7 text-white" fill="white" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => handleAction(true)}
             disabled={actionLoading || likesExhausted}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
             title={
               likesExhausted
                 ? 'Limite de likes atteinte'
                 : 'Liker ce profil'
             }
           >
-            <Heart className="w-7 h-7 text-white" fill="white" />
+            <Heart className="w-6 h-6 text-white" fill="white" />
           </button>
         </div>
 
         <div className="mt-4 space-y-3">
           <p className="text-center text-xs text-gray-400">
-            {currentIndex + 1} sur {candidates.length}
+            {currentIndex + 1} sur {candidates.length} · classés par affinité
+          </p>
+          <p className="text-center text-xs text-amber-700/80">
+            <Zap className="w-3 h-3 inline mb-0.5" /> Coup de cœur : notifie la
+            personne (3 / jour en gratuit)
           </p>
           <LikesQuotaHint status={status} />
         </div>

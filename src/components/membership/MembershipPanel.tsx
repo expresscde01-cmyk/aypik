@@ -1,4 +1,4 @@
-import { Award, Bell, Check, Gift, Sparkles } from 'lucide-react';
+import { Award, Bell, Check, Gift, Heart, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
@@ -23,19 +23,14 @@ function FounderActiveBanner({
   status,
   onActivate,
   activating = false,
-  formId,
   exhausted = false,
 }: {
   status: MembershipStatus;
-  /** CTA principal : valide le profil avec l’offre Fondateur */
   onActivate?: () => void;
   activating?: boolean;
-  /** Associe le bouton au formulaire d’inscription (soumission native) */
-  formId?: string;
-  /** Offre épuisée (≥ 501 inscrits) */
   exhausted?: boolean;
 }) {
-  const showCta = !exhausted && Boolean(onActivate || formId);
+  const showCta = !exhausted && Boolean(onActivate);
 
   if (exhausted) {
     return (
@@ -53,8 +48,8 @@ function FounderActiveBanner({
               Membre Fondateur
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
-              Les 500 places ont été attribuées. L’abonnement Premium est
-              désormais l’offre principale.
+              Les 500 places ont été attribuées. Choisissez l’offre Freemium ou
+              Premium pour continuer.
             </p>
           </div>
         </div>
@@ -104,9 +99,8 @@ function FounderActiveBanner({
         {showCta && (
           <div className="flex justify-end pt-1">
             <button
-              type={formId ? 'submit' : 'button'}
-              form={formId}
-              onClick={formId ? undefined : onActivate}
+              type="button"
+              onClick={onActivate}
               disabled={activating}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-700 text-white text-sm sm:text-base font-bold shadow-lg shadow-emerald-900/35 ring-2 ring-white/70 hover:bg-emerald-800 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
@@ -114,6 +108,70 @@ function FounderActiveBanner({
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function FreemiumClaimCard({
+  onActivate,
+  activating = false,
+  primary = false,
+}: {
+  onActivate: () => void;
+  activating?: boolean;
+  primary?: boolean;
+}) {
+  return (
+    <div
+      className={
+        primary
+          ? 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+          : 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
+      }
+    >
+      <div
+        className={
+          primary
+            ? 'bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-white'
+            : 'bg-gray-100 px-4 py-3 border-b border-gray-200'
+        }
+      >
+        <p
+          className={
+            primary
+              ? 'text-xs font-medium text-white/90'
+              : 'text-xs font-medium text-gray-500'
+          }
+        >
+          Offre Freemium
+        </p>
+        <p
+          className={
+            primary
+              ? 'text-lg font-bold tracking-tight mt-0.5'
+              : 'text-lg font-bold tracking-tight text-gray-800 mt-0.5'
+          }
+        >
+          Gratuit
+        </p>
+      </div>
+      <div className="p-4 space-y-3">
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Accès à l’essentiel d’Aypik, sans engagement ni carte bancaire.
+        </p>
+        <button
+          type="button"
+          onClick={onActivate}
+          disabled={activating}
+          className={
+            primary
+              ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-60'
+              : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
+          }
+        >
+          {activating ? 'Activation…' : 'Continuer en Freemium'}
+        </button>
       </div>
     </div>
   );
@@ -146,18 +204,19 @@ export function MembershipPanel({
   status,
   onPurchaseBoost,
   onRefresh,
-  onActivateFounder,
-  activatingFounder = false,
-  profileFormId,
+  onClaimFounder,
+  onClaimFreemium,
+  claimingOffer = false,
+  /** Tunnel inscription : choix d’offre obligatoire avant le profil */
+  signupGate = false,
 }: {
   status: MembershipStatus;
   onPurchaseBoost: () => Promise<string | null>;
   onRefresh?: () => void;
-  /** CTA Fondateur : même action que l’enregistrement du profil */
-  onActivateFounder?: () => void;
-  activatingFounder?: boolean;
-  /** id du formulaire profil pour soumission native depuis le CTA */
-  profileFormId?: string;
+  onClaimFounder?: () => void;
+  onClaimFreemium?: () => void;
+  claimingOffer?: boolean;
+  signupGate?: boolean;
 }) {
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
@@ -168,18 +227,17 @@ export function MembershipPanel({
     status.premium_interval
   );
   const periodActive = isFounderPeriodActive(status);
-  /** Compteur < 500 : offre Fondateur encore ouverte */
   const founderAvailable = isFounderAvailable(status);
-  /** Vue inscription (création de profil), pas l’édition compte */
-  const isSignupView = Boolean(profileFormId);
+  const offerChosen = status.membership_linked;
 
   const showFounderActive = founderAvailable || status.is_founder;
   const showFounderExhausted =
-    !founderAvailable && !status.is_founder && isSignupView;
+    signupGate && !founderAvailable && !status.is_founder;
   const showFounderCta =
+    signupGate &&
+    !offerChosen &&
     founderAvailable &&
-    isSignupView &&
-    Boolean(onActivateFounder || profileFormId);
+    Boolean(onClaimFounder);
 
   const founderExpiringSoon =
     periodActive &&
@@ -193,8 +251,7 @@ export function MembershipPanel({
   const canCancelPaid =
     status.has_premium && !periodActive && status.plan === 'premium';
 
-  /** Pendant les 500 : Premium visible mais verrouillé */
-  const premiumLockedByFounder = founderAvailable;
+  const premiumLockedByFounder = founderAvailable && !offerChosen;
   const showPaidPremiumActive =
     status.has_premium && !periodActive && !premiumLockedByFounder;
   const showPremiumOffer =
@@ -202,6 +259,9 @@ export function MembershipPanel({
     (premiumLockedByFounder || !status.has_premium || founderExpired);
   const premiumTone =
     !founderAvailable || founderExpired ? 'primary' : 'secondary';
+
+  const showFreemiumClaim =
+    signupGate && !offerChosen && Boolean(onClaimFreemium);
 
   const handleCancel = async () => {
     if (
@@ -223,18 +283,85 @@ export function MembershipPanel({
     onRefresh?.();
   };
 
+  if (signupGate && !offerChosen) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-rose-100 bg-white/80 p-4 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-500 mb-2">
+            <Heart className="w-5 h-5" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+            Choisissez votre offre
+          </h2>
+          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+            Une offre doit être validée avant de créer votre profil.
+          </p>
+        </div>
+
+        {showFounderActive && (
+          <FounderActiveBanner
+            status={status}
+            onActivate={showFounderCta ? onClaimFounder : undefined}
+            activating={claimingOffer}
+          />
+        )}
+
+        {showFounderExhausted && (
+          <FounderActiveBanner status={status} exhausted />
+        )}
+
+        <div className="space-y-3">
+          <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
+            {founderAvailable ? 'Autres options' : 'Offres disponibles'}
+          </p>
+
+          {showPremiumOffer && (
+            <PremiumConversionCard
+              status={status}
+              founderExpired={founderExpired}
+              onPaymentSuccess={onRefresh}
+              tone={premiumTone}
+              disabled={premiumLockedByFounder}
+            />
+          )}
+
+          {showFreemiumClaim && (
+            <FreemiumClaimCard
+              onActivate={onClaimFreemium!}
+              activating={claimingOffer}
+              primary={!founderAvailable}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {signupGate && offerChosen && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-2">
+          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-emerald-900 leading-relaxed">
+            Offre activée :{' '}
+            <strong>
+              {status.is_founder
+                ? 'Membre Fondateur'
+                : status.plan === 'premium'
+                  ? 'Premium'
+                  : 'Freemium'}
+            </strong>
+            . Vous pouvez maintenant compléter votre profil.
+          </p>
+        </div>
+      )}
+
       {showFounderActive && (
         <FounderActiveBanner
           status={status}
-          onActivate={showFounderCta ? onActivateFounder : undefined}
-          activating={activatingFounder}
-          formId={showFounderCta ? profileFormId : undefined}
+          activating={false}
         />
       )}
-
-      {showFounderExhausted && <FounderActiveBanner status={status} exhausted />}
 
       {founderExpiringSoon && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
@@ -253,24 +380,24 @@ export function MembershipPanel({
         </div>
       )}
 
-      {periodActive && !premiumLockedByFounder && (
+      {periodActive && (
         <OptionalPremiumNote months={status.founder_premium_months} />
       )}
 
       <div className="space-y-3 pt-1">
-        {(showFounderActive || showFounderExhausted) && (
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 px-0.5">
-            {founderAvailable ? 'Autres options' : 'Offres disponibles'}
+        {!signupGate && (
+          <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
+            Offres
           </p>
         )}
 
-        {showPremiumOffer && (
+        {showPremiumOffer && !signupGate && (
           <PremiumConversionCard
             status={status}
             founderExpired={founderExpired}
             onPaymentSuccess={onRefresh}
             tone={premiumTone}
-            disabled={premiumLockedByFounder}
+            disabled={false}
           />
         )}
 
@@ -318,12 +445,13 @@ export function MembershipPanel({
           </div>
         )}
 
-        {/* Boost : toujours actif, indépendamment de Fondateur */}
-        <BoostPurchaseCard
-          hasBoost={status.has_boost}
-          boostEndsAt={status.boost_ends_at}
-          onPurchase={onPurchaseBoost}
-        />
+        {!signupGate && (
+          <BoostPurchaseCard
+            hasBoost={status.has_boost}
+            boostEndsAt={status.boost_ends_at}
+            onPurchase={onPurchaseBoost}
+          />
+        )}
       </div>
     </div>
   );

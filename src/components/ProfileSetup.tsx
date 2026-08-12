@@ -1,12 +1,44 @@
-import { useState, useEffect } from 'react';
-import { Heart, AlertCircle, Check, Baby, Camera, ArrowRight, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Heart,
+  AlertCircle,
+  Check,
+  Baby,
+  Camera,
+  ArrowRight,
+  Trash2,
+  ImagePlus,
+  Plus,
+  X,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/deleteAccount';
 import { useMembership } from '@/lib/useMembership';
+import {
+  uploadProfilePhoto,
+  validateProfilePhoto,
+} from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { LegalLink } from '@/components/LegalTerms';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
+import {
+  CITY_SELECTION_REQUIRED_ERROR,
+  communeFromStoredLabel,
+  type GeoCommune,
+} from '@/lib/geoCommunes';
+import {
+  INTEREST_CATEGORIES,
+  ALL_SUGGESTED_INTERESTS,
+  MAX_CUSTOM_INTEREST_LENGTH,
+  MIN_INTERESTS,
+  INTERESTS_MIN_ERROR,
+  normalizeInterestKey,
+  sanitizeCustomInterest,
+} from '@/lib/interests';
+import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
+import { sendFounderWelcomeEmail } from '@/lib/email';
 
 export interface Profile {
   id: string;
@@ -17,12 +49,8 @@ export interface Profile {
   location: string;
   interests: string[];
   photo_url: string;
+  email_notifications_enabled?: boolean;
 }
-
-const SUGGESTED_INTERESTS = [
-  'Voyage', 'Cuisine', 'Cinéma', 'Sport', 'Lecture', 'Musique',
-  'Randonnée', 'Gaming', 'Art', 'Yoga', 'Photographie', 'Animaux',
-];
 
 export default function ProfileSetup({
   onDone,
@@ -32,9 +60,17 @@ export default function ProfileSetup({
   allowAccountDeletion?: boolean;
 }) {
   const { user, signOut } = useAuth();
-  const { status, purchaseBoost, refresh } = useMembership();
+  const {
+    status,
+    loading: membershipLoading,
+    purchaseBoost,
+    refresh,
+    claimSignupOffer,
+    ensureMembershipLinked,
+  } = useMembership();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [claimingOffer, setClaimingOffer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +80,22 @@ export default function ProfileSetup({
   const [bio, setBio] = useState('');
   const [hasChildren, setHasChildren] = useState(false);
   const [location, setLocation] = useState('');
+  const [selectedCity, setSelectedCity] = useState<GeoCommune | null>(null);
+  const [cityError, setCityError] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFileName, setPhotoFileName] = useState<string | null>(null);
+  const [customInterest, setCustomInterest] = useState('');
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] =
+    useState(true);
+  const [prefsHint, setPrefsHint] = useState(false);
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const preferencesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -63,29 +113,199 @@ export default function ProfileSetup({
       }
 
       if (data) {
+        setProfileExists(true);
         setDisplayName(data.display_name || '');
         setBirthDate(data.birth_date || '');
         setBio(data.bio || '');
         setHasChildren(data.has_children ?? false);
         setLocation(data.location || '');
+        setSelectedCity(communeFromStoredLabel(data.location || ''));
+        setCityError(null);
         setInterests(data.interests || []);
         setPhotoUrl(data.photo_url || '');
+        setEmailNotificationsEnabled(
+          data.email_notifications_enabled !== false
+        );
+      } else {
+        setProfileExists(false);
       }
       setLoading(false);
     })();
   }, [user]);
 
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open') !== 'preferences') return;
+
+    setPrefsHint(true);
+    const t = window.setTimeout(() => {
+      preferencesRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 120);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('open');
+    window.history.replaceState({}, '', url.pathname + url.search);
+
+    return () => window.clearTimeout(t);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!photoFile) {
+      setPhotoPreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(photoFile);
+    setPhotoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [photoFile]);
+
+  const handleEmailNotificationsChange = async (enabled: boolean) => {
+    setPrefsHint(false);
+    setPrefsSaved(false);
+    setEmailNotificationsEnabled(enabled);
+
+    // Inscription : pas encore de ligne profiles → valeur incluse au premier upsert.
+    if (!user || !profileExists) return;
+
+    setPrefsSaving(true);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ email_notifications_enabled: enabled })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+      setPrefsSaved(true);
+      window.setTimeout(() => setPrefsSaved(false), 2200);
+    } catch (err) {
+      setEmailNotificationsEnabled(!enabled);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible d’enregistrer la préférence e-mail'
+      );
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
+
   const toggleInterest = (interest: string) => {
-    setInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest]
+    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    const already = interests.some(
+      (i) => normalizeInterestKey(i) === normalizeInterestKey(interest)
     );
+    if (already) {
+      setInterests((prev) =>
+        prev.filter(
+          (i) => normalizeInterestKey(i) !== normalizeInterestKey(interest)
+        )
+      );
+      return;
+    }
+    setInterests((prev) => [...prev, interest]);
+  };
+
+  const addCustomInterest = () => {
+    const cleaned = sanitizeCustomInterest(customInterest);
+    if (!cleaned) {
+      setCustomInterest('');
+      return;
+    }
+
+    const key = normalizeInterestKey(cleaned);
+    const alreadySelected = interests.some(
+      (i) => normalizeInterestKey(i) === key
+    );
+    if (alreadySelected) {
+      setCustomInterest('');
+      return;
+    }
+
+    const known = ALL_SUGGESTED_INTERESTS.find(
+      (i) => normalizeInterestKey(i) === key
+    );
+    const label = known ?? cleaned;
+
+    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    setInterests((prev) => [...prev, label]);
+    setCustomInterest('');
+  };
+
+  const removeInterest = (interest: string) => {
+    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    setInterests((prev) => prev.filter((i) => i !== interest));
+  };
+
+  const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    if (!file) return;
+
+    const validationError = validateProfilePhoto(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError(null);
+    setPhotoFile(file);
+    setPhotoFileName(file.name);
+  };
+
+  const clearSelectedPhoto = () => {
+    setPhotoFile(null);
+    setPhotoFileName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const isSignup = !allowAccountDeletion;
+  const offerChosen = status.membership_linked;
+  const canEditProfile = !isSignup || offerChosen;
+
+  const handleClaimOffer = async (offer: 'founder' | 'free') => {
+    setError(null);
+    setClaimingOffer(true);
+    try {
+      const result = await claimSignupOffer(offer);
+      if (!result.ok) {
+        setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
+      }
+    } finally {
+      setClaimingOffer(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setCityError(null);
+
+    if (isSignup && !status.membership_linked) {
+      setError(
+        'Veuillez d’abord choisir et activer une offre pour continuer l’inscription.'
+      );
+      return;
+    }
+
+    const cityOk =
+      selectedCity !== null &&
+      selectedCity.label === location.trim();
+
+    if (!cityOk) {
+      setCityError(CITY_SELECTION_REQUIRED_ERROR);
+      setError(CITY_SELECTION_REQUIRED_ERROR);
+      return;
+    }
+
+    if (interests.length < MIN_INTERESTS) {
+      setError(INTERESTS_MIN_ERROR);
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -96,15 +316,28 @@ export default function ProfileSetup({
         );
       }
 
+      let nextPhotoUrl = photoUrl;
+      if (photoFile) {
+        const { url, error: uploadError } = await uploadProfilePhoto(
+          user.id,
+          photoFile
+        );
+        if (uploadError || !url) {
+          throw new Error(uploadError || "Échec de l'envoi de la photo.");
+        }
+        nextPhotoUrl = url;
+      }
+
       const payload = {
         id: user.id,
         display_name: displayName,
         birth_date: birthDate,
         bio,
         has_children: hasChildren,
-        location,
+        location: selectedCity.label,
         interests,
-        photo_url: photoUrl,
+        photo_url: nextPhotoUrl,
+        email_notifications_enabled: emailNotificationsEnabled,
       };
 
       const { error: upsertError } = await supabase
@@ -112,6 +345,23 @@ export default function ProfileSetup({
         .upsert(payload);
 
       if (upsertError) throw upsertError;
+
+      setProfileExists(true);
+
+      const membership = await ensureMembershipLinked();
+      if (!membership.ok) {
+        throw new Error(membership.error || MEMBERSHIP_REQUIRED_ERROR);
+      }
+
+      if (isSignup && membership.is_founder) {
+        // Non bloquant : l'inscription reste valide même si Resend échoue.
+        void sendFounderWelcomeEmail({ displayName });
+      }
+
+      setPhotoUrl(nextPhotoUrl);
+      setPhotoFile(null);
+      setPhotoFileName(null);
+      setLocation(selectedCity.label);
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -135,7 +385,7 @@ export default function ProfileSetup({
     }
   };
 
-  if (loading) {
+  if (loading || (isSignup && membershipLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-gray-400">Chargement...</div>
@@ -146,19 +396,27 @@ export default function ProfileSetup({
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Offres : Fondateur / Premium / Boost — logique conditionnelle via founders_remaining */}
         <div className="mb-6">
           <MembershipPanel
             status={status}
             onPurchaseBoost={purchaseBoost}
             onRefresh={refresh}
-            activatingFounder={saving}
-            profileFormId={
-              allowAccountDeletion ? undefined : 'profile-setup-form'
-            }
+            signupGate={isSignup}
+            claimingOffer={claimingOffer}
+            onClaimFounder={() => void handleClaimOffer('founder')}
+            onClaimFreemium={() => void handleClaimOffer('free')}
           />
         </div>
 
+        {error && isSignup && !canEditProfile && (
+          <div className="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {canEditProfile && (
+          <>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
@@ -185,23 +443,53 @@ export default function ProfileSetup({
           {/* Photo */}
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-rose-100">
-              {photoUrl ? (
-                <img src={photoUrl} alt="Aperçu" className="w-full h-full object-cover" />
+              {photoPreview || photoUrl ? (
+                <img
+                  src={photoPreview || photoUrl}
+                  alt="Aperçu"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <Camera className="w-7 h-7 text-rose-300" />
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                URL de votre photo
+                Votre photo
               </label>
               <input
-                type="url"
-                value={photoUrl}
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
-                placeholder="https://..."
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handlePhotoPick}
               />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-rose-600 text-sm font-semibold hover:bg-rose-50 transition-colors"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {photoPreview || photoUrl
+                    ? 'Changer de photo'
+                    : 'Choisir une photo'}
+                </button>
+                {photoFile && (
+                  <button
+                    type="button"
+                    onClick={clearSelectedPhoto}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-400 truncate">
+                {photoFileName
+                  ? photoFileName
+                  : 'JPEG, PNG ou WebP · 5 Mo max'}
+              </p>
             </div>
           </div>
 
@@ -239,16 +527,41 @@ export default function ProfileSetup({
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Ville / Région
+            <label
+              htmlFor="profile-city"
+              className="block text-sm font-semibold text-gray-700 mb-1.5"
+            >
+              Ville <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="text"
+            <CityAutocomplete
+              id="profile-city"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-              placeholder="Paris, Lyon..."
+              onChange={(next) => {
+                setLocation(next);
+                setCityError(null);
+                setError((prev) =>
+                  prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                );
+              }}
+              selected={selectedCity}
+              onSelect={(commune) => {
+                setSelectedCity(commune);
+                if (commune) {
+                  setCityError(null);
+                  setError((prev) =>
+                    prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                  );
+                }
+              }}
+              invalid={Boolean(cityError)}
+              placeholder="Tapez puis choisissez dans la liste…"
             />
+            {cityError && (
+              <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{cityError}</span>
+              </p>
+            )}
           </div>
 
           {/* Has children */}
@@ -294,36 +607,104 @@ export default function ProfileSetup({
           </div>
 
           {/* Interests */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2.5">
-              Centres d'intérêt
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700">
+              Centres d&apos;intérêt
             </label>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_INTERESTS.map((interest) => {
-                const selected = interests.includes(interest);
-                return (
-                  <button
+
+            {interests.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-rose-50/60 border border-rose-100">
+                {interests.map((interest) => (
+                  <span
                     key={interest}
-                    type="button"
-                    onClick={() => toggleInterest(interest)}
-                    className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-all ${
-                      selected
-                        ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                    }`}
+                    className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-semibold bg-rose-500 text-white shadow-sm shadow-rose-200"
                   >
-                    {selected && <Check className="w-3.5 h-3.5 inline mr-1" />}
                     {interest}
-                  </button>
-                );
-              })}
+                    <button
+                      type="button"
+                      onClick={() => removeInterest(interest)}
+                      className="p-0.5 rounded-full hover:bg-white/20 transition-colors"
+                      aria-label={`Retirer ${interest}`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {INTEREST_CATEGORIES.map((category) => (
+                <div key={category.id}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                    {category.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {category.interests.map((interest) => {
+                      const selected = interests.some(
+                        (i) =>
+                          normalizeInterestKey(i) ===
+                          normalizeInterestKey(interest)
+                      );
+                      return (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => toggleInterest(interest)}
+                          className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-all ${
+                            selected
+                              ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                          }`}
+                        >
+                          {selected && (
+                            <Check className="w-3.5 h-3.5 inline mr-1" />
+                          )}
+                          {interest}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                Ajouter le vôtre
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customInterest}
+                  maxLength={MAX_CUSTOM_INTEREST_LENGTH}
+                  onChange={(e) => setCustomInterest(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomInterest();
+                    }
+                  }}
+                  className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
+                  placeholder="Ex. Astronomie amateur, Bridge…"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomInterest}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Bio */}
+          {/* Bio (optionnelle) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Bio
+              Bio{' '}
+              <span className="font-normal text-gray-400">(optionnel)</span>
             </label>
             <textarea
               value={bio}
@@ -338,6 +719,64 @@ export default function ProfileSetup({
             </p>
           </div>
 
+          {/* Préférences de communication */}
+          <div
+            ref={preferencesRef}
+            id="email-preferences"
+            className={`rounded-2xl border p-4 sm:p-5 space-y-3 transition-colors ${
+              prefsHint
+                ? 'border-rose-300 bg-rose-50/60 ring-2 ring-rose-100'
+                : 'border-gray-100 bg-gray-50/80'
+            }`}
+          >
+            <div>
+              <h2 className="text-sm font-bold text-gray-900 tracking-tight">
+                Préférences
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                Gérez les e-mails de notification envoyés par Aypik (coups de
+                cœur, actualisations, messages d’accueil, etc.).
+              </p>
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailNotificationsEnabled}
+                disabled={prefsSaving}
+                onChange={(e) => {
+                  void handleEmailNotificationsChange(e.target.checked);
+                }}
+                className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400 disabled:opacity-60"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-800">
+                  Recevoir les notifications et actualisations par e-mail
+                </span>
+                <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                  {profileExists
+                    ? 'Ce choix est enregistré immédiatement. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'
+                    : 'Ce choix sera enregistré avec votre profil. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'}
+                </span>
+                {(prefsSaving || prefsSaved) && (
+                  <span
+                    className={`mt-1.5 inline-flex items-center gap-1 text-xs font-medium ${
+                      prefsSaved ? 'text-emerald-600' : 'text-gray-400'
+                    }`}
+                  >
+                    {prefsSaving ? (
+                      'Enregistrement…'
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Préférence enregistrée
+                      </>
+                    )}
+                  </span>
+                )}
+              </span>
+            </label>
+          </div>
+
           {error && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -350,10 +789,16 @@ export default function ProfileSetup({
             disabled={saving || hasChildren}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {saving ? 'Sauvegarde...' : 'Enregistrer mon profil'}
+            {saving
+              ? photoFile
+                ? 'Envoi de la photo…'
+                : 'Sauvegarde...'
+              : 'Enregistrer mon profil'}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+          </>
+        )}
 
         {allowAccountDeletion && (
           <p className="mt-6 text-center text-xs text-gray-400">
