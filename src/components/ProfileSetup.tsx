@@ -146,12 +146,16 @@ export default function ProfileSetup({
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Bannière Fondateur en tout premier — visible pour tous */}
+        {/* Offres : Fondateur / Premium / Boost — logique conditionnelle via founders_remaining */}
         <div className="mb-6">
           <MembershipPanel
             status={status}
             onPurchaseBoost={purchaseBoost}
             onRefresh={refresh}
+            activatingFounder={saving}
+            profileFormId={
+              allowAccountDeletion ? undefined : 'profile-setup-form'
+            }
           />
         </div>
 
@@ -174,6 +178,7 @@ export default function ProfileSetup({
         </div>
 
         <form
+          id="profile-setup-form"
           onSubmit={handleSubmit}
           className="bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6"
         >

@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { BrandLockup, BRAND_FULL } from '@/components/BrandLockup';
+import { BRAND_NAME, BRAND_BASELINE, BRAND_FULL } from '@/components/BrandLockup';
 
 export function openLegalTerms() {
   const url = new URL(window.location.href);
@@ -62,10 +62,20 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <article className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed">
           <header className="space-y-2 border-b border-gray-100 pb-6">
-            <BrandLockup
-              variant="inline"
-              className="text-[10px] text-rose-500"
-            />
+            <p className="inline-flex items-baseline gap-1.5 text-[10px]">
+              <span
+                className="font-extrabold uppercase tracking-[0.22em]"
+                style={{ color: '#C71585' }}
+              >
+                {BRAND_NAME}
+              </span>
+              <span className="text-xs font-light tracking-wide text-gray-600">
+                <span className="mr-1" aria-hidden>
+                  —
+                </span>
+                {BRAND_BASELINE}
+              </span>
+            </p>
             <h2 className="text-xl font-bold text-gray-900 tracking-tight">
               Conditions Générales d&apos;Utilisation et de Vente (CGU / CGV)
             </h2>
@@ -118,17 +128,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Strictement réservée aux 500 premiers membres inscrits, cette
                 offre accorde 6 mois de services Premium offerts. Dès que ce
                 plafond est atteint, l&apos;offre Membre Fondateur n&apos;est
-                plus proposée : les nouveaux inscrits basculent automatiquement
-                vers l&apos;offre freemium / Premium standard.
+                plus proposée.
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>
-                  Aucune carte bancaire n&apos;est requise pour en bénéficier.
-                </li>
                 <li>
                   À l&apos;issue des 6 mois, le compte fait l&apos;objet d&apos;un
                   retour automatique à l&apos;offre gratuite, sans tacite
                   reconduction et sans prélèvement automatique.
+                </li>
+                <li>
+                  Aucune carte bancaire n&apos;est requise pour en bénéficier.
                 </li>
               </ul>
             </div>

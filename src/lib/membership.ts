@@ -184,3 +184,8 @@ export function daysUntil(iso: string | null | undefined): number | null {
 export function isFounderOfferOpen(status: MembershipStatus): boolean {
   return status.founders_remaining > 0;
 }
+
+/** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
+export function isFounderAvailable(status: MembershipStatus): boolean {
+  return isFounderOfferOpen(status);
+}

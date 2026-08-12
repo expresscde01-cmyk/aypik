@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Heart,
   Mail,
   Lock,
   AlertCircle,
@@ -14,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import { LegalLink } from '@/components/LegalTerms';
-import { BrandLockup } from '@/components/BrandLockup';
+import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 
 type Mode = 'signin' | 'signup';
 
@@ -95,8 +94,8 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
             className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
             aria-label="Accueil Aypik"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-5 animate-pop">
-              <Heart className="w-8 h-8 text-white" fill="white" />
+            <div className="mb-5 animate-pop">
+              <BrandMark size="lg" className="mx-auto" />
             </div>
             <BrandLockup variant="hero" />
           </a>

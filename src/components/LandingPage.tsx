@@ -1,5 +1,5 @@
 import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
-import { BrandLockup } from '@/components/BrandLockup';
+import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
 
 const FOUNDER_SUBTITLE =
@@ -87,9 +87,7 @@ export function SiteHeader({
           className="flex items-center gap-2.5 min-w-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
           aria-label="Accueil Aypik"
         >
-          <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center shadow-sm">
-            <Heart className="w-4 h-4 text-white" fill="white" />
-          </div>
+          <BrandMark size="sm" />
           <BrandLockup />
         </a>
 
@@ -265,11 +263,10 @@ export default function LandingPage({
 
           {/* Signature de marque sous l’accroche */}
           <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-200/70">
-              <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="white" />
-            </div>
+            <BrandMark size="md" />
             <p
-              className="text-xl sm:text-2xl font-extrabold uppercase tracking-[0.32em] bg-gradient-to-r from-rose-500 to-amber-500 bg-clip-text text-transparent"
+              className="w-fit mx-auto text-xl sm:text-2xl font-extrabold uppercase tracking-[0.32em] bg-clip-text text-transparent"
+              style={{ backgroundImage: BRAND_GRADIENT_CSS }}
               aria-label="Aypik"
             >
               Aypik
@@ -310,7 +307,7 @@ export default function LandingPage({
         <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6">
           {VALUES.map(({ id, title, description, Icon }) => (
             <li key={id} className="text-center sm:text-left">
-              <div className="mx-auto sm:mx-0 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+              <div className="mx-auto sm:mx-0 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md text-orange-500">
                 <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </div>
               <h3 className="text-base font-bold text-gray-900 tracking-tight leading-snug">
