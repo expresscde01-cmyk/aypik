@@ -6,6 +6,7 @@ import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
 import LandingPage from '@/components/LandingPage';
 import type { Profile } from '@/components/ProfileSetup';
+import { MIN_INTERESTS } from '@/lib/interests';
 
 type Tab = 'home' | 'matches' | 'profile';
 
@@ -34,7 +35,17 @@ export default function AppShell() {
     };
   }, [user]);
 
-  const needsProfile = !profileLoading && !profile;
+  const profileComplete = (p: Profile | null) =>
+    Boolean(
+      p?.display_name?.trim() &&
+        p.birth_date &&
+        p.location?.trim() &&
+        Array.isArray(p.interests) &&
+        p.interests.length >= MIN_INTERESTS
+    );
+  // Inscription inachevée → forcer ProfileSetup (bouton « Valider mon inscription »)
+  // plutôt que l’accueil « Nos offres ».
+  const needsProfile = !profileLoading && !profileComplete(profile);
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||

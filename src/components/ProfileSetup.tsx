@@ -62,6 +62,7 @@ export default function ProfileSetup({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [claimingOffer, setClaimingOffer] = useState(false);
+  const [scrollToFormAfterClaim, setScrollToFormAfterClaim] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,11 +161,24 @@ export default function ProfileSetup({
       const result = await claimSignupOffer(offer);
       if (!result.ok) {
         setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
+        return;
       }
+      setScrollToFormAfterClaim(true);
     } finally {
       setClaimingOffer(false);
     }
   };
+
+  useEffect(() => {
+    if (!scrollToFormAfterClaim || !canEditProfile) return;
+    const t = window.setTimeout(() => {
+      document
+        .getElementById('profile-setup-form')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setScrollToFormAfterClaim(false);
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [scrollToFormAfterClaim, canEditProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -295,9 +309,13 @@ export default function ProfileSetup({
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mon profil</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            {isSignup ? 'Finaliser mon inscription' : 'Mon profil'}
+          </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Renseignez vos informations pour apparaître dans les recherches
+            {isSignup
+              ? 'Renseignez vos informations, puis validez pour rejoindre Aypik'
+              : 'Renseignez vos informations pour apparaître dans les recherches'}
           </p>
           {(status.is_founder || status.has_boost) && (
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
@@ -556,7 +574,9 @@ export default function ProfileSetup({
               ? photoFile
                 ? 'Envoi de la photo…'
                 : 'Sauvegarde...'
-              : 'Enregistrer mon profil'}
+              : isSignup
+                ? 'Valider mon inscription'
+                : 'Enregistrer mon profil'}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
