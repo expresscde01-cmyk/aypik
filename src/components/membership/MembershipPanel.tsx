@@ -4,7 +4,7 @@ import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
-import { cancelPremiumSubscription } from '@/lib/payments';
+import { cancelPremiumSubscription, ENABLE_PAYMENTS } from '@/lib/payments';
 import {
   daysUntil,
   formatPremiumPriceLabel,
@@ -15,7 +15,6 @@ import {
   AFTER_FOUNDER_PERIOD_COPY,
   type MembershipStatus,
 } from '@/lib/membership';
-import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
 
 /** Libellé partagé quand Freemium est l’offre active (cartes secondaires grisées). */
 const FREEMIUM_ACTIVE_UNSELECTED_LABEL =
@@ -432,13 +431,12 @@ export function MembershipPanel({
   /**
    * Boost : coloré seulement s’il a déjà été acheté (page précédente),
    * sinon grisé quand Freemium est l’offre active.
-   * Paiements temporairement masqués au lancement Fondateur.
+   * Paiements masqués tant que ENABLE_PAYMENTS === false (code conservé).
    */
-  const showBoost = !PAYMENTS_TEMPORARILY_DISABLED;
+  const showBoost = ENABLE_PAYMENTS;
   const boostPurchaseDisabled = onFreemium && !status.has_boost;
   const boostDisabledReason = FREEMIUM_ACTIVE_UNSELECTED_LABEL;
-  const showPremiumOfferCard =
-    showPremiumOffer && !PAYMENTS_TEMPORARILY_DISABLED;
+  const showPremiumOfferCard = showPremiumOffer && ENABLE_PAYMENTS;
 
   const handleCancel = async () => {
     if (
@@ -508,7 +506,7 @@ export function MembershipPanel({
             />
           )}
 
-          {PAYMENTS_TEMPORARILY_DISABLED && signupGate && !offerChosen && (
+          {!ENABLE_PAYMENTS && signupGate && !offerChosen && (
             <p className="text-xs text-center text-gray-500 leading-relaxed px-1">
               Les paiements Premium et Boost seront disponibles plus tard.
               Rejoignez l’offre Fondateur gratuitement, ou continuez en

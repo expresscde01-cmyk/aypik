@@ -7,10 +7,17 @@ export type CheckoutProduct = 'premium' | 'boost';
 export const BOOST_PRICE_CENTS = 299;
 
 /**
- * Lancement Fondateur : paiements Stripe/PayPal temporairement désactivés.
- * Remettre à `false` pour réactiver Premium / Boost payants.
+ * Interrupteur unique pour Stripe / PayPal (Premium + Boost).
+ * - `false` : lancement Fondateur gratuit — les CTAs de paiement sont masqués,
+ *   le code Stripe/PayPal reste intact et prêt à servir.
+ * - `true`  : réactive immédiatement les boutons et le modal de checkout.
+ *
+ * Ne pas supprimer le code de paiement : basculez uniquement ce drapeau.
  */
-export const PAYMENTS_TEMPORARILY_DISABLED = true;
+export const ENABLE_PAYMENTS = false;
+
+/** @deprecated Préférer `!ENABLE_PAYMENTS`. Conservé pour compatibilité. */
+export const PAYMENTS_TEMPORARILY_DISABLED = !ENABLE_PAYMENTS;
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 

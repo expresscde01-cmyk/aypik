@@ -7,7 +7,7 @@ import {
 } from '@/lib/membership';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 import { LegalLink } from '@/components/LegalTerms';
-import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
+import { ENABLE_PAYMENTS } from '@/lib/payments';
 
 const PREMIUM_PERKS = [
   'Voir qui a liké votre profil',
@@ -150,7 +150,7 @@ export function PremiumConversionCard({
               >
                 {lockedLabel}
               </div>
-            ) : PAYMENTS_TEMPORARILY_DISABLED ? (
+            ) : !ENABLE_PAYMENTS ? (
               <div className="w-full py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm font-semibold text-center">
                 Paiement bientôt disponible
               </div>
@@ -168,7 +168,7 @@ export function PremiumConversionCard({
               </button>
             )}
 
-            {!disabled && !PAYMENTS_TEMPORARILY_DISABLED && (
+            {!disabled && ENABLE_PAYMENTS && (
               <>
                 <p className="text-xs text-center text-gray-500 leading-relaxed">
                   Sans engagement · résiliable à tout moment · aucune
@@ -186,7 +186,7 @@ export function PremiumConversionCard({
         </div>
       </div>
 
-      {!disabled && !PAYMENTS_TEMPORARILY_DISABLED && (
+      {!disabled && ENABLE_PAYMENTS && (
         <PaymentCheckoutModal
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}

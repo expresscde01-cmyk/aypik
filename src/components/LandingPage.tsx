@@ -7,7 +7,7 @@ import {
   founderOfferBadgeLabel,
   founderOfferSubtitle,
 } from '@/lib/membership';
-import { PAYMENTS_TEMPORARILY_DISABLED } from '@/lib/payments';
+import { ENABLE_PAYMENTS } from '@/lib/payments';
 
 const FOUNDER_SUBTITLE =
   '6 mois offerts — accès 100 % gratuit, sans carte bancaire.';
@@ -348,7 +348,7 @@ export default function LandingPage({
   const founderSubtitle = founderOfferSubtitle(availability);
 
   const visibleOffers = OFFERS.filter((offer) => {
-    if (PAYMENTS_TEMPORARILY_DISABLED) {
+    if (!ENABLE_PAYMENTS) {
       return offer.id === 'founder' || offer.id === 'freemium';
     }
     return true;
@@ -499,9 +499,9 @@ export default function LandingPage({
               Nos offres
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              {PAYMENTS_TEMPORARILY_DISABLED
-                ? 'Offre Fondateur gratuite ou Freemium — sans paiement pour le moment.'
-                : 'Une entrée libre, des options pour aller plus loin.'}
+              {ENABLE_PAYMENTS
+                ? 'Une entrée libre, des options pour aller plus loin.'
+                : 'Offre Fondateur gratuite ou Freemium — sans paiement pour le moment.'}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

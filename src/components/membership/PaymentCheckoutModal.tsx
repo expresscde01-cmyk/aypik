@@ -21,6 +21,7 @@ import {
   createPayPalSubscription,
   createStripeBoostPayment,
   createStripeSubscription,
+  ENABLE_PAYMENTS,
   getStripe,
   isPayPalConfigured,
   isStripeConfigured,
@@ -77,7 +78,8 @@ export function PaymentCheckoutModal({
     }
   }, [open]);
 
-  if (!open) return null;
+  // Code Stripe/PayPal conservé : le modal ne s’ouvre que si ENABLE_PAYMENTS.
+  if (!open || !ENABLE_PAYMENTS) return null;
 
   const finishSuccess = async () => {
     if (isBoost) {
