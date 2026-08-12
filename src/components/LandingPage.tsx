@@ -309,6 +309,7 @@ export default function LandingPage({
   onSignOut,
   onLogoClick,
   onPrimaryCta,
+  onValidateSignup,
 }: {
   displayName?: string | null;
   onAuthClick?: () => void;
@@ -316,6 +317,8 @@ export default function LandingPage({
   onLogoClick?: () => void;
   /** CTA principal (ex. aller aux matchs si déjà connecté) */
   onPrimaryCta?: () => void;
+  /** Ouvre le formulaire « Valider mon inscription » */
+  onValidateSignup?: () => void;
 }) {
   const connected = Boolean(displayName);
   const { status } = useMembership();
@@ -336,7 +339,19 @@ export default function LandingPage({
 
   const boostPurchased = status.has_boost;
 
-  const visibleOffers = onFreemium
+  type VisibleOffer = {
+    id: (typeof OFFERS)[number]['id'];
+    title: string;
+    badge?: string;
+    description: string;
+    point?: string;
+    accent: (typeof OFFERS)[number]['accent'];
+    highlighted: boolean;
+    locked: boolean;
+    note?: string;
+  };
+
+  const visibleOffers: VisibleOffer[] = onFreemium
     ? [
         {
           ...OFFERS.find((o) => o.id === 'freemium')!,
@@ -370,7 +385,7 @@ export default function LandingPage({
         ...offer,
         highlighted: false,
         locked: false,
-        note: undefined as string | undefined,
+        note: undefined,
       }));
 
   return (
@@ -410,21 +425,41 @@ export default function LandingPage({
           </div>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
-            <button
-              type="button"
-              onClick={connected ? onPrimaryCta : onAuthClick}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
-            >
-              {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
-            </button>
-            {!connected && (
+            {connected && onValidateSignup ? (
               <button
                 type="button"
-                onClick={onAuthClick}
+                onClick={onValidateSignup}
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
+              >
+                Valider mon inscription
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={connected ? onPrimaryCta : onAuthClick}
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
+              >
+                {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
+              </button>
+            )}
+            {connected && onValidateSignup ? (
+              <button
+                type="button"
+                onClick={onPrimaryCta}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
               >
-                Se connecter
+                Voir mes matchs
               </button>
+            ) : (
+              !connected && (
+                <button
+                  type="button"
+                  onClick={onAuthClick}
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
+                >
+                  Se connecter
+                </button>
+              )
             )}
           </div>
         </div>
@@ -465,9 +500,18 @@ export default function LandingPage({
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {onFreemium
-              ? 'Inscription déjà active en Freemium — rien à valider sur cette page. Les autres options sont affichées à titre d’information.'
+              ? 'Freemium est active. Pour finaliser, validez votre inscription via le bouton ci-dessous.'
               : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
+          {onFreemium && onValidateSignup && (
+            <button
+              type="button"
+              onClick={onValidateSignup}
+              className="mt-5 w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
+            >
+              Valider mon inscription
+            </button>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {visibleOffers.map((offer) => (

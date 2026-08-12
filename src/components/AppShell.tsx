@@ -15,6 +15,23 @@ export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  /** Ouvre le formulaire d’inscription depuis l’accueil (CTA visible). */
+  const [forceSignupForm, setForceSignupForm] = useState(false);
+  const signupOkKey = user ? `aypik_signup_ok_${user.id}` : null;
+  const [signupValidated, setSignupValidated] = useState(false);
+
+  useEffect(() => {
+    if (!signupOkKey) {
+      setSignupValidated(false);
+      return;
+    }
+    setSignupValidated(localStorage.getItem(signupOkKey) === '1');
+  }, [signupOkKey]);
+
+  const markSignupValidated = () => {
+    if (signupOkKey) localStorage.setItem(signupOkKey, '1');
+    setSignupValidated(true);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -59,7 +76,7 @@ export default function AppShell() {
     );
   }
 
-  if (needsProfile) {
+  if (needsProfile || forceSignupForm) {
     return (
       <ProfileSetup
         onDone={async () => {
@@ -69,6 +86,9 @@ export default function AppShell() {
             .eq('id', user!.id)
             .maybeSingle();
           setProfile(data as Profile);
+          markSignupValidated();
+          setForceSignupForm(false);
+          setTab('home');
         }}
       />
     );
@@ -83,6 +103,9 @@ export default function AppShell() {
             onSignOut={signOut}
             onLogoClick={() => setTab('home')}
             onPrimaryCta={() => setTab('matches')}
+            onValidateSignup={
+              signupValidated ? undefined : () => setForceSignupForm(true)
+            }
           />
         )}
         {tab === 'matches' && (

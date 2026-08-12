@@ -62,6 +62,7 @@ export default function ProfileSetup({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [claimingOffer, setClaimingOffer] = useState(false);
+  const [offerUnlocked, setOfferUnlocked] = useState(false);
   const [scrollToFormAfterClaim, setScrollToFormAfterClaim] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -151,7 +152,7 @@ export default function ProfileSetup({
   };
 
   const isSignup = !allowAccountDeletion;
-  const offerChosen = status.membership_linked;
+  const offerChosen = status.membership_linked || offerUnlocked;
   const canEditProfile = !isSignup || offerChosen;
 
   const handleClaimOffer = async (offer: 'founder' | 'free') => {
@@ -163,6 +164,8 @@ export default function ProfileSetup({
         setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
         return;
       }
+      // Déblocage immédiat du formulaire (sans attendre un 2e refresh UI).
+      setOfferUnlocked(true);
       setScrollToFormAfterClaim(true);
     } finally {
       setClaimingOffer(false);
