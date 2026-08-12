@@ -313,6 +313,8 @@ export default function LandingPage({
   onLogoClick,
   onPrimaryCta,
   primaryCtaLabel,
+  /** Inscription non finalisée : ne pas afficher l’offre comme « active ». */
+  signupIncomplete = false,
 }: {
   displayName?: string | null;
   onAuthClick?: () => void;
@@ -322,8 +324,9 @@ export default function LandingPage({
   onPrimaryCta?: () => void;
   /** Libellé custom du CTA connecté (ex. reprendre l’inscription) */
   primaryCtaLabel?: string;
+  signupIncomplete?: boolean;
 }) {
-  const connected = Boolean(displayName);
+  const connected = Boolean(displayName) || signupIncomplete;
   const { status } = useMembership();
   const { availability } = useFounderAvailability();
 
@@ -333,15 +336,22 @@ export default function LandingPage({
       !!status.founder_premium_until &&
       new Date(status.founder_premium_until).getTime() > Date.now());
 
-  const membershipLabel = !connected
+  // Pendant l’inscription : jamais « Fondateur active » (même si la place est réservée).
+  const membershipLabel = signupIncomplete
     ? null
-    : onFounderBenefits || status.is_founder
-      ? 'Membre Fondateur'
-      : status.plan === 'premium'
-        ? 'Premium'
-        : status.membership_linked
-          ? 'Freemium'
-          : null;
+    : !connected
+      ? null
+      : onFounderBenefits || status.is_founder
+        ? 'Membre Fondateur'
+        : status.plan === 'premium'
+          ? 'Premium'
+          : status.membership_linked
+            ? 'Freemium'
+            : null;
+
+  const headerName = signupIncomplete
+    ? 'Inscription…'
+    : displayName;
 
   // Accueil connecté = vraie home (pas la grille d’offres du tunnel d’inscription).
   // Les offres se gèrent dans l’onglet Profil.
@@ -384,7 +394,7 @@ export default function LandingPage({
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
       <SiteHeader
-        displayName={displayName}
+        displayName={headerName}
         onAuthClick={onAuthClick}
         onSignOut={onSignOut}
         onLogoClick={onLogoClick}
@@ -401,7 +411,9 @@ export default function LandingPage({
         />
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
           <h1 className="max-w-xl sm:max-w-2xl mx-auto text-3xl sm:text-4xl md:text-[2.75rem] font-extrabold text-gray-900 tracking-tight leading-[1.2] text-balance animate-pop">
-            {connected ? (
+            {signupIncomplete ? (
+              <>Finalisez votre inscription</>
+            ) : connected ? (
               <>
                 Bonjour
                 {displayName ? (
@@ -419,14 +431,25 @@ export default function LandingPage({
           </h1>
           {connected && (
             <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">
-              Bienvenue sur Aypik
-              {membershipLabel ? (
+              {signupIncomplete ? (
                 <>
-                  {' '}
-                  — offre <strong>{membershipLabel}</strong> active
+                  Votre compte est créé, mais l’inscription n’est pas terminée.
+                  Reprenez pour valider votre profil
+                  {status.is_founder ? ' et confirmer votre place Fondateur' : ''}
+                  .
                 </>
-              ) : null}
-              .
+              ) : (
+                <>
+                  Bienvenue sur Aypik
+                  {membershipLabel ? (
+                    <>
+                      {' '}
+                      — offre <strong>{membershipLabel}</strong> active
+                    </>
+                  ) : null}
+                  .
+                </>
+              )}
             </p>
           )}
 

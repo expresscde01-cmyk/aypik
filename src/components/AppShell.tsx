@@ -135,6 +135,7 @@ export default function AppShell() {
                 onLogoClick={() => setTab('home')}
                 onPrimaryCta={continueSignup}
                 primaryCtaLabel="Continuer mon inscription"
+                signupIncomplete
               />
             </main>
             <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
