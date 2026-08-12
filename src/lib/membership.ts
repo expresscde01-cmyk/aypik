@@ -202,7 +202,7 @@ export const MEMBERSHIP_REQUIRED_ERROR =
 export const AFTER_FOUNDER_TITLE = "À l'échéance de vos 6 mois";
 
 export const AFTER_FOUNDER_PERIOD_COPY =
-  "Vous pourrez aussi bien interrompre votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.";
+  "Vous pourrez aussi bien interrompre votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium : il n'y a pas d'engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.";
 
 const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
 
