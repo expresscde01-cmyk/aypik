@@ -330,6 +330,8 @@ export function MembershipPanel({
   claimingOffer = false,
   /** Tunnel inscription : choix d’offre obligatoire avant le profil */
   signupGate = false,
+  /** Si fourni, prime sur status.membership_linked (déblocage immédiat après claim). */
+  offerSelected,
 }: {
   status: MembershipStatus;
   onPurchaseBoost: () => Promise<string | null>;
@@ -338,6 +340,7 @@ export function MembershipPanel({
   onClaimFreemium?: () => void;
   claimingOffer?: boolean;
   signupGate?: boolean;
+  offerSelected?: boolean;
 }) {
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
@@ -349,7 +352,10 @@ export function MembershipPanel({
   );
   const periodActive = isFounderPeriodActive(status);
   const founderAvailable = isFounderAvailable(status);
-  const offerChosen = status.membership_linked;
+  const offerChosen =
+    typeof offerSelected === 'boolean'
+      ? offerSelected
+      : status.membership_linked;
   /** Bénéficie déjà de l’offre Fondateur (période 6 mois en cours). */
   const onFounderBenefits = periodActive && status.is_founder;
   /**
@@ -508,8 +514,8 @@ export function MembershipPanel({
     );
   }
 
-  // Fin du tunnel inscription : confirmation courte uniquement (pas la grille
-  // « Nos offres »). Le formulaire de profil est déjà affiché juste en dessous.
+  // Fin du tunnel inscription : plus de grille d’offres — uniquement la
+  // confirmation. Le bouton « Validez votre inscription » est sur le formulaire.
   if (signupGate && offerChosen) {
     const offerLabel = status.is_founder
       ? 'Membre Fondateur'
@@ -520,8 +526,9 @@ export function MembershipPanel({
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-2">
         <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-emerald-900 leading-relaxed">
-          Offre <strong>{offerLabel}</strong> activée. Complétez votre profil
-          ci-dessous, puis validez votre inscription.
+          Offre <strong>{offerLabel}</strong> activée — dernière étape :
+          complétez le formulaire puis appuyez sur{' '}
+          <strong>Validez votre inscription</strong> en bas de page.
         </p>
       </div>
     );

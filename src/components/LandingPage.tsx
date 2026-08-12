@@ -309,7 +309,6 @@ export default function LandingPage({
   onSignOut,
   onLogoClick,
   onPrimaryCta,
-  onValidateSignup,
 }: {
   displayName?: string | null;
   onAuthClick?: () => void;
@@ -317,8 +316,6 @@ export default function LandingPage({
   onLogoClick?: () => void;
   /** CTA principal (ex. aller aux matchs si déjà connecté) */
   onPrimaryCta?: () => void;
-  /** Ouvre le formulaire « Valider mon inscription » */
-  onValidateSignup?: () => void;
 }) {
   const connected = Boolean(displayName);
   const { status } = useMembership();
@@ -425,41 +422,21 @@ export default function LandingPage({
           </div>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
-            {connected && onValidateSignup ? (
+            <button
+              type="button"
+              onClick={connected ? onPrimaryCta : onAuthClick}
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
+            >
+              {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
+            </button>
+            {!connected && (
               <button
                 type="button"
-                onClick={onValidateSignup}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
-              >
-                Validez votre inscription
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={connected ? onPrimaryCta : onAuthClick}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
-              >
-                {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
-              </button>
-            )}
-            {connected && onValidateSignup ? (
-              <button
-                type="button"
-                onClick={onPrimaryCta}
+                onClick={onAuthClick}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
               >
-                Voir mes matchs
+                Se connecter
               </button>
-            ) : (
-              !connected && (
-                <button
-                  type="button"
-                  onClick={onAuthClick}
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
-                >
-                  Se connecter
-                </button>
-              )
             )}
           </div>
         </div>
@@ -500,18 +477,9 @@ export default function LandingPage({
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {onFreemium
-              ? 'Freemium est active. Pour finaliser, utilisez le bouton ci-dessous.'
+              ? 'Votre offre Freemium est active. Les autres options restent visibles à titre d’information.'
               : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
-          {onFreemium && onValidateSignup && (
-            <button
-              type="button"
-              onClick={onValidateSignup}
-              className="mt-5 w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
-            >
-              Validez votre inscription
-            </button>
-          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {visibleOffers.map((offer) => (

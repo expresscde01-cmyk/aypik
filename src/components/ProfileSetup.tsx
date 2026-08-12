@@ -297,6 +297,7 @@ export default function ProfileSetup({
             onPurchaseBoost={purchaseBoost}
             onRefresh={refresh}
             signupGate={isSignup}
+            offerSelected={offerChosen}
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
             onClaimFreemium={() => void handleClaimOffer('free')}
@@ -317,11 +318,11 @@ export default function ProfileSetup({
             <Heart className="w-7 h-7 text-white" fill="white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            {isSignup ? 'Finaliser mon inscription' : 'Mon profil'}
+            {isSignup ? 'Dernière étape de votre inscription' : 'Mon profil'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {isSignup
-              ? 'Renseignez vos informations, puis validez pour rejoindre Aypik'
+              ? 'Remplissez vos informations, puis validez avec le bouton en bas'
               : 'Renseignez vos informations pour apparaître dans les recherches'}
           </p>
           {(status.is_founder || status.has_boost) && (
