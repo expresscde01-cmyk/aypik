@@ -9,7 +9,10 @@ import {
   EyeOff,
   ArrowLeft,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import {
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
+} from '@/lib/authApi';
 import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import { LegalLink } from '@/components/LegalTerms';
@@ -53,16 +56,12 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
     setLoading(true);
 
     try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      }
+      // Auth découplée des e-mails : aucun await mail, aucune confirmation forcée.
+      const { error: authError } =
+        mode === 'signup'
+          ? await signUpWithEmailPassword(email, password, { founderOpen })
+          : await signInWithEmailPassword(email, password);
+      if (authError) throw authError;
     } catch (err) {
       setError(translateAuthError(err));
     } finally {
