@@ -14,6 +14,7 @@ import {
   founderOfferSubtitle,
   AFTER_FOUNDER_TITLE,
   AFTER_FOUNDER_PERIOD_COPY,
+  SHOW_FREEMIUM,
   type MembershipStatus,
 } from '@/lib/membership';
 
@@ -331,6 +332,7 @@ export function MembershipPanel({
   onPurchaseBoost,
   onRefresh,
   onClaimFounder,
+  onClaimFreemium,
   claimingOffer = false,
   /** Tunnel inscription : choix d’offre obligatoire avant le profil */
   signupGate = false,
@@ -344,7 +346,7 @@ export function MembershipPanel({
   onPurchaseBoost?: () => Promise<string | null>;
   onRefresh?: () => void;
   onClaimFounder?: () => void;
-  /** Conservé pour compatibilité API (plus proposé à l’inscription). */
+  /** Claim Freemium — affiché seulement si SHOW_FREEMIUM === true. */
   onClaimFreemium?: () => void;
   claimingOffer?: boolean;
   signupGate?: boolean;
@@ -429,8 +431,14 @@ export function MembershipPanel({
       ? FREEMIUM_ACTIVE_UNSELECTED_LABEL
       : undefined;
 
+  /** Freemium à l’inscription : masqué tant que SHOW_FREEMIUM === false. */
+  const showFreemiumClaim =
+    SHOW_FREEMIUM &&
+    signupGate &&
+    !offerChosen &&
+    Boolean(onClaimFreemium);
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
-  const showFreemiumLocked = onFounderBenefits;
+  const showFreemiumLocked = SHOW_FREEMIUM && onFounderBenefits;
   /**
    * Paiements opérationnels (ENABLE_PAYMENTS) : Fondateurs = Premium auto-validé
    * à 0 € + Boost offert via purchase_boost (sans Stripe).
@@ -501,6 +509,20 @@ export function MembershipPanel({
 
         {showFounderExhausted && (
           <FounderActiveBanner status={status} exhausted />
+        )}
+
+        {/* Freemium : code conservé — réactiver via SHOW_FREEMIUM = true */}
+        {showFreemiumClaim && (
+          <div className="space-y-3">
+            <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
+              Autre option
+            </p>
+            <FreemiumClaimCard
+              onActivate={onClaimFreemium!}
+              activating={claimingOffer}
+              primary={!founderAvailable}
+            />
+          </div>
         )}
       </div>
     );

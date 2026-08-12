@@ -2,6 +2,13 @@ export type MembershipPlan = 'free' | 'premium' | 'founder';
 
 export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
 
+/**
+ * Affiche l’offre Freemium sur la sélection d’offres / landing.
+ * - `false` : lancement Fondateur exclusif (code Freemium conservé).
+ * - `true`  : réaffiche « Continuer en Freemium » et la carte marketing.
+ */
+export const SHOW_FREEMIUM = false;
+
 export interface MembershipStatus {
   user_id?: string;
   /** True si une ligne memberships existe en base pour cet utilisateur */

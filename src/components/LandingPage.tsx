@@ -6,6 +6,7 @@ import { useFounderAvailability } from '@/lib/useFounderAvailability';
 import {
   founderOfferBadgeLabel,
   founderOfferSubtitle,
+  SHOW_FREEMIUM,
 } from '@/lib/membership';
 
 const FOUNDER_SUBTITLE =
@@ -348,8 +349,14 @@ export default function LandingPage({
 
   const visibleOffers = OFFERS.filter((offer) => {
     // Lancement Fondateur : une seule offre mise en avant tant qu’il reste des places.
-    if (availability.founder_open) return offer.id === 'founder';
-    return offer.id !== 'freemium';
+    if (availability.founder_open) {
+      if (offer.id === 'founder') return true;
+      // Freemium marketing : réactivable via SHOW_FREEMIUM = true
+      if (offer.id === 'freemium') return SHOW_FREEMIUM;
+      return false;
+    }
+    if (offer.id === 'freemium') return SHOW_FREEMIUM;
+    return true;
   }).map((offer) => {
     if (offer.id === 'founder') {
       return {

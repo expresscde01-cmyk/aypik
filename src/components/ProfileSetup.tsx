@@ -494,6 +494,7 @@ export default function ProfileSetup({
             offerSelected={offerChosen}
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
+            onClaimFreemium={() => void handleClaimOffer('free')}
             onPaidOfferSuccess={handlePaidOfferSuccess}
           />
 
