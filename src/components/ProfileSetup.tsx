@@ -29,6 +29,11 @@ import {
   INTEREST_CATEGORIES,
   MIN_INTERESTS,
 } from '@/lib/interests';
+import {
+  clearSignupDraft,
+  readSignupDraft,
+  writeSignupDraft,
+} from '@/lib/signupDraft';
 
 const CITY_SELECTION_ERROR =
   'Veuillez sélectionner une ville valide dans la liste déroulante';
@@ -60,6 +65,7 @@ export default function ProfileSetup({
     claimSignupOffer,
     ensureMembershipLinked,
   } = useMembership();
+  const isSignup = !allowAccountDeletion;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [claimingOffer, setClaimingOffer] = useState(false);
@@ -69,6 +75,7 @@ export default function ProfileSetup({
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draftReady, setDraftReady] = useState(!isSignup);
 
   const [displayName, setDisplayName] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -95,23 +102,79 @@ export default function ProfileSetup({
       if (error) {
         setError(error.message);
         setLoading(false);
+        setDraftReady(true);
         return;
       }
 
-      if (data) {
-        setDisplayName(data.display_name || '');
-        setBirthDate(data.birth_date || '');
-        setBio(data.bio || '');
-        setHasChildren(data.has_children ?? false);
-        const nextLocation = data.location || '';
-        setLocation(nextLocation);
-        setLocationSelected(Boolean(nextLocation.trim()));
-        setInterests(data.interests || []);
-        setPhotoUrl(data.photo_url || '');
+      const draft = isSignup ? readSignupDraft(user.id) : null;
+
+      // Base profil serveur, puis brouillon local (prioritaire) pour ne pas
+      // perdre les saisies au retour en arrière / remount.
+      const nextDisplayName =
+        draft?.displayName || data?.display_name || '';
+      const nextBirthDate = draft?.birthDate || data?.birth_date || '';
+      const nextBio = draft?.bio ?? data?.bio ?? '';
+      const nextHasChildren =
+        draft?.hasChildren ?? data?.has_children ?? false;
+      const nextLocation = draft?.location || data?.location || '';
+      const nextInterests =
+        draft?.interests?.length
+          ? draft.interests
+          : data?.interests || [];
+      const nextPhotoUrl = draft?.photoUrl || data?.photo_url || '';
+
+      setDisplayName(nextDisplayName);
+      setBirthDate(nextBirthDate);
+      setBio(nextBio);
+      setHasChildren(nextHasChildren);
+      setLocation(nextLocation);
+      setLocationSelected(
+        draft?.locationSelected ?? Boolean(nextLocation.trim())
+      );
+      setInterests(nextInterests);
+      setPhotoUrl(nextPhotoUrl);
+
+      if (draft) {
+        setSignupStep(draft.signupStep);
+        setOfferUnlocked(draft.offerUnlocked);
       }
+
       setLoading(false);
+      setDraftReady(true);
     })();
-  }, [user]);
+  }, [user, isSignup]);
+
+  // Persiste le brouillon d’inscription à chaque modification.
+  useEffect(() => {
+    if (!isSignup || !user || !draftReady || loading) return;
+    writeSignupDraft(user.id, {
+      signupStep,
+      offerUnlocked,
+      displayName,
+      birthDate,
+      bio,
+      hasChildren,
+      location,
+      locationSelected,
+      interests,
+      photoUrl,
+    });
+  }, [
+    isSignup,
+    user,
+    draftReady,
+    loading,
+    signupStep,
+    offerUnlocked,
+    displayName,
+    birthDate,
+    bio,
+    hasChildren,
+    location,
+    locationSelected,
+    interests,
+    photoUrl,
+  ]);
 
   useEffect(() => {
     if (!photoFile) {
@@ -153,7 +216,6 @@ export default function ProfileSetup({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const isSignup = !allowAccountDeletion;
   const offerChosen = status.membership_linked || offerUnlocked;
   const showOfferStep = isSignup && signupStep === 'offer';
   const showProfileForm = !isSignup || signupStep === 'profile';
@@ -172,6 +234,27 @@ export default function ProfileSetup({
     } finally {
       setClaimingOffer(false);
     }
+  };
+
+  const handleLeaveSignup = () => {
+    if (!user) {
+      void signOut();
+      return;
+    }
+    // Sauvegarde explicite avant déconnexion — les données restent au retour.
+    writeSignupDraft(user.id, {
+      signupStep,
+      offerUnlocked,
+      displayName,
+      birthDate,
+      bio,
+      hasChildren,
+      location,
+      locationSelected,
+      interests,
+      photoUrl,
+    });
+    void signOut();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -244,6 +327,7 @@ export default function ProfileSetup({
       setPhotoUrl(nextPhotoUrl);
       setPhotoFile(null);
       setPhotoFileName(null);
+      if (user) clearSignupDraft(user.id);
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -282,7 +366,7 @@ export default function ProfileSetup({
         <div className="max-w-2xl mx-auto space-y-6">
           <button
             type="button"
-            onClick={() => void signOut()}
+            onClick={handleLeaveSignup}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
