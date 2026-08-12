@@ -6,6 +6,7 @@ import {
   Baby,
   Camera,
   ArrowRight,
+  ArrowLeft,
   Trash2,
   ImagePlus,
 } from 'lucide-react';
@@ -279,6 +280,15 @@ export default function ProfileSetup({
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
         <div className="max-w-2xl mx-auto space-y-6">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour
+          </button>
+
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mb-2">
               Inscription · Étape 1/2
@@ -338,10 +348,15 @@ export default function ProfileSetup({
           <div className="mb-6">
             <button
               type="button"
-              onClick={() => setSignupStep('offer')}
-              className="text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+              onClick={() => {
+                setError(null);
+                setSignupStep('offer');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
             >
-              ← Retour aux offres
+              <ArrowLeft className="w-4 h-4" />
+              Retour aux offres
             </button>
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mt-3 text-center">
               Inscription · Étape 2/2
