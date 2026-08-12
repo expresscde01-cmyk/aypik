@@ -8,6 +8,8 @@ import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { LegalLink } from '@/components/LegalTerms';
 
+import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -32,9 +34,17 @@ export default function ProfileSetup({
   allowAccountDeletion?: boolean;
 }) {
   const { user, signOut } = useAuth();
-  const { status, purchaseBoost, refresh } = useMembership();
+  const {
+    status,
+    loading: membershipLoading,
+    purchaseBoost,
+    refresh,
+    claimSignupOffer,
+    ensureMembershipLinked,
+  } = useMembership();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [claimingOffer, setClaimingOffer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +93,34 @@ export default function ProfileSetup({
     );
   };
 
+  const isSignup = !allowAccountDeletion;
+  const offerChosen = status.membership_linked;
+  const canEditProfile = !isSignup || offerChosen;
+
+  const handleClaimOffer = async (offer: 'founder' | 'free') => {
+    setError(null);
+    setClaimingOffer(true);
+    try {
+      const result = await claimSignupOffer(offer);
+      if (!result.ok) {
+        setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
+      }
+    } finally {
+      setClaimingOffer(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (isSignup && !status.membership_linked) {
+      setError(
+        'Veuillez d’abord choisir et activer une offre pour continuer l’inscription.'
+      );
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -112,6 +147,12 @@ export default function ProfileSetup({
         .upsert(payload);
 
       if (upsertError) throw upsertError;
+
+      const membership = await ensureMembershipLinked();
+      if (!membership.ok) {
+        throw new Error(membership.error || MEMBERSHIP_REQUIRED_ERROR);
+      }
+
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -135,7 +176,7 @@ export default function ProfileSetup({
     }
   };
 
-  if (loading) {
+  if (loading || (isSignup && membershipLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-gray-400">Chargement...</div>
@@ -146,19 +187,27 @@ export default function ProfileSetup({
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Offres : Fondateur / Premium / Boost — logique conditionnelle via founders_remaining */}
         <div className="mb-6">
           <MembershipPanel
             status={status}
             onPurchaseBoost={purchaseBoost}
             onRefresh={refresh}
-            activatingFounder={saving}
-            profileFormId={
-              allowAccountDeletion ? undefined : 'profile-setup-form'
-            }
+            signupGate={isSignup}
+            claimingOffer={claimingOffer}
+            onClaimFounder={() => void handleClaimOffer('founder')}
+            onClaimFreemium={() => void handleClaimOffer('free')}
           />
         </div>
 
+        {error && isSignup && !canEditProfile && (
+          <div className="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {canEditProfile && (
+          <>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
@@ -354,6 +403,8 @@ export default function ProfileSetup({
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+          </>
+        )}
 
         {allowAccountDeletion && (
           <p className="mt-6 text-center text-xs text-gray-400">

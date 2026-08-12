@@ -4,6 +4,8 @@ export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
 
 export interface MembershipStatus {
   user_id?: string;
+  /** True si une ligne memberships existe en base pour cet utilisateur */
+  membership_linked: boolean;
   plan: MembershipPlan;
   is_founder: boolean;
   founder_number: number | null;
@@ -35,6 +37,7 @@ export interface MembershipStatus {
 }
 
 export const DEFAULT_MEMBERSHIP: MembershipStatus = {
+  membership_linked: false,
   plan: 'free',
   is_founder: false,
   founder_number: null,
@@ -88,6 +91,8 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
 
   return {
     user_id: typeof d.user_id === 'string' ? d.user_id : undefined,
+    membership_linked:
+      d.membership_linked === true || typeof d.user_id === 'string',
     plan: (d.plan as MembershipPlan) || 'free',
     is_founder,
     founder_number:
@@ -188,4 +193,23 @@ export function isFounderOfferOpen(status: MembershipStatus): boolean {
 /** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
 export function isFounderAvailable(status: MembershipStatus): boolean {
   return isFounderOfferOpen(status);
+}
+
+export const MEMBERSHIP_REQUIRED_ERROR =
+  "Impossible de finaliser l'inscription : aucune offre valide n'est liée à votre profil. Veuillez d'abord choisir une offre.";
+
+const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
+
+export function isValidLinkedOffer(status: {
+  membership_linked?: boolean;
+  linked?: boolean;
+  plan?: string | null;
+  user_id?: string;
+}): boolean {
+  const linked =
+    status.membership_linked === true ||
+    status.linked === true ||
+    typeof status.user_id === 'string';
+  if (!linked) return false;
+  return VALID_PLANS.includes((status.plan as MembershipPlan) || 'free');
 }
