@@ -509,7 +509,7 @@ export function MembershipPanel({
   }
 
   // Fin du tunnel inscription : confirmation courte uniquement (pas la grille
-  // « Nos offres »), pour laisser place au CTA « Valider mon inscription ».
+  // « Nos offres »). Le formulaire de profil est déjà affiché juste en dessous.
   if (signupGate && offerChosen) {
     const offerLabel = status.is_founder
       ? 'Membre Fondateur'
@@ -517,25 +517,12 @@ export function MembershipPanel({
         ? 'Premium'
         : 'Freemium';
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 space-y-3">
-        <div className="flex items-start gap-2">
-          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-emerald-950">
-              Offre {offerLabel} activée
-            </p>
-            <p className="text-sm text-emerald-900 leading-relaxed">
-              Dernière étape : complétez votre profil ci-dessous, puis cliquez
-              sur <strong>Valider mon inscription</strong>.
-            </p>
-          </div>
-        </div>
-        <a
-          href="#profile-setup-form"
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
-        >
-          Compléter mon profil
-        </a>
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-2">
+        <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-emerald-900 leading-relaxed">
+          Offre <strong>{offerLabel}</strong> activée. Complétez votre profil
+          ci-dessous, puis validez votre inscription.
+        </p>
       </div>
     );
   }
