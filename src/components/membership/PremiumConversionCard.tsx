@@ -186,6 +186,7 @@ export function PremiumConversionCard({
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}
           status={status}
+          product="premium"
           onSuccess={onPaymentSuccess}
         />
       )}

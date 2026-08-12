@@ -325,7 +325,7 @@ function PostFounderChoicePanel() {
 
 export function MembershipPanel({
   status,
-  onPurchaseBoost,
+  onPurchaseBoost: _onPurchaseBoost,
   onRefresh,
   onClaimFounder,
   onClaimFreemium,
@@ -334,15 +334,18 @@ export function MembershipPanel({
   signupGate = false,
   /** Si fourni, prime sur status.membership_linked (déblocage immédiat après claim). */
   offerSelected,
+  /** Après paiement Premium / Boost réussi (ex. passer à l’étape profil). */
+  onPaidOfferSuccess,
 }: {
   status: MembershipStatus;
-  onPurchaseBoost: () => Promise<string | null>;
+  onPurchaseBoost?: () => Promise<string | null>;
   onRefresh?: () => void;
   onClaimFounder?: () => void;
   onClaimFreemium?: () => void;
   claimingOffer?: boolean;
   signupGate?: boolean;
   offerSelected?: boolean;
+  onPaidOfferSuccess?: () => void;
 }) {
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
@@ -451,6 +454,11 @@ export function MembershipPanel({
     onRefresh?.();
   };
 
+  const handlePaidSuccess = () => {
+    onRefresh?.();
+    onPaidOfferSuccess?.();
+  };
+
   if (signupGate && !offerChosen) {
     return (
       <div className="space-y-4">
@@ -487,7 +495,7 @@ export function MembershipPanel({
             <PremiumConversionCard
               status={status}
               founderExpired={founderExpired}
-              onPaymentSuccess={onRefresh}
+              onPaymentSuccess={handlePaidSuccess}
               tone={premiumTone}
               disabled={premiumDisabled}
               disabledReason={premiumDisabledReason}
@@ -504,11 +512,12 @@ export function MembershipPanel({
 
           {showBoost && (
             <BoostPurchaseCard
+              status={status}
               hasBoost={status.has_boost}
               boostEndsAt={status.boost_ends_at}
-              onPurchase={onPurchaseBoost}
               purchaseDisabled={boostPurchaseDisabled}
               purchaseDisabledReason={boostDisabledReason}
+              onPaymentSuccess={handlePaidSuccess}
             />
           )}
         </div>
@@ -563,7 +572,7 @@ export function MembershipPanel({
           <PremiumConversionCard
             status={status}
             founderExpired={founderExpired}
-            onPaymentSuccess={onRefresh}
+            onPaymentSuccess={handlePaidSuccess}
             tone={premiumTone}
             disabled={premiumDisabled || onFreemium}
             disabledReason={
@@ -629,11 +638,12 @@ export function MembershipPanel({
 
         {showBoost && (
           <BoostPurchaseCard
+            status={status}
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
-            onPurchase={onPurchaseBoost}
             purchaseDisabled={boostPurchaseDisabled}
             purchaseDisabledReason={boostDisabledReason}
+            onPaymentSuccess={handlePaidSuccess}
           />
         )}
       </div>

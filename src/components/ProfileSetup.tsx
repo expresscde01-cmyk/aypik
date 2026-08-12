@@ -34,6 +34,10 @@ import {
   readSignupDraft,
   writeSignupDraft,
 } from '@/lib/signupDraft';
+import {
+  capturePayPalBoostOrder,
+  consumePaymentReturn,
+} from '@/lib/payments';
 
 const CITY_SELECTION_ERROR =
   'Veuillez sélectionner une ville valide dans la liste déroulante';
@@ -351,6 +355,42 @@ export default function ProfileSetup({
     }
   };
 
+  const handlePaidOfferSuccess = () => {
+    setOfferUnlocked(true);
+    setSignupStep('profile');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Retour PayPal / Stripe : finaliser Boost si besoin, puis étape profil.
+  useEffect(() => {
+    if (!isSignup || !user || loading) return;
+    const product = consumePaymentReturn();
+    if (!product) return;
+
+    let cancelled = false;
+    (async () => {
+      if (product === 'boost') {
+        try {
+          const orderId = sessionStorage.getItem('aypik_paypal_boost_order');
+          if (orderId) {
+            sessionStorage.removeItem('aypik_paypal_boost_order');
+            await capturePayPalBoostOrder(orderId);
+          }
+        } catch {
+          // webhook / capture déjà faite
+        }
+      }
+      await refresh();
+      if (cancelled) return;
+      setOfferUnlocked(true);
+      setSignupStep('profile');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignup, user, loading, refresh]);
+
   if (loading || (isSignup && membershipLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -396,6 +436,7 @@ export default function ProfileSetup({
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
             onClaimFreemium={() => void handleClaimOffer('free')}
+            onPaidOfferSuccess={handlePaidOfferSuccess}
           />
 
           {error && (
