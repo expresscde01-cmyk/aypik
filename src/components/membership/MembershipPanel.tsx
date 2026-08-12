@@ -504,11 +504,16 @@ export function MembershipPanel({
         )}
 
         <div className="space-y-3">
-          <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
-            {founderAvailable ? 'Autres options' : 'Offres disponibles'}
-          </p>
+          {showFreemiumClaim && (
+            <FreemiumClaimCard
+              onActivate={onClaimFreemium!}
+              activating={claimingOffer}
+              primary={!founderAvailable}
+            />
+          )}
 
-          {showPremiumOfferCard && (
+          {/* Premium / Boost : visibles mais non prioritaires tant que Fondateur est ouvert */}
+          {showPremiumOfferCard && !founderAvailable && (
             <PremiumConversionCard
               status={status}
               founderExpired={founderExpired}
@@ -518,38 +523,24 @@ export function MembershipPanel({
               disabledReason={premiumDisabledReason}
             />
           )}
-
-          {!ENABLE_PAYMENTS && signupGate && !offerChosen && (
-            <p className="text-xs text-center text-gray-500 leading-relaxed px-1">
-              Les paiements Premium et Boost seront disponibles plus tard.
-              Rejoignez l’offre Fondateur gratuitement, ou continuez en
-              Freemium.
-            </p>
-          )}
-
-          {showFreemiumClaim && (
-            <FreemiumClaimCard
-              onActivate={onClaimFreemium!}
-              activating={claimingOffer}
-              primary={!founderAvailable}
-            />
-          )}
-
-          {showBoost && !(signupGate && !offerChosen) && (
-            <BoostPurchaseCard
-              status={status}
-              hasBoost={status.has_boost}
-              boostEndsAt={status.boost_ends_at}
-              purchaseDisabled={boostPurchaseDisabled}
-              purchaseDisabledReason={boostDisabledReason}
-              onPaymentSuccess={handlePaidSuccess}
-              onComplimentaryActivate={
-                onFounderBenefits ? handleComplimentaryBoost : undefined
-              }
-              complimentaryActivating={boostActivating}
-            />
-          )}
         </div>
+      </div>
+    );
+  }
+
+  // Tunnel inscription : offre déjà choisie — vue courte (CTA d’étape hors panel).
+  if (signupGate && offerChosen) {
+    return (
+      <div className="space-y-4">
+        {onFounderBenefits || status.is_founder ? (
+          <FounderActiveBanner status={status} onActivate={undefined} />
+        ) : (
+          <FreemiumActiveBanner />
+        )}
+        <p className="text-sm text-center text-gray-600 leading-relaxed px-1">
+          Offre active. Utilisez le bouton ci-dessous pour continuer vers votre
+          profil.
+        </p>
       </div>
     );
   }

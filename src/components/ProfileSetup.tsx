@@ -402,17 +402,21 @@ export default function ProfileSetup({
   // ——— Écran 1 : sélection / visualisation de l’offre (inscription) ———
   if (showOfferStep) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <button
-            type="button"
-            onClick={handleLeaveSignup}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 flex flex-col">
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-rose-100">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center">
+            <button
+              type="button"
+              onClick={handleLeaveSignup}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </button>
+          </div>
+        </div>
 
+        <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-6 pb-28">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mb-2">
               Inscription · Étape 1/2
@@ -445,32 +449,36 @@ export default function ProfileSetup({
               <span>{error}</span>
             </div>
           )}
-
-          {offerChosen && (
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setSignupStep('profile');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
-            >
-              Valider cette étape
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
         </div>
+
+        {offerChosen && (
+          <div className="sticky bottom-0 z-30 border-t border-rose-100 bg-white/95 backdrop-blur-md">
+            <div className="max-w-2xl mx-auto px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setSignupStep('profile');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 transition-all flex items-center justify-center gap-2"
+              >
+                Valider cette étape
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   // ——— Écran 2 : profil (inscription) ou édition compte ———
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        {isSignup && (
-          <div className="mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 flex flex-col">
+      {isSignup && (
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-rose-100">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => {
@@ -478,17 +486,19 @@ export default function ProfileSetup({
                 setSignupStep('offer');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Retour aux offres
             </button>
-            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mt-3 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">
               Inscription · Étape 2/2
             </p>
           </div>
-        )}
+        </div>
+      )}
 
+      <div className={`max-w-2xl mx-auto w-full px-4 py-6 ${isSignup ? 'pb-28' : ''}`}>
         {!isSignup && (
           <div className="mb-6">
             <MembershipPanel
@@ -764,20 +774,20 @@ export default function ProfileSetup({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={saving || hasChildren}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {saving
-              ? photoFile
-                ? 'Envoi de la photo…'
-                : 'Sauvegarde...'
-              : isSignup
-                ? 'Validez votre inscription'
+          {!isSignup && (
+            <button
+              type="submit"
+              disabled={saving || hasChildren}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {saving
+                ? photoFile
+                  ? 'Envoi de la photo…'
+                  : 'Sauvegarde...'
                 : 'Enregistrer mon profil'}
-            {!saving && <ArrowRight className="w-4 h-4" />}
-          </button>
+              {!saving && <ArrowRight className="w-4 h-4" />}
+            </button>
+          )}
         </form>
           </>
         )}
@@ -836,6 +846,26 @@ export default function ProfileSetup({
           </div>
         )}
       </div>
+
+      {isSignup && showProfileForm && (
+        <div className="sticky bottom-0 z-30 border-t border-rose-100 bg-white/95 backdrop-blur-md mt-auto">
+          <div className="max-w-2xl mx-auto px-4 py-3">
+            <button
+              type="submit"
+              form="profile-setup-form"
+              disabled={saving || hasChildren}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {saving
+                ? photoFile
+                  ? 'Envoi de la photo…'
+                  : 'Sauvegarde...'
+                : 'Validez votre inscription'}
+              {!saving && <ArrowRight className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
