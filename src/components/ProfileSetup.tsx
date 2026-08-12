@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Heart,
   AlertCircle,
@@ -33,6 +33,7 @@ import {
   clearSignupDraft,
   readSignupDraft,
   writeSignupDraft,
+  type SignupDraft,
 } from '@/lib/signupDraft';
 import {
   capturePayPalBoostOrder,
@@ -93,10 +94,60 @@ export default function ProfileSetup({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFileName, setPhotoFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Empêche un refresh auth d’écraser la saisie en cours. */
+  const hydratedUserIdRef = useRef<string | null>(null);
+  const draftSnapshotRef = useRef<SignupDraft | null>(null);
+
+  const buildDraft = useCallback(
+    (step: 'offer' | 'profile' = signupStep): SignupDraft => ({
+      signupStep: step,
+      offerUnlocked,
+      displayName,
+      birthDate,
+      bio,
+      hasChildren,
+      location,
+      locationSelected,
+      interests,
+      photoUrl,
+    }),
+    [
+      signupStep,
+      offerUnlocked,
+      displayName,
+      birthDate,
+      bio,
+      hasChildren,
+      location,
+      locationSelected,
+      interests,
+      photoUrl,
+    ]
+  );
+
+  /** Sauvegarde synchrone du brouillon (retour arrière / déconnexion). */
+  const flushDraft = useCallback(
+    (step?: 'offer' | 'profile') => {
+      if (!isSignup || !user) return;
+      const draft = buildDraft(step ?? signupStep);
+      draftSnapshotRef.current = draft;
+      writeSignupDraft(user.id, draft);
+    },
+    [isSignup, user, buildDraft, signupStep]
+  );
+
+  useEffect(() => {
+    draftSnapshotRef.current = buildDraft();
+  }, [buildDraft]);
 
   useEffect(() => {
     (async () => {
       if (!user) return;
+      // Une seule hydratation par utilisateur : ne pas réécraser la saisie
+      // quand l’objet session/user est rafraîchi.
+      if (hydratedUserIdRef.current === user.id) return;
+      hydratedUserIdRef.current = user.id;
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -112,19 +163,20 @@ export default function ProfileSetup({
 
       const draft = isSignup ? readSignupDraft(user.id) : null;
 
-      // Base profil serveur, puis brouillon local (prioritaire) pour ne pas
-      // perdre les saisies au retour en arrière / remount.
+      // Brouillon local prioritaire : le retour arrière ne perd jamais la saisie.
       const nextDisplayName =
         draft?.displayName || data?.display_name || '';
       const nextBirthDate = draft?.birthDate || data?.birth_date || '';
-      const nextBio = draft?.bio ?? data?.bio ?? '';
+      const nextBio =
+        draft && typeof draft.bio === 'string'
+          ? draft.bio
+          : (data?.bio ?? '');
       const nextHasChildren =
-        draft?.hasChildren ?? data?.has_children ?? false;
+        draft && typeof draft.hasChildren === 'boolean'
+          ? draft.hasChildren
+          : (data?.has_children ?? false);
       const nextLocation = draft?.location || data?.location || '';
-      const nextInterests =
-        draft?.interests?.length
-          ? draft.interests
-          : data?.interests || [];
+      const nextInterests = draft ? draft.interests : data?.interests || [];
       const nextPhotoUrl = draft?.photoUrl || data?.photo_url || '';
 
       setDisplayName(nextDisplayName);
@@ -133,7 +185,7 @@ export default function ProfileSetup({
       setHasChildren(nextHasChildren);
       setLocation(nextLocation);
       setLocationSelected(
-        draft?.locationSelected ?? Boolean(nextLocation.trim())
+        draft ? draft.locationSelected : Boolean(nextLocation.trim())
       );
       setInterests(nextInterests);
       setPhotoUrl(nextPhotoUrl);
@@ -141,44 +193,21 @@ export default function ProfileSetup({
       if (draft) {
         setSignupStep(draft.signupStep);
         setOfferUnlocked(draft.offerUnlocked);
+        draftSnapshotRef.current = draft;
       }
 
       setLoading(false);
       setDraftReady(true);
     })();
-  }, [user, isSignup]);
+  }, [user?.id, isSignup, user]);
 
   // Persiste le brouillon d’inscription à chaque modification.
   useEffect(() => {
     if (!isSignup || !user || !draftReady || loading) return;
-    writeSignupDraft(user.id, {
-      signupStep,
-      offerUnlocked,
-      displayName,
-      birthDate,
-      bio,
-      hasChildren,
-      location,
-      locationSelected,
-      interests,
-      photoUrl,
-    });
-  }, [
-    isSignup,
-    user,
-    draftReady,
-    loading,
-    signupStep,
-    offerUnlocked,
-    displayName,
-    birthDate,
-    bio,
-    hasChildren,
-    location,
-    locationSelected,
-    interests,
-    photoUrl,
-  ]);
+    const draft = buildDraft();
+    draftSnapshotRef.current = draft;
+    writeSignupDraft(user.id, draft);
+  }, [isSignup, user, draftReady, loading, buildDraft]);
 
   useEffect(() => {
     if (!photoFile) {
@@ -224,6 +253,21 @@ export default function ProfileSetup({
   const showOfferStep = isSignup && signupStep === 'offer';
   const showProfileForm = !isSignup || signupStep === 'profile';
 
+  const goToOfferStep = () => {
+    setError(null);
+    // Garde toute la saisie profil : on ne change que l’étape.
+    flushDraft('offer');
+    setSignupStep('offer');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goToProfileStep = () => {
+    setError(null);
+    flushDraft('profile');
+    setSignupStep('profile');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleClaimOffer = async (offer: 'founder' | 'free') => {
     setError(null);
     setClaimingOffer(true);
@@ -235,6 +279,15 @@ export default function ProfileSetup({
       }
       // Reste sur l’écran offres : un CTA d’étape mène ensuite au profil.
       setOfferUnlocked(true);
+      // offerUnlocked pas encore dans le closure de buildDraft : flush manuel.
+      if (user) {
+        const draft = {
+          ...buildDraft(signupStep),
+          offerUnlocked: true,
+        };
+        draftSnapshotRef.current = draft;
+        writeSignupDraft(user.id, draft);
+      }
     } finally {
       setClaimingOffer(false);
     }
@@ -246,18 +299,8 @@ export default function ProfileSetup({
       return;
     }
     // Sauvegarde explicite avant déconnexion — les données restent au retour.
-    writeSignupDraft(user.id, {
-      signupStep,
-      offerUnlocked,
-      displayName,
-      birthDate,
-      bio,
-      hasChildren,
-      location,
-      locationSelected,
-      interests,
-      photoUrl,
-    });
+    const draft = draftSnapshotRef.current ?? buildDraft();
+    writeSignupDraft(user.id, draft);
     void signOut();
   };
 
@@ -357,6 +400,11 @@ export default function ProfileSetup({
 
   const handlePaidOfferSuccess = () => {
     setOfferUnlocked(true);
+    if (user) {
+      const draft = { ...buildDraft('profile'), offerUnlocked: true };
+      draftSnapshotRef.current = draft;
+      writeSignupDraft(user.id, draft);
+    }
     setSignupStep('profile');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -383,13 +431,20 @@ export default function ProfileSetup({
       await refresh();
       if (cancelled) return;
       setOfferUnlocked(true);
+      const draft = {
+        ...(draftSnapshotRef.current ?? buildDraft('profile')),
+        offerUnlocked: true,
+        signupStep: 'profile' as const,
+      };
+      draftSnapshotRef.current = draft;
+      writeSignupDraft(user.id, draft);
       setSignupStep('profile');
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [isSignup, user, loading, refresh]);
+  }, [isSignup, user, loading, refresh, buildDraft]);
 
   if (loading || (isSignup && membershipLoading)) {
     return (
@@ -456,11 +511,7 @@ export default function ProfileSetup({
             <div className="max-w-2xl mx-auto px-4 py-3">
               <button
                 type="button"
-                onClick={() => {
-                  setError(null);
-                  setSignupStep('profile');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
+                onClick={goToProfileStep}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 transition-all flex items-center justify-center gap-2"
               >
                 Valider cette étape
@@ -481,11 +532,7 @@ export default function ProfileSetup({
           <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => {
-                setError(null);
-                setSignupStep('offer');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={goToOfferStep}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
