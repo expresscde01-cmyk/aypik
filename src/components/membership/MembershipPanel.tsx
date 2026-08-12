@@ -352,9 +352,16 @@ export function MembershipPanel({
   const offerChosen = status.membership_linked;
   /** Bénéficie déjà de l’offre Fondateur (période 6 mois en cours). */
   const onFounderBenefits = periodActive && status.is_founder;
-  /** Offre Freemium active (plan free lié, hors Fondateur). */
+  /**
+   * Offre Freemium active : offre liée, hors Fondateur / Premium.
+   * Détection large pour éviter qu’une carte Fondateur colorée réapparaisse.
+   */
   const onFreemium =
-    offerChosen && status.plan === 'free' && !status.is_founder && !periodActive;
+    offerChosen &&
+    !status.is_founder &&
+    !periodActive &&
+    status.plan !== 'premium' &&
+    status.plan !== 'founder';
 
   const showFounderHero =
     !onFreemium && (founderAvailable || status.is_founder);
@@ -390,7 +397,10 @@ export function MembershipPanel({
     status.plan === 'premium';
   const showPremiumOffer =
     !showPaidPremiumActive &&
-    (premiumDisabled || !status.has_premium || founderExpired);
+    (onFreemium ||
+      premiumDisabled ||
+      !status.has_premium ||
+      founderExpired);
   const premiumTone =
     (!founderAvailable && !onFreemium) || founderExpired
       ? 'primary'
@@ -405,8 +415,13 @@ export function MembershipPanel({
     signupGate && !offerChosen && Boolean(onClaimFreemium);
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
   const showFreemiumLocked = onFounderBenefits;
-  /** Boost achetable dès l’écran d’offres, quel que soit le choix d’offre. */
+  /**
+   * Boost : coloré seulement s’il a déjà été acheté (page précédente),
+   * sinon grisé quand Freemium est l’offre active.
+   */
   const showBoost = true;
+  const boostPurchaseDisabled = onFreemium && !status.has_boost;
+  const boostDisabledReason = FREEMIUM_ACTIVE_UNSELECTED_LABEL;
 
   const handleCancel = async () => {
     if (
@@ -484,6 +499,8 @@ export function MembershipPanel({
               hasBoost={status.has_boost}
               boostEndsAt={status.boost_ends_at}
               onPurchase={onPurchaseBoost}
+              purchaseDisabled={boostPurchaseDisabled}
+              purchaseDisabledReason={boostDisabledReason}
             />
           )}
         </div>
@@ -553,8 +570,12 @@ export function MembershipPanel({
             founderExpired={founderExpired}
             onPaymentSuccess={onRefresh}
             tone={premiumTone}
-            disabled={premiumDisabled}
-            disabledReason={premiumDisabledReason}
+            disabled={premiumDisabled || onFreemium}
+            disabledReason={
+              onFreemium
+                ? FREEMIUM_ACTIVE_UNSELECTED_LABEL
+                : premiumDisabledReason
+            }
           />
         )}
 
@@ -616,6 +637,8 @@ export function MembershipPanel({
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
+            purchaseDisabled={boostPurchaseDisabled}
+            purchaseDisabledReason={boostDisabledReason}
           />
         )}
       </div>
