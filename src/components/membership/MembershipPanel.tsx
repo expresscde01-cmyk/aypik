@@ -98,11 +98,11 @@ function FounderActiveBanner({
           </li>
         </ul>
 
-        <div className="rounded-xl bg-white/70 border border-white/80 px-3.5 py-2.5">
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-900/80">
+        <div className="rounded-2xl bg-white/75 border border-white/90 px-4 py-3.5 space-y-1.5">
+          <p className="text-sm sm:text-base font-bold text-amber-950 tracking-tight">
             {AFTER_FOUNDER_TITLE}
           </p>
-          <p className="mt-1 text-xs sm:text-sm font-medium text-amber-950/80 leading-snug">
+          <p className="text-sm font-medium text-amber-950/85 leading-relaxed">
             {AFTER_FOUNDER_PERIOD_COPY}
           </p>
         </div>

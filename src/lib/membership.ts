@@ -201,12 +201,7 @@ export const MEMBERSHIP_REQUIRED_ERROR =
 /** Liberté de choix à l’échéance des mois Fondateur (aucune reconduction forcée). */
 export const AFTER_FOUNDER_TITLE = "À l'échéance de vos 6 mois";
 
-/** Version courte pour l’UI (cartes / bannières). */
 export const AFTER_FOUNDER_PERIOD_COPY =
-  'Interrompre, Freemium ou Premium : libre choix, sans engagement ni prélèvement forcé.';
-
-/** Version détaillée (CGU / notifications). */
-export const AFTER_FOUNDER_PERIOD_COPY_FULL =
   "Vous pourrez aussi bien interrompre votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.";
 
 const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
