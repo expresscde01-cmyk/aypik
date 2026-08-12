@@ -29,6 +29,9 @@ import {
   MIN_INTERESTS,
 } from '@/lib/interests';
 
+const CITY_SELECTION_ERROR =
+  'Veuillez sélectionner une ville valide dans la liste déroulante';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -175,9 +178,7 @@ export default function ProfileSetup({
     }
 
     if (!location.trim() || !locationSelected) {
-      setError(
-        'Veuillez sélectionner une ville valide dans la liste déroulante'
-      );
+      setError(CITY_SELECTION_ERROR);
       return;
     }
 
@@ -411,7 +412,14 @@ export default function ProfileSetup({
               value={location}
               onChange={setLocation}
               selected={locationSelected}
-              onSelectedChange={setLocationSelected}
+              onSelectedChange={(nextSelected) => {
+                setLocationSelected(nextSelected);
+                if (nextSelected) {
+                  setError((prev) =>
+                    prev === CITY_SELECTION_ERROR ? null : prev
+                  );
+                }
+              }}
               required
               placeholder="Tapez une ville ou un code postal…"
             />
