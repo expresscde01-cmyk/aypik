@@ -161,12 +161,12 @@ function FounderActiveBanner({
 /** Carte principale quand Freemium est l’offre active (même poids visuel que Fondateur). */
 function FreemiumActiveBanner() {
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-gradient-to-br from-sky-400 via-sky-300 to-sky-100 shadow-lg shadow-sky-200/50">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-cyan-200 bg-gradient-to-br from-sky-500 via-cyan-400 to-sky-200 shadow-lg shadow-cyan-200/50">
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-45"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 90% 12%, #fff8d4 0%, #ffe97a 14%, rgba(255,248,220,0.75) 28%, rgba(255,255,255,0.35) 42%, transparent 58%), radial-gradient(circle at 12% 82%, rgba(255,255,255,0.55) 0%, transparent 45%)',
+            'radial-gradient(circle at 88% 14%, rgba(255,255,255,0.55) 0%, transparent 42%), radial-gradient(circle at 12% 80%, rgba(224,242,254,0.65) 0%, transparent 48%), radial-gradient(circle at 45% 35%, rgba(34,211,238,0.25) 0%, transparent 45%)',
         }}
       />
       <div className="relative p-5 sm:p-6 space-y-4">
@@ -401,14 +401,8 @@ export function MembershipPanel({
     signupGate && !offerChosen && Boolean(onClaimFreemium);
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
   const showFreemiumLocked = onFounderBenefits;
-  /**
-   * Boost toujours visible à titre d’info.
-   * Achat désactivé pendant l’onboarding ; actif une fois l’inscription finalisée.
-   */
+  /** Boost achetable dès l’écran d’offres, quel que soit le choix d’offre. */
   const showBoost = true;
-  const boostPurchaseDisabled = signupGate;
-  const boostDisabledReason =
-    'Disponible une fois l’inscription complètement finalisée.';
 
   const handleCancel = async () => {
     if (
@@ -486,8 +480,6 @@ export function MembershipPanel({
               hasBoost={status.has_boost}
               boostEndsAt={status.boost_ends_at}
               onPurchase={onPurchaseBoost}
-              purchaseDisabled={boostPurchaseDisabled}
-              purchaseDisabledReason={boostDisabledReason}
             />
           )}
         </div>
@@ -620,8 +612,6 @@ export function MembershipPanel({
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
-            purchaseDisabled={boostPurchaseDisabled}
-            purchaseDisabledReason={boostDisabledReason}
           />
         )}
       </div>

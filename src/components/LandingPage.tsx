@@ -1,10 +1,6 @@
 import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
-import {
-  AFTER_FOUNDER_PERIOD_COPY,
-  AFTER_FOUNDER_TITLE,
-} from '@/lib/membership';
 
 const FOUNDER_SUBTITLE =
   '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
@@ -40,7 +36,6 @@ const OFFERS = [
     badge: 'Offre limitée',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
-    point2: `${AFTER_FOUNDER_TITLE} — ${AFTER_FOUNDER_PERIOD_COPY}`,
     accent: 'founder' as const,
   },
   {
@@ -53,7 +48,8 @@ const OFFERS = [
   {
     id: 'boost',
     title: 'Boost 24h',
-    description: 'Visibilité maximale.',
+    description:
+      'Visibilité maximale pendant 24 h. Achat ponctuel, disponible à tout moment.',
     accent: 'boost' as const,
   },
   {
