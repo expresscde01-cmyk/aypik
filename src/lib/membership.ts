@@ -199,11 +199,10 @@ export const MEMBERSHIP_REQUIRED_ERROR =
   "Impossible de finaliser l'inscription : aucune offre valide n'est liée à votre profil. Veuillez d'abord choisir une offre.";
 
 /** Liberté de choix à l’échéance des mois Fondateur (aucune reconduction forcée). */
-export const AFTER_FOUNDER_PERIOD_COPY =
-  "Après vos 6 mois offerts, vous pourrez aussi bien cesser votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium qui sont toutes des options entièrement sans engagement.";
+export const AFTER_FOUNDER_TITLE = "À l'échéance de vos 6 mois";
 
-export const AFTER_FOUNDER_NO_AUTO_RENEWAL =
-  'Aucune reconduction automatique : vous choisissez librement, sans prélèvement forcé.';
+export const AFTER_FOUNDER_PERIOD_COPY =
+  "Vous pourrez aussi bien interrompre votre adhésion, migrer vers l'offre Freemium que passer à l'offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.";
 
 const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
 

@@ -1,4 +1,4 @@
-import { Award, Bell, Check, Gift, Heart, Sparkles } from 'lucide-react';
+import { Award, Bell, Check, Gift, Heart } from 'lucide-react';
 import { useState } from 'react';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
@@ -9,8 +9,8 @@ import {
   daysUntil,
   formatPremiumPriceLabel,
   isFounderAvailable,
+  AFTER_FOUNDER_TITLE,
   AFTER_FOUNDER_PERIOD_COPY,
-  AFTER_FOUNDER_NO_AUTO_RENEWAL,
   type MembershipStatus,
 } from '@/lib/membership';
 
@@ -96,14 +96,16 @@ function FounderActiveBanner({
             </span>
             Inscription sans carte bancaire
           </li>
-          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-amber-950">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            </span>
-            À l’échéance : cessez, Freemium ou Premium — sans engagement ni
-            reconduction forcée
-          </li>
         </ul>
+
+        <div className="rounded-2xl bg-white/75 border border-white/90 px-4 py-3.5 space-y-1.5">
+          <p className="text-sm sm:text-base font-bold text-amber-950 tracking-tight">
+            {AFTER_FOUNDER_TITLE}
+          </p>
+          <p className="text-sm font-medium text-amber-950/85 leading-relaxed">
+            {AFTER_FOUNDER_PERIOD_COPY}
+          </p>
+        </div>
 
         {showCta && (
           <div className="flex justify-end pt-1">
@@ -189,35 +191,6 @@ function FreemiumClaimCard({
 const PAID_PREMIUM_LINE =
   "Premium à 19,99 € / mois pour un confort d'utilisation, sans engagement.";
 
-function OptionalPremiumNote({ months }: { months: number }) {
-  const afterCopy =
-    months === 6
-      ? AFTER_FOUNDER_PERIOD_COPY
-      : AFTER_FOUNDER_PERIOD_COPY.replace('6 mois', `${months} mois`);
-
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-gray-400" />
-        </div>
-        <div className="min-w-0 space-y-1.5">
-          <p className="text-sm font-semibold text-gray-700">
-            Après vos {months} mois offerts
-          </p>
-          <p className="text-xs text-gray-600 leading-relaxed">{afterCopy}</p>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            {AFTER_FOUNDER_NO_AUTO_RENEWAL}
-          </p>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            Si vous le souhaitez plus tard : {PAID_PREMIUM_LINE}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PostFounderChoicePanel() {
   return (
     <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3">
@@ -225,15 +198,12 @@ function PostFounderChoicePanel() {
         <div className="w-9 h-9 rounded-xl bg-white border border-emerald-100 flex items-center justify-center flex-shrink-0">
           <Heart className="w-4 h-4 text-emerald-600" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-1.5">
           <p className="text-sm font-semibold text-emerald-950">
-            Votre période offerte est terminée — libre choix
+            {AFTER_FOUNDER_TITLE}
           </p>
-          <p className="text-xs text-emerald-900/90 mt-1 leading-relaxed">
+          <p className="text-xs text-emerald-900/90 leading-relaxed">
             {AFTER_FOUNDER_PERIOD_COPY}
-          </p>
-          <p className="text-xs text-emerald-800/80 mt-1 leading-relaxed">
-            {AFTER_FOUNDER_NO_AUTO_RENEWAL}
           </p>
         </div>
       </div>
@@ -241,7 +211,7 @@ function PostFounderChoicePanel() {
       <ul className="space-y-2">
         <li className="rounded-xl border border-white/80 bg-white/80 px-3 py-2.5">
           <p className="text-sm font-semibold text-gray-900">
-            Cesser votre adhésion
+            Interrompre votre adhésion
           </p>
           <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
             Aucun prélèvement ne démarre. Vous pouvez quitter quand vous voulez,
@@ -330,7 +300,7 @@ export function MembershipPanel({
   const handleCancel = async () => {
     if (
       !window.confirm(
-        'Résilier Premium ? Aucune reconduction forcée : vous ne serez plus prélevé. Aucun frais de résiliation. L’accès reste actif jusqu’à la fin de la période déjà payée, puis vous pourrez rester en Freemium, choisir une autre offre, ou cesser votre adhésion.'
+        'Résilier Premium ? Aucune reconduction forcée : vous ne serez plus prélevé. Aucun frais de résiliation. L’accès reste actif jusqu’à la fin de la période déjà payée, puis vous pourrez rester en Freemium, choisir une autre offre, ou interrompre votre adhésion.'
       )
     ) {
       return;
@@ -427,19 +397,14 @@ export function MembershipPanel({
           <Bell className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-900">
-              Votre période Fondateur touche à sa fin
+              {AFTER_FOUNDER_TITLE}
             </p>
             <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, vos{' '}
-              {status.founder_premium_months} mois offerts se terminent.{' '}
-              {AFTER_FOUNDER_PERIOD_COPY} {AFTER_FOUNDER_NO_AUTO_RENEWAL}
+              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, vos mois offerts
+              se terminent. {AFTER_FOUNDER_PERIOD_COPY}
             </p>
           </div>
         </div>
-      )}
-
-      {periodActive && (
-        <OptionalPremiumNote months={status.founder_premium_months} />
       )}
 
       {founderExpired && <PostFounderChoicePanel />}
@@ -478,7 +443,7 @@ export function MembershipPanel({
               Résiliation en un clic, sans frais ni parcours compliqué. Aucune
               reconduction forcée : vous conservez Premium jusqu’à la fin de la
               période déjà payée, puis vous pouvez rester en Freemium, choisir
-              une autre offre, ou cesser votre adhésion.
+              une autre offre, ou interrompre votre adhésion.
             </p>
             <button
               type="button"

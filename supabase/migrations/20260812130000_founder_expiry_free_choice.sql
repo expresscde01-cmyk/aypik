@@ -29,8 +29,8 @@ BEGIN
   SELECT
     user_id,
     'founder_expiring_soon',
-    'Votre période Fondateur touche à sa fin',
-    'Après vos 6 mois offerts, vous pourrez aussi bien cesser votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium qui sont toutes des options entièrement sans engagement. Aucune reconduction automatique forcée.'
+    'À l''échéance de vos 6 mois',
+    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté.'
   FROM due;
 
   GET DIAGNOSTICS n_warned = ROW_COUNT;
@@ -49,8 +49,8 @@ BEGIN
   SELECT
     user_id,
     'founder_expired',
-    'Merci d''avoir été Membre Fondateur',
-    'Vos 6 mois offerts sont terminés. Votre badge Fondateur reste visible. Aucune reconduction automatique : vous pouvez cesser votre adhésion, rester en Freemium, ou choisir Premium — toutes les options sont sans engagement.'
+    'À l''échéance de vos 6 mois',
+    'Vous pourrez aussi bien interrompre votre adhésion, migrer vers l''offre Freemium que passer à l''offre Premium : ce sont des options entièrement sans engagement. Aucune reconduction automatique, aucun prélèvement forcé : vous choisissez en toute liberté. Votre badge Fondateur reste visible.'
   FROM expired;
 
   GET DIAGNOSTICS n_expired = ROW_COUNT;

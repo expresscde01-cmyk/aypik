@@ -1,6 +1,10 @@
 import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
+import {
+  AFTER_FOUNDER_PERIOD_COPY,
+  AFTER_FOUNDER_TITLE,
+} from '@/lib/membership';
 
 const FOUNDER_SUBTITLE =
   '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
@@ -36,8 +40,7 @@ const OFFERS = [
     badge: 'Offre limitée',
     description: FOUNDER_SUBTITLE,
     point: 'Inscription sans carte bancaire',
-    point2:
-      'Après 6 mois : cessez, Freemium ou Premium — sans engagement ni reconduction forcée',
+    point2: `${AFTER_FOUNDER_TITLE}. ${AFTER_FOUNDER_PERIOD_COPY}`,
     accent: 'founder' as const,
   },
   {

@@ -112,7 +112,7 @@ export function PremiumConversionCard({
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
             {founderExpired
-              ? 'Choix volontaire uniquement : Freemium, Premium ou cesser votre adhésion — sans engagement ni reconduction automatique.'
+              ? 'Choix volontaire uniquement : Freemium, Premium ou interrompre votre adhésion — sans engagement ni reconduction automatique.'
               : "Premium à 19,99 € / mois pour un confort d'utilisation, sans engagement."}
           </p>
 
