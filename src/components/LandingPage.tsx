@@ -433,7 +433,7 @@ export default function LandingPage({
             Valeurs
           </h2>
           <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-            Une communauté claire, sereine et respectueuse.
+            Une communauté transparente, sereine et respectueuse.
           </p>
         </div>
         <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6">
