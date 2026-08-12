@@ -23,6 +23,11 @@ import { LegalLink } from '@/components/LegalTerms';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 
 import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
+import {
+  ALL_SUGGESTED_INTERESTS,
+  INTEREST_CATEGORIES,
+  MIN_INTERESTS,
+} from '@/lib/interests';
 
 export interface Profile {
   id: string;
@@ -34,11 +39,6 @@ export interface Profile {
   interests: string[];
   photo_url: string;
 }
-
-const SUGGESTED_INTERESTS = [
-  'Voyage', 'Cuisine', 'Cinéma', 'Sport', 'Lecture', 'Musique',
-  'Randonnée', 'Gaming', 'Art', 'Yoga', 'Photographie', 'Animaux',
-];
 
 export default function ProfileSetup({
   onDone,
@@ -177,6 +177,13 @@ export default function ProfileSetup({
     if (!location.trim() || !locationSelected) {
       setError(
         'Veuillez sélectionner une ville valide dans la liste déroulante'
+      );
+      return;
+    }
+
+    if (interests.length < MIN_INTERESTS) {
+      setError(
+        `Veuillez sélectionner au moins ${MIN_INTERESTS} centres d’intérêt pour valider votre profil.`
       );
       return;
     }
@@ -457,29 +464,54 @@ export default function ProfileSetup({
 
           {/* Interests */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2.5">
-              Centres d'intérêt
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Centres d&apos;intérêt{' '}
+              <span className="text-rose-500">*</span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_INTERESTS.map((interest) => {
-                const selected = interests.includes(interest);
-                return (
-                  <button
-                    key={interest}
-                    type="button"
-                    onClick={() => toggleInterest(interest)}
-                    className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-all ${
-                      selected
-                        ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                    }`}
-                  >
-                    {selected && <Check className="w-3.5 h-3.5 inline mr-1" />}
-                    {interest}
-                  </button>
-                );
-              })}
+            <p className="text-xs text-gray-500 mb-3">
+              Sélectionnez au moins {MIN_INTERESTS} passions ou loisirs
+              ({ALL_SUGGESTED_INTERESTS.length}+ suggestions).
+            </p>
+            <div className="space-y-4 max-h-80 overflow-y-auto pr-1 rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+              {INTEREST_CATEGORIES.map((category) => (
+                <div key={category.id}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                    {category.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {category.items.map((interest) => {
+                      const selected = interests.includes(interest);
+                      return (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => toggleInterest(interest)}
+                          className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-all ${
+                            selected
+                              ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                          }`}
+                        >
+                          {selected && (
+                            <Check className="w-3.5 h-3.5 inline mr-1" />
+                          )}
+                          {interest}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
+            {interests.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                {interests.length} sélectionné
+                {interests.length > 1 ? 's' : ''}
+                {interests.length < MIN_INTERESTS
+                  ? ` · encore ${MIN_INTERESTS - interests.length} minimum`
+                  : ''}
+              </p>
+            )}
           </div>
 
           {/* Bio */}
