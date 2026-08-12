@@ -431,7 +431,7 @@ export default function LandingPage({
                 onClick={onValidateSignup}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
               >
-                Valider mon inscription
+                Validez votre inscription
               </button>
             ) : (
               <button
@@ -500,7 +500,7 @@ export default function LandingPage({
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {onFreemium
-              ? 'Freemium est active. Pour finaliser, validez votre inscription via le bouton ci-dessous.'
+              ? 'Freemium est active. Pour finaliser, utilisez le bouton ci-dessous.'
               : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
           {onFreemium && onValidateSignup && (
@@ -509,7 +509,7 @@ export default function LandingPage({
               onClick={onValidateSignup}
               className="mt-5 w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
             >
-              Valider mon inscription
+              Validez votre inscription
             </button>
           )}
         </div>

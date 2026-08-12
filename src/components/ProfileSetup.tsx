@@ -285,7 +285,11 @@ export default function ProfileSetup({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
+    <div
+      className={`min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4 ${
+        isSignup && canEditProfile ? 'pb-28' : ''
+      }`}
+    >
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <MembershipPanel
@@ -578,12 +582,32 @@ export default function ProfileSetup({
                 ? 'Envoi de la photo…'
                 : 'Sauvegarde...'
               : isSignup
-                ? 'Valider mon inscription'
+                ? 'Validez votre inscription'
                 : 'Enregistrer mon profil'}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
           </>
+        )}
+
+        {isSignup && canEditProfile && (
+          <div className="fixed bottom-0 inset-x-0 z-30 border-t border-rose-100 bg-white/95 backdrop-blur-md p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="max-w-2xl mx-auto">
+              <button
+                type="submit"
+                form="profile-setup-form"
+                disabled={saving || hasChildren}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {saving
+                  ? photoFile
+                    ? 'Envoi de la photo…'
+                    : 'Sauvegarde...'
+                  : 'Validez votre inscription'}
+                {!saving && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
         )}
 
         {allowAccountDeletion && (

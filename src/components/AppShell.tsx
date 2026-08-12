@@ -18,7 +18,7 @@ export default function AppShell() {
   /** Ouvre le formulaire d’inscription depuis l’accueil (CTA visible). */
   const [forceSignupForm, setForceSignupForm] = useState(false);
   const signupOkKey = user ? `aypik_signup_ok_${user.id}` : null;
-  const [signupValidated, setSignupValidated] = useState(false);
+  const [signupValidated, setSignupValidated] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!signupOkKey) {
@@ -60,15 +60,17 @@ export default function AppShell() {
         Array.isArray(p.interests) &&
         p.interests.length >= MIN_INTERESTS
     );
-  // Inscription inachevée → forcer ProfileSetup (bouton « Valider mon inscription »)
-  // plutôt que l’accueil « Nos offres ».
+  // Inscription non finalisée → formulaire + « Validez votre inscription »
+  // (évite l’accueil « Nos offres » sans bouton de validation).
   const needsProfile = !profileLoading && !profileComplete(profile);
+  const mustFinalizeSignup =
+    !profileLoading && signupValidated === false;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
     'Membre';
 
-  if (profileLoading) {
+  if (profileLoading || signupValidated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
@@ -76,7 +78,7 @@ export default function AppShell() {
     );
   }
 
-  if (needsProfile || forceSignupForm) {
+  if (needsProfile || forceSignupForm || mustFinalizeSignup) {
     return (
       <ProfileSetup
         onDone={async () => {
