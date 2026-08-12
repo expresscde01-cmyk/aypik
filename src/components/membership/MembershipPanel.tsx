@@ -26,32 +26,38 @@ function FounderActiveBanner({
   onActivate,
   activating = false,
   exhausted = false,
+  locked = false,
+  lockedReason = 'Inaccessible : votre offre Freemium est déjà active',
 }: {
   status: MembershipStatus;
   onActivate?: () => void;
   activating?: boolean;
   exhausted?: boolean;
+  /** Grisé / non interactif (ex. Freemium déjà choisie). */
+  locked?: boolean;
+  lockedReason?: string;
 }) {
-  const showCta = !exhausted && Boolean(onActivate);
+  const showCta = !exhausted && !locked && Boolean(onActivate);
 
-  if (exhausted) {
+  if (exhausted || locked) {
     return (
       <div
         aria-disabled="true"
-        className="relative overflow-hidden rounded-3xl border-2 border-gray-200 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 opacity-60 grayscale"
+        className="relative overflow-hidden rounded-3xl border-2 border-gray-200 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 opacity-60 grayscale pointer-events-none select-none"
       >
         <div className="relative p-5 sm:p-6 space-y-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-200/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-gray-600 border border-gray-300/80">
             <Gift className="w-3.5 h-3.5" />
-            Offre épuisée
+            {exhausted ? 'Offre épuisée' : 'Non disponible'}
           </span>
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-700 tracking-tight leading-tight">
               Membre Fondateur
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
-              Les 500 places ont été attribuées. Choisissez l’offre Freemium ou
-              Premium pour continuer.
+              {exhausted
+                ? 'Les 500 places ont été attribuées. Choisissez l’offre Freemium ou Premium pour continuer.'
+                : lockedReason}
             </p>
           </div>
         </div>
@@ -261,12 +267,21 @@ export function MembershipPanel({
   const offerChosen = status.membership_linked;
   /** Bénéficie déjà de l’offre Fondateur (période 6 mois en cours). */
   const onFounderBenefits = periodActive && status.is_founder;
+  /** Offre Freemium active (plan free lié, hors Fondateur). */
+  const onFreemium =
+    offerChosen && status.plan === 'free' && !status.is_founder && !periodActive;
 
-  const showFounderActive = founderAvailable || status.is_founder;
+  const showFounderActive =
+    founderAvailable || status.is_founder || onFreemium;
   const showFounderExhausted =
-    signupGate && !founderAvailable && !status.is_founder;
+    signupGate && !founderAvailable && !status.is_founder && !onFreemium;
   const showFounderCta =
-    signupGate && !offerChosen && founderAvailable && Boolean(onClaimFounder);
+    signupGate &&
+    !offerChosen &&
+    founderAvailable &&
+    !onFreemium &&
+    Boolean(onClaimFounder);
+  const founderLockedByFreemium = onFreemium && !status.is_founder;
 
   const founderExpiringSoon =
     periodActive && daysLeft !== null && daysLeft <= 14 && daysLeft > 0;
@@ -279,23 +294,37 @@ export function MembershipPanel({
 
   const premiumLockedByFounder =
     (founderAvailable && !offerChosen) || onFounderBenefits;
+  /** Freemium active → Premium grisé / non interactif. */
+  const premiumLockedByFreemium = onFreemium;
+  const premiumDisabled = premiumLockedByFounder || premiumLockedByFreemium;
   const showPaidPremiumActive =
-    status.has_premium && !periodActive && !premiumLockedByFounder;
+    status.has_premium &&
+    !periodActive &&
+    !premiumLockedByFounder &&
+    status.plan === 'premium';
   const showPremiumOffer =
     !showPaidPremiumActive &&
-    (premiumLockedByFounder || !status.has_premium || founderExpired);
+    (premiumDisabled || !status.has_premium || founderExpired);
   const premiumTone =
-    !founderAvailable || founderExpired ? 'primary' : 'secondary';
+    (!founderAvailable && !onFreemium) || founderExpired
+      ? 'primary'
+      : 'secondary';
   const premiumDisabledReason = onFounderBenefits
     ? 'Inaccessible : votre offre Fondateur inclut déjà les avantages Premium'
-    : undefined;
+    : premiumLockedByFreemium
+      ? 'Inaccessible : votre offre Freemium est déjà active'
+      : undefined;
 
   const showFreemiumClaim =
     signupGate && !offerChosen && Boolean(onClaimFreemium);
   /** Pendant la période Fondateur : Freemium visible mais non sélectionnable. */
   const showFreemiumLocked = onFounderBenefits;
-  /** Boost achetable dès qu’une offre est liée, y compris pendant les 6 mois. */
-  const showBoost = offerChosen || !signupGate;
+  /**
+   * Boost toujours visible à titre d’info.
+   * Achat désactivé pendant l’onboarding (signupGate) pour éviter un boost sur profil vide.
+   */
+  const showBoost = true;
+  const boostPurchaseDisabled = signupGate;
 
   const handleCancel = async () => {
     if (
@@ -355,7 +384,7 @@ export function MembershipPanel({
               founderExpired={founderExpired}
               onPaymentSuccess={onRefresh}
               tone={premiumTone}
-              disabled={premiumLockedByFounder}
+              disabled={premiumDisabled}
               disabledReason={premiumDisabledReason}
             />
           )}
@@ -365,6 +394,15 @@ export function MembershipPanel({
               onActivate={onClaimFreemium!}
               activating={claimingOffer}
               primary={!founderAvailable}
+            />
+          )}
+
+          {showBoost && (
+            <BoostPurchaseCard
+              hasBoost={status.has_boost}
+              boostEndsAt={status.boost_ends_at}
+              onPurchase={onPurchaseBoost}
+              purchaseDisabled={boostPurchaseDisabled}
             />
           )}
         </div>
@@ -391,7 +429,13 @@ export function MembershipPanel({
         </div>
       )}
 
-      {showFounderActive && <FounderActiveBanner status={status} />}
+      {showFounderActive && (
+        <FounderActiveBanner
+          status={status}
+          locked={founderLockedByFreemium}
+          onActivate={undefined}
+        />
+      )}
 
       {founderExpiringSoon && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
@@ -421,7 +465,7 @@ export function MembershipPanel({
             founderExpired={founderExpired}
             onPaymentSuccess={onRefresh}
             tone={premiumTone}
-            disabled={premiumLockedByFounder}
+            disabled={premiumDisabled}
             disabledReason={premiumDisabledReason}
           />
         )}
@@ -484,6 +528,7 @@ export function MembershipPanel({
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
+            purchaseDisabled={boostPurchaseDisabled}
           />
         )}
       </div>
