@@ -473,7 +473,7 @@ export default function ProfileSetup({
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Retour
+              Plus tard
             </button>
           </div>
         </div>

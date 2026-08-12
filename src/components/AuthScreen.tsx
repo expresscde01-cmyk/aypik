@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Mail,
   Lock,
@@ -22,9 +22,30 @@ import { founderOfferBadgeLabel } from '@/lib/membership';
 
 type Mode = 'signin' | 'signup';
 
+const AUTH_EMAIL_DRAFT_KEY = 'aypik_auth_email_draft';
+const AUTH_MODE_DRAFT_KEY = 'aypik_auth_mode_draft';
+
+function readAuthEmailDraft(): string {
+  try {
+    return sessionStorage.getItem(AUTH_EMAIL_DRAFT_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function readAuthModeDraft(): Mode {
+  try {
+    return sessionStorage.getItem(AUTH_MODE_DRAFT_KEY) === 'signin'
+      ? 'signin'
+      : 'signup';
+  } catch {
+    return 'signup';
+  }
+}
+
 export default function AuthScreen({ onBack }: { onBack?: () => void }) {
-  const [mode, setMode] = useState<Mode>('signup');
-  const [email, setEmail] = useState('');
+  const [mode, setMode] = useState<Mode>(() => readAuthModeDraft());
+  const [email, setEmail] = useState(() => readAuthEmailDraft());
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,6 +53,25 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
   const { availability } = useFounderAvailability();
   const founderOpen = availability.founder_open;
   const founderBadge = founderOfferBadgeLabel(availability);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(AUTH_EMAIL_DRAFT_KEY, email);
+      sessionStorage.setItem(AUTH_MODE_DRAFT_KEY, mode);
+    } catch {
+      // ignore
+    }
+  }, [email, mode]);
+
+  const handleBack = () => {
+    try {
+      sessionStorage.setItem(AUTH_EMAIL_DRAFT_KEY, email);
+      sessionStorage.setItem(AUTH_MODE_DRAFT_KEY, mode);
+    } catch {
+      // ignore
+    }
+    onBack?.();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +120,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
         {onBack && (
           <button
             type="button"
-            onClick={onBack}
+            onClick={handleBack}
             className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -93,7 +133,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
             href="/"
             onClick={(e) => {
               e.preventDefault();
-              onBack?.();
+              handleBack();
             }}
             className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
             aria-label="Accueil Aypik"

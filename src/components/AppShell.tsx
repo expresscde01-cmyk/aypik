@@ -87,13 +87,11 @@ export default function AppShell() {
         Array.isArray(p.interests) &&
         p.interests.length >= MIN_INTERESTS
     );
-  // Inscription non finalisée → tunnel obligatoire,
-  // sauf pause volontaire (Retour) : compte + brouillon conservés.
+
   const needsProfile = !profileLoading && !profileComplete(profile);
   const mustFinalizeSignup =
     !profileLoading && signupValidated === false;
   const incompleteSignup = needsProfile || mustFinalizeSignup;
-  const forceSignupTunnel = incompleteSignup && !signupPaused;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
@@ -107,21 +105,63 @@ export default function AppShell() {
     );
   }
 
-  if (forceSignupTunnel) {
+  // Tunnel d’inscription : ProfileSetup reste monté même en pause
+  // pour ne jamais perdre la saisie (état React + brouillon local).
+  if (incompleteSignup) {
     return (
-      <ProfileSetup
-        onDone={async () => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user!.id)
-            .maybeSingle();
-          setProfile(data as Profile);
-          markSignupValidated();
-          setTab('home');
-        }}
-        onPauseSignup={handlePauseSignup}
-      />
+      <>
+        <div className={signupPaused ? 'hidden' : undefined}>
+          <ProfileSetup
+            onDone={async () => {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user!.id)
+                .maybeSingle();
+              setProfile(data as Profile);
+              markSignupValidated();
+              setTab('home');
+            }}
+            onPauseSignup={handlePauseSignup}
+          />
+        </div>
+
+        {signupPaused && (
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <main className="flex-1 min-h-0">
+              <LandingPage
+                displayName={displayName}
+                onSignOut={signOut}
+                onLogoClick={() => setTab('home')}
+                onPrimaryCta={continueSignup}
+                primaryCtaLabel="Continuer mon inscription"
+              />
+            </main>
+            <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
+              <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-around">
+                <NavButton
+                  icon={<Home className="w-5 h-5" />}
+                  label="Accueil"
+                  active
+                  onClick={() => undefined}
+                />
+                <NavButton
+                  icon={<Heart className="w-5 h-5" />}
+                  label="Matchs"
+                  active={false}
+                  onClick={continueSignup}
+                />
+                <NavButton
+                  icon={<User className="w-5 h-5" />}
+                  label="Profil"
+                  active={false}
+                  onClick={continueSignup}
+                />
+              </div>
+            </nav>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -133,12 +173,7 @@ export default function AppShell() {
             displayName={displayName}
             onSignOut={signOut}
             onLogoClick={() => setTab('home')}
-            onPrimaryCta={() =>
-              incompleteSignup ? continueSignup() : setTab('matches')
-            }
-            primaryCtaLabel={
-              incompleteSignup ? 'Continuer mon inscription' : undefined
-            }
+            onPrimaryCta={() => setTab('matches')}
           />
         )}
         {tab === 'matches' && (
@@ -157,52 +192,23 @@ export default function AppShell() {
                 </span>
               </div>
             </div>
-            {incompleteSignup ? (
-              <div className="flex-1 flex flex-col items-center justify-center px-4 text-center gap-4 py-16">
-                <p className="text-sm text-gray-600 max-w-sm">
-                  Finalisez votre inscription Fondateur pour accéder aux matchs.
-                </p>
-                <button
-                  type="button"
-                  onClick={continueSignup}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200"
-                >
-                  Continuer mon inscription
-                </button>
-              </div>
-            ) : (
-              <MatchesPage />
-            )}
+            <MatchesPage />
           </div>
         )}
-        {tab === 'profile' &&
-          (incompleteSignup ? (
-            <div className="flex flex-col items-center justify-center px-4 text-center gap-4 py-20">
-              <p className="text-sm text-gray-600 max-w-sm">
-                Votre profil sera accessible après validation de l’inscription.
-              </p>
-              <button
-                type="button"
-                onClick={continueSignup}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200"
-              >
-                Continuer mon inscription
-              </button>
-            </div>
-          ) : (
-            <ProfileSetup
-              allowAccountDeletion
-              onDone={async () => {
-                const { data } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', user!.id)
-                  .maybeSingle();
-                setProfile(data as Profile);
-                setTab('home');
-              }}
-            />
-          ))}
+        {tab === 'profile' && (
+          <ProfileSetup
+            allowAccountDeletion
+            onDone={async () => {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user!.id)
+                .maybeSingle();
+              setProfile(data as Profile);
+              setTab('home');
+            }}
+          />
+        )}
       </main>
 
       <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
@@ -217,17 +223,13 @@ export default function AppShell() {
             icon={<Heart className="w-5 h-5" />}
             label="Matchs"
             active={tab === 'matches'}
-            onClick={() =>
-              incompleteSignup ? continueSignup() : setTab('matches')
-            }
+            onClick={() => setTab('matches')}
           />
           <NavButton
             icon={<User className="w-5 h-5" />}
             label="Profil"
             active={tab === 'profile'}
-            onClick={() =>
-              incompleteSignup ? continueSignup() : setTab('profile')
-            }
+            onClick={() => setTab('profile')}
           />
         </div>
       </nav>
