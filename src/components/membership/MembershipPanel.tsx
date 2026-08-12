@@ -514,25 +514,9 @@ export function MembershipPanel({
     );
   }
 
-  // Fin du tunnel inscription : plus de grille d’offres — uniquement la
-  // confirmation. Le bouton « Validez votre inscription » est sur le formulaire.
-  if (signupGate && offerChosen) {
-    const offerLabel = status.is_founder
-      ? 'Membre Fondateur'
-      : status.plan === 'premium'
-        ? 'Premium'
-        : 'Freemium';
-    return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-2">
-        <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-emerald-900 leading-relaxed">
-          Offre <strong>{offerLabel}</strong> activée — dernière étape :
-          complétez le formulaire puis appuyez sur{' '}
-          <strong>Validez votre inscription</strong> en bas de page.
-        </p>
-      </div>
-    );
-  }
+  // Après choix d’offre en inscription : visualiser l’offre active
+  // (Freemium coloré, autres grisés). Le CTA d’étape est dans ProfileSetup.
+  // (pas de return anticipé ici)
 
   return (
     <div className="space-y-4">

@@ -63,7 +63,8 @@ export default function ProfileSetup({
   const [saving, setSaving] = useState(false);
   const [claimingOffer, setClaimingOffer] = useState(false);
   const [offerUnlocked, setOfferUnlocked] = useState(false);
-  const [scrollToFormAfterClaim, setScrollToFormAfterClaim] = useState(false);
+  /** Tunnel inscription : offres (1) puis profil (2) sur des écrans séparés. */
+  const [signupStep, setSignupStep] = useState<'offer' | 'profile'>('offer');
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,7 +154,8 @@ export default function ProfileSetup({
 
   const isSignup = !allowAccountDeletion;
   const offerChosen = status.membership_linked || offerUnlocked;
-  const canEditProfile = !isSignup || offerChosen;
+  const showOfferStep = isSignup && signupStep === 'offer';
+  const showProfileForm = !isSignup || signupStep === 'profile';
 
   const handleClaimOffer = async (offer: 'founder' | 'free') => {
     setError(null);
@@ -164,30 +166,18 @@ export default function ProfileSetup({
         setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
         return;
       }
-      // Déblocage immédiat du formulaire (sans attendre un 2e refresh UI).
+      // Reste sur l’écran offres : un CTA d’étape mène ensuite au profil.
       setOfferUnlocked(true);
-      setScrollToFormAfterClaim(true);
     } finally {
       setClaimingOffer(false);
     }
   };
 
-  useEffect(() => {
-    if (!scrollToFormAfterClaim || !canEditProfile) return;
-    const t = window.setTimeout(() => {
-      document
-        .getElementById('profile-setup-form')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setScrollToFormAfterClaim(false);
-    }, 120);
-    return () => window.clearTimeout(t);
-  }, [scrollToFormAfterClaim, canEditProfile]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (isSignup && !status.membership_linked) {
+    if (isSignup && !status.membership_linked && !offerUnlocked) {
       setError(
         'Veuillez d’abord choisir et activer une offre pour continuer l’inscription.'
       );
@@ -284,41 +274,106 @@ export default function ProfileSetup({
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
+  // ——— Écran 1 : sélection / visualisation de l’offre (inscription) ———
+  if (showOfferStep) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mb-2">
+              Inscription · Étape 1/2
+            </p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              Votre offre
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {offerChosen
+                ? 'Votre offre est active. Validez cette étape pour configurer votre profil.'
+                : 'Choisissez une offre pour continuer votre inscription.'}
+            </p>
+          </div>
+
           <MembershipPanel
             status={status}
             onPurchaseBoost={purchaseBoost}
             onRefresh={refresh}
-            signupGate={isSignup}
+            signupGate
             offerSelected={offerChosen}
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
             onClaimFreemium={() => void handleClaimOffer('free')}
           />
-        </div>
 
-        {error && isSignup && !canEditProfile && (
-          <div className="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
+          {error && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {offerChosen && (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setSignupStep('profile');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+            >
+              Valider cette étape
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ——— Écran 2 : profil (inscription) ou édition compte ———
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {isSignup && (
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setSignupStep('offer')}
+              className="text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+            >
+              ← Retour aux offres
+            </button>
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mt-3 text-center">
+              Inscription · Étape 2/2
+            </p>
           </div>
         )}
 
-        {canEditProfile && (
+        {!isSignup && (
+          <div className="mb-6">
+            <MembershipPanel
+              status={status}
+              onPurchaseBoost={purchaseBoost}
+              onRefresh={refresh}
+              claimingOffer={claimingOffer}
+              onClaimFounder={() => void handleClaimOffer('founder')}
+              onClaimFreemium={() => void handleClaimOffer('free')}
+            />
+          </div>
+        )}
+
+        {showProfileForm && (
           <>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            {isSignup ? 'Dernière étape de votre inscription' : 'Mon profil'}
+            {isSignup ? 'Configurez votre profil' : 'Mon profil'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {isSignup
-              ? 'Remplissez vos informations, puis validez avec le bouton en bas'
+              ? 'Renseignez vos informations, puis validez votre inscription'
               : 'Renseignez vos informations pour apparaître dans les recherches'}
           </p>
           {(status.is_founder || status.has_boost) && (
