@@ -289,8 +289,8 @@ function FreemiumClaimCard({
             disabled={activating}
             className={
               primary
-                ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-60'
-                : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
+                ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white text-sm font-semibold shadow-sm shadow-sky-100 hover:opacity-95 transition-opacity disabled:opacity-60'
+                : 'w-full py-2.5 rounded-xl border border-sky-300 bg-sky-50 text-sky-800 text-sm font-semibold hover:bg-sky-100 transition-colors disabled:opacity-60'
             }
           >
             {activating ? 'Activation…' : 'Continuer en Freemium'}
