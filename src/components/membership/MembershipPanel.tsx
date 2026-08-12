@@ -28,6 +28,8 @@ function FounderActiveBanner({
   exhausted = false,
   locked = false,
   lockedReason = 'Inaccessible : votre offre Freemium est déjà active',
+  /** Compact = carte secondaire (section « Autres options »). */
+  compact = false,
 }: {
   status: MembershipStatus;
   onActivate?: () => void;
@@ -36,10 +38,39 @@ function FounderActiveBanner({
   /** Grisé / non interactif (ex. Freemium déjà choisie). */
   locked?: boolean;
   lockedReason?: string;
+  compact?: boolean;
 }) {
   const showCta = !exhausted && !locked && Boolean(onActivate);
 
   if (exhausted || locked) {
+    if (compact) {
+      return (
+        <div
+          aria-disabled="true"
+          className="rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none"
+        >
+          <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
+            <p className="text-xs font-medium text-gray-500">
+              {exhausted ? 'Offre épuisée' : 'Non disponible'}
+            </p>
+            <p className="text-lg font-bold tracking-tight text-gray-800 mt-0.5">
+              Membre Fondateur
+            </p>
+          </div>
+          <div className="p-4 space-y-2">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              6 mois offerts — réservée aux 500 premiers membres.
+            </p>
+            <p className="text-xs font-medium text-gray-700 leading-relaxed bg-white/70 border border-gray-200 rounded-xl px-3 py-2">
+              {exhausted
+                ? 'Les 500 places ont été attribuées.'
+                : lockedReason}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         aria-disabled="true"
@@ -125,6 +156,59 @@ function FounderActiveBanner({
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Carte principale quand Freemium est l’offre active (même poids visuel que Fondateur). */
+function FreemiumActiveBanner() {
+  return (
+    <div className="relative overflow-hidden rounded-3xl border-2 border-rose-300 bg-gradient-to-br from-rose-500 via-rose-400 to-amber-300 shadow-lg shadow-rose-200/60">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
+        }}
+      />
+      <div className="relative p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-rose-800 border border-white/80 shadow-sm">
+            <Check className="w-3.5 h-3.5" />
+            Offre active
+          </span>
+        </div>
+
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-sm">
+            Offre Freemium
+          </h2>
+          <p className="mt-2 text-base sm:text-lg font-semibold text-white/95 leading-snug">
+            Gratuit — l’essentiel d’Aypik, sans engagement.
+          </p>
+        </div>
+
+        <ul className="space-y-2">
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-white">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+            </span>
+            Sans carte bancaire
+          </li>
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-white">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+            </span>
+            Profil, matching et messages inclus
+          </li>
+          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-white">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+            </span>
+            Aucune reconduction ni prélèvement
+          </li>
+        </ul>
       </div>
     </div>
   );
@@ -271,8 +355,8 @@ export function MembershipPanel({
   const onFreemium =
     offerChosen && status.plan === 'free' && !status.is_founder && !periodActive;
 
-  const showFounderActive =
-    founderAvailable || status.is_founder || onFreemium;
+  const showFounderHero =
+    !onFreemium && (founderAvailable || status.is_founder);
   const showFounderExhausted =
     signupGate && !founderAvailable && !status.is_founder && !onFreemium;
   const showFounderCta =
@@ -281,7 +365,8 @@ export function MembershipPanel({
     founderAvailable &&
     !onFreemium &&
     Boolean(onClaimFounder);
-  const founderLockedByFreemium = onFreemium && !status.is_founder;
+  /** Fondateur en secondaire grisé quand Freemium est l’offre active. */
+  const showFounderSecondaryLocked = onFreemium;
 
   const founderExpiringSoon =
     periodActive && daysLeft !== null && daysLeft <= 14 && daysLeft > 0;
@@ -361,7 +446,7 @@ export function MembershipPanel({
           </p>
         </div>
 
-        {showFounderActive && (
+        {showFounderHero && (
           <FounderActiveBanner
             status={status}
             onActivate={showFounderCta ? onClaimFounder : undefined}
@@ -429,12 +514,10 @@ export function MembershipPanel({
         </div>
       )}
 
-      {showFounderActive && (
-        <FounderActiveBanner
-          status={status}
-          locked={founderLockedByFreemium}
-          onActivate={undefined}
-        />
+      {onFreemium && <FreemiumActiveBanner />}
+
+      {showFounderHero && (
+        <FounderActiveBanner status={status} onActivate={undefined} />
       )}
 
       {founderExpiringSoon && (
@@ -456,8 +539,17 @@ export function MembershipPanel({
 
       <div className="space-y-3 pt-1">
         <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
-          Offres
+          {onFreemium ? 'Autres options' : 'Offres'}
         </p>
+
+        {showFounderSecondaryLocked && (
+          <FounderActiveBanner
+            status={status}
+            locked
+            compact
+            lockedReason="Non sélectionnée — votre offre Freemium est active"
+          />
+        )}
 
         {showPremiumOffer && (
           <PremiumConversionCard
