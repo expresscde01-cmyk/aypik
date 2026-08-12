@@ -394,7 +394,7 @@ export function MembershipPanel({
   const premiumDisabledReason = onFounderBenefits
     ? 'Inaccessible : votre offre Fondateur inclut déjà les avantages Premium'
     : premiumLockedByFreemium
-      ? 'Inaccessible : votre offre Freemium est déjà active'
+      ? 'Non requis : votre offre Freemium est active'
       : undefined;
 
   const showFreemiumClaim =
