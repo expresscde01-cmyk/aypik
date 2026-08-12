@@ -543,7 +543,7 @@ export function MembershipPanel({
             status={status}
             locked
             compact
-            lockedReason="Non sélectionnée — votre offre Freemium est active"
+            lockedReason={FREEMIUM_ACTIVE_UNSELECTED_LABEL}
           />
         )}
 
