@@ -248,9 +248,11 @@ function FreemiumClaimCard({
       >
         <p
           className={
-            disabled || !primary
-              ? 'text-xs font-medium text-gray-500'
-              : 'text-xs font-medium text-white/90'
+            disabled
+              ? 'text-xs font-medium uppercase tracking-wide text-gray-500'
+              : primary
+                ? 'text-xs font-medium uppercase tracking-wide text-white/90'
+                : 'text-xs font-semibold uppercase tracking-wide text-gray-900'
           }
         >
           Offre Freemium
