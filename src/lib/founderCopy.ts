@@ -3,7 +3,7 @@
  * Passer à `false` pour restaurer l’UI payante : encart « Après tes 6 mois »,
  * cartes Premium/Boost, prix landing, teasers et CGU tarifaires.
  */
-export const SITE_FREE_MODE: boolean = true;
+export const SITE_FREE_MODE: boolean = false;
 
 /** Numerus clausus Fondateur (aligné sur platform_settings.founder_max_slots). */
 export const FOUNDER_MAX_SLOTS = 500;
