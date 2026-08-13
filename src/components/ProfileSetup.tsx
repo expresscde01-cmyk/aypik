@@ -41,6 +41,8 @@ import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
 import { userErrorMessage } from '@/lib/userError';
 
+export type ProfileGender = 'homme' | 'femme';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -50,6 +52,7 @@ export interface Profile {
   location: string;
   interests: string[];
   photo_url: string;
+  gender?: ProfileGender | null;
   email_notifications_enabled?: boolean;
   deletion_requested_at?: string | null;
 }
@@ -98,6 +101,8 @@ export default function ProfileSetup({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFileName, setPhotoFileName] = useState<string | null>(null);
   const [customInterest, setCustomInterest] = useState('');
+  const [gender, setGender] = useState<ProfileGender | null>(null);
+  const [genderLocked, setGenderLocked] = useState(false);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] =
     useState(true);
   const [prefsHint, setPrefsHint] = useState(false);
@@ -133,6 +138,13 @@ export default function ProfileSetup({
         setCityError(null);
         setInterests(data.interests || []);
         setPhotoUrl(data.photo_url || '');
+        if (data.gender === 'homme' || data.gender === 'femme') {
+          setGender(data.gender);
+          setGenderLocked(true);
+        } else {
+          setGender(null);
+          setGenderLocked(false);
+        }
         setEmailNotificationsEnabled(
           data.email_notifications_enabled !== false
         );
@@ -346,7 +358,18 @@ export default function ProfileSetup({
         nextPhotoUrl = url;
       }
 
-      const payload = {
+      const payload: {
+        id: string;
+        display_name: string;
+        birth_date: string;
+        bio: string;
+        has_children: boolean;
+        location: string;
+        interests: string[];
+        photo_url: string;
+        email_notifications_enabled: boolean;
+        gender?: ProfileGender;
+      } = {
         id: user.id,
         display_name: displayName,
         birth_date: birthDate,
@@ -358,11 +381,19 @@ export default function ProfileSetup({
         email_notifications_enabled: emailNotificationsEnabled,
       };
 
+      if (!genderLocked && (gender === 'homme' || gender === 'femme')) {
+        payload.gender = gender;
+      }
+
       const { error: upsertError } = await supabase
         .from('profiles')
         .upsert(payload);
 
       if (upsertError) throw upsertError;
+
+      if (!genderLocked && (gender === 'homme' || gender === 'femme')) {
+        setGenderLocked(true);
+      }
 
       setProfileExists(true);
 
@@ -558,6 +589,54 @@ export default function ProfileSetup({
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900"
             />
           </div>
+
+          {/* Gender (optional, locked after first save) */}
+          {genderLocked ? (
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+              <p className="text-sm font-semibold text-gray-700">
+                {gender === 'homme' ? 'Homme' : 'Femme'}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Je suis{' '}
+                <span className="font-normal text-gray-400">(optionnel)</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                Facultatif. Une fois enregistré, ce choix ne pourra plus être
+                modifié.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGender((prev) => (prev === 'homme' ? null : 'homme'))
+                  }
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    gender === 'homme'
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                  }`}
+                >
+                  Je suis un homme
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGender((prev) => (prev === 'femme' ? null : 'femme'))
+                  }
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    gender === 'femme'
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                  }`}
+                >
+                  Je suis une femme
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Location */}
           <div>

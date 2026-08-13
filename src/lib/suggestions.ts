@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/components/ProfileSetup';
-import { isWithinAgeGap } from '@/lib/dating';
+import type { Profile, ProfileGender } from '@/components/ProfileSetup';
+import { isWithinAgeGap, matchingTargetGender } from '@/lib/dating';
 
 export type SocialNotificationKind =
   | 'flash_received'
@@ -56,12 +56,17 @@ export type SuggestedProfile = Profile & {
   mutual_interests: string[];
 };
 
+function parseProfileGender(value: unknown): ProfileGender | null {
+  return value === 'homme' || value === 'femme' ? value : null;
+}
+
 export async function fetchSuggestedProfiles(options?: {
   limit?: number;
   sameCityOnly?: boolean;
   minInterestOverlap?: number;
   myInterests?: string[];
   myAge?: number;
+  viewerGender?: ProfileGender | null;
 }): Promise<SuggestedProfile[]> {
   const minOverlap = options?.minInterestOverlap ?? 0;
 
@@ -92,6 +97,7 @@ export async function fetchSuggestedProfiles(options?: {
       location: String(row.location || ''),
       interests,
       photo_url: String(row.photo_url || ''),
+      gender: parseProfileGender(row.gender),
       score: Number(row.score) || 0,
       mutual_interest_count: Number(row.mutual_interest_count) || 0,
       same_city: Boolean(row.same_city),
@@ -107,9 +113,17 @@ export async function fetchSuggestedProfiles(options?: {
     return [];
   }
 
-  return mapped.filter(
-    (p) => isWithinAgeGap(myAge, p.age) && isWithinAgeGap(p.age, myAge)
-  );
+  const targetGender = matchingTargetGender(options?.viewerGender);
+
+  return mapped.filter((p) => {
+    if (!isWithinAgeGap(myAge, p.age) || !isWithinAgeGap(p.age, myAge)) {
+      return false;
+    }
+    if (targetGender && p.gender != null && p.gender !== targetGender) {
+      return false;
+    }
+    return true;
+  });
 }
 
 /** Affinité géographique à partir des libellés « Ville (CP) » (sans lat/lng). */

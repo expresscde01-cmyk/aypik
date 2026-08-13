@@ -15,6 +15,7 @@ import {
   ageFromBirthDate,
   isWithinAgeGap,
   latestBirthDateForAge,
+  matchingTargetGender,
   minPartnerAge,
 } from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
@@ -109,14 +110,21 @@ export default function DiscoveryPage() {
     (async () => {
       const myAge = ageFromBirthDate(myProfile.birth_date);
       const myMinAge = minPartnerAge(myAge);
+      const targetGender = matchingTargetGender(myProfile.gender);
 
-      const { data, error: candErr } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .neq('id', user.id)
         .eq('has_children', false)
         .is('deletion_requested_at', null)
         .lte('birth_date', latestBirthDateForAge(myMinAge));
+
+      if (targetGender) {
+        query = query.eq('gender', targetGender);
+      }
+
+      const { data, error: candErr } = await query;
 
       if (cancelled) return;
 
@@ -191,6 +199,7 @@ export default function DiscoveryPage() {
           };
         })
         .filter((c) => {
+          if (targetGender && c.gender !== targetGender) return false;
           if (!isWithinAgeGap(myAge, c.age)) return false;
           if (!isWithinAgeGap(c.age, myAge)) return false;
           if (canFilter && sameCityOnly && !c.same_city) return false;

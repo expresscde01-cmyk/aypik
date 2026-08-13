@@ -1,3 +1,14 @@
+export type ProfileGender = 'homme' | 'femme';
+
+/** Homme → femmes, femme → hommes, non renseigné → pas de filtre. */
+export function matchingTargetGender(
+  viewerGender: string | null | undefined
+): ProfileGender | null {
+  if (viewerGender === 'homme') return 'femme';
+  if (viewerGender === 'femme') return 'homme';
+  return null;
+}
+
 export function ageFromBirthDate(birthDate: string): number {
   const today = new Date();
   const birth = new Date(birthDate);

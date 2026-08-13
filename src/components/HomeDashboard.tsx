@@ -65,7 +65,7 @@ export default function HomeDashboard({
       try {
         const { data: me } = await supabase
           .from('profiles')
-          .select('interests, birth_date')
+          .select('interests, birth_date, gender')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -76,6 +76,10 @@ export default function HomeDashboard({
           myAge: meProfile?.birth_date
             ? ageFromBirthDate(meProfile.birth_date)
             : undefined,
+          viewerGender:
+            meProfile?.gender === 'homme' || meProfile?.gender === 'femme'
+              ? meProfile.gender
+              : null,
         });
 
         const ids = list.map((p) => p.id);
