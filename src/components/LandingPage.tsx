@@ -1,4 +1,4 @@
-import { Gift, HeartHandshake, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, UserRound, Zap } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
 import {
@@ -7,6 +7,7 @@ import {
   FOUNDER_BENEFIT_NO_CARD,
   FOUNDER_BENEFIT_UNLIMITED_LIKES,
   FOUNDER_SLOTS_SUBTITLE,
+  SITE_FREE_MODE,
 } from '@/lib/founderCopy';
 
 const VALUES = [
@@ -33,21 +34,43 @@ const VALUES = [
   },
 ] as const;
 
-const OFFERS = [
+const FOUNDER_OFFER = {
+  id: 'founder' as const,
+  title: 'Membre Fondateur',
+  badge: 'Offre limitée',
+  description: FOUNDER_SLOTS_SUBTITLE,
+  points: [
+    FOUNDER_BENEFIT_NO_CARD,
+    FOUNDER_BENEFIT_UNLIMITED_LIKES,
+    FOUNDER_BENEFIT_FLASH,
+    FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+  ],
+  accent: 'founder' as const,
+};
+
+const PAID_OFFERS = [
   {
-    id: 'founder',
-    title: 'Membre Fondateur',
-    badge: 'Offre limitée',
-    description: FOUNDER_SLOTS_SUBTITLE,
-    points: [
-      FOUNDER_BENEFIT_NO_CARD,
-      FOUNDER_BENEFIT_UNLIMITED_LIKES,
-      FOUNDER_BENEFIT_FLASH,
-      FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
-    ],
-    accent: 'founder' as const,
+    id: 'premium' as const,
+    title: 'Offre Premium',
+    description:
+      '19,99 € / mois pour un confort d’utilisation, sans engagement.',
+    accent: 'premium' as const,
   },
-] as const;
+  {
+    id: 'boost' as const,
+    title: 'Boost 24h',
+    description: 'Visibilité maximale.',
+    accent: 'boost' as const,
+  },
+  {
+    id: 'freemium' as const,
+    title: 'Offre Freemium',
+    description: 'Notre offre standard gratuite.',
+    accent: 'freemium' as const,
+  },
+];
+
+const OFFERS = SITE_FREE_MODE ? [FOUNDER_OFFER] : [FOUNDER_OFFER, ...PAID_OFFERS];
 
 export function SiteHeader({
   displayName,
@@ -119,23 +142,50 @@ function OfferCard({
   description,
   point,
   points,
+  accent,
 }: {
   title: string;
   badge?: string;
   description: string;
   point?: string;
   points?: readonly string[];
+  accent: 'founder' | 'premium' | 'boost' | 'freemium';
 }) {
   const items = points?.length ? points : point ? [point] : [];
+  const shell =
+    accent === 'founder'
+      ? 'border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300'
+      : accent === 'premium'
+        ? 'border-rose-200 bg-white'
+        : accent === 'boost'
+          ? 'border-amber-200 bg-white'
+          : 'border-gray-200 bg-white';
+  const titleColor =
+    accent === 'founder' ? 'text-amber-950' : 'text-gray-900';
+  const bodyColor =
+    accent === 'founder' ? 'text-amber-950/85' : 'text-gray-600';
+  const Icon =
+    accent === 'founder'
+      ? Gift
+      : accent === 'premium'
+        ? Sparkles
+        : accent === 'boost'
+          ? Zap
+          : Heart;
+
   return (
-    <article className="relative overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300 p-5 sm:p-6 animate-fadeIn">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
-        }}
-      />
+    <article
+      className={`relative overflow-hidden rounded-3xl border-2 p-5 sm:p-6 ${shell} animate-fadeIn`}
+    >
+      {accent === 'founder' && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-30"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
+          }}
+        />
+      )}
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {badge && (
@@ -144,19 +194,38 @@ function OfferCard({
               {badge}
             </span>
           )}
+          {accent !== 'founder' && (
+            <span
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+                accent === 'premium'
+                  ? 'bg-rose-50 text-rose-500'
+                  : accent === 'boost'
+                    ? 'bg-amber-50 text-amber-600'
+                    : 'bg-gray-100 text-rose-400'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </span>
+          )}
         </div>
-        <h3 className="text-xl font-extrabold tracking-tight text-amber-950">
+        <h3 className={`text-xl font-extrabold tracking-tight ${titleColor}`}>
           {title}
         </h3>
-        <p className="text-sm sm:text-base font-medium leading-snug text-amber-950/85">
+        <p className={`text-sm sm:text-base font-medium leading-snug ${bodyColor}`}>
           {description}
         </p>
         {items.map((item) => (
           <p
             key={item}
-            className="flex items-center gap-2 text-sm font-semibold text-amber-950"
+            className={`flex items-center gap-2 text-sm font-semibold ${
+              accent === 'founder' ? 'text-amber-950' : 'text-gray-800'
+            }`}
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/80">
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-full ${
+                accent === 'founder' ? 'bg-white/80' : 'bg-rose-50'
+              }`}
+            >
               ✓
             </span>
             {item}
@@ -267,24 +336,27 @@ export default function LandingPage({
         </ul>
       </section>
 
-      {/* Offre unique : Membre Fondateur */}
+      {/* Offres : Fondateur seul en mode gratuit ; Premium / Boost / Freemium si SITE_FREE_MODE === false */}
       <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Notre offre
+            {SITE_FREE_MODE ? 'Notre offre' : 'Nos offres'}
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Une formule gratuite pendant 6 mois, sans carte bancaire.
+            {SITE_FREE_MODE
+              ? 'Une formule gratuite pendant 6 mois, sans carte bancaire.'
+              : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
         </div>
-        <div className="max-w-md mx-auto">
+        <div className={SITE_FREE_MODE ? 'max-w-md mx-auto' : 'grid gap-4 sm:grid-cols-2'}>
           {OFFERS.map((offer) => (
             <OfferCard
               key={offer.id}
               title={offer.title}
-              badge={offer.badge}
+              badge={'badge' in offer ? offer.badge : undefined}
               description={offer.description}
-              points={offer.points}
+              points={'points' in offer ? offer.points : undefined}
+              accent={offer.accent}
             />
           ))}
         </div>
