@@ -195,11 +195,11 @@ export default function MatchesPage() {
           />
         )}
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center mb-4">
-            <Heart className="w-9 h-9 text-rose-300" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
+            <Heart className="w-9 h-9 text-rose-300 match-empty-heart" />
           </div>
           <h2
-            className="text-xl font-bold text-blue-900 mb-2"
+            className="text-xl font-bold text-blue-900 my-4"
             aria-label="Pas encore de match"
           >
             {Array.from('Pas encore de match').map((char, i, chars) => (
@@ -207,7 +207,7 @@ export default function MatchesPage() {
                 key={i}
                 aria-hidden
                 className="match-title-wave-letter"
-                style={{ animationDelay: `${(i / (chars.length - 1)) * 0.8}s` }}
+                style={{ animationDelay: `${(i / (chars.length - 1)) * 1.1}s` }}
               >
                 {char === ' ' ? '\u00A0' : char}
               </span>
