@@ -7,7 +7,7 @@ export type GeoCommune = {
 };
 
 export const CITY_SELECTION_REQUIRED_ERROR =
-  'Veuillez sélectionner une ville valide dans la liste déroulante';
+  'Sélectionne une ville valide dans la liste déroulante';
 
 const GEO_API = 'https://geo.api.gouv.fr/communes';
 

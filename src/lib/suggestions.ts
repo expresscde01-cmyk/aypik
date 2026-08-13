@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile, ProfileGender } from '@/components/ProfileSetup';
 import { isWithinAgeGap, matchingTargetGender } from '@/lib/dating';
+import { geoProximityFlags } from '@/lib/geoProximity';
 
 export type SocialNotificationKind =
   | 'flash_received'
@@ -51,6 +52,8 @@ export type SuggestedProfile = Profile & {
   mutual_interest_count: number;
   same_city: boolean;
   same_department: boolean;
+  same_region: boolean;
+  neighboring_region: boolean;
   age: number;
   is_boosted: boolean;
   mutual_interests: string[];
@@ -102,6 +105,8 @@ export async function fetchSuggestedProfiles(options?: {
       mutual_interest_count: Number(row.mutual_interest_count) || 0,
       same_city: Boolean(row.same_city),
       same_department: Boolean(row.same_department),
+      same_region: Boolean(row.same_region),
+      neighboring_region: Boolean(row.neighboring_region),
       age: Number(row.age) || 0,
       is_boosted: Boolean(row.is_boosted),
       mutual_interests: mutual,
@@ -119,7 +124,12 @@ export async function fetchSuggestedProfiles(options?: {
     if (!isWithinAgeGap(myAge, p.age) || !isWithinAgeGap(p.age, myAge)) {
       return false;
     }
-    if (targetGender && p.gender != null && p.gender !== targetGender) {
+    if (targetGender && p.gender !== targetGender) {
+      return false;
+    }
+    // Accueil : ville / département / région uniquement.
+    // Région voisine + intérêts (même 3–4) ne suffisent pas.
+    if (!p.same_city && !p.same_department && !p.same_region) {
       return false;
     }
     return true;
@@ -131,23 +141,14 @@ export function cityAffinityScore(a: string, b: string): number {
   if (!a?.trim() || !b?.trim()) return 0;
   if (a.trim() === b.trim()) return 100;
 
-  const parse = (loc: string) => {
-    const range = loc.trim().match(/^(.+?)\s*\((\d{5})/);
-    if (range) {
-      return {
-        name: range[1].trim().toLowerCase(),
-        cp: range[2],
-        dept: range[2].slice(0, 2),
-      };
-    }
-    return { name: loc.trim().toLowerCase(), cp: '', dept: '' };
-  };
-
-  const A = parse(a);
-  const B = parse(b);
-  if (A.cp && A.cp === B.cp) return 90;
-  if (A.name && A.name === B.name) return 80;
-  if (A.dept && A.dept === B.dept) return 50;
+  const flags = geoProximityFlags(a, b);
+  const parsedA = a.trim().match(/\((\d{5})/);
+  const parsedB = b.trim().match(/\((\d{5})/);
+  if (parsedA && parsedB && parsedA[1] === parsedB[1]) return 90;
+  if (flags.same_city) return 80;
+  if (flags.same_department) return 50;
+  if (flags.same_region) return 25;
+  if (flags.neighboring_region) return 12;
   return 0;
 }
 
@@ -162,7 +163,17 @@ export function rankProfileScore(params: {
   const ageProximity = Math.max(0, 20 - Math.abs(params.myAge - params.theirAge));
   const city = cityAffinityScore(params.myLocation, params.theirLocation);
   const cityPoints =
-    city >= 100 ? 35 : city >= 80 ? 28 : city >= 50 ? 15 : city * 0.15;
+    city >= 100
+      ? 35
+      : city >= 80
+        ? 28
+        : city >= 50
+          ? 15
+          : city >= 25
+            ? 8
+            : city >= 12
+              ? 4
+              : 0;
   return (
     params.mutualInterestCount * 40 +
     cityPoints +

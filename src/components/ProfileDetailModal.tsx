@@ -1,5 +1,6 @@
 import { Heart, MapPin, X, Zap } from 'lucide-react';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
+import { geoProximityBadge } from '@/lib/geoProximity';
 
 export type ProfileDetailCandidate = {
   id: string;
@@ -11,6 +12,9 @@ export type ProfileDetailCandidate = {
   interests?: string[];
   mutual_interests?: string[];
   same_city?: boolean;
+  same_department?: boolean;
+  same_region?: boolean;
+  neighboring_region?: boolean;
   is_boosted?: boolean;
   is_founder?: boolean;
   founder_number?: number | null;
@@ -41,6 +45,7 @@ export default function ProfileDetailModal({
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
+  const geoBadge = geoProximityBadge(candidate);
 
   return (
     <div
@@ -101,9 +106,9 @@ export default function ProfileDetailModal({
               <p className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                 <MapPin className="w-4 h-4 shrink-0" />
                 {candidate.location}
-                {candidate.same_city ? (
+                {geoBadge ? (
                   <span className="ml-1 text-emerald-700 font-medium">
-                    · Même ville
+                    · {geoBadge}
                   </span>
                 ) : null}
               </p>

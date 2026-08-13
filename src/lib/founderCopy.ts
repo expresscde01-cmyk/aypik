@@ -1,6 +1,6 @@
 /**
  * Mode site entièrement gratuit (Fondateur / FREE).
- * Passer à `false` pour restaurer l’UI payante : encart « Après vos 6 mois »,
+ * Passer à `false` pour restaurer l’UI payante : encart « Après tes 6 mois »,
  * cartes Premium/Boost, prix landing, teasers et CGU tarifaires.
  */
 export const SITE_FREE_MODE: boolean = true;
@@ -18,17 +18,17 @@ export const FOUNDER_BENEFIT_FLASH =
   'Coup de cœur offert (notification immédiate)';
 
 /**
- * Copies de l’encart « Après vos 6 mois offerts ».
+ * Copies de l’encart « Après tes 6 mois offerts ».
  * Conservées pour restaurer le mode payant ; C est le dernier corps validé.
  */
 export const FOUNDER_AFTER_6_MONTHS_COPY_A =
-  'Vous pourrez ensuite migrer de votre statut de Membre Fondateur vers l’offre Freemium, ou choisir de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Aucune carte bancaire n’est jamais demandée.';
+  'Tu pourras ensuite migrer de ton statut de Membre Fondateur vers l’offre Freemium, ou choisir de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Aucune carte bancaire n’est jamais demandée.';
 
 export const FOUNDER_AFTER_6_MONTHS_COPY_B =
-  'Vous restez libre d’annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Aucune obligation.';
+  'Tu restes libre d’annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Aucune obligation.';
 
 export const FOUNDER_AFTER_6_MONTHS_COPY_C =
-  "Vous restez libre d'annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Les offres sur AYPIK sont sans engagement de durée.";
+  "Tu restes libre d'annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Les offres sur AYPIK sont sans engagement de durée.";
 
 /** Dernier corps validé — à réafficher dans l’encart après 6 mois. */
 export const FOUNDER_AFTER_6_MONTHS_BODY = FOUNDER_AFTER_6_MONTHS_COPY_C;

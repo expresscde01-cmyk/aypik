@@ -41,17 +41,17 @@ export function WhoLikedTeaser({
 
   const body = included
     ? count > 0
-      ? `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké. Découvrez qui — c’est inclus dans ${namedOffer}.`
-      : `Quand quelqu’un vous likera, vous pourrez le découvrir — c’est inclus dans ${namedOffer}.`
+      ? `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké. Découvre qui — c’est inclus dans ${namedOffer}.`
+      : `Quand quelqu’un te likera, tu pourras le découvrir — c’est inclus dans ${namedOffer}.`
     : count > 0
       ? SITE_FREE_MODE
-        ? `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké.`
-        : `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké. Découvrez qui avec Premium${
+        ? `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké.`
+        : `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké. Découvre qui avec Premium${
             priceLabel ? ` (${priceLabel})` : ''
           }.`
       : SITE_FREE_MODE
-        ? 'Quand quelqu’un vous likera, vous pourrez le découvrir ici.'
-        : 'Quand quelqu’un vous likera, vous pourrez le découvrir avec Premium.';
+        ? 'Quand quelqu’un te likera, tu pourras le découvrir ici.'
+        : 'Quand quelqu’un te likera, tu pourras le découvrir avec Premium.';
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 relative overflow-hidden">
@@ -59,7 +59,7 @@ export function WhoLikedTeaser({
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-rose-500" />
           <h3 className="text-sm font-semibold text-gray-900">
-            Qui vous a liké
+            Qui t'a liké
           </h3>
         </div>
         <SoftLock label={lockLabel} />
@@ -172,12 +172,12 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
         title="Limite de likes atteinte pour aujourd’hui"
         description={
           included
-            ? `Les likes illimités sont inclus dans ${namedOffer}. Réessayez dans un instant.`
+            ? `Les likes illimités sont inclus dans ${namedOffer}. Réessaie dans un instant.`
             : priceLabel
-              ? `Revenez demain, ou passez à Premium (${priceLabel}) pour liker sans limite — à votre rythme.`
+              ? `Reviens demain, ou passe à Premium (${priceLabel}) pour liker sans limite — à ton rythme.`
               : SITE_FREE_MODE
-                ? 'Revenez demain pour liker à nouveau — à votre rythme.'
-                : 'Revenez demain, ou passez à Premium pour liker sans limite — à votre rythme.'
+                ? 'Reviens demain pour liker à nouveau — à ton rythme.'
+                : 'Reviens demain, ou passe à Premium pour liker sans limite — à ton rythme.'
         }
         priceLabel={priceLabel}
       />

@@ -31,6 +31,7 @@ import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import { rankProfileScore } from '@/lib/suggestions';
+import { geoProximityBadge, geoProximityFlags } from '@/lib/geoProximity';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 
 type SortChoice = 'pertinence' | 'recents' | null;
@@ -43,6 +44,9 @@ interface Candidate extends Profile {
   founder_number?: number | null;
   score: number;
   same_city: boolean;
+  same_department: boolean;
+  same_region: boolean;
+  neighboring_region: boolean;
   created_at?: string;
 }
 
@@ -83,7 +87,7 @@ export default function DiscoveryPage() {
         .maybeSingle();
 
       if (profileErr || !profile) {
-        setError('Impossible de charger votre profil');
+        setError('Impossible de charger ton profil');
         setLoading(false);
         return;
       }
@@ -169,12 +173,10 @@ export default function DiscoveryPage() {
             (myProfile.interests || []).includes(i)
           );
           const is_boosted = boostSet.has(profile.id);
-          const same_city =
-            Boolean(myProfile.location) &&
-            Boolean(profile.location) &&
-            (myProfile.location === profile.location ||
-              myProfile.location.split('(')[0].trim().toLowerCase() ===
-                profile.location.split('(')[0].trim().toLowerCase());
+          const flags = geoProximityFlags(
+            myProfile.location || '',
+            profile.location || ''
+          );
 
           return {
             ...profile,
@@ -183,7 +185,10 @@ export default function DiscoveryPage() {
             is_boosted,
             is_founder: founderMap.has(profile.id),
             founder_number: founderMap.get(profile.id) ?? null,
-            same_city,
+            same_city: flags.same_city,
+            same_department: flags.same_department,
+            same_region: flags.same_region,
+            neighboring_region: flags.neighboring_region,
             created_at:
               typeof (profile as Candidate).created_at === 'string'
                 ? (profile as Candidate).created_at
@@ -346,7 +351,7 @@ export default function DiscoveryPage() {
         setFlashedIds((prev) => new Set(prev).add(candidate.id));
         setToast(
           result.already_flashed
-            ? 'Vous avez déjà flashé ce profil'
+            ? 'Tu as déjà flashé ce profil'
             : `Coup de cœur envoyé à ${candidate.display_name} ✨`
         );
 
@@ -441,7 +446,7 @@ export default function DiscoveryPage() {
                   onChange={(e) => setSameCityOnly(e.target.checked)}
                   className="rounded border-gray-300 text-rose-500 focus:ring-rose-400"
                 />
-                Même ville uniquement
+                Même ville
               </label>
               <label className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
@@ -518,14 +523,14 @@ export default function DiscoveryPage() {
                 C'est tout pour le moment
               </h2>
               <p className="text-gray-500 max-w-sm">
-                Revenez plus tard pour découvrir de nouveaux profils.
+                Reviens plus tard pour découvrir de nouveaux profils.
               </p>
             </>
           )}
           {!canFilter && !SITE_FREE_MODE && (
             <div className="w-full max-w-sm">
               <SoftPremiumBanner
-                title="Affiner vos rencontres"
+                title="Affiner tes rencontres"
                 description={
                   isFounderPeriodActive(status) || status.plan === 'premium'
                     ? `Les filtres par ville et centres d’intérêt sont inclus dans ${offerLabel(status)}${
@@ -578,6 +583,7 @@ export default function DiscoveryPage() {
               const alreadyFlashed = flashedIds.has(c.id);
               const alreadyLiked = likedIds.has(c.id);
               const busy = actingId === c.id;
+              const geoBadge = geoProximityBadge(c);
               return (
                 <li key={c.id}>
                   <article className="relative rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-rose-100 transition-all animate-fadeIn cursor-pointer">
@@ -633,7 +639,7 @@ export default function DiscoveryPage() {
                           {c.location}
                         </p>
                       )}
-                      {(c.mutual_interests.length > 0 || c.same_city) && (
+                      {(c.mutual_interests.length > 0 || geoBadge) && (
                         <div className="flex flex-col gap-0.5">
                           {c.mutual_interests.length > 0 && (
                             <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
@@ -643,9 +649,9 @@ export default function DiscoveryPage() {
                                 : `${c.mutual_interests.length} centres d'intérêt en commun`}
                             </p>
                           )}
-                          {c.same_city && (
+                          {geoBadge && (
                             <p className="text-[11px] text-emerald-700 font-medium">
-                              Même ville
+                              {geoBadge}
                             </p>
                           )}
                         </div>

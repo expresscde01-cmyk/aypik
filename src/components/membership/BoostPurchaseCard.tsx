@@ -39,7 +39,7 @@ export function BoostPurchaseCard({
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900">Boost 24 h</h3>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-            Mettez votre profil en avant pendant une journée. Achat ponctuel,
+            Mets ton profil en avant pendant une journée. Achat ponctuel,
             sans abonnement.
           </p>
 
@@ -64,7 +64,7 @@ export function BoostPurchaseCard({
 
           {done && !error && (
             <p className="text-xs text-green-700 mt-2 font-medium">
-              Boost activé — votre profil est mis en avant.
+              Boost activé — ton profil est mis en avant.
             </p>
           )}
 

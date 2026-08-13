@@ -174,7 +174,7 @@ export function PaymentCheckoutModal({
             </div>
             <ul className="mt-3 space-y-1.5">
               {[
-                'Voir qui a liké votre profil',
+                'Voir qui a liké ton profil',
                 'Filtres avancés',
                 'Likes illimités',
               ].map((item) => (
@@ -191,9 +191,9 @@ export function PaymentCheckoutModal({
               <strong className="font-semibold text-gray-800">
                 Résiliable à tout moment en un clic
               </strong>{' '}
-              depuis votre profil. Aucun frais de résiliation. Vous gardez
+              depuis ton profil. Aucun frais de résiliation. Tu gardes
               l’accès jusqu’à la fin de la période déjà payée. En continuant,
-              vous acceptez les{' '}
+              tu acceptes les{' '}
               <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium">
                 CGU / CGV
               </LegalLink>
@@ -207,7 +207,7 @@ export function PaymentCheckoutModal({
                 Paiement confirmé
               </p>
               <p className="text-xs text-green-700">
-                Votre Premium ({priceLabel}) est actif. Merci pour votre soutien.
+                Ton Premium ({priceLabel}) est actif. Merci pour ton soutien.
               </p>
               <button
                 type="button"
@@ -226,7 +226,7 @@ export function PaymentCheckoutModal({
             <>
               <div>
                 <p className="text-sm font-semibold text-gray-900 mb-2">
-                  Choisissez votre mode de paiement
+                  Choisis ton mode de paiement
                 </p>
                 <div className="grid gap-2">
                   <PaymentOption
@@ -277,7 +277,7 @@ export function PaymentCheckoutModal({
 
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Paiement chiffré · nous ne stockons pas vos données de carte
+                Paiement chiffré · nous ne stockons pas tes données de carte
               </p>
             </>
           )}
@@ -319,7 +319,7 @@ export function PaymentCheckoutModal({
                 Redirection vers PayPal…
               </p>
               <p className="text-xs text-gray-500">
-                Vous allez confirmer l’abonnement {priceLabel} sur le site
+                Tu vas confirmer l’abonnement {priceLabel} sur le site
                 PayPal, puis revenir ici.
               </p>
             </div>
@@ -365,7 +365,7 @@ function StripeCardForm({
     setSubmitting(false);
 
     if (error) {
-      const msg = error.message ?? 'Paiement refusé. Vérifiez votre carte.';
+      const msg = error.message ?? 'Paiement refusé. Vérifie ta carte.';
       setLocalError(msg);
       onError(msg);
       return;
@@ -421,7 +421,7 @@ function StripeCardForm({
       </div>
 
       <p className="text-[11px] text-center text-gray-400 leading-relaxed">
-        En confirmant, vous acceptez un prélèvement récurrent de {priceLabel}.
+        En confirmant, tu acceptes un prélèvement récurrent de {priceLabel}.
         Résiliable à tout moment en un clic.
       </p>
     </form>

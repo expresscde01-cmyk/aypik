@@ -21,3 +21,24 @@ body {
     scrollbar-width: none;
   }
 }
+
+@keyframes match-title-wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(4px);
+  }
+}
+
+.match-title-wave-letter {
+  display: inline-block;
+  animation: match-title-wave 1.6s ease-in-out infinite;
+}

@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       "Aypik <onboarding@resend.dev>";
 
     const subject =
-      `${fromDisplayName} vous a envoyé un coup de cœur sur Aypik`;
+      `${fromDisplayName} t'a envoyé un coup de cœur sur Aypik`;
     const html = wrapTransactionalEmailHtml({
       title: "Coup de cœur Aypik",
       bodyHtml: buildFlashBody({ fromDisplayName }),
@@ -190,10 +190,10 @@ function buildFlashBody(params: { fromDisplayName: string }) {
   const name = escapeHtml(params.fromDisplayName);
   return `
               <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Vous avez reçu un coup de cœur&nbsp;!</h1>
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Tu as reçu un coup de cœur&nbsp;!</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                <strong>${name}</strong> vous a flashé sur Aypik.
-                Connectez-vous pour découvrir ce profil et répondre si le feeling est réciproque.
+                <strong>${name}</strong> t'a flashé sur Aypik.
+                Connecte-toi pour découvrir ce profil et répondre si le feeling est réciproque.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
                 Belle découverte — un espace bienveillant réservé exclusivement aux personnes sans enfants.

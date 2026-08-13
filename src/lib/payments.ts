@@ -41,7 +41,7 @@ export async function createStripeSubscription(): Promise<{
     return {
       error:
         error.message ||
-        "Impossible de démarrer le paiement Stripe. Vérifiez que la fonction Edge est déployée.",
+        "Impossible de démarrer le paiement Stripe. Vérifie que la fonction Edge est déployée.",
     };
   }
 
@@ -70,7 +70,7 @@ export async function createPayPalSubscription(urls: {
     return {
       error:
         error.message ||
-        "Impossible de démarrer PayPal. Vérifiez que la fonction Edge est déployée.",
+        "Impossible de démarrer PayPal. Vérifie que la fonction Edge est déployée.",
     };
   }
 
@@ -94,7 +94,7 @@ export async function cancelPremiumSubscription(): Promise<string | null> {
   if (error) {
     return (
       error.message ||
-      'Impossible de résilier. Réessayez ou contactez le support.'
+      'Impossible de résilier. Réessaie ou contacte le support.'
     );
   }
 

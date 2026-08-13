@@ -83,16 +83,16 @@ export function flashErrorMessage(
         return 'Limite de coups de cœur atteinte pour aujourd’hui.';
       }
       if (SITE_FREE_MODE) {
-        return 'Limite de coups de cœur atteinte pour aujourd’hui. Réessayez demain.';
+        return 'Limite de coups de cœur atteinte pour aujourd’hui. Réessaie demain.';
       }
-      return 'Limite de coups de cœur atteinte pour aujourd’hui. Passez à Premium pour en envoyer davantage.';
+      return 'Limite de coups de cœur atteinte pour aujourd’hui. Passe à Premium pour en envoyer davantage.';
     case 'invalid_target':
     case 'age_rule_violation':
       return 'Profil invalide.';
     case 'profile_not_found':
       return 'Ce profil n’est plus disponible.';
     case 'not_authenticated':
-      return 'Session expirée. Reconnectez-vous.';
+      return 'Session expirée. Reconnecte-toi.';
     default:
       return error || 'Impossible d’envoyer le coup de cœur.';
   }

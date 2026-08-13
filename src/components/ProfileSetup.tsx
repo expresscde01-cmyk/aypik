@@ -316,7 +316,7 @@ export default function ProfileSetup({
 
     if (isSignup && !status.membership_linked) {
       setError(
-        'Veuillez d’abord choisir et activer une offre pour continuer l’inscription.'
+        'Choisis et active d’abord une offre pour continuer l’inscription.'
       );
       return;
     }
@@ -342,7 +342,7 @@ export default function ProfileSetup({
       if (!user) throw new Error('Non connecté');
       if (hasChildren) {
         throw new Error(
-          "Ce site est réservé aux personnes sans enfants. Vous avez indiqué avoir des enfants."
+          "Ce site est réservé aux personnes sans enfants. Tu as indiqué avoir des enfants."
         );
       }
 
@@ -488,7 +488,7 @@ export default function ProfileSetup({
           </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mon profil</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Renseignez vos informations pour apparaître dans les recherches
+            Renseigne tes informations pour apparaître dans les recherches
           </p>
           {(status.is_founder || status.has_boost) && (
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
@@ -520,7 +520,7 @@ export default function ProfileSetup({
             </div>
             <div className="flex-1 min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Votre photo
+                Ta photo
               </label>
               <input
                 ref={fileInputRef}
@@ -571,7 +571,7 @@ export default function ProfileSetup({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-              placeholder="Votre prénom ou pseudo"
+              placeholder="Ton prénom ou pseudo"
             />
           </div>
 
@@ -590,50 +590,41 @@ export default function ProfileSetup({
             />
           </div>
 
-          {/* Gender (optional, locked after first save) */}
-          {genderLocked ? (
-            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-              <p className="text-sm font-semibold text-gray-700">
-                {gender === 'homme' ? 'Homme' : 'Femme'}
-              </p>
-            </div>
-          ) : (
+          {/* Gender: optional until first save, then the whole block disappears */}
+          {!genderLocked && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Je suis{' '}
-                <span className="font-normal text-gray-400">(optionnel)</span>
+                Je suis
               </label>
-              <p className="text-xs text-gray-500 mb-2 leading-relaxed">
-                Facultatif. Une fois enregistré, ce choix ne pourra plus être
-                modifié.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setGender((prev) => (prev === 'homme' ? null : 'homme'))
-                  }
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                    gender === 'homme'
-                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                  }`}
-                >
-                  Je suis un homme
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setGender((prev) => (prev === 'femme' ? null : 'femme'))
-                  }
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                    gender === 'femme'
-                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                  }`}
-                >
-                  Je suis une femme
-                </button>
+              <div className="flex gap-2" role="group" aria-label="Je suis">
+              <button
+                type="button"
+                aria-pressed={gender === 'homme'}
+                onClick={() =>
+                  setGender((prev) => (prev === 'homme' ? null : 'homme'))
+                }
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                  gender === 'homme'
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                }`}
+              >
+                Un homme
+              </button>
+              <button
+                type="button"
+                aria-pressed={gender === 'femme'}
+                onClick={() =>
+                  setGender((prev) => (prev === 'femme' ? null : 'femme'))
+                }
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                  gender === 'femme'
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                }`}
+              >
+                Une femme
+              </button>
               </div>
             </div>
           )}
@@ -667,7 +658,7 @@ export default function ProfileSetup({
                 }
               }}
               invalid={Boolean(cityError)}
-              placeholder="Tapez puis choisissez dans la liste…"
+              placeholder="Tape puis choisis dans la liste…"
             />
             {cityError && (
               <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
@@ -683,7 +674,7 @@ export default function ProfileSetup({
               <Baby className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Avez-vous des enfants ?
+                  As-tu des enfants ?
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -825,7 +816,7 @@ export default function ProfileSetup({
               rows={4}
               maxLength={500}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
-              placeholder="Parlez de vous, ce que vous aimez, ce que vous recherchez..."
+              placeholder="Parle de toi, ce que tu aimes, ce que tu recherches..."
             />
             <p className="text-xs text-gray-400 mt-1 text-right">
               {bio.length}/500
@@ -847,7 +838,7 @@ export default function ProfileSetup({
                 Préférences
               </h2>
               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                Gérez les e-mails de notification envoyés par Aypik (coups de
+                Gère les e-mails de notification envoyés par Aypik (coups de
                 cœur, actualisations, messages d’accueil, etc.).
               </p>
             </div>
@@ -868,7 +859,7 @@ export default function ProfileSetup({
                 <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
                   {profileExists
                     ? 'Ce choix est enregistré immédiatement. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'
-                    : 'Ce choix sera enregistré avec votre profil. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'}
+                    : 'Ce choix sera enregistré avec ton profil. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'}
                 </span>
                 {(prefsSaving || prefsSaved) && (
                   <span
@@ -926,14 +917,14 @@ export default function ProfileSetup({
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
             <h2 className="text-sm font-semibold text-gray-900 mb-1">SUPPRESSION DU COMPTE</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Vous partez ? La suppression devient définitive après 30 jours.
-              Votre profil, vos likes et vos matchs seront alors effacés.
+              Tu pars ? La suppression devient définitive après 30 jours.
+              Ton profil, tes likes et tes matchs seront alors effacés.
             </p>
 
             {deletionRequested || deletionRequestedAt ? (
               <div className="space-y-3">
                 <p className="text-sm text-amber-800 bg-amber-50 rounded-xl p-3">
-                  Compte en cours de suppression — reconnectez-vous dans les
+                  Compte en cours de suppression — reconnecte-toi dans les
                   30 jours pour annuler.
                 </p>
                 <button
@@ -970,10 +961,10 @@ export default function ProfileSetup({
                     Attention
                   </h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    Attention : La suppression de votre compte sera définitive
-                    après un délai de 30 jours. Toutes vos données seront
-                    effacées. Si vous êtes Membre Fondateur, votre statut et
-                    votre numéro d&apos;inscription seront également perdus et
+                    Attention : La suppression de ton compte sera définitive
+                    après un délai de 30 jours. Toutes tes données seront
+                    effacées. Si tu es Membre Fondateur, ton statut et
+                    ton numéro d&apos;inscription seront également perdus et
                     ne pourront pas être récupérés.
                   </p>
                   <div className="flex gap-3 pt-1">

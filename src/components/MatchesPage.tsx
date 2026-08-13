@@ -158,7 +158,7 @@ export default function MatchesPage() {
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
-          <div className="text-gray-400 text-sm">Chargement de vos matchs...</div>
+          <div className="text-gray-400 text-sm">Chargement de tes matchs...</div>
         </div>
       </div>
     );
@@ -198,14 +198,26 @@ export default function MatchesPage() {
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center mb-4">
             <Heart className="w-9 h-9 text-rose-300" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Pas encore de match
+          <h2
+            className="text-xl font-bold text-blue-900 mb-2"
+            aria-label="Pas encore de match"
+          >
+            {Array.from('Pas encore de match').map((char, i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="match-title-wave-letter"
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                {char === ' ' ? '\u00A0' : char}
+              </span>
+            ))}
           </h2>
           <p className="text-gray-500 max-w-md font-bold not-italic">
-            Continuez à explorer les profils dans la section Découvrir.
+            Continue à explorer les profils dans la section Découvrir.
           </p>
           <p className="text-gray-500 max-w-md mt-2 font-normal italic">
-            Un match apparaît ici dès qu'on vous envoie un coup de cœur{' '}
+            Un match apparaît ici dès qu'on t'envoie un coup de cœur{' '}
             <Zap
               className="w-4 h-4 inline mb-0.5 text-amber-500"
               fill="currentColor"
@@ -222,7 +234,7 @@ export default function MatchesPage() {
         </div>
         <SoftPremiumBanner
           title="Messages illimités après match"
-          description={`Dès qu'il y a réciprocité, vous pouvez échanger librement — c’est inclus dans ${offerLabel(status)}.`}
+          description={`Dès qu'il y a réciprocité, tu peux échanger librement — c’est inclus dans ${offerLabel(status)}.`}
         />
       </div>
     );
@@ -235,10 +247,10 @@ export default function MatchesPage() {
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        Vos matchs ({matches.length})
+        Tes matchs ({matches.length})
       </h2>
       <p className="text-sm text-gray-500 mb-5">
-        Vous vous êtes mutuellement appréciés — messagerie libre et illimitée,
+        Match réciproque — messagerie libre et illimitée,
         c’est inclus dans {offerLabel(status)}
       </p>
 

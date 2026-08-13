@@ -22,7 +22,7 @@ export type EnsureMembershipResult = {
 export type SignupOffer = 'founder' | 'free';
 
 const SCHEMA_CACHE_ERROR =
-  "L'activation de l'offre n'est pas encore disponible. Réessayez dans quelques secondes.";
+  "L'activation de l'offre n'est pas encore disponible. Réessaie dans quelques secondes.";
 
 function isMissingRpc(error: { code?: string; message: string }, name: string) {
   return (

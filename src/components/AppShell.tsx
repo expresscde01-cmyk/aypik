@@ -99,7 +99,7 @@ export default function AppShell() {
         <div className="bg-amber-50 border-b border-amber-200">
           <div className="max-w-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
             <p className="flex-1 text-sm text-amber-900">
-              Compte en cours de suppression — reconnectez-vous dans les 30
+              Compte en cours de suppression — reconnecte-toi dans les 30
               jours pour annuler.
             </p>
             <button

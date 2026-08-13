@@ -56,7 +56,7 @@ export function buildEmailLegalFooter(siteUrl = getPublicSiteUrl()): string {
   return `
   <hr style="border:none;border-top:1px solid #fce7f3;margin:28px 0 16px;" />
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">
-    Vous recevez cet e-mail car vous avez un compte sur
+    Tu reçois cet e-mail car tu as un compte sur
     <a href="${home}" style="color:#e11d48;text-decoration:underline;">Aypik</a>.
   </p>
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">

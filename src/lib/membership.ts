@@ -70,7 +70,7 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
 };
 
 export const MEMBERSHIP_REQUIRED_ERROR =
-  "Impossible de finaliser l'inscription : aucune offre valide n'est liée à votre profil. Veuillez réessayer.";
+  "Impossible de finaliser l'inscription : aucune offre valide n'est liée à ton profil. Réessaie.";
 
 const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
 

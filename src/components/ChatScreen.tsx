@@ -235,7 +235,7 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
                     C’est un match avec {peer.display_name}
                   </p>
                   <p className="text-xs text-gray-400 mt-1.5 max-w-xs">
-                    Envoyez le premier message pour lancer la conversation.
+                    Envoie le premier message pour lancer la conversation.
                   </p>
                   <p className="text-xs text-gray-400 mt-1 max-w-xs">
                     Messagerie illimitée — c’est inclus dans{' '}

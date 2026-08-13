@@ -119,7 +119,7 @@ export const MIN_INTERESTS = 3;
 export const MAX_CUSTOM_INTEREST_LENGTH = 32;
 
 export const INTERESTS_MIN_ERROR =
-  'Veuillez sélectionner au moins 3 centres d’intérêt';
+  'Sélectionne au moins 3 centres d’intérêt';
 
 /** Normalise pour comparer sans doublon (casse / espaces). */
 export function normalizeInterestKey(value: string): string {

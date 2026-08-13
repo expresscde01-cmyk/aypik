@@ -57,7 +57,7 @@ function FounderActiveBanner({
               Les {FOUNDER_MAX_SLOTS} places ont été attribuées
               {SITE_FREE_MODE
                 ? '.'
-                : '. Choisissez l’offre Freemium ou Premium pour continuer.'}
+                : '. Choisis l’offre Freemium ou Premium pour continuer.'}
             </p>
           </div>
         </div>
@@ -206,7 +206,7 @@ function OptionalPremiumNote({ months }: { months: number }) {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-700">
-            Après vos {months} mois offerts
+            Après tes {months} mois offerts
           </p>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">
             {FOUNDER_AFTER_6_MONTHS_BODY}
@@ -288,7 +288,7 @@ export function MembershipPanel({
   const handleCancel = async () => {
     if (
       !window.confirm(
-        'Résilier Premium ? Vous ne serez plus prélevé. Aucun frais de résiliation. L’accès reste actif jusqu’à la fin de la période déjà payée.'
+        'Résilier Premium ? Tu ne seras plus prélevé. Aucun frais de résiliation. L’accès reste actif jusqu’à la fin de la période déjà payée.'
       )
     ) {
       return;
@@ -313,11 +313,11 @@ export function MembershipPanel({
             <Heart className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-            Votre formule
+            Ta formule
           </h2>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            6 mois offerts, sans carte bancaire. Activez l’offre Fondateur
-            pour créer votre profil.
+            6 mois offerts, sans carte bancaire. Active l’offre Fondateur
+            pour créer ton profil.
           </p>
         </div>
 
@@ -357,7 +357,7 @@ export function MembershipPanel({
                 ? 'Membre Fondateur'
                 : offerShortName(status)}
             </strong>
-            . Vous pouvez maintenant compléter votre profil.
+            . Tu peux maintenant compléter ton profil.
           </p>
         </div>
       )}
@@ -374,12 +374,12 @@ export function MembershipPanel({
           <Bell className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-900">
-              Votre période Fondateur touche à sa fin
+              Ta période Fondateur touche à sa fin
             </p>
             <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, vos{' '}
-              {status.founder_premium_months} mois à 0 € se terminent. Vous
-              pourrez rester en freemium, ou reconduire en soutien à{' '}
+              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, tes{' '}
+              {status.founder_premium_months} mois à 0 € se terminent. Tu
+              pourras rester en freemium, ou reconduire en soutien à{' '}
               <strong>{priceLabel}</strong>.
             </p>
           </div>
@@ -410,7 +410,7 @@ export function MembershipPanel({
         {showPaidPremiumActive && !SITE_FREE_MODE && (
           <SoftPremiumBanner
             title="Abonnement Premium actif"
-            description="Qui vous a liké, filtres avancés et likes illimités sont inclus."
+            description="Qui t'a liké, filtres avancés et likes illimités sont inclus."
             priceLabel={SITE_FREE_MODE ? undefined : priceLabel}
           />
         )}
@@ -421,8 +421,8 @@ export function MembershipPanel({
               Gérer l’abonnement
             </p>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Résiliation en un clic, sans frais ni parcours compliqué. Vous
-              conservez Premium jusqu’à la fin de la période déjà payée.
+              Résiliation en un clic, sans frais ni parcours compliqué. Tu
+              conserves Premium jusqu’à la fin de la période déjà payée.
             </p>
             <button
               type="button"
@@ -446,7 +446,7 @@ export function MembershipPanel({
               {typeof status.founder_number === 'number'
                 ? ` #${status.founder_number}`
                 : ''}{' '}
-              — visible sur votre profil.
+              — visible sur ton profil.
             </p>
           </div>
         )}

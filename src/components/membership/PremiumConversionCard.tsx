@@ -10,7 +10,7 @@ import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 
 const PREMIUM_PERKS = [
-  'Voir qui a liké votre profil',
+  'Voir qui a liké ton profil',
   'Filtres géographiques & centres d’intérêt',
   'Likes illimités',
 ];

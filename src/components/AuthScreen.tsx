@@ -30,7 +30,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
     setError(null);
 
     if (!email.trim()) {
-      setError('Veuillez saisir votre adresse e-mail.');
+      setError('Saisis ton adresse e-mail.');
       return;
     }
 
@@ -140,7 +140,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-                  placeholder="vous@exemple.com"
+                  placeholder="toi@exemple.com"
                 />
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
                   placeholder={
                     mode === 'signup'
                       ? '12 caractères min., majuscule, symbole'
-                      : 'Votre mot de passe'
+                      : 'Ton mot de passe'
                   }
                 />
                 <button
@@ -221,7 +221,7 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
-          En vous inscrivant, vous confirmez être une personne sans enfant et
+          En t&apos;inscrivant, tu confirmes être une personne sans enfant et
           accepter les{' '}
           <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
             CGU / CGV

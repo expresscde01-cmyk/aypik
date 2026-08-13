@@ -11,15 +11,15 @@ function mapDeletionError(error: {
       error.message
     )
   ) {
-    return "La suppression de compte n'est pas encore disponible. Réessayez dans quelques secondes.";
+    return "La suppression de compte n'est pas encore disponible. Réessaie dans quelques secondes.";
   }
 
   if (error.message.includes('not_authenticated')) {
-    return 'Vous devez être connecté(e) pour gérer la suppression de votre compte.';
+    return 'Tu dois être connecté(e) pour gérer la suppression de ton compte.';
   }
 
   if (error.message.includes('profile_not_found')) {
-    return 'Profil introuvable. Enregistrez votre profil avant de demander la suppression.';
+    return 'Profil introuvable. Enregistre ton profil avant de demander la suppression.';
   }
 
   if (error.message.includes('deletion_already_processed')) {

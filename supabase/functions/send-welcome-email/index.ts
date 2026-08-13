@@ -183,14 +183,14 @@ function buildWelcomeBody(params: {
       ? `#${params.founderNumber}`
       : "Fondateur";
   const until = params.premiumUntil
-    ? `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Vos 6 mois Premium offerts sont actifs jusqu'au <strong>${escapeHtml(params.premiumUntil)}</strong>.</p>`
-    : `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Vos 6 mois Premium offerts sont maintenant actifs.</p>`;
+    ? `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Tes 6 mois Premium offerts sont actifs jusqu'au <strong>${escapeHtml(params.premiumUntil)}</strong>.</p>`
+    : `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Tes 6 mois Premium offerts sont maintenant actifs.</p>`;
 
   return `
               <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
               <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Bienvenue, ${name}&nbsp;!</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Vous faites partie des 500 premiers membres. Votre statut
+                Tu fais partie des 500 premiers membres. Ton statut
                 <strong>Membre Fondateur ${escapeHtml(numberLabel)}</strong>
                 est confirmé à vie. Likes illimités, coup de cœur et boost de
                 visibilité du profil offert pendant le premier mois.
@@ -198,7 +198,7 @@ function buildWelcomeBody(params: {
               ${until}
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
                 Aucune carte bancaire n'est requise. À l'issue de cette période,
-                les avantages fonctionnels prennent fin ; votre badge Membre
+                les avantages fonctionnels prennent fin ; ton badge Membre
                 Fondateur reste visible. Sans tacite reconduction.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">

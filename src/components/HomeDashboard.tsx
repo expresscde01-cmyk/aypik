@@ -14,6 +14,7 @@ import {
   fetchSuggestedProfiles,
   type SuggestedProfile,
 } from '@/lib/suggestions';
+import { geoProximityBadge } from '@/lib/geoProximity';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
@@ -204,7 +205,7 @@ export default function HomeDashboard({
         setFlashedIds((prev) => new Set(prev).add(candidate.id));
         setToast(
           result.already_flashed
-            ? 'Vous avez déjà flashé ce profil'
+            ? 'Tu as déjà flashé ce profil'
             : `Coup de cœur envoyé à ${candidate.display_name} ✨`
         );
 
@@ -271,8 +272,8 @@ export default function HomeDashboard({
             Bonjour, {displayName}
           </h1>
           <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-            Des profils proches de vous, de votre âge et de vos centres
-            d’intérêt — sélectionnés pour vous.
+            Des profils proches de toi, de ton âge et de tes centres
+            d’intérêt — sélectionnés pour toi.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
             <button
@@ -298,10 +299,10 @@ export default function HomeDashboard({
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-                Suggestions pour vous
+                Suggestions pour toi
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Ville · âge · centres d’intérêt en commun
+                Près de chez toi · âge · centres d’intérêt
               </p>
             </div>
             <button
@@ -333,8 +334,8 @@ export default function HomeDashboard({
             <div className="rounded-2xl border border-dashed border-rose-200 bg-white/70 px-5 py-10 text-center">
               <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-2" />
               <p className="text-sm text-gray-600">
-                Pas encore de suggestion. Complétez vos centres d’intérêt ou
-                revenez bientôt.
+                Pas encore de profil dans ta ville, ton département ou ta
+                région. Parcours les autres profils ou reviens bientôt.
               </p>
               <button
                 type="button"
@@ -346,7 +347,9 @@ export default function HomeDashboard({
             </div>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:gap-4">
-              {suggestions.map((p) => (
+              {suggestions.map((p) => {
+                const geoBadge = geoProximityBadge(p);
+                return (
                 <li key={p.id}>
                   <button
                     type="button"
@@ -393,15 +396,16 @@ export default function HomeDashboard({
                             : `${p.mutual_interest_count} centres d'intérêt en commun`}
                         </p>
                       )}
-                      {(p.same_city || p.same_department) && (
+                      {geoBadge && (
                         <p className="text-[11px] text-emerald-700 font-medium">
-                          {p.same_city ? 'Même ville' : 'Même département'}
+                          {geoBadge}
                         </p>
                       )}
                     </div>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>
