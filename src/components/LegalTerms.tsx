@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { BRAND_NAME, BRAND_BASELINE, BRAND_FULL } from '@/components/BrandLockup';
+import { SITE_FREE_MODE, FOUNDER_MAX_SLOTS } from '@/lib/founderCopy';
 
 export function openLegalTerms() {
   const url = new URL(window.location.href);
@@ -125,16 +126,26 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Offre Membre Fondateur
               </p>
               <p>
-                Strictement réservée aux 500 premiers membres inscrits, cette
-                offre accorde 6 mois de services Premium offerts. Dès que ce
-                plafond est atteint, l&apos;offre Membre Fondateur n&apos;est
-                plus proposée.
+                Strictement réservée aux {FOUNDER_MAX_SLOTS} premiers membres
+                inscrits, cette offre accorde 6 mois de services Premium
+                offerts, likes illimités, un coup de cœur, et un boost de
+                visibilité du profil pendant le premier mois. Le titre de
+                Membre Fondateur et le numéro associé restent visibles tant
+                que le compte est actif. Dès que ce plafond est atteint,
+                l&apos;offre n&apos;est plus proposée.
+              </p>
+              <p>
+                Le statut de Membre Fondateur et son numéro associé sont
+                strictement liés au compte actif. En cas de désinscription ou
+                de suppression du compte, le badge est définitivement perdu et
+                ne pourra pas être réattribué.
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>
-                  À l&apos;issue des 6 mois, le compte fait l&apos;objet d&apos;un
-                  retour automatique à l&apos;offre gratuite, sans tacite
-                  reconduction et sans prélèvement automatique.
+                  À l&apos;issue des 6 mois, les avantages fonctionnels
+                  prennent fin et le compte revient à l&apos;offre gratuite,
+                  sans tacite reconduction ni prélèvement. Le badge Membre
+                  Fondateur reste honorifique tant que le compte existe.
                 </li>
                 <li>
                   Aucune carte bancaire n&apos;est requise pour en bénéficier.
@@ -143,13 +154,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
           </section>
 
+          {!SITE_FREE_MODE && (
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
               Article 3 : Abonnement Premium et Achats Ponctuels
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
-                Abonnement Premium (19,99&nbsp;€ / mois)
+                {SITE_FREE_MODE
+                  ? 'Abonnement Premium'
+                  : 'Abonnement Premium (19,99\u00a0€ / mois)'}
               </p>
               <p>
                 Cet abonnement optionnel apporte du confort supplémentaire
@@ -176,6 +190,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
             </div>
           </section>
+          )}
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
@@ -220,11 +235,48 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Article 6 : Résiliation et Suppression de Compte
             </h3>
             <p>
-              L&apos;utilisateur peut à tout moment supprimer son compte et
-              l&apos;intégralité de ses données personnelles en un clic depuis
-              les paramètres de son profil, conformément à la réglementation sur
-              la protection des données (RGPD).
+              L&apos;utilisateur peut à tout moment demander la suppression de
+              son compte et de l&apos;intégralité de ses données personnelles
+              depuis les paramètres de son profil, conformément à la
+              réglementation sur la protection des données (RGPD). La
+              suppression n&apos;est pas immédiate : le compte passe au statut
+              « en cours de suppression » pendant 30 jours. Une reconnexion
+              pendant ce délai permet d&apos;annuler la demande. Passé ce délai,
+              toutes les données sont effacées définitivement.
             </p>
+            <p>
+              Le statut de Membre Fondateur et son numéro associé sont
+              strictement liés au compte actif. En cas de désinscription ou
+              de suppression du compte, le badge est définitivement perdu et
+              ne pourra pas être réattribué.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Questions fréquentes
+            </h3>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Comment se passe la suppression de mon compte&nbsp;?
+              </p>
+              <p>
+                La suppression n&apos;est pas immédiate : vous disposez d&apos;un
+                délai de 30 jours pour vous reconnecter et annuler. Passé ce
+                délai, toutes vos données sont définitivement effacées.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Que devient le badge Membre Fondateur si je me désinscris&nbsp;?
+              </p>
+              <p>
+                Le statut de Membre Fondateur et son numéro associé sont
+                strictement liés au compte actif. En cas de désinscription ou
+                de suppression du compte, le badge est définitivement perdu et
+                ne pourra pas être réattribué.
+              </p>
+            </div>
           </section>
 
           <footer className="border-t border-gray-100 pt-6 text-xs text-gray-400">

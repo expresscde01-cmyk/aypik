@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Heart, MapPin, AlertCircle, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, AlertCircle, MessageCircle, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { ageFromBirthDate } from '@/lib/dating';
+import {
+  ageFromBirthDate,
+  isWithinAgeGap,
+  latestBirthDateForAge,
+  minPartnerAge,
+} from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
 import type { Profile } from '@/components/ProfileSetup';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { WhoLikedTeaser } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
+import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import { formatPremiumPriceLabel } from '@/lib/membership';
 import ChatScreen from '@/components/ChatScreen';
 
@@ -33,6 +39,17 @@ export default function MatchesPage() {
     (async () => {
       if (!user) return;
       try {
+        const { data: meRow } = await supabase
+          .from('profiles')
+          .select('birth_date')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const myAge = meRow?.birth_date
+          ? ageFromBirthDate(meRow.birth_date as string)
+          : null;
+        const myMinAge = typeof myAge === 'number' ? minPartnerAge(myAge) : null;
+
         const { data: sentLikes, error: sentErr } = await supabase
           .from('likes')
           .select('to_user, created_at')
@@ -79,7 +96,14 @@ export default function MatchesPage() {
         const { data: profiles, error: profErr } = await supabase
           .from('profiles')
           .select('*')
-          .in('id', matchIdList);
+          .in('id', matchIdList)
+          .is('deletion_requested_at', null)
+          .lte(
+            'birth_date',
+            myMinAge !== null
+              ? latestBirthDateForAge(myMinAge)
+              : '1900-01-01'
+          );
 
         if (profErr) throw profErr;
 
@@ -105,14 +129,20 @@ export default function MatchesPage() {
         (boosts || []).forEach((b) => boostSet.add(b.user_id));
 
         const matchMap = new Map(matchIds.map((m) => [m.id, m.matched_at]));
-        const matchList: Match[] = (profiles || []).map((p) => ({
-          profile: p as Profile,
-          age: ageFromBirthDate((p as Profile).birth_date),
-          matched_at: matchMap.get((p as Profile).id) || '',
-          is_founder: founderMap.has((p as Profile).id),
-          founder_number: founderMap.get((p as Profile).id) ?? null,
-          is_boosted: boostSet.has((p as Profile).id),
-        }));
+        const matchList: Match[] = (profiles || [])
+          .map((p) => ({
+            profile: p as Profile,
+            age: ageFromBirthDate((p as Profile).birth_date),
+            matched_at: matchMap.get((p as Profile).id) || '',
+            is_founder: founderMap.has((p as Profile).id),
+            founder_number: founderMap.get((p as Profile).id) ?? null,
+            is_boosted: boostSet.has((p as Profile).id),
+          }))
+          .filter((m) =>
+            typeof myAge === 'number'
+              ? isWithinAgeGap(myAge, m.age) && isWithinAgeGap(m.age, myAge)
+              : false
+          );
 
         setMatches(matchList);
       } catch (err) {
@@ -134,11 +164,13 @@ export default function MatchesPage() {
     );
   }
 
-  const priceLabel = formatPremiumPriceLabel(
-    status.premium_price_cents,
-    status.premium_currency,
-    status.premium_interval
-  );
+  const priceLabel = SITE_FREE_MODE
+    ? undefined
+    : formatPremiumPriceLabel(
+        status.premium_price_cents,
+        status.premium_currency,
+        status.premium_interval
+      );
 
   if (error) {
     return (
@@ -159,6 +191,7 @@ export default function MatchesPage() {
             locked
             count={incomingLikeCount}
             priceLabel={priceLabel}
+            status={status}
           />
         )}
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -168,14 +201,28 @@ export default function MatchesPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-2">
             Pas encore de match
           </h2>
-          <p className="text-gray-500 max-w-sm">
-            Continuez à explorer les profils dans la section Découvrir. Quand
-            quelqu'un vous aimera en retour, votre match apparaîtra ici !
+          <p className="text-gray-500 max-w-md font-bold not-italic">
+            Continuez à explorer les profils dans la section Découvrir.
+          </p>
+          <p className="text-gray-500 max-w-md mt-2 font-normal italic">
+            Un match apparaît ici dès qu'on vous envoie un coup de cœur{' '}
+            <Zap
+              className="w-4 h-4 inline mb-0.5 text-amber-500"
+              fill="currentColor"
+              aria-hidden
+            />
+            , ou dès qu'un like{' '}
+            <Heart
+              className="w-4 h-4 inline mb-0.5 text-rose-500"
+              fill="currentColor"
+              aria-hidden
+            />{' '}
+            est réciproque.
           </p>
         </div>
         <SoftPremiumBanner
           title="Messages illimités après match"
-          description="Dès qu’il y a réciprocité, vous pouvez échanger librement — c’est inclus dans le freemium."
+          description={`Dès qu'il y a réciprocité, vous pouvez échanger librement — c’est inclus dans ${offerLabel(status)}.`}
         />
       </div>
     );
@@ -191,7 +238,8 @@ export default function MatchesPage() {
         Vos matchs ({matches.length})
       </h2>
       <p className="text-sm text-gray-500 mb-5">
-        Vous vous êtes mutuellement appréciés — messagerie libre et illimitée
+        Vous vous êtes mutuellement appréciés — messagerie libre et illimitée,
+        c’est inclus dans {offerLabel(status)}
       </p>
 
       {!status.can_see_who_liked && (
@@ -200,6 +248,7 @@ export default function MatchesPage() {
             locked
             count={incomingLikeCount}
             priceLabel={priceLabel}
+            status={status}
           />
         </div>
       )}

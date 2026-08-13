@@ -1,15 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Heart,
-  X,
   MapPin,
   Sparkles,
   AlertCircle,
   Zap,
+  Filter,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { ageFromBirthDate, minPartnerAge } from '@/lib/dating';
+import {
+  ageFromBirthDate,
+  isWithinAgeGap,
+  latestBirthDateForAge,
+  minPartnerAge,
+} from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
 import type { Profile } from '@/components/ProfileSetup';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
@@ -18,10 +25,14 @@ import {
   LikesQuotaHint,
 } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
-import { formatPremiumPriceLabel } from '@/lib/membership';
-import { flashErrorMessage, sendFlash } from '@/lib/flashes';
+import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
+import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership';
+import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import { rankProfileScore } from '@/lib/suggestions';
+import ProfileDetailModal from '@/components/ProfileDetailModal';
+
+type SortChoice = 'pertinence' | 'recents' | null;
 
 interface Candidate extends Profile {
   age: number;
@@ -31,24 +42,35 @@ interface Candidate extends Profile {
   founder_number?: number | null;
   score: number;
   same_city: boolean;
+  created_at?: string;
 }
 
 export default function DiscoveryPage() {
   const { user } = useAuth();
-  const { status, refresh } = useMembership();
+  const { status, refresh, loading: membershipLoading } = useMembership();
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [searching, setSearching] = useState(true);
+  const [actingId, setActingId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
   const [showFiltersHint, setShowFiltersHint] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [sameCityOnly, setSameCityOnly] = useState(false);
-  const [minOverlap, setMinOverlap] = useState(0);
+  const [minOverlap, setMinOverlap] = useState<number | null>(null);
+  const [sortChoice, setSortChoice] = useState<SortChoice>(null);
+  const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
+  const canFilter = status.can_use_advanced_filters;
+  const hasActiveFilter = sameCityOnly || minOverlap !== null;
+  const catalogAllProfiles = minOverlap === null && !sameCityOnly;
+
+  useEffect(() => {
+    setSkippedIds(new Set());
+  }, [sameCityOnly, minOverlap]);
 
   useEffect(() => {
     (async () => {
@@ -79,16 +101,28 @@ export default function DiscoveryPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!myProfile || !user) return;
+    if (!myProfile || !user || membershipLoading) return;
+
+    let cancelled = false;
+    setSearching(true);
+
     (async () => {
+      const myAge = ageFromBirthDate(myProfile.birth_date);
+      const myMinAge = minPartnerAge(myAge);
+
       const { data, error: candErr } = await supabase
         .from('profiles')
         .select('*')
         .neq('id', user.id)
-        .eq('has_children', false);
+        .eq('has_children', false)
+        .is('deletion_requested_at', null)
+        .lte('birth_date', latestBirthDateForAge(myMinAge));
+
+      if (cancelled) return;
 
       if (candErr) {
         setError(candErr.message);
+        setSearching(false);
         return;
       }
 
@@ -119,10 +153,6 @@ export default function DiscoveryPage() {
         });
       }
 
-      const myAge = ageFromBirthDate(myProfile.birth_date);
-      const myMinAge = minPartnerAge(myAge);
-      const canFilter = status.can_use_advanced_filters;
-
       const filtered: Candidate[] = (data || [])
         .map((p) => {
           const profile = p as Profile;
@@ -146,6 +176,10 @@ export default function DiscoveryPage() {
             is_founder: founderMap.has(profile.id),
             founder_number: founderMap.get(profile.id) ?? null,
             same_city,
+            created_at:
+              typeof (profile as Candidate).created_at === 'string'
+                ? (profile as Candidate).created_at
+                : undefined,
             score: rankProfileScore({
               myAge,
               theirAge: age,
@@ -157,134 +191,192 @@ export default function DiscoveryPage() {
           };
         })
         .filter((c) => {
-          if (c.age < myMinAge) return false;
-          if (myAge < minPartnerAge(c.age)) return false;
-          if (likedIds.has(c.id)) return false;
+          if (!isWithinAgeGap(myAge, c.age)) return false;
+          if (!isWithinAgeGap(c.age, myAge)) return false;
           if (canFilter && sameCityOnly && !c.same_city) return false;
-          if (canFilter && minOverlap > 0 && c.mutual_interests.length < minOverlap)
+          if (
+            canFilter &&
+            typeof minOverlap === 'number' &&
+            minOverlap > 0 &&
+            c.mutual_interests.length < minOverlap
+          ) {
             return false;
+          }
           return true;
         })
         .sort((a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted));
 
+      if (cancelled) return;
       setCandidates(filtered);
-      setCurrentIndex(0);
+      setSearching(false);
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     myProfile,
     user,
-    likedIds,
-    status.can_use_advanced_filters,
+    membershipLoading,
+    canFilter,
     sameCityOnly,
     minOverlap,
   ]);
 
-  const current = candidates[currentIndex];
+  const founderActive = isFounderPeriodActive(status);
+  const likesUnlimited = status.unlimited_likes || founderActive;
   const likesExhausted =
-    !status.unlimited_likes && (status.likes_remaining_today ?? 0) <= 0;
-  const alreadyFlashed = current ? flashedIds.has(current.id) : false;
-  const priceLabel = formatPremiumPriceLabel(
-    status.premium_price_cents,
-    status.premium_currency,
-    status.premium_interval
-  );
+    !likesUnlimited && (status.likes_remaining_today ?? 0) <= 0;
+  const showFlashCta = isFlashCtaVisible(status);
+  const priceLabel = SITE_FREE_MODE
+    ? undefined
+    : formatPremiumPriceLabel(
+        status.premium_price_cents,
+        status.premium_currency,
+        status.premium_interval
+      );
 
-  const advanceCard = useCallback(() => {
-    setTimeout(() => {
-      setCurrentIndex((i) => i + 1);
-      setSwipeDir(null);
-    }, 300);
-  }, []);
+  const visible = candidates.filter((c) => {
+    if (skippedIds.has(c.id)) return false;
+    if (!catalogAllProfiles && likedIds.has(c.id)) return false;
+    return true;
+  });
+  const displayed = useMemo(() => {
+    const list = [...visible];
+    if (sortChoice === 'recents') {
+      list.sort((a, b) => {
+        const ta = a.created_at ? Date.parse(a.created_at) : 0;
+        const tb = b.created_at ? Date.parse(b.created_at) : 0;
+        return tb - ta || b.score - a.score;
+      });
+    } else {
+      list.sort(
+        (a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted)
+      );
+    }
+    return list;
+  }, [visible, sortChoice]);
 
-  const handleAction = useCallback(
-    async (liked: boolean) => {
-      if (!user || !current || actionLoading) return;
+  const countLabel = `${visible.length} profil${visible.length > 1 ? 's' : ''}`;
+  const sortCaption =
+    sortChoice === 'pertinence'
+      ? 'classés par pertinence'
+      : sortChoice === 'recents'
+        ? 'classés par récents'
+        : null;
 
-      if (liked && likesExhausted) {
-        setError(null);
+  useEffect(() => {
+    if (!openProfile) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenProfile(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openProfile]);
+
+  const handleLike = useCallback(
+    async (candidate: Candidate) => {
+      if (!user || actingId || likesExhausted || likedIds.has(candidate.id))
         return;
-      }
 
-      setActionLoading(true);
-      setSwipeDir(liked ? 'right' : 'left');
+      setActingId(candidate.id);
       setError(null);
 
       try {
-        if (liked) {
-          await supabase.from('likes').insert({
-            from_user: user.id,
-            to_user: current.id,
-          });
-          setLikedIds((prev) => new Set(prev).add(current.id));
-          await refresh();
+        const { error: likeErr } = await supabase.from('likes').insert({
+          from_user: user.id,
+          to_user: candidate.id,
+        });
+        if (likeErr) throw likeErr;
+        setLikedIds((prev) => new Set(prev).add(candidate.id));
+        setOpenProfile((open) => (open?.id === candidate.id ? null : open));
+
+        const { data: reverse } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('from_user', candidate.id)
+          .eq('to_user', user.id)
+          .maybeSingle();
+
+        if (reverse) {
+          setToast(`C’est un match avec ${candidate.display_name} !`);
+          window.setTimeout(() => setToast(null), 2800);
         }
 
-        advanceCard();
+        await refresh();
       } catch {
         setError('Une erreur est survenue');
-        setSwipeDir(null);
       } finally {
-        setActionLoading(false);
+        setActingId(null);
       }
     },
-    [user, current, actionLoading, likesExhausted, refresh, advanceCard]
+    [user, actingId, likesExhausted, likedIds, refresh]
   );
 
-  const handleFlash = useCallback(async () => {
-    if (!user || !current || actionLoading || alreadyFlashed) return;
+  const handleSkip = useCallback((id: string) => {
+    setSkippedIds((prev) => new Set(prev).add(id));
+    setOpenProfile((open) => (open?.id === id ? null : open));
+  }, []);
 
-    setActionLoading(true);
-    setError(null);
-
-    try {
-      const result = await sendFlash(current.id);
-
-      if (!result.ok) {
-        setError(flashErrorMessage(result.error));
+  const handleFlash = useCallback(
+    async (candidate: Candidate) => {
+      if (!user || actingId || flashedIds.has(candidate.id) || !showFlashCta)
         return;
+
+      setActingId(candidate.id);
+      setError(null);
+
+      try {
+        const result = await sendFlash(candidate.id);
+
+        if (!result.ok) {
+          setError(flashErrorMessage(result.error, status));
+          return;
+        }
+
+        setFlashedIds((prev) => new Set(prev).add(candidate.id));
+        setToast(
+          result.already_flashed
+            ? 'Vous avez déjà flashé ce profil'
+            : `Coup de cœur envoyé à ${candidate.display_name} ✨`
+        );
+
+        if (
+          result.should_notify_email &&
+          result.notification_id &&
+          result.flash_id &&
+          result.to_user
+        ) {
+          void sendFlashReceivedEmail({
+            notificationId: result.notification_id,
+            flashId: result.flash_id,
+            toUserId: result.to_user,
+            fromDisplayName: result.from_display_name,
+          });
+        }
+
+        window.setTimeout(() => setToast(null), 2800);
+      } catch {
+        setError('Impossible d’envoyer le coup de cœur');
+      } finally {
+        setActingId(null);
       }
+    },
+    [user, actingId, flashedIds, status, showFlashCta]
+  );
 
-      setFlashedIds((prev) => new Set(prev).add(current.id));
-      setToast(
-        result.already_flashed
-          ? 'Vous avez déjà flashé ce profil'
-          : `Coup de cœur envoyé à ${current.display_name} ✨`
-      );
-
-      if (
-        result.should_notify_email &&
-        result.notification_id &&
-        result.flash_id &&
-        result.to_user
-      ) {
-        void sendFlashReceivedEmail({
-          notificationId: result.notification_id,
-          flashId: result.flash_id,
-          toUserId: result.to_user,
-          fromDisplayName: result.from_display_name,
-        });
-      }
-
-      window.setTimeout(() => setToast(null), 2800);
-    } catch {
-      setError('Impossible d’envoyer le coup de cœur');
-    } finally {
-      setActionLoading(false);
-    }
-  }, [user, current, actionLoading, alreadyFlashed]);
-
-  if (loading) {
+  if (loading || membershipLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
-          <div className="text-gray-400 text-sm">Chargement des profils...</div>
+          <div className="text-gray-400 text-sm">Chargement...</div>
         </div>
       </div>
     );
   }
 
-  if (error && !current) {
+  if (error && !myProfile) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
@@ -295,82 +387,89 @@ export default function DiscoveryPage() {
     );
   }
 
-  if (candidates.length === 0 || currentIndex >= candidates.length) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
-          <Heart className="w-9 h-9 text-rose-300" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-900">
-          C'est tout pour le moment
-        </h2>
-        <p className="text-gray-500 max-w-sm">
-          Vous avez vu tous les profils compatibles. Revenez plus tard pour
-          découvrir de nouvelles personnes !
-        </p>
-        {!status.can_use_advanced_filters && (
-          <div className="w-full max-w-sm">
-            <SoftPremiumBanner
-              title="Affiner vos rencontres"
-              description={`Les filtres par ville et centres d’intérêt sont inclus avec Premium (${priceLabel}) — sans toucher au gratuit de base.`}
-              priceLabel={priceLabel}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const swipeClass =
-    swipeDir === 'right'
-      ? 'animate-slideOutRight'
-      : swipeDir === 'left'
-        ? 'animate-slideOutLeft'
-        : 'animate-fadeIn';
-
   return (
-    <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       <AdvancedFiltersTeaser
         locked={!status.can_use_advanced_filters}
         onAskPremium={() => setShowFiltersHint(true)}
         priceLabel={priceLabel}
+        status={status}
       />
 
       {status.can_use_advanced_filters && (
-        <div className="rounded-2xl border border-rose-100 bg-white p-3 space-y-2.5">
-          <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            Suggestions ciblées
-          </p>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={sameCityOnly}
-              onChange={(e) => setSameCityOnly(e.target.checked)}
-              className="rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+        <div className="rounded-2xl border border-rose-100 bg-white overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowFilters((open) => !open)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-rose-50/60 transition-colors"
+            aria-expanded={showFilters}
+          >
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-rose-700">
+              <Filter className="w-4 h-4" />
+              Filtres
+              {hasActiveFilter && (
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-rose-100 text-[10px] font-bold text-rose-600">
+                  {[sameCityOnly, minOverlap !== null].filter(Boolean).length}
+                </span>
+              )}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-rose-400 transition-transform ${
+                showFilters ? 'rotate-180' : ''
+              }`}
             />
-            Même ville uniquement
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
-            Centres d’intérêt en commun (min.)
-            <select
-              value={minOverlap}
-              onChange={(e) => setMinOverlap(Number(e.target.value))}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            >
-              <option value={0}>Tous</option>
-              <option value={1}>Au moins 1</option>
-              <option value={2}>Au moins 2</option>
-              <option value={3}>Au moins 3</option>
-            </select>
-          </label>
+          </button>
+          {showFilters && (
+            <div className="px-3 pb-3 space-y-2.5 border-t border-rose-50">
+              <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5 pt-2.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Suggestions ciblées
+              </p>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={sameCityOnly}
+                  onChange={(e) => setSameCityOnly(e.target.checked)}
+                  className="rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+                />
+                Même ville uniquement
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-gray-700">
+                Centres d’intérêt en commun (min.)
+                <select
+                  value={minOverlap === null ? '' : minOverlap}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') setMinOverlap(null);
+                    else setMinOverlap(Number(v));
+                  }}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                >
+                  <option value="">Tous les profils</option>
+                  <option value={1}>Au moins 1 centre d'intérêt</option>
+                  <option value={2}>Au moins 2 centres d'intérêt</option>
+                  <option value={3}>Au moins 3 centres d'intérêt</option>
+                </select>
+              </label>
+            </div>
+          )}
         </div>
       )}
 
-      {showFiltersHint && !status.can_use_advanced_filters && (
+      {showFiltersHint && !status.can_use_advanced_filters && !SITE_FREE_MODE && (
         <SoftPremiumBanner
           title="Filtres avancés"
-          description={`Ville, centres d’intérêt et affinage : disponibles avec Premium (${priceLabel}). La navigation de base reste libre.`}
+          description={
+            isFounderPeriodActive(status) || status.plan === 'premium'
+              ? `Ville, centres d’intérêt et affinage : inclus dans ${offerLabel(status)}${
+                  priceLabel ? ` (${priceLabel})` : ''
+                }. La navigation de base reste libre.`
+              : priceLabel
+                ? `Ville, centres d’intérêt et affinage : disponibles avec Premium (${priceLabel}). La navigation de base reste libre.`
+                : SITE_FREE_MODE
+                  ? 'Ville, centres d’intérêt et affinage : la navigation de base reste libre.'
+                  : 'Ville, centres d’intérêt et affinage : disponibles avec Premium. La navigation de base reste libre.'
+          }
           priceLabel={priceLabel}
         />
       )}
@@ -388,152 +487,249 @@ export default function DiscoveryPage() {
         </div>
       )}
 
-      <div className="relative">
-        <div
-          key={current.id}
-          className={`bg-white rounded-3xl shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden ${swipeClass}`}
-        >
-          <div className="relative h-80 bg-gradient-to-br from-rose-100 to-amber-100">
-            {current.photo_url ? (
-              <img
-                src={current.photo_url}
-                alt={current.display_name}
-                className="w-full h-full object-cover"
+      {membershipLoading || searching ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+            <div className="text-gray-400 text-sm">Recherche en cours...</div>
+          </div>
+        </div>
+      ) : candidates.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
+            <Heart className="w-9 h-9 text-rose-300" />
+          </div>
+          {hasActiveFilter ? (
+            <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
+              Aucun profil ne correspond à ces filtres.
+            </p>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-gray-900">
+                C'est tout pour le moment
+              </h2>
+              <p className="text-gray-500 max-w-sm">
+                Revenez plus tard pour découvrir de nouveaux profils.
+              </p>
+            </>
+          )}
+          {!canFilter && !SITE_FREE_MODE && (
+            <div className="w-full max-w-sm">
+              <SoftPremiumBanner
+                title="Affiner vos rencontres"
+                description={
+                  isFounderPeriodActive(status) || status.plan === 'premium'
+                    ? `Les filtres par ville et centres d’intérêt sont inclus dans ${offerLabel(status)}${
+                        priceLabel ? ` (${priceLabel})` : ''
+                      } — sans toucher au gratuit de base.`
+                    : priceLabel
+                      ? `Les filtres par ville et centres d’intérêt sont inclus avec Premium (${priceLabel}) — sans toucher au gratuit de base.`
+                      : SITE_FREE_MODE
+                        ? 'Les filtres par ville et centres d’intérêt restent optionnels — la navigation de base est libre.'
+                        : 'Les filtres par ville et centres d’intérêt sont inclus avec Premium — sans toucher au gratuit de base.'
+                }
+                priceLabel={priceLabel}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-white/40 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-white/80">
-                    {current.display_name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm font-semibold">
-              {current.age} ans
             </div>
-
-            {(current.is_boosted || current.is_founder) && (
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start">
-                {current.is_boosted && <BoostedBadge size="sm" />}
-                {current.is_founder && (
-                  <FounderBadge number={current.founder_number} size="sm" />
-                )}
-              </div>
-            )}
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-gray-400">
+              {countLabel}
+              {sortCaption ? ` · ${sortCaption}` : ''}
+            </p>
+            <label className="sr-only" htmlFor="discovery-sort">
+              Trier les profils
+            </label>
+            <select
+              id="discovery-sort"
+              value={sortChoice ?? ''}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === 'pertinence' || v === 'recents') setSortChoice(v);
+                else setSortChoice(null);
+              }}
+              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            >
+              <option value="">Trier</option>
+              <option value="pertinence">Pertinence</option>
+              <option value="recents">Récents</option>
+            </select>
           </div>
 
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-2 gap-2">
-              <h2 className="text-xl font-bold text-gray-900">
-                {current.display_name}
-              </h2>
-              {current.location && (
-                <span className="flex items-center gap-1 text-sm text-gray-500 shrink-0">
-                  <MapPin className="w-4 h-4" />
-                  {current.location}
-                </span>
-              )}
-            </div>
+          {visible.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">
+              Profils masqués. Les filtres n’ont pas changé le résultat.
+            </p>
+          ) : (
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4">
+            {displayed.map((c) => {
+              const alreadyFlashed = flashedIds.has(c.id);
+              const alreadyLiked = likedIds.has(c.id);
+              const busy = actingId === c.id;
+              return (
+                <li key={c.id}>
+                  <article className="relative rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-rose-100 transition-all animate-fadeIn cursor-pointer">
+                    <button
+                      type="button"
+                      className="absolute inset-0 z-[1] cursor-pointer"
+                      onClick={() => setOpenProfile(c)}
+                      aria-label={`Voir le profil de ${c.display_name}`}
+                    />
+                    <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none">
+                      {c.photo_url ? (
+                        <img
+                          src={c.photo_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white/80">
+                          {c.display_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
+                        {c.age} ans
+                      </span>
+                      {(c.is_boosted || c.is_founder) && (
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]">
+                          {c.is_boosted && <BoostedBadge size="sm" />}
+                          {c.is_founder && (
+                            <FounderBadge number={c.founder_number} size="sm" />
+                          )}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSkip(c.id);
+                        }}
+                        className="pointer-events-auto absolute bottom-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+                        title="Masquer"
+                        aria-label={`Masquer ${c.display_name}`}
+                      >
+                        <X className="w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                      </button>
+                    </div>
+                    <div className="p-3 space-y-1.5">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        {c.display_name}
+                      </p>
+                      {c.location && (
+                        <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" />
+                          {c.location}
+                        </p>
+                      )}
+                      {(c.mutual_interests.length > 0 || c.same_city) && (
+                        <div className="flex flex-col gap-0.5">
+                          {c.mutual_interests.length > 0 && (
+                            <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                              <Sparkles className="w-3 h-3 shrink-0" />
+                              {c.mutual_interests.length === 1
+                                ? "1 centre d'intérêt en commun"
+                                : `${c.mutual_interests.length} centres d'intérêt en commun`}
+                            </p>
+                          )}
+                          {c.same_city && (
+                            <p className="text-[11px] text-emerald-700 font-medium">
+                              Même ville
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <div
+                        className="relative z-10 flex items-center justify-center gap-2 pt-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        {showFlashCta && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleFlash(c);
+                            }}
+                            disabled={busy || alreadyFlashed}
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+                            title={
+                              alreadyFlashed
+                                ? 'Déjà flashé'
+                                : 'Envoyer un coup de cœur'
+                            }
+                            aria-label={
+                              alreadyFlashed
+                                ? `Déjà flashé ${c.display_name}`
+                                : `Coup de cœur pour ${c.display_name}`
+                            }
+                          >
+                            <Zap className="w-4 h-4 text-white" fill="white" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleLike(c);
+                          }}
+                          disabled={busy || likesExhausted || alreadyLiked}
+                          className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+                          title={
+                            alreadyLiked
+                              ? 'Déjà liké'
+                              : likesExhausted
+                                ? 'Limite de likes atteinte'
+                                : 'Liker ce profil'
+                          }
+                          aria-label={
+                            alreadyLiked
+                              ? `Déjà liké ${c.display_name}`
+                              : `Liker ${c.display_name}`
+                          }
+                        >
+                          <Heart className="w-4 h-4 text-white" fill="white" />
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
+          </ul>
+          )}
 
-            {(current.mutual_interests.length > 0 || current.same_city) && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
-                {current.mutual_interests.length > 0 && (
-                  <span className="flex items-center gap-1.5 text-sm text-amber-600 font-semibold">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    {current.mutual_interests.length} centre
-                    {current.mutual_interests.length > 1 ? 's' : ''} d'intérêt en
-                    commun
-                  </span>
-                )}
-                {current.same_city && (
-                  <span className="text-sm text-rose-600 font-semibold">
-                    Même ville
-                  </span>
-                )}
-              </div>
-            )}
-
-            {current.bio && (
-              <p className="text-gray-600 text-sm leading-relaxed mb-3">
-                {current.bio}
+          <div className="pt-1 space-y-2">
+            {showFlashCta && (
+              <p className="text-center text-xs text-amber-700/80">
+                <Zap className="w-3 h-3 inline mb-0.5" /> Coup de cœur : notifie
+                la personne
+                {status.plan !== 'premium' && !isFounderPeriodActive(status)
+                  ? ' (3 / jour en freemium)'
+                  : ''}
               </p>
             )}
-
-            {current.interests.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {current.interests.map((interest) => {
-                  const mutual = current.mutual_interests.includes(interest);
-                  return (
-                    <span
-                      key={interest}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        mutual
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {interest}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            <LikesQuotaHint status={status} />
           </div>
         </div>
+      )}
 
-        <div className="flex items-center justify-center gap-5 mt-6">
-          <button
-            type="button"
-            onClick={() => handleAction(false)}
-            disabled={actionLoading}
-            className="w-14 h-14 rounded-full bg-white shadow-lg shadow-gray-200 border border-gray-200 flex items-center justify-center hover:scale-110 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-50"
-            title="Passer"
-          >
-            <X className="w-6 h-6 text-gray-400" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void handleFlash()}
-            disabled={actionLoading || alreadyFlashed}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-lg shadow-amber-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
-            title={
-              alreadyFlashed
-                ? 'Déjà flashé'
-                : 'Envoyer un coup de cœur'
-            }
-          >
-            <Zap className="w-7 h-7 text-white" fill="white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleAction(true)}
-            disabled={actionLoading || likesExhausted}
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
-            title={
-              likesExhausted
-                ? 'Limite de likes atteinte'
-                : 'Liker ce profil'
-            }
-          >
-            <Heart className="w-6 h-6 text-white" fill="white" />
-          </button>
-        </div>
-
-        <div className="mt-4 space-y-3">
-          <p className="text-center text-xs text-gray-400">
-            {currentIndex + 1} sur {candidates.length} · classés par affinité
-          </p>
-          <p className="text-center text-xs text-amber-700/80">
-            <Zap className="w-3 h-3 inline mb-0.5" /> Coup de cœur : notifie la
-            personne (3 / jour en gratuit)
-          </p>
-          <LikesQuotaHint status={status} />
-        </div>
-      </div>
+      {openProfile && (
+        <ProfileDetailModal
+          candidate={openProfile}
+          alreadyFlashed={flashedIds.has(openProfile.id)}
+          alreadyLiked={likedIds.has(openProfile.id)}
+          busy={actingId === openProfile.id}
+          likesExhausted={likesExhausted}
+          showFlashCta={showFlashCta}
+          onClose={() => setOpenProfile(null)}
+          onLike={() => void handleLike(openProfile)}
+          onFlash={() => void handleFlash(openProfile)}
+          onSkip={() => handleSkip(openProfile.id)}
+        />
+      )}
     </div>
   );
 }

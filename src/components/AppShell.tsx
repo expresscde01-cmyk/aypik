@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { cancelAccountDeletion } from '@/lib/deleteAccount';
+import { userErrorMessage } from '@/lib/userError';
 import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
 import DiscoveryPage from '@/components/DiscoveryPage';
@@ -23,6 +25,8 @@ export default function AppShell() {
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [cancelingDeletion, setCancelingDeletion] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +52,23 @@ export default function AppShell() {
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
     'Membre';
+  const deletionPending = Boolean(profile?.deletion_requested_at);
+
+  const handleCancelDeletion = async () => {
+    setCancelError(null);
+    setCancelingDeletion(true);
+    try {
+      const err = await cancelAccountDeletion();
+      if (err) throw new Error(err);
+      setProfile((prev) =>
+        prev ? { ...prev, deletion_requested_at: null } : prev
+      );
+    } catch (err) {
+      setCancelError(userErrorMessage(err));
+    } finally {
+      setCancelingDeletion(false);
+    }
+  };
 
   if (profileLoading) {
     return (
@@ -74,6 +95,31 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {deletionPending && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="flex-1 text-sm text-amber-900">
+              Compte en cours de suppression — reconnectez-vous dans les 30
+              jours pour annuler.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleCancelDeletion()}
+              disabled={cancelingDeletion}
+              className="shrink-0 px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-60"
+            >
+              {cancelingDeletion
+                ? 'Annulation...'
+                : 'Annuler la suppression'}
+            </button>
+          </div>
+          {cancelError && (
+            <p className="max-w-2xl mx-auto px-4 pb-3 text-sm text-red-700">
+              {cancelError}
+            </p>
+          )}
+        </div>
+      )}
       <main className="flex-1 min-h-0">
         {tab === 'home' && (
           <HomeDashboard
@@ -127,6 +173,12 @@ export default function AppShell() {
         {tab === 'profile' && (
           <ProfileSetup
             allowAccountDeletion
+            accountDeletionPending={deletionPending}
+            onDeletionStatusChange={(requestedAt) => {
+              setProfile((prev) =>
+                prev ? { ...prev, deletion_requested_at: requestedAt } : prev
+              );
+            }}
             onDone={async () => {
               const { data } = await supabase
                 .from('profiles')

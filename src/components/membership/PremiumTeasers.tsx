@@ -1,20 +1,57 @@
 import { Eye, Filter, Heart, Lock } from 'lucide-react';
 import { SoftLock, SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import {
+  SITE_FREE_MODE,
+  offerLabel,
+  offerShortName,
+} from '@/lib/founderCopy';
+import {
   formatPremiumPriceLabel,
+  isFounderPeriodActive,
   type MembershipStatus,
 } from '@/lib/membership';
+
+function offerIncludesPremiumPerks(status: MembershipStatus): boolean {
+  return isFounderPeriodActive(status) || status.plan === 'premium';
+}
 
 export function WhoLikedTeaser({
   locked,
   count,
   priceLabel,
+  status,
 }: {
   locked: boolean;
   count: number;
   priceLabel?: string;
+  status: MembershipStatus;
 }) {
   if (!locked) return null;
+
+  const namedOffer = offerLabel(status);
+  const included = offerIncludesPremiumPerks(status);
+  const lockLabel =
+    !SITE_FREE_MODE && priceLabel
+      ? `Premium · ${priceLabel}`
+      : included
+        ? `Inclus dans ${namedOffer}`
+        : SITE_FREE_MODE
+          ? 'Aperçu'
+          : 'Inclus avec Premium';
+
+  const body = included
+    ? count > 0
+      ? `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké. Découvrez qui — c’est inclus dans ${namedOffer}.`
+      : `Quand quelqu’un vous likera, vous pourrez le découvrir — c’est inclus dans ${namedOffer}.`
+    : count > 0
+      ? SITE_FREE_MODE
+        ? `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké.`
+        : `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké. Découvrez qui avec Premium${
+            priceLabel ? ` (${priceLabel})` : ''
+          }.`
+      : SITE_FREE_MODE
+        ? 'Quand quelqu’un vous likera, vous pourrez le découvrir ici.'
+        : 'Quand quelqu’un vous likera, vous pourrez le découvrir avec Premium.';
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 relative overflow-hidden">
@@ -25,9 +62,7 @@ export function WhoLikedTeaser({
             Qui vous a liké
           </h3>
         </div>
-        <SoftLock
-          label={priceLabel ? `Premium · ${priceLabel}` : 'Inclus avec Premium'}
-        />
+        <SoftLock label={lockLabel} />
       </div>
 
       <div className="flex -space-x-2 mb-3 blur-[3px] select-none pointer-events-none opacity-70">
@@ -44,11 +79,7 @@ export function WhoLikedTeaser({
         )}
       </div>
 
-      <p className="text-xs text-gray-500 leading-relaxed">
-        {count > 0
-          ? `${count} personne${count > 1 ? 's' : ''} vous a${count > 1 ? 'iment' : ''} liké. Découvrez qui avec Premium${priceLabel ? ` (${priceLabel})` : ''}.`
-          : 'Quand quelqu’un vous likera, vous pourrez le découvrir avec Premium.'}
-      </p>
+      <p className="text-xs text-gray-500 leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -57,19 +88,38 @@ export function AdvancedFiltersTeaser({
   locked,
   onAskPremium,
   priceLabel,
+  status,
 }: {
   locked: boolean;
   onAskPremium?: () => void;
   priceLabel?: string;
+  status: MembershipStatus;
 }) {
+  const short = offerShortName(status);
+  const included = offerIncludesPremiumPerks(status);
+  const title = included
+    ? `Filtres avancés & avantages ${short}`
+    : 'Filtres avancés';
+
   if (!locked) {
     return (
-      <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3 flex items-center gap-2 text-xs text-rose-700">
-        <Filter className="w-4 h-4" />
-        Filtres avancés & avantages Premium
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-center gap-2 text-xs text-emerald-800">
+        <Filter className="w-4 h-4 text-emerald-700" />
+        Filtres avancés
       </div>
     );
   }
+
+  if (SITE_FREE_MODE) return null;
+
+  const badge =
+    !SITE_FREE_MODE && priceLabel
+      ? priceLabel
+      : included
+        ? short
+        : SITE_FREE_MODE
+          ? null
+          : 'Premium';
 
   return (
     <button
@@ -79,28 +129,37 @@ export function AdvancedFiltersTeaser({
     >
       <span className="flex items-center gap-2 text-sm text-gray-600">
         <Filter className="w-4 h-4 text-gray-400" />
-        Filtres avancés & avantages Premium
+        {title}
       </span>
       <span className="inline-flex items-center gap-1 text-xs text-gray-400">
         <Lock className="w-3.5 h-3.5" />
-        {priceLabel ?? 'Premium'}
+        {badge}
       </span>
     </button>
   );
 }
 
 export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
-  const priceLabel = formatPremiumPriceLabel(
-    status.premium_price_cents,
-    status.premium_currency,
-    status.premium_interval
-  );
+  const priceLabel = SITE_FREE_MODE
+    ? undefined
+    : formatPremiumPriceLabel(
+        status.premium_price_cents,
+        status.premium_currency,
+        status.premium_interval
+      );
+  const namedOffer = offerLabel(status);
+  const short = offerShortName(status);
+  const included = offerIncludesPremiumPerks(status);
+
+  if (isFounderPeriodActive(status)) {
+    return null;
+  }
 
   if (status.unlimited_likes) {
     return (
       <p className="text-center text-xs text-gray-400">
         Likes illimités ·{' '}
-        <span className="text-rose-500 font-medium">Premium</span>
+        <span className="text-rose-500 font-medium">{short}</span>
       </p>
     );
   }
@@ -111,7 +170,15 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
     return (
       <SoftPremiumBanner
         title="Limite de likes atteinte pour aujourd’hui"
-        description={`Revenez demain, ou passez à Premium (${priceLabel}) pour liker sans limite — à votre rythme.`}
+        description={
+          included
+            ? `Les likes illimités sont inclus dans ${namedOffer}. Réessayez dans un instant.`
+            : priceLabel
+              ? `Revenez demain, ou passez à Premium (${priceLabel}) pour liker sans limite — à votre rythme.`
+              : SITE_FREE_MODE
+                ? 'Revenez demain pour liker à nouveau — à votre rythme.'
+                : 'Revenez demain, ou passez à Premium pour liker sans limite — à votre rythme.'
+        }
         priceLabel={priceLabel}
       />
     );

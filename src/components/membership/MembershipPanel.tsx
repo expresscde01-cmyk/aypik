@@ -6,18 +6,24 @@ import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
 import { cancelPremiumSubscription } from '@/lib/payments';
 import {
+  FOUNDER_AFTER_6_MONTHS_BODY,
+  FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+  FOUNDER_BENEFIT_FLASH,
+  FOUNDER_BENEFIT_NO_CARD,
+  FOUNDER_BENEFIT_UNLIMITED_LIKES,
+  FOUNDER_MAX_SLOTS,
+  FOUNDER_SLOTS_SUBTITLE,
+  SITE_FREE_MODE,
+  isFounderOffer,
+  offerShortName,
+} from '@/lib/founderCopy';
+import {
   daysUntil,
   formatPremiumPriceLabel,
   isFounderAvailable,
+  isFounderPeriodActive,
   type MembershipStatus,
 } from '@/lib/membership';
-
-/** True si la période fondateur à 0 € est encore en cours (sans exiger le flag RPC). */
-function isFounderPeriodActive(status: MembershipStatus): boolean {
-  if (status.on_founder_trial) return true;
-  if (!status.is_founder || !status.founder_premium_until) return false;
-  return new Date(status.founder_premium_until).getTime() > Date.now();
-}
 
 function FounderActiveBanner({
   status,
@@ -48,8 +54,10 @@ function FounderActiveBanner({
               Membre Fondateur
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
-              Les 500 places ont été attribuées. Choisissez l’offre Freemium ou
-              Premium pour continuer.
+              Les {FOUNDER_MAX_SLOTS} places ont été attribuées
+              {SITE_FREE_MODE
+                ? '.'
+                : '. Choisissez l’offre Freemium ou Premium pour continuer.'}
             </p>
           </div>
         </div>
@@ -83,17 +91,27 @@ function FounderActiveBanner({
             Membre Fondateur
           </h2>
           <p className="mt-2 text-base sm:text-lg font-semibold text-amber-950/90 leading-snug">
-            6 mois offerts — Offre exclusive réservée aux 500 premiers membres.
+            {FOUNDER_SLOTS_SUBTITLE}
           </p>
         </div>
 
         <ul className="space-y-2">
-          <li className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-amber-950">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            </span>
-            Inscription sans carte bancaire
-          </li>
+          {[
+            FOUNDER_BENEFIT_NO_CARD,
+            FOUNDER_BENEFIT_UNLIMITED_LIKES,
+            FOUNDER_BENEFIT_FLASH,
+            FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+          ].map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-amber-950"
+            >
+              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              </span>
+              {item}
+            </li>
+          ))}
         </ul>
 
         {showCta && (
@@ -177,10 +195,9 @@ function FreemiumClaimCard({
   );
 }
 
-const PAID_PREMIUM_LINE =
-  "Premium à 19,99 € / mois pour un confort d'utilisation, sans engagement.";
-
 function OptionalPremiumNote({ months }: { months: number }) {
+  if (SITE_FREE_MODE) return null;
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
       <div className="flex items-start gap-3">
@@ -192,7 +209,7 @@ function OptionalPremiumNote({ months }: { months: number }) {
             Après vos {months} mois offerts
           </p>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-            {PAID_PREMIUM_LINE}
+            {FOUNDER_AFTER_6_MONTHS_BODY}
           </p>
         </div>
       </div>
@@ -230,7 +247,9 @@ export function MembershipPanel({
   const founderAvailable = isFounderAvailable(status);
   const offerChosen = status.membership_linked;
 
-  const showFounderActive = founderAvailable || status.is_founder;
+  const showFounderActive =
+    (founderAvailable && !status.is_founder) ||
+    (status.is_founder && periodActive);
   const showFounderExhausted =
     signupGate && !founderAvailable && !status.is_founder;
   const showFounderCta =
@@ -261,7 +280,10 @@ export function MembershipPanel({
     !founderAvailable || founderExpired ? 'primary' : 'secondary';
 
   const showFreemiumClaim =
-    signupGate && !offerChosen && Boolean(onClaimFreemium);
+    signupGate &&
+    !offerChosen &&
+    !founderAvailable &&
+    Boolean(onClaimFreemium);
 
   const handleCancel = async () => {
     if (
@@ -291,10 +313,11 @@ export function MembershipPanel({
             <Heart className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-            Choisissez votre offre
+            Votre formule
           </h2>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            Une offre doit être validée avant de créer votre profil.
+            6 mois offerts, sans carte bancaire. Activez l’offre Fondateur
+            pour créer votre profil.
           </p>
         </div>
 
@@ -307,32 +330,17 @@ export function MembershipPanel({
         )}
 
         {showFounderExhausted && (
-          <FounderActiveBanner status={status} exhausted />
+          <>
+            <FounderActiveBanner status={status} exhausted />
+            {showFreemiumClaim && (
+              <FreemiumClaimCard
+                onActivate={onClaimFreemium!}
+                activating={claimingOffer}
+                primary
+              />
+            )}
+          </>
         )}
-
-        <div className="space-y-3">
-          <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
-            {founderAvailable ? 'Autres options' : 'Offres disponibles'}
-          </p>
-
-          {showPremiumOffer && (
-            <PremiumConversionCard
-              status={status}
-              founderExpired={founderExpired}
-              onPaymentSuccess={onRefresh}
-              tone={premiumTone}
-              disabled={premiumLockedByFounder}
-            />
-          )}
-
-          {showFreemiumClaim && (
-            <FreemiumClaimCard
-              onActivate={onClaimFreemium!}
-              activating={claimingOffer}
-              primary={!founderAvailable}
-            />
-          )}
-        </div>
       </div>
     );
   }
@@ -345,11 +353,9 @@ export function MembershipPanel({
           <p className="text-sm text-emerald-900 leading-relaxed">
             Offre activée :{' '}
             <strong>
-              {status.is_founder
+              {isFounderOffer(status)
                 ? 'Membre Fondateur'
-                : status.plan === 'premium'
-                  ? 'Premium'
-                  : 'Freemium'}
+                : offerShortName(status)}
             </strong>
             . Vous pouvez maintenant compléter votre profil.
           </p>
@@ -363,7 +369,7 @@ export function MembershipPanel({
         />
       )}
 
-      {founderExpiringSoon && (
+      {!SITE_FREE_MODE && founderExpiringSoon && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
           <Bell className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <div>
@@ -380,18 +386,18 @@ export function MembershipPanel({
         </div>
       )}
 
-      {periodActive && (
+      {!SITE_FREE_MODE && periodActive && (
         <OptionalPremiumNote months={status.founder_premium_months} />
       )}
 
       <div className="space-y-3 pt-1">
-        {!signupGate && (
+        {!signupGate && !SITE_FREE_MODE && (
           <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
             Offres
           </p>
         )}
 
-        {showPremiumOffer && !signupGate && (
+        {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
           <PremiumConversionCard
             status={status}
             founderExpired={founderExpired}
@@ -401,15 +407,15 @@ export function MembershipPanel({
           />
         )}
 
-        {showPaidPremiumActive && (
+        {showPaidPremiumActive && !SITE_FREE_MODE && (
           <SoftPremiumBanner
             title="Abonnement Premium actif"
             description="Qui vous a liké, filtres avancés et likes illimités sont inclus."
-            priceLabel={priceLabel}
+            priceLabel={SITE_FREE_MODE ? undefined : priceLabel}
           />
         )}
 
-        {canCancelPaid && (
+        {canCancelPaid && !SITE_FREE_MODE && (
           <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-2">
             <p className="text-sm font-semibold text-gray-900">
               Gérer l’abonnement
@@ -445,7 +451,10 @@ export function MembershipPanel({
           </div>
         )}
 
-        {!signupGate && (
+        {!signupGate &&
+          !SITE_FREE_MODE &&
+          !periodActive &&
+          status.plan !== 'founder' && (
           <BoostPurchaseCard
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}

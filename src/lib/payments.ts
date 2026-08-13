@@ -1,5 +1,9 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { supabase } from '@/lib/supabase';
+
+const PAYMENTS_DISABLED =
+  'Les paiements sont désactivés. Aypik est entièrement gratuit pour le moment.';
 
 export type PaymentMethodChoice = 'card' | 'paypal';
 
@@ -27,6 +31,7 @@ export async function createStripeSubscription(): Promise<{
   clientSecret: string;
   subscriptionId: string;
 } | { error: string }> {
+  if (SITE_FREE_MODE) return { error: PAYMENTS_DISABLED };
   const { data, error } = await supabase.functions.invoke(
     'create-stripe-subscription',
     { body: {} }
@@ -55,6 +60,7 @@ export async function createPayPalSubscription(urls: {
   returnUrl: string;
   cancelUrl: string;
 }): Promise<{ approveUrl: string; subscriptionId: string } | { error: string }> {
+  if (SITE_FREE_MODE) return { error: PAYMENTS_DISABLED };
   const { data, error } = await supabase.functions.invoke(
     'create-paypal-subscription',
     { body: urls }
@@ -80,6 +86,7 @@ export async function createPayPalSubscription(urls: {
 }
 
 export async function cancelPremiumSubscription(): Promise<string | null> {
+  if (SITE_FREE_MODE) return PAYMENTS_DISABLED;
   const { data, error } = await supabase.functions.invoke('cancel-premium', {
     body: {},
   });

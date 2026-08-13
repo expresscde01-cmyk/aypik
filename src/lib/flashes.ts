@@ -1,4 +1,9 @@
 import { supabase } from '@/lib/supabase';
+import {
+  SITE_FREE_MODE,
+  isFounderPrivilegeActive,
+  type OfferStatusLike,
+} from '@/lib/founderCopy';
 
 export type SendFlashResult = {
   ok: boolean;
@@ -55,11 +60,34 @@ export async function sendFlash(toUserId: string): Promise<SendFlashResult> {
   };
 }
 
-export function flashErrorMessage(error?: string | null): string {
+/**
+ * Coup de cœur (éclair) : inclus pendant la fenêtre Fondateur (6 mois),
+ * y compris en mode site gratuit. Masqué hors fenêtre au lancement.
+ */
+export function isFlashCtaVisible(status?: OfferStatusLike): boolean {
+  if (status && isFounderPrivilegeActive(status)) return true;
+  if (SITE_FREE_MODE) return false;
+  return true;
+}
+
+export function flashErrorMessage(
+  error?: string | null,
+  status?: OfferStatusLike
+): string {
   switch (error) {
+    case 'flash_reserved_for_founders':
+    case 'flash_not_available_for_founders':
+      return 'Le coup de cœur est réservé aux Membres Fondateurs pendant le lancement.';
     case 'flash_quota_exhausted':
+      if (status && status.plan === 'premium') {
+        return 'Limite de coups de cœur atteinte pour aujourd’hui.';
+      }
+      if (SITE_FREE_MODE) {
+        return 'Limite de coups de cœur atteinte pour aujourd’hui. Réessayez demain.';
+      }
       return 'Limite de coups de cœur atteinte pour aujourd’hui. Passez à Premium pour en envoyer davantage.';
     case 'invalid_target':
+    case 'age_rule_violation':
       return 'Profil invalide.';
     case 'profile_not_found':
       return 'Ce profil n’est plus disponible.';

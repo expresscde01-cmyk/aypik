@@ -1,9 +1,13 @@
-import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, Zap, UserRound } from 'lucide-react';
+import { Gift, HeartHandshake, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { LegalLink } from '@/components/LegalTerms';
-
-const FOUNDER_SUBTITLE =
-  '6 mois offerts — Offre exclusive réservée aux 500 premiers membres.';
+import {
+  FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+  FOUNDER_BENEFIT_FLASH,
+  FOUNDER_BENEFIT_NO_CARD,
+  FOUNDER_BENEFIT_UNLIMITED_LIKES,
+  FOUNDER_SLOTS_SUBTITLE,
+} from '@/lib/founderCopy';
 
 const VALUES = [
   {
@@ -34,28 +38,14 @@ const OFFERS = [
     id: 'founder',
     title: 'Membre Fondateur',
     badge: 'Offre limitée',
-    description: FOUNDER_SUBTITLE,
-    point: 'Inscription sans carte bancaire',
+    description: FOUNDER_SLOTS_SUBTITLE,
+    points: [
+      FOUNDER_BENEFIT_NO_CARD,
+      FOUNDER_BENEFIT_UNLIMITED_LIKES,
+      FOUNDER_BENEFIT_FLASH,
+      FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+    ],
     accent: 'founder' as const,
-  },
-  {
-    id: 'premium',
-    title: 'Offre Premium',
-    description:
-      '19,99 € / mois pour un confort d’utilisation, sans engagement.',
-    accent: 'premium' as const,
-  },
-  {
-    id: 'boost',
-    title: 'Boost 24h',
-    description: 'Visibilité maximale.',
-    accent: 'boost' as const,
-  },
-  {
-    id: 'freemium',
-    title: 'Offre Freemium',
-    description: 'Notre offre standard gratuite.',
-    accent: 'freemium' as const,
   },
 ] as const;
 
@@ -128,50 +118,24 @@ function OfferCard({
   badge,
   description,
   point,
-  accent,
+  points,
 }: {
   title: string;
   badge?: string;
   description: string;
   point?: string;
-  accent: 'founder' | 'premium' | 'boost' | 'freemium';
+  points?: readonly string[];
 }) {
-  const shell =
-    accent === 'founder'
-      ? 'border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300'
-      : accent === 'premium'
-        ? 'border-rose-200 bg-white'
-        : accent === 'boost'
-          ? 'border-amber-200 bg-white'
-          : 'border-gray-200 bg-white';
-
-  const titleColor =
-    accent === 'founder' ? 'text-amber-950' : 'text-gray-900';
-  const bodyColor =
-    accent === 'founder' ? 'text-amber-950/85' : 'text-gray-600';
-
-  const Icon =
-    accent === 'founder'
-      ? Gift
-      : accent === 'premium'
-        ? Sparkles
-        : accent === 'boost'
-          ? Zap
-          : Heart;
-
+  const items = points?.length ? points : point ? [point] : [];
   return (
-    <article
-      className={`relative overflow-hidden rounded-3xl border-2 p-5 sm:p-6 ${shell} animate-fadeIn`}
-    >
-      {accent === 'founder' && (
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
-          }}
-        />
-      )}
+    <article className="relative overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300 p-5 sm:p-6 animate-fadeIn">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
+        }}
+      />
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {badge && (
@@ -180,42 +144,24 @@ function OfferCard({
               {badge}
             </span>
           )}
-          {accent !== 'founder' && (
-            <span
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
-                accent === 'premium'
-                  ? 'bg-rose-50 text-rose-500'
-                  : accent === 'boost'
-                    ? 'bg-amber-50 text-amber-600'
-                    : 'bg-gray-100 text-rose-400'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-            </span>
-          )}
         </div>
-        <h3 className={`text-xl font-extrabold tracking-tight ${titleColor}`}>
+        <h3 className="text-xl font-extrabold tracking-tight text-amber-950">
           {title}
         </h3>
-        <p className={`text-sm sm:text-base font-medium leading-snug ${bodyColor}`}>
+        <p className="text-sm sm:text-base font-medium leading-snug text-amber-950/85">
           {description}
         </p>
-        {point && (
+        {items.map((item) => (
           <p
-            className={`flex items-center gap-2 text-sm font-semibold ${
-              accent === 'founder' ? 'text-amber-950' : 'text-gray-800'
-            }`}
+            key={item}
+            className="flex items-center gap-2 text-sm font-semibold text-amber-950"
           >
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                accent === 'founder' ? 'bg-white/80' : 'bg-rose-50'
-              }`}
-            >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/80">
               ✓
             </span>
-            {point}
+            {item}
           </p>
-        )}
+        ))}
       </div>
     </article>
   );
@@ -321,19 +267,25 @@ export default function LandingPage({
         </ul>
       </section>
 
-      {/* Offres */}
+      {/* Offre unique : Membre Fondateur */}
       <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Nos offres
+            Notre offre
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Une entrée libre, des options pour aller plus loin.
+            Une formule gratuite pendant 6 mois, sans carte bancaire.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="max-w-md mx-auto">
           {OFFERS.map((offer) => (
-            <OfferCard key={offer.id} {...offer} />
+            <OfferCard
+              key={offer.id}
+              title={offer.title}
+              badge={offer.badge}
+              description={offer.description}
+              points={offer.points}
+            />
           ))}
         </div>
       </section>

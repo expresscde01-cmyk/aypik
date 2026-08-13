@@ -7,6 +7,7 @@ import {
 } from '@/lib/membership';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 import { LegalLink } from '@/components/LegalTerms';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 
 const PREMIUM_PERKS = [
   'Voir qui a liké votre profil',
@@ -35,6 +36,8 @@ export function PremiumConversionCard({
   disabledReason?: string;
 }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  if (SITE_FREE_MODE) return null;
+
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
     status.premium_currency,

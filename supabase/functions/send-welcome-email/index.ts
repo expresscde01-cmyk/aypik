@@ -192,13 +192,14 @@ function buildWelcomeBody(params: {
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
                 Vous faites partie des 500 premiers membres. Votre statut
                 <strong>Membre Fondateur ${escapeHtml(numberLabel)}</strong>
-                est confirmé.
+                est confirmé à vie. Likes illimités, coup de cœur et boost de
+                visibilité du profil offert pendant le premier mois.
               </p>
               ${until}
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
                 Aucune carte bancaire n'est requise. À l'issue de cette période,
-                votre compte repasse automatiquement à l'offre gratuite, sans
-                tacite reconduction.
+                les avantages fonctionnels prennent fin ; votre badge Membre
+                Fondateur reste visible. Sans tacite reconduction.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
                 Belle découverte sur Aypik — un espace bienveillant réservé

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import { purgeExpiredDeletions } from '@/lib/deleteAccount';
 import {
   DEFAULT_MEMBERSHIP,
   isValidLinkedOffer,
@@ -19,6 +21,78 @@ export type EnsureMembershipResult = {
 
 export type SignupOffer = 'founder' | 'free';
 
+const SCHEMA_CACHE_ERROR =
+  "L'activation de l'offre n'est pas encore disponible. Réessayez dans quelques secondes.";
+
+function isMissingRpc(error: { code?: string; message: string }, name: string) {
+  return (
+    error.code === '42883' ||
+    error.code === 'PGRST202' ||
+    new RegExp(`Could not find the (function|.*)${name}`, 'i').test(error.message)
+  );
+}
+
+function isSchemaCacheError(error: { code?: string; message: string }) {
+  return (
+    error.code === 'PGRST205' ||
+    error.code === 'PGRST202' ||
+    /schema cache/i.test(error.message)
+  );
+}
+
+function publicErrorMessage(error: { code?: string; message: string }) {
+  if (isSchemaCacheError(error)) return SCHEMA_CACHE_ERROR;
+  return error.message;
+}
+
+async function claimOfferFallback(
+  offer: SignupOffer,
+  userId: string
+): Promise<EnsureMembershipResult> {
+  if (offer === 'founder') {
+    const { data, error } = await supabase.rpc('try_claim_founder_slot', {
+      p_user_id: userId,
+    });
+    if (!error && data && typeof data === 'object') {
+      const row = data as Record<string, unknown>;
+      return {
+        ok: true,
+        error: null,
+        plan: (typeof row.plan === 'string' ? row.plan : 'founder') as MembershipPlan,
+        is_founder: Boolean(row.is_founder),
+      };
+    }
+    if (error) {
+      return {
+        ok: false,
+        error: publicErrorMessage(error),
+        plan: null,
+        is_founder: false,
+      };
+    }
+  }
+
+  const { data, error } = await supabase.rpc('ensure_my_membership');
+  if (!error && data && typeof data === 'object') {
+    const raw = data as Record<string, unknown>;
+    if (raw.linked === true) {
+      return {
+        ok: true,
+        error: null,
+        plan: (typeof raw.plan === 'string' ? raw.plan : 'free') as MembershipPlan,
+        is_founder: Boolean(raw.is_founder),
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    error: error ? publicErrorMessage(error) : SCHEMA_CACHE_ERROR,
+    plan: null,
+    is_founder: false,
+  };
+}
+
 export function useMembership() {
   const { user } = useAuth();
   const [status, setStatus] = useState<MembershipStatus>(DEFAULT_MEMBERSHIP);
@@ -33,6 +107,7 @@ export function useMembership() {
     }
 
     setError(null);
+    void purgeExpiredDeletions();
     const { data, error: rpcError } = await supabase.rpc(
       'get_my_membership_status'
     );
@@ -64,8 +139,17 @@ export function useMembership() {
   }, [refresh]);
 
   const purchaseBoost = useCallback(async (): Promise<string | null> => {
+    if (SITE_FREE_MODE) {
+      return 'Les achats sont désactivés pendant le lancement.';
+    }
     const { error: rpcError } = await supabase.rpc('purchase_boost');
     if (rpcError) {
+      if (rpcError.message.includes('payments_disabled')) {
+        return 'Les achats sont désactivés pendant le lancement.';
+      }
+      if (rpcError.message.includes('boost_not_available_for_founders')) {
+        return "Le Boost n'est pas inclus dans l'offre Membre Fondateur.";
+      }
       if (
         rpcError.code === '42883' ||
         rpcError.message.includes('purchase_boost')
@@ -81,31 +165,29 @@ export function useMembership() {
   /** Choix explicite d’offre avant création du profil. */
   const claimSignupOffer = useCallback(
     async (offer: SignupOffer): Promise<EnsureMembershipResult> => {
+      if (!user) {
+        return {
+          ok: false,
+          error: 'Non authentifié',
+          plan: null,
+          is_founder: false,
+        };
+      }
+
       const { data, error: rpcError } = await supabase.rpc(
         'claim_signup_offer',
         { p_offer: offer }
       );
 
       if (rpcError) {
-        const missingFn =
-          rpcError.code === '42883' ||
-          rpcError.code === 'PGRST202' ||
-          /Could not find the (function|.*)claim_signup_offer/i.test(
-            rpcError.message
-          );
-
-        if (missingFn) {
-          return {
-            ok: false,
-            error:
-              "La fonction d'offre n'est pas encore visible côté API. Rechargez la page dans quelques secondes (cache schéma Supabase).",
-            plan: null,
-            is_founder: false,
-          };
+        if (isMissingRpc(rpcError, 'claim_signup_offer')) {
+          const fallback = await claimOfferFallback(offer, user.id);
+          if (fallback.ok) await refresh();
+          return fallback;
         }
         return {
           ok: false,
-          error: rpcError.message,
+          error: publicErrorMessage(rpcError),
           plan: null,
           is_founder: false,
         };
@@ -147,7 +229,7 @@ export function useMembership() {
         is_founder: Boolean(raw.is_founder),
       };
     },
-    [refresh]
+    [refresh, user]
   );
 
   /**

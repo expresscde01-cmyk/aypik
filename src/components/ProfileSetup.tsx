@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { deleteAccount } from '@/lib/deleteAccount';
+import { requestAccountDeletion } from '@/lib/deleteAccount';
 import { useMembership } from '@/lib/useMembership';
 import {
   uploadProfilePhoto,
@@ -39,6 +39,7 @@ import {
 } from '@/lib/interests';
 import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
+import { userErrorMessage } from '@/lib/userError';
 
 export interface Profile {
   id: string;
@@ -50,14 +51,19 @@ export interface Profile {
   interests: string[];
   photo_url: string;
   email_notifications_enabled?: boolean;
+  deletion_requested_at?: string | null;
 }
 
 export default function ProfileSetup({
   onDone,
   allowAccountDeletion = false,
+  onDeletionStatusChange,
+  accountDeletionPending,
 }: {
   onDone: () => void;
   allowAccountDeletion?: boolean;
+  onDeletionStatusChange?: (requestedAt: string | null) => void;
+  accountDeletionPending?: boolean;
 }) {
   const { user, signOut } = useAuth();
   const {
@@ -73,6 +79,10 @@ export default function ProfileSetup({
   const [claimingOffer, setClaimingOffer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletionRequestedAt, setDeletionRequestedAt] = useState<string | null>(
+    null
+  );
+  const [deletionRequested, setDeletionRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [displayName, setDisplayName] = useState('');
@@ -126,12 +136,22 @@ export default function ProfileSetup({
         setEmailNotificationsEnabled(
           data.email_notifications_enabled !== false
         );
+        setDeletionRequestedAt(data.deletion_requested_at || null);
       } else {
         setProfileExists(false);
       }
       setLoading(false);
     })();
   }, [user]);
+
+  useEffect(() => {
+    if (accountDeletionPending === true) {
+      setDeletionRequestedAt((prev) => prev ?? new Date().toISOString());
+    } else if (accountDeletionPending === false) {
+      setDeletionRequestedAt(null);
+      setDeletionRequested(false);
+    }
+  }, [accountDeletionPending]);
 
   useEffect(() => {
     if (loading) return;
@@ -184,9 +204,7 @@ export default function ProfileSetup({
     } catch (err) {
       setEmailNotificationsEnabled(!enabled);
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Impossible d’enregistrer la préférence e-mail'
+        userErrorMessage(err, 'Impossible d’enregistrer la préférence e-mail')
       );
     } finally {
       setPrefsSaving(false);
@@ -364,7 +382,7 @@ export default function ProfileSetup({
       setLocation(selectedCity.label);
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(userErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -375,12 +393,16 @@ export default function ProfileSetup({
     setDeleting(true);
 
     try {
-      const deleteError = await deleteAccount();
+      const deleteError = await requestAccountDeletion();
       if (deleteError) throw new Error(deleteError);
 
-      await signOut();
+      setDeletionRequested(true);
+      setDeletionRequestedAt(new Date().toISOString());
+      setConfirmDelete(false);
+      onDeletionStatusChange?.(new Date().toISOString());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(userErrorMessage(err));
+    } finally {
       setDeleting(false);
     }
   };
@@ -396,6 +418,18 @@ export default function ProfileSetup({
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
+        {isSignup && (
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
+            >
+              Se déconnecter
+            </button>
+          </div>
+        )}
+
         <div className="mb-6">
           <MembershipPanel
             status={status}
@@ -813,11 +847,25 @@ export default function ProfileSetup({
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
             <h2 className="text-sm font-semibold text-gray-900 mb-1">SUPPRESSION DU COMPTE</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Vous partez ? Cette action est irréversible : votre profil, vos likes et vos
-              matchs seront supprimés définitivement.
+              Vous partez ? La suppression devient définitive après 30 jours.
+              Votre profil, vos likes et vos matchs seront alors effacés.
             </p>
 
-            {!confirmDelete ? (
+            {deletionRequested || deletionRequestedAt ? (
+              <div className="space-y-3">
+                <p className="text-sm text-amber-800 bg-amber-50 rounded-xl p-3">
+                  Compte en cours de suppression — reconnectez-vous dans les
+                  30 jours pour annuler.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  Se déconnecter
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
@@ -826,28 +874,47 @@ export default function ProfileSetup({
                 <Trash2 className="w-4 h-4" />
                 Supprimer mon compte
               </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-red-700 bg-red-50 rounded-xl p-3">
-                  Êtes-vous sûr(e) ? Cette action est irréversible.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    disabled={deleting}
-                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+            )}
+
+            {confirmDelete && !deletionRequested && !deletionRequestedAt && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="delete-account-title"
+                  className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4"
+                >
+                  <h3
+                    id="delete-account-title"
+                    className="text-base font-bold text-gray-900"
                   >
-                    Annuler
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-                  >
-                    {deleting ? 'Suppression...' : 'Confirmer la suppression'}
-                  </button>
+                    Attention
+                  </h3>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Attention : La suppression de votre compte sera définitive
+                    après un délai de 30 jours. Toutes vos données seront
+                    effacées. Si vous êtes Membre Fondateur, votre statut et
+                    votre numéro d&apos;inscription seront également perdus et
+                    ne pourront pas être récupérés.
+                  </p>
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      disabled={deleting}
+                      className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

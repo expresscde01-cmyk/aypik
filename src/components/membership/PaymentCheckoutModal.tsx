@@ -27,6 +27,7 @@ import {
   type MembershipStatus,
 } from '@/lib/membership';
 import { LegalLink } from '@/components/LegalTerms';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 
 type Step = 'choose' | 'card' | 'paypal_redirect' | 'success';
 
@@ -67,7 +68,7 @@ export function PaymentCheckoutModal({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (SITE_FREE_MODE || !open) return null;
 
   const startCard = async () => {
     setError(null);

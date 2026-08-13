@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowLeft, Send, AlertCircle, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import { useMembership } from '@/lib/useMembership';
+import { offerLabel } from '@/lib/founderCopy';
 import type { Profile } from '@/components/ProfileSetup';
+import { ageFromBirthDate, isWithinAgeGap } from '@/lib/dating';
 import {
   type ChatMessage,
   fetchMessages,
@@ -19,6 +22,7 @@ type ChatScreenProps = {
 
 export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
   const { user } = useAuth();
+  const { status } = useMembership();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -36,6 +40,26 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
       try {
         setLoading(true);
         setError(null);
+
+        const { data: meRow } = await supabase
+          .from('profiles')
+          .select('birth_date')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (!meRow?.birth_date || !peer.birth_date) {
+          throw new Error('Ce profil n’est plus disponible.');
+        }
+
+        const myAge = ageFromBirthDate(meRow.birth_date as string);
+        const peerAge = ageFromBirthDate(peer.birth_date);
+        if (
+          !isWithinAgeGap(myAge, peerAge) ||
+          !isWithinAgeGap(peerAge, myAge)
+        ) {
+          throw new Error('Ce profil n’est plus disponible.');
+        }
+
         const convId = await getOrCreateConversation(peer.id);
         if (!active) return;
         setConversationId(convId);
@@ -212,6 +236,10 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
                   </p>
                   <p className="text-xs text-gray-400 mt-1.5 max-w-xs">
                     Envoyez le premier message pour lancer la conversation.
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                    Messagerie illimitée — c’est inclus dans{' '}
+                    {offerLabel(status)}.
                   </p>
                 </div>
               )}

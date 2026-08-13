@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
+import { isWithinAgeGap } from '@/lib/dating';
 
 export type SocialNotificationKind =
   | 'flash_received'
@@ -60,18 +61,21 @@ export async function fetchSuggestedProfiles(options?: {
   sameCityOnly?: boolean;
   minInterestOverlap?: number;
   myInterests?: string[];
+  myAge?: number;
 }): Promise<SuggestedProfile[]> {
+  const minOverlap = options?.minInterestOverlap ?? 0;
+
   const { data, error } = await supabase.rpc('suggest_profiles', {
     p_limit: options?.limit ?? 12,
     p_same_city_only: options?.sameCityOnly ?? false,
-    p_min_interest_overlap: options?.minInterestOverlap ?? 0,
+    p_min_interest_overlap: minOverlap,
   });
 
   if (error) throw error;
 
   const myInterests = options?.myInterests || [];
 
-  return ((data || []) as Array<Record<string, unknown>>).map((row) => {
+  const mapped = ((data || []) as Array<Record<string, unknown>>).map((row) => {
     const interests = Array.isArray(row.interests)
       ? (row.interests as string[])
       : [];
@@ -97,6 +101,15 @@ export async function fetchSuggestedProfiles(options?: {
       mutual_interests: mutual,
     };
   });
+
+  const myAge = options?.myAge;
+  if (typeof myAge !== 'number' || !Number.isFinite(myAge)) {
+    return [];
+  }
+
+  return mapped.filter(
+    (p) => isWithinAgeGap(myAge, p.age) && isWithinAgeGap(p.age, myAge)
+  );
 }
 
 /** Affinité géographique à partir des libellés « Ville (CP) » (sans lat/lng). */

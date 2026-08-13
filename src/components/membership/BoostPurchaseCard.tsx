@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Zap, AlertCircle } from 'lucide-react';
 import { SoftLock } from '@/components/membership/SoftPremium';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 
 export function BoostPurchaseCard({
   hasBoost,
@@ -14,6 +15,8 @@ export function BoostPurchaseCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  if (SITE_FREE_MODE) return null;
 
   const handleBuy = async () => {
     setError(null);
@@ -65,21 +68,23 @@ export function BoostPurchaseCard({
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              type="button"
-              onClick={handleBuy}
-              disabled={loading}
-              className="px-3.5 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
-            >
-              {loading
-                ? 'Activation...'
-                : hasBoost
-                  ? 'Prolonger 24 h · 2,99 €'
-                  : 'Activer 24 h · 2,99 €'}
-            </button>
-            <SoftLock label="Achat unique" />
-          </div>
+          {!SITE_FREE_MODE && (
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                type="button"
+                onClick={handleBuy}
+                disabled={loading}
+                className="px-3.5 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
+              >
+                {loading
+                  ? 'Activation...'
+                  : hasBoost
+                    ? 'Prolonger 24 h · 2,99 €'
+                    : 'Activer 24 h · 2,99 €'}
+              </button>
+              <SoftLock label="Achat unique" />
+            </div>
+          )}
         </div>
       </div>
     </div>

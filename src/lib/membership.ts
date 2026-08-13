@@ -1,3 +1,8 @@
+import {
+  FOUNDER_MAX_SLOTS,
+  isFounderPrivilegeActive,
+} from '@/lib/founderCopy';
+
 export type MembershipPlan = 'free' | 'premium' | 'founder';
 
 export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
@@ -47,8 +52,8 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   has_boost: false,
   boost_ends_at: null,
   founders_taken: 0,
-  founders_max: 500,
-  founders_remaining: 500,
+  founders_max: FOUNDER_MAX_SLOTS,
+  founders_remaining: FOUNDER_MAX_SLOTS,
   free_daily_likes: 10,
   likes_used_today: 0,
   likes_remaining_today: 10,
@@ -93,6 +98,7 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
       : DEFAULT_PREMIUM_PRICE_CENTS;
 
   const is_founder = Boolean(d.is_founder);
+  const plan = (d.plan as MembershipPlan) || 'free';
   const founder_premium_until =
     typeof d.founder_premium_until === 'string'
       ? d.founder_premium_until
@@ -101,18 +107,18 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     !!founder_premium_until &&
     new Date(founder_premium_until).getTime() > Date.now();
 
-  // Filet client : si la date fondateur est encore valide, on force le flag
-  // (évite un bandeau invisible quand le RPC / migration est incomplet).
+  // Privilèges uniquement pendant founder_premium_until — pas le seul is_founder.
   const on_founder_trial =
     Boolean(d.on_founder_trial) || (is_founder && founderUntilActive);
 
   const has_premium = Boolean(d.has_premium) || on_founder_trial;
+  const unlimited_likes = Boolean(d.unlimited_likes) || has_premium;
 
   return {
     user_id: typeof d.user_id === 'string' ? d.user_id : undefined,
     membership_linked:
       d.membership_linked === true || typeof d.user_id === 'string',
-    plan: (d.plan as MembershipPlan) || 'free',
+    plan,
     is_founder,
     founder_number:
       typeof d.founder_number === 'number' ? d.founder_number : null,
@@ -132,8 +138,9 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
       typeof d.free_daily_likes === 'number' ? d.free_daily_likes : 10,
     likes_used_today:
       typeof d.likes_used_today === 'number' ? d.likes_used_today : 0,
-    likes_remaining_today:
-      d.likes_remaining_today === null
+    likes_remaining_today: unlimited_likes
+      ? null
+      : d.likes_remaining_today === null
         ? null
         : typeof d.likes_remaining_today === 'number'
           ? d.likes_remaining_today
@@ -141,7 +148,7 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     can_see_who_liked: Boolean(d.can_see_who_liked) || has_premium,
     can_use_advanced_filters:
       Boolean(d.can_use_advanced_filters) || has_premium,
-    unlimited_likes: Boolean(d.unlimited_likes) || has_premium,
+    unlimited_likes,
     premium_price_cents,
     premium_currency:
       typeof d.premium_currency === 'string' ? d.premium_currency : 'EUR',
@@ -202,6 +209,11 @@ export function daysUntil(iso: string | null | undefined): number | null {
   if (!iso) return null;
   const ms = new Date(iso).getTime() - Date.now();
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+/** True si la période fondateur (likes, flash, boost offert) est encore en cours. */
+export function isFounderPeriodActive(status: MembershipStatus): boolean {
+  return isFounderPrivilegeActive(status);
 }
 
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */

@@ -1,4 +1,5 @@
 import { Lock, Sparkles } from 'lucide-react';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
 
 export function SoftPremiumBanner({
   title,
@@ -23,7 +24,7 @@ export function SoftPremiumBanner({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold text-gray-900">{title}</p>
-            {priceLabel && (
+            {!SITE_FREE_MODE && priceLabel && (
               <span className="flex-shrink-0 text-xs font-bold text-rose-600 bg-white/80 border border-rose-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                 {priceLabel}
               </span>
@@ -32,7 +33,7 @@ export function SoftPremiumBanner({
           <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
             {description}
           </p>
-          {onAction && (
+          {onAction && !SITE_FREE_MODE && (
             <button
               type="button"
               onClick={onAction}
