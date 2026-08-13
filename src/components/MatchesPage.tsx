@@ -202,12 +202,12 @@ export default function MatchesPage() {
             className="text-xl font-bold text-blue-900 mb-2"
             aria-label="Pas encore de match"
           >
-            {Array.from('Pas encore de match').map((char, i) => (
+            {Array.from('Pas encore de match').map((char, i, chars) => (
               <span
                 key={i}
                 aria-hidden
                 className="match-title-wave-letter"
-                style={{ animationDelay: `${i * 0.08}s` }}
+                style={{ animationDelay: `${(i / (chars.length - 1)) * 0.8}s` }}
               >
                 {char === ' ' ? '\u00A0' : char}
               </span>

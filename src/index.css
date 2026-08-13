@@ -23,22 +23,24 @@ body {
 }
 
 @keyframes match-title-wave {
-  0%,
-  100% {
+  0% {
     transform: translateY(0);
-  }
-  25% {
-    transform: translateY(-4px);
+    color: #1e3a8a;
+    opacity: 1;
   }
   50% {
-    transform: translateY(0);
+    transform: translateY(-5px);
+    color: #e11d48;
+    opacity: 1;
   }
-  75% {
-    transform: translateY(4px);
+  100% {
+    transform: translateY(0);
+    color: #1e3a8a;
+    opacity: 1;
   }
 }
 
 .match-title-wave-letter {
   display: inline-block;
-  animation: match-title-wave 1.6s ease-in-out infinite;
+  animation: match-title-wave 1.6s ease-in-out infinite both;
 }
