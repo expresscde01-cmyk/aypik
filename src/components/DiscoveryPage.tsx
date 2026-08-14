@@ -5,8 +5,6 @@ import {
   Sparkles,
   AlertCircle,
   Zap,
-  Filter,
-  ChevronDown,
   X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -31,7 +29,14 @@ import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import { rankProfileScore } from '@/lib/suggestions';
-import { geoProximityBadge, geoProximityFlags } from '@/lib/geoProximity';
+import {
+  GEO_PERIMETER_FILTER_LABEL,
+  GEO_PERIMETER_OPTIONS,
+  geoProximityBadge,
+  geoProximityFlags,
+  matchesGeoPerimeter,
+  type GeoPerimeterFilter,
+} from '@/lib/geoProximity';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 
 type SortChoice = 'pertinence' | 'recents' | null;
@@ -65,17 +70,19 @@ export default function DiscoveryPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [showFiltersHint, setShowFiltersHint] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [sameCityOnly, setSameCityOnly] = useState(false);
+  const [geoPerimeter, setGeoPerimeter] =
+    useState<GeoPerimeterFilter>('anywhere');
   const [minOverlap, setMinOverlap] = useState<number | null>(null);
   const [sortChoice, setSortChoice] = useState<SortChoice>(null);
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
-  const hasActiveFilter = sameCityOnly || minOverlap !== null;
-  const catalogAllProfiles = minOverlap === null && !sameCityOnly;
+  const geoFilterActive = geoPerimeter !== 'anywhere';
+  const hasActiveFilter = geoFilterActive || minOverlap !== null;
+  const catalogAllProfiles = minOverlap === null && !geoFilterActive;
 
   useEffect(() => {
     setSkippedIds(new Set());
-  }, [sameCityOnly, minOverlap]);
+  }, [geoPerimeter, minOverlap]);
 
   useEffect(() => {
     (async () => {
@@ -207,7 +214,12 @@ export default function DiscoveryPage() {
           if (targetGender && c.gender !== targetGender) return false;
           if (!isWithinAgeGap(myAge, c.age)) return false;
           if (!isWithinAgeGap(c.age, myAge)) return false;
-          if (canFilter && sameCityOnly && !c.same_city) return false;
+          if (
+            canFilter &&
+            !matchesGeoPerimeter(c, geoPerimeter)
+          ) {
+            return false;
+          }
           if (
             canFilter &&
             typeof minOverlap === 'number' &&
@@ -233,7 +245,7 @@ export default function DiscoveryPage() {
     user,
     membershipLoading,
     canFilter,
-    sameCityOnly,
+    geoPerimeter,
     minOverlap,
   ]);
 
@@ -403,50 +415,42 @@ export default function DiscoveryPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      <AdvancedFiltersTeaser
-        locked={!status.can_use_advanced_filters}
-        onAskPremium={() => setShowFiltersHint(true)}
-        priceLabel={priceLabel}
-        status={status}
-      />
-
-      {status.can_use_advanced_filters && (
-        <div className="rounded-2xl border border-rose-100 bg-white overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowFilters((open) => !open)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-rose-50/60 transition-colors"
-            aria-expanded={showFilters}
-          >
-            <span className="flex items-center gap-1.5 text-sm font-semibold text-rose-700">
-              <Filter className="w-4 h-4" />
-              Filtres
-              {hasActiveFilter && (
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-rose-100 text-[10px] font-bold text-rose-600">
-                  {[sameCityOnly, minOverlap !== null].filter(Boolean).length}
-                </span>
-              )}
-            </span>
-            <ChevronDown
-              className={`w-4 h-4 text-rose-400 transition-transform ${
-                showFilters ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
+      {status.can_use_advanced_filters ? (
+        <div className="space-y-2">
+          <AdvancedFiltersTeaser
+            locked={false}
+            expanded={showFilters}
+            onToggle={() => setShowFilters((open) => !open)}
+            activeCount={
+              [geoFilterActive, minOverlap !== null].filter(Boolean).length
+            }
+            priceLabel={priceLabel}
+            status={status}
+          />
           {showFilters && (
-            <div className="px-3 pb-3 space-y-2.5 border-t border-rose-50">
-              <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5 pt-2.5">
+            <div
+              id="discovery-filters-panel"
+              className="rounded-2xl border border-rose-100 bg-white px-3 py-3 space-y-2.5"
+            >
+              <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 Suggestions ciblées
               </p>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={sameCityOnly}
-                  onChange={(e) => setSameCityOnly(e.target.checked)}
-                  className="rounded border-gray-300 text-rose-500 focus:ring-rose-400"
-                />
-                Même ville
+              <label className="flex flex-col gap-1 text-sm text-gray-700">
+                Périmètre géographique
+                <select
+                  value={geoPerimeter}
+                  onChange={(e) =>
+                    setGeoPerimeter(e.target.value as GeoPerimeterFilter)
+                  }
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                >
+                  {GEO_PERIMETER_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {GEO_PERIMETER_FILTER_LABEL[option]}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
@@ -468,6 +472,13 @@ export default function DiscoveryPage() {
             </div>
           )}
         </div>
+      ) : (
+        <AdvancedFiltersTeaser
+          locked={!status.can_use_advanced_filters}
+          onAskPremium={() => setShowFiltersHint(true)}
+          priceLabel={priceLabel}
+          status={status}
+        />
       )}
 
       {showFiltersHint && !status.can_use_advanced_filters && !SITE_FREE_MODE && (

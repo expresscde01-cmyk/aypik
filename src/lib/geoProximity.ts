@@ -281,3 +281,44 @@ export function geoProximityBadgeFromLocations(
 ): string | null {
   return geoProximityBadge(geoProximityFlags(a, b));
 }
+
+/** Filtre Découvrir : périmètre expansif (le plus large inclut les plus proches). */
+export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel;
+
+const GEO_PERIMETER_RANK: Record<GeoProximityLevel, number> = {
+  city: 1,
+  department: 2,
+  region: 3,
+  neighboring_region: 4,
+};
+
+export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
+  anywhere: 'Partout',
+  city: GEO_PROXIMITY_LABEL.city,
+  department: GEO_PROXIMITY_LABEL.department,
+  region: GEO_PROXIMITY_LABEL.region,
+  neighboring_region: GEO_PROXIMITY_LABEL.neighboring_region,
+};
+
+export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
+  'anywhere',
+  'city',
+  'department',
+  'region',
+  'neighboring_region',
+];
+
+/**
+ * Périmètre expansif, pas un niveau exclusif :
+ * ville ⊂ département ⊂ région ⊂ région voisine.
+ * « Partout » = aucun filtre geo (ancienne case décochée).
+ */
+export function matchesGeoPerimeter(
+  flags: Partial<GeoProximityFlags> | null | undefined,
+  perimeter: GeoPerimeterFilter
+): boolean {
+  if (perimeter === 'anywhere') return true;
+  const level = geoProximityLevelFromFlags(flags);
+  if (!level) return false;
+  return GEO_PERIMETER_RANK[level] <= GEO_PERIMETER_RANK[perimeter];
+}

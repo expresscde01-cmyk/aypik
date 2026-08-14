@@ -1,4 +1,4 @@
-import { Eye, Filter, Heart, Lock } from 'lucide-react';
+import { ChevronDown, Eye, Filter, Heart, Lock } from 'lucide-react';
 import { SoftLock, SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import {
   SITE_FREE_MODE,
@@ -89,11 +89,17 @@ export function AdvancedFiltersTeaser({
   onAskPremium,
   priceLabel,
   status,
+  expanded = false,
+  onToggle,
+  activeCount = 0,
 }: {
   locked: boolean;
   onAskPremium?: () => void;
   priceLabel?: string;
   status: MembershipStatus;
+  expanded?: boolean;
+  onToggle?: () => void;
+  activeCount?: number;
 }) {
   const short = offerShortName(status);
   const included = offerIncludesPremiumPerks(status);
@@ -103,10 +109,32 @@ export function AdvancedFiltersTeaser({
 
   if (!locked) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 flex items-center gap-2 text-xs text-emerald-800">
-        <Filter className="w-4 h-4 text-emerald-700" />
-        Filtres avancés
-      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls="discovery-filters-panel"
+        className={`w-full rounded-2xl border p-3 flex items-center justify-between text-left transition-colors ${
+          expanded
+            ? 'border-emerald-400 bg-emerald-100 text-emerald-900 shadow-inner'
+            : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/70'
+        }`}
+      >
+        <span className="flex items-center gap-2 text-xs font-semibold">
+          <Filter className="w-4 h-4 text-emerald-700" />
+          Filtres avancés
+          {activeCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-800">
+              {activeCount}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-emerald-600 transition-transform ${
+            expanded ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
     );
   }
 

@@ -72,6 +72,12 @@ const PAID_OFFERS = [
 
 const OFFERS = SITE_FREE_MODE ? [FOUNDER_OFFER] : [FOUNDER_OFFER, ...PAID_OFFERS];
 
+const HERO_CHILD_FREE_LINE =
+  '[ Réservé exclusivement aux personnes sans enfants ]';
+
+const HERO_TITLE_GRADIENT =
+  'linear-gradient(to right, #F9C8D0, #E94375, #D32F2F, #1E88E5, #0D47A1)';
+
 export function SiteHeader({
   displayName,
   onAuthClick,
@@ -271,10 +277,17 @@ export default function LandingPage({
           }}
         />
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
-          <h1 className="max-w-xl sm:max-w-2xl mx-auto text-3xl sm:text-4xl md:text-[2.75rem] font-extrabold text-gray-900 tracking-tight leading-[1.2] text-balance animate-pop">
-            Un espace bienveillant réservé exclusivement aux personnes{' '}
-            <span className="whitespace-nowrap">sans enfants</span>
+          <h1
+            className="mx-auto text-center text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
+            style={{ backgroundImage: HERO_TITLE_GRADIENT }}
+          >
+            Un espace de rencontre
+            <br />
+            bienveillant
           </h1>
+          <p className="mt-8 text-lg sm:text-xl md:text-[1.375rem] font-semibold text-neutral-800 whitespace-nowrap">
+            {HERO_CHILD_FREE_LINE}
+          </p>
 
           {/* Signature de marque sous l’accroche */}
           <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">

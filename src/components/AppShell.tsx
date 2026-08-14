@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Compass, Heart, Home, User } from 'lucide-react';
+import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { cancelAccountDeletion } from '@/lib/deleteAccount';
@@ -132,21 +132,38 @@ export default function AppShell() {
         )}
         {tab === 'discover' && (
           <div className="min-h-full flex flex-col">
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
-              <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTab('home')}
-                  className="text-sm font-semibold text-rose-600 hover:text-rose-700"
-                >
-                  ← Accueil
-                </button>
-                <span className="text-sm font-semibold text-gray-800 truncate">
-                  Découvrir
-                </span>
-                <NotificationsBell />
+            <header className="sticky top-0 z-10 discover-sticky-header">
+              <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setTab('home')}
+                      className="inline-flex items-center gap-1.5 h-8 pl-1 pr-2.5 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 text-[13px] font-semibold transition-colors"
+                      aria-label="Retour à l’accueil"
+                    >
+                      <span className="w-6 h-6 rounded-full bg-white text-rose-500 flex items-center justify-center shadow-sm shadow-rose-100">
+                        <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
+                      </span>
+                      Accueil
+                    </button>
+                    <h1 className="mt-3 text-2xl font-bold text-gray-900 tracking-tight">
+                      Découvrir
+                    </h1>
+                    <span
+                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
+                      aria-hidden
+                    />
+                    <p className="mt-1.5 text-sm text-gray-500 leading-snug">
+                      Découvre des profils qui pourraient te plaire
+                    </p>
+                  </div>
+                  <div className="shrink-0 -mr-1 -mt-0.5">
+                    <NotificationsBell />
+                  </div>
+                </div>
               </div>
-            </div>
+            </header>
             <DiscoveryPage />
           </div>
         )}

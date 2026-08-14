@@ -22,6 +22,28 @@ body {
   }
 }
 
+.discover-sticky-header {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.discover-sticky-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5rem;
+  transform: translateY(100%);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.82),
+    transparent
+  );
+}
+
 @keyframes match-title-wave {
   0% {
     transform: translateY(3px);
