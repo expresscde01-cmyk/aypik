@@ -1,9 +1,8 @@
-import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, UserRound, Zap } from 'lucide-react';
+import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
-import { LegalLink } from '@/components/LegalTerms';
+import { SiteFooter } from '@/components/LegalTerms';
 import {
   FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
-  FOUNDER_BENEFIT_FLASH,
   FOUNDER_BENEFIT_NO_CARD,
   FOUNDER_BENEFIT_UNLIMITED_LIKES,
   FOUNDER_SLOTS_SUBTITLE,
@@ -42,7 +41,6 @@ const FOUNDER_OFFER = {
   points: [
     FOUNDER_BENEFIT_NO_CARD,
     FOUNDER_BENEFIT_UNLIMITED_LIKES,
-    FOUNDER_BENEFIT_FLASH,
     FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
   ],
   accent: 'founder' as const,
@@ -72,11 +70,108 @@ const PAID_OFFERS = [
 
 const OFFERS = SITE_FREE_MODE ? [FOUNDER_OFFER] : [FOUNDER_OFFER, ...PAID_OFFERS];
 
-const HERO_CHILD_FREE_LINE =
-  '[ Réservé exclusivement aux personnes sans enfants ]';
+const HERO_CHILD_FREE_PHRASE =
+  'Réservé exclusivement aux personnes sans enfants';
 
 const HERO_TITLE_GRADIENT =
   'linear-gradient(to right, #F9C8D0, #E94375, #D32F2F, #1E88E5, #0D47A1)';
+
+/** Phrase droite, typo tampon, liseret arrondi, taches discrètes. */
+function HeroChildFreeStamp() {
+  return (
+    <div className="stamp-ink-appear mt-[0.62em] w-[92%] mx-auto">
+        <svg
+          role="img"
+          aria-label={HERO_CHILD_FREE_PHRASE}
+          viewBox="0 0 640 116"
+          className="h-auto w-full mix-blend-multiply select-none"
+        >
+          <title>{HERO_CHILD_FREE_PHRASE}</title>
+          <defs>
+            <filter
+              id="aypik-stamp-ink"
+              x="-8%"
+              y="-28%"
+              width="116%"
+              height="156%"
+              colorInterpolationFilters="sRGB"
+            >
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.62"
+                numOctaves="3"
+                seed="9"
+                result="noise"
+              />
+              <feColorMatrix
+                in="noise"
+                type="matrix"
+                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3.6 -1.15"
+                result="speckle"
+              />
+              <feComposite
+                in="SourceGraphic"
+                in2="speckle"
+                operator="in"
+                result="punched"
+              />
+              <feDisplacementMap
+                in="punched"
+                in2="noise"
+                scale="0.7"
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+          </defs>
+          <g filter="url(#aypik-stamp-ink)" fill="currentColor" stroke="currentColor">
+            <rect
+              x="10"
+              y="10"
+              width="620"
+              height="96"
+              rx="16"
+              ry="16"
+              fill="none"
+              strokeWidth="2.6"
+            />
+            <ellipse cx="22" cy="26" rx="2.6" ry="1.7" opacity="0.28" stroke="none" />
+            <circle cx="618" cy="34" r="1.7" opacity="0.22" stroke="none" />
+            <ellipse cx="36" cy="98" rx="2.2" ry="1.4" opacity="0.2" stroke="none" />
+            <circle cx="604" cy="94" r="1.45" opacity="0.18" stroke="none" />
+            <ellipse cx="320" cy="6" rx="1.8" ry="1.15" opacity="0.16" stroke="none" />
+            <circle cx="214" cy="108" r="1.2" opacity="0.14" stroke="none" />
+            <text
+              x="320"
+              y="50"
+              textAnchor="middle"
+              fill="currentColor"
+              stroke="none"
+              fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
+              fontWeight="800"
+              fontSize="28"
+              letterSpacing="3.4"
+            >
+              RÉSERVÉ EXCLUSIVEMENT
+            </text>
+            <text
+              x="320"
+              y="84"
+              textAnchor="middle"
+              fill="currentColor"
+              stroke="none"
+              fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
+              fontWeight="800"
+              fontSize="21"
+              letterSpacing="2.5"
+            >
+              AUX PERSONNES SANS ENFANTS
+            </text>
+          </g>
+        </svg>
+    </div>
+  );
+}
 
 export function SiteHeader({
   displayName,
@@ -85,7 +180,7 @@ export function SiteHeader({
   onLogoClick,
 }: {
   displayName?: string | null;
-  onAuthClick?: () => void;
+  onAuthClick?: (mode?: 'signin' | 'signup') => void;
   onSignOut?: () => void;
   onLogoClick?: () => void;
 }) {
@@ -130,7 +225,7 @@ export function SiteHeader({
           ) : (
             <button
               type="button"
-              onClick={onAuthClick}
+              onClick={() => onAuthClick?.('signup')}
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold shadow-md shadow-rose-200/60 hover:opacity-95 transition-opacity"
             >
               Connexion / Inscription
@@ -176,7 +271,7 @@ function OfferCard({
       : accent === 'premium'
         ? Sparkles
         : accent === 'boost'
-          ? Zap
+          ? Sparkles
           : Heart;
 
   return (
@@ -250,7 +345,7 @@ export default function LandingPage({
   onPrimaryCta,
 }: {
   displayName?: string | null;
-  onAuthClick?: () => void;
+  onAuthClick?: (mode?: 'signin' | 'signup') => void;
   onSignOut?: () => void;
   onLogoClick?: () => void;
   /** CTA principal (ex. aller aux matchs si déjà connecté) */
@@ -277,17 +372,17 @@ export default function LandingPage({
           }}
         />
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
-          <h1
-            className="mx-auto text-center text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
-            style={{ backgroundImage: HERO_TITLE_GRADIENT }}
-          >
-            Un espace de rencontre
-            <br />
-            bienveillant
-          </h1>
-          <p className="mt-8 text-lg sm:text-xl md:text-[1.375rem] font-semibold text-neutral-800 whitespace-nowrap">
-            {HERO_CHILD_FREE_LINE}
-          </p>
+          <div className="mx-auto flex w-fit max-w-full flex-col items-stretch text-4xl sm:text-5xl md:text-[3.25rem]">
+            <h1
+              className="text-center text-[1em] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
+              style={{ backgroundImage: HERO_TITLE_GRADIENT }}
+            >
+              Un espace de rencontre
+              <br />
+              bienveillant
+            </h1>
+            <HeroChildFreeStamp />
+          </div>
 
           {/* Signature de marque sous l’accroche */}
           <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">
@@ -304,7 +399,7 @@ export default function LandingPage({
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
             <button
               type="button"
-              onClick={connected ? onPrimaryCta : onAuthClick}
+              onClick={connected ? onPrimaryCta : () => onAuthClick?.('signup')}
               className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
             >
               {connected ? 'Voir mes matchs' : 'Rejoindre Aypik'}
@@ -312,7 +407,7 @@ export default function LandingPage({
             {!connected && (
               <button
                 type="button"
-                onClick={onAuthClick}
+                onClick={() => onAuthClick?.('signin')}
                 className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
               >
                 Se connecter
@@ -329,7 +424,7 @@ export default function LandingPage({
             Valeurs
           </h2>
           <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-            Les piliers d’une communauté claire, sereine et respectueuse.
+            Les piliers d’une communauté transparente, sereine et respectueuse.
           </p>
         </div>
         <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6">
@@ -357,7 +452,7 @@ export default function LandingPage({
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {SITE_FREE_MODE
-              ? 'Une formule gratuite pendant 6 mois, sans carte bancaire.'
+              ? 'Une formule gratuite pendant 6 mois.'
               : 'Une entrée libre, des options pour aller plus loin.'}
           </p>
         </div>
@@ -375,14 +470,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      <footer className="mt-auto border-t border-rose-100/80 bg-white/60">
-        <div className="max-w-3xl mx-auto px-4 py-6 text-center text-xs text-gray-400 leading-relaxed">
-          Aypik ·{' '}
-          <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-            CGU / CGV
-          </LegalLink>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

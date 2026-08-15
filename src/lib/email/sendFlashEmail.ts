@@ -17,7 +17,7 @@ export type SendFlashEmailResult = {
 };
 
 /**
- * Envoie l'e-mail transactionnel « coup de cœur reçu » via Edge Function Resend.
+ * Envoie l'e-mail transactionnel « flash reçu » via Edge Function Resend.
  * Non bloquant : les échecs réseau ne doivent pas casser l'UX flash.
  */
 export async function sendFlashReceivedEmail(

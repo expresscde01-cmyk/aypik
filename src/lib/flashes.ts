@@ -61,7 +61,7 @@ export async function sendFlash(toUserId: string): Promise<SendFlashResult> {
 }
 
 /**
- * Coup de cœur (éclair) : inclus pendant la fenêtre Fondateur (6 mois),
+ * Flash (éclair) : inclus pendant la fenêtre Fondateur (6 mois),
  * y compris en mode site gratuit. Masqué hors fenêtre au lancement.
  */
 export function isFlashCtaVisible(status?: OfferStatusLike): boolean {
@@ -77,15 +77,15 @@ export function flashErrorMessage(
   switch (error) {
     case 'flash_reserved_for_founders':
     case 'flash_not_available_for_founders':
-      return 'Le coup de cœur est réservé aux Membres Fondateurs pendant le lancement.';
+      return 'Le flash est réservé aux Membres Fondateurs pendant le lancement.';
     case 'flash_quota_exhausted':
       if (status && status.plan === 'premium') {
-        return 'Limite de coups de cœur atteinte pour aujourd’hui.';
+        return 'Limite de flashes atteinte pour aujourd’hui.';
       }
       if (SITE_FREE_MODE) {
-        return 'Limite de coups de cœur atteinte pour aujourd’hui. Réessaie demain.';
+        return 'Limite de flashes atteinte pour aujourd’hui. Réessaie demain.';
       }
-      return 'Limite de coups de cœur atteinte pour aujourd’hui. Passe à Premium pour en envoyer davantage.';
+      return 'Limite de flashes atteinte pour aujourd’hui. Passe à Premium pour en envoyer davantage.';
     case 'invalid_target':
     case 'age_rule_violation':
       return 'Profil invalide.';
@@ -94,6 +94,6 @@ export function flashErrorMessage(
     case 'not_authenticated':
       return 'Session expirée. Reconnecte-toi.';
     default:
-      return error || 'Impossible d’envoyer le coup de cœur.';
+      return error || 'Impossible d’envoyer le flash.';
   }
 }

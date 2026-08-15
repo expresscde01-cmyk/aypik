@@ -21,7 +21,7 @@ import {
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
-import { LegalLink } from '@/components/LegalTerms';
+import { ContactLink, LegalLink } from '@/components/LegalTerms';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import {
   CITY_SELECTION_REQUIRED_ERROR,
@@ -40,6 +40,12 @@ import {
 import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
 import { userErrorMessage } from '@/lib/userError';
+import {
+  ADULTS_ONLY_MESSAGE,
+  MIN_USER_AGE,
+  isAdult,
+  latestBirthDateForAge,
+} from '@/lib/dating';
 
 export type ProfileGender = 'homme' | 'femme';
 
@@ -138,6 +144,10 @@ export default function ProfileSetup({
         setCityError(null);
         setInterests(data.interests || []);
         setPhotoUrl(data.photo_url || '');
+        if (!data.birth_date) {
+          const metaDob = user.user_metadata?.birth_date;
+          if (typeof metaDob === 'string') setBirthDate(metaDob);
+        }
         if (data.gender === 'homme' || data.gender === 'femme') {
           setGender(data.gender);
           setGenderLocked(true);
@@ -151,6 +161,8 @@ export default function ProfileSetup({
         setDeletionRequestedAt(data.deletion_requested_at || null);
       } else {
         setProfileExists(false);
+        const metaDob = user.user_metadata?.birth_date;
+        if (typeof metaDob === 'string') setBirthDate(metaDob);
       }
       setLoading(false);
     })();
@@ -333,6 +345,16 @@ export default function ProfileSetup({
 
     if (interests.length < MIN_INTERESTS) {
       setError(INTERESTS_MIN_ERROR);
+      return;
+    }
+
+    if (!birthDate) {
+      setError('Indique ta date de naissance.');
+      return;
+    }
+
+    if (!isAdult(birthDate)) {
+      setError(ADULTS_ONLY_MESSAGE);
       return;
     }
 
@@ -585,18 +607,22 @@ export default function ProfileSetup({
               required
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              max={latestBirthDateForAge(MIN_USER_AGE)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900"
             />
           </div>
 
-          {/* Gender: optional until first save, then the whole block disappears */}
+          {/* Genre : optionnel. Une fois Homme/Femme enregistré, le bloc disparaît. */}
           {!genderLocked && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Je suis
-              </label>
-              <div className="flex gap-2" role="group" aria-label="Je suis">
+              {gender === null && (
+                <p className="text-sm text-gray-500">Genre : Non spécifié</p>
+              )}
+              <div
+                className={`flex gap-2 ${gender === null ? 'mt-2' : ''}`}
+                role="group"
+                aria-label="Genre (optionnel)"
+              >
               <button
                 type="button"
                 aria-pressed={gender === 'homme'}
@@ -838,8 +864,8 @@ export default function ProfileSetup({
                 Préférences
               </h2>
               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                Gère les e-mails de notification envoyés par Aypik (coups de
-                cœur, actualisations, messages d’accueil, etc.).
+                Gère les e-mails de notification envoyés par Aypik (flashes,
+                actualisations, messages d’accueil, etc.).
               </p>
             </div>
             <label className="flex items-start gap-3 cursor-pointer">
@@ -905,7 +931,9 @@ export default function ProfileSetup({
         )}
 
         {allowAccountDeletion && (
-          <p className="mt-6 text-center text-xs text-gray-400">
+          <p className="mt-6 text-center text-xs text-gray-400 leading-relaxed">
+            Vous avez des questions ? <ContactLink />
+            <br />
             Conditions d&apos;utilisation et de vente :{' '}
             <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium text-gray-500">
               CGU / CGV

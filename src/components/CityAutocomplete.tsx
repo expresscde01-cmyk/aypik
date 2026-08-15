@@ -37,8 +37,8 @@ export function CityAutocomplete({
   /** Évite de relancer une recherche juste après une sélection */
   const skipFetchRef = useRef(false);
 
-  const isValidated =
-    selected !== null && selected.label === value.trim();
+  const selectedLabel = selected?.label ?? '';
+  const isValidated = selected !== null && selectedLabel === value.trim();
 
   useEffect(() => {
     if (skipFetchRef.current) {
@@ -46,11 +46,11 @@ export function CityAutocomplete({
       setSuggestions([]);
       setOpen(false);
       setLoading(false);
+      setQueryError(null);
       return;
     }
 
-    // Ville déjà validée : pas de nouvelle recherche tant que le texte ne change pas
-    if (selected && selected.label === value.trim()) {
+    if (selectedLabel && selectedLabel === value.trim()) {
       setSuggestions([]);
       setOpen(false);
       setLoading(false);
@@ -67,36 +67,46 @@ export function CityAutocomplete({
       return;
     }
 
+    let cancelled = false;
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setLoading(true);
-      setQueryError(null);
-      try {
-        const results = await searchFrenchCommunes(q, controller.signal);
-        if (controller.signal.aborted) return;
-        setSuggestions(results);
-        setHighlight(0);
-        setOpen(results.length > 0);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        setSuggestions([]);
-        setOpen(false);
-        setQueryError(
-          err instanceof Error
-            ? err.message
-            : 'Impossible de charger les suggestions.'
-        );
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+    setQueryError(null);
+
+    const timer = window.setTimeout(() => {
+      if (cancelled) {
+        setLoading(false);
+        return;
       }
+      setLoading(true);
+      void (async () => {
+        try {
+          const results = await searchFrenchCommunes(q, controller.signal);
+          if (cancelled) return;
+          setSuggestions(results);
+          setHighlight(0);
+          setOpen(true);
+          setQueryError(null);
+        } catch (err) {
+          if (cancelled) return;
+          setSuggestions([]);
+          setOpen(false);
+          setQueryError(
+            err instanceof Error
+              ? err.message
+              : 'Impossible de charger les suggestions.'
+          );
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
     }, 280);
 
     return () => {
+      cancelled = true;
       controller.abort();
       window.clearTimeout(timer);
+      setLoading(false);
     };
-  }, [value, selected]);
+  }, [value, selectedLabel]);
 
   useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -140,7 +150,7 @@ export function CityAutocomplete({
   };
 
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div ref={rootRef} className={`relative overflow-visible ${className}`}>
       <div className="relative">
         <MapPin className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
@@ -162,8 +172,7 @@ export function CityAutocomplete({
           onChange={(e) => {
             const next = e.target.value;
             onChange(next);
-            // Toute retouche manuelle invalide la sélection officielle
-            if (!selected || next.trim() !== selected.label) {
+            if (selected && next.trim() !== selected.label) {
               onSelect(null);
             }
           }}
@@ -203,13 +212,18 @@ export function CityAutocomplete({
         <p className="mt-1.5 text-xs text-amber-700">{queryError}</p>
       )}
 
-      {open && suggestions.length > 0 && (
+      {open && (suggestions.length > 0 || (!loading && value.trim().length >= 2 && !isValidated)) && (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1.5 w-full max-h-60 overflow-auto rounded-xl border border-rose-100 bg-white shadow-lg shadow-rose-100/50 py-1"
+          className="absolute z-50 mt-1.5 w-full max-h-60 overflow-auto rounded-xl border border-rose-100 bg-white shadow-lg shadow-rose-100/50 py-1"
         >
-          {suggestions.map((commune, index) => {
+          {suggestions.length === 0 ? (
+            <li className="px-3.5 py-2.5 text-sm text-gray-500">
+              Aucune commune trouvée
+            </li>
+          ) : (
+          suggestions.map((commune, index) => {
             const active = index === highlight;
             const cp =
               commune.codesPostaux.length === 1
@@ -246,7 +260,8 @@ export function CityAutocomplete({
                 </button>
               </li>
             );
-          })}
+          })
+          )}
         </ul>
       )}
     </div>

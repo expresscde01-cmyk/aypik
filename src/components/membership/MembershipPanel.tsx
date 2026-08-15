@@ -8,7 +8,6 @@ import { cancelPremiumSubscription } from '@/lib/payments';
 import {
   FOUNDER_AFTER_6_MONTHS_BODY,
   FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
-  FOUNDER_BENEFIT_FLASH,
   FOUNDER_BENEFIT_NO_CARD,
   FOUNDER_BENEFIT_UNLIMITED_LIKES,
   FOUNDER_MAX_SLOTS,
@@ -99,7 +98,6 @@ function FounderActiveBanner({
           {[
             FOUNDER_BENEFIT_NO_CARD,
             FOUNDER_BENEFIT_UNLIMITED_LIKES,
-            FOUNDER_BENEFIT_FLASH,
             FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
           ].map((item) => (
             <li

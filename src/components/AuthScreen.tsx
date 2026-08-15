@@ -8,22 +8,37 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
+  Calendar,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
-import { LegalLink } from '@/components/LegalTerms';
+import {
+  ADULTS_ONLY_MESSAGE,
+  MIN_USER_AGE,
+  isAdult,
+  latestBirthDateForAge,
+} from '@/lib/dating';
+import { LegalLink, SiteFooter } from '@/components/LegalTerms';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 
 type Mode = 'signin' | 'signup';
 
-export default function AuthScreen({ onBack }: { onBack?: () => void }) {
-  const [mode, setMode] = useState<Mode>('signup');
+export default function AuthScreen({
+  onBack,
+  initialMode = 'signup',
+}: {
+  onBack?: () => void;
+  initialMode?: Mode;
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const maxAdultBirthDate = latestBirthDateForAge(MIN_USER_AGE);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +50,14 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
     }
 
     if (mode === 'signup') {
+      if (!birthDate) {
+        setError('Indique ta date de naissance.');
+        return;
+      }
+      if (!isAdult(birthDate)) {
+        setError(ADULTS_ONLY_MESSAGE);
+        return;
+      }
       const passwordError = validateSignupPassword(password);
       if (passwordError) {
         setError(passwordError);
@@ -49,7 +72,11 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { birth_date: birthDate } },
+        });
         if (error) throw error;
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -66,7 +93,8 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-white to-amber-50">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl" />
@@ -145,6 +173,29 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
               </div>
             </div>
 
+            {mode === 'signup' && (
+              <div>
+                <label
+                  htmlFor="signup-birth-date"
+                  className="block text-sm font-semibold text-gray-700 mb-1.5"
+                >
+                  Date de naissance
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  <input
+                    id="signup-birth-date"
+                    type="date"
+                    required
+                    value={birthDate}
+                    max={maxAdultBirthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Mot de passe
@@ -221,14 +272,16 @@ export default function AuthScreen({ onBack }: { onBack?: () => void }) {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
-          En t&apos;inscrivant, tu confirmes être une personne sans enfant et
-          accepter les{' '}
+          En t&apos;inscrivant, tu confirmes avoir 18 ans révolus, être une
+          personne sans enfant et accepter les{' '}
           <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
             CGU / CGV
           </LegalLink>
           .
         </p>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

@@ -4,12 +4,16 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { cancelAccountDeletion } from '@/lib/deleteAccount';
 import { userErrorMessage } from '@/lib/userError';
+import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
 import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
 import NotificationsBell from '@/components/NotificationsBell';
+import UnreadBadge from '@/components/UnreadBadge';
+import { SiteFooter } from '@/components/LegalTerms';
 import type { Profile } from '@/components/ProfileSetup';
+import { useUnreadMessages } from '@/lib/messaging';
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -23,6 +27,9 @@ function initialTabFromQuery(): Tab {
 export default function AppShell() {
   const { user, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
+  const [inboxActorId, setInboxActorId] = useState<string | null>(null);
+  const [inboxOpenChat, setInboxOpenChat] = useState(false);
+  const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [cancelingDeletion, setCancelingDeletion] = useState(false);
@@ -53,6 +60,12 @@ export default function AppShell() {
     user?.email?.split('@')[0] ||
     'Membre';
   const deletionPending = Boolean(profile?.deletion_requested_at);
+
+  const openMatches = (actorId?: string | null, openChat = false) => {
+    setInboxActorId(actorId ?? null);
+    setInboxOpenChat(openChat);
+    setTab('matches');
+  };
 
   const handleCancelDeletion = async () => {
     setCancelError(null);
@@ -93,6 +106,25 @@ export default function AppShell() {
     );
   }
 
+  if (profile && !isAdult(profile.birth_date)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+          <p className="text-gray-800 text-sm leading-relaxed">
+            {ADULTS_ONLY_MESSAGE}
+          </p>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {deletionPending && (
@@ -126,8 +158,10 @@ export default function AppShell() {
             displayName={displayName}
             onSignOut={signOut}
             onOpenDiscover={() => setTab('discover')}
-            onOpenMatches={() => setTab('matches')}
+            onOpenMatches={openMatches}
             onOpenProfile={() => setTab('profile')}
+            unreadTotal={unread.total}
+            unreadBySender={unread.bySender}
           />
         )}
         {tab === 'discover' && (
@@ -159,12 +193,15 @@ export default function AppShell() {
                     </p>
                   </div>
                   <div className="shrink-0 -mr-1 -mt-0.5">
-                    <NotificationsBell />
+                    <NotificationsBell onOpenInbox={openMatches} />
                   </div>
                 </div>
               </div>
             </header>
-            <DiscoveryPage />
+            <DiscoveryPage
+              unreadBySender={unread.bySender}
+              onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
+            />
           </div>
         )}
         {tab === 'matches' && (
@@ -181,10 +218,18 @@ export default function AppShell() {
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
-                <NotificationsBell />
+                <NotificationsBell onOpenInbox={openMatches} />
               </div>
             </div>
-            <MatchesPage />
+            <MatchesPage
+              focusActorId={inboxActorId}
+              focusOpenChat={inboxOpenChat}
+              onChatClosed={() => void unread.refresh()}
+              onFocusActorConsumed={() => {
+                setInboxActorId(null);
+                setInboxOpenChat(false);
+              }}
+            />
           </div>
         )}
         {tab === 'profile' && (
@@ -209,6 +254,8 @@ export default function AppShell() {
         )}
       </main>
 
+      <SiteFooter compact />
+
       <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
         <div className="max-w-2xl mx-auto px-2 h-16 flex items-center justify-around">
           <NavButton
@@ -227,7 +274,8 @@ export default function AppShell() {
             icon={<Heart className="w-5 h-5" />}
             label="Matchs"
             active={tab === 'matches'}
-            onClick={() => setTab('matches')}
+            badge={unread.total}
+            onClick={() => openMatches()}
           />
           <NavButton
             icon={<User className="w-5 h-5" />}
@@ -246,21 +294,36 @@ function NavButton({
   label,
   active,
   onClick,
+  badge = 0,
 }: {
   icon: React.ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
+  badge?: number;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-3 sm:px-5 py-2 rounded-lg transition-all ${
-        active ? 'text-rose-500' : 'text-gray-400 hover:text-gray-600'
+      className={`relative flex flex-col items-center gap-0.5 px-3 sm:px-5 py-2 rounded-lg transition-all ${
+        active
+          ? 'text-rose-500'
+          : badge > 0
+            ? 'text-rose-500'
+            : 'text-gray-400 hover:text-gray-600'
       }`}
     >
-      {icon}
+      <span className="relative">
+        {icon}
+        {badge > 0 && (
+          <UnreadBadge
+            count={badge}
+            pulse
+            className="absolute -top-1.5 -right-2 text-[9px] h-[1.05rem] min-w-[1.05rem]"
+          />
+        )}
+      </span>
       <span className="text-[11px] sm:text-xs font-medium">{label}</span>
     </button>
   );

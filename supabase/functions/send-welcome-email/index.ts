@@ -192,7 +192,7 @@ function buildWelcomeBody(params: {
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
                 Tu fais partie des 500 premiers membres. Ton statut
                 <strong>Membre Fondateur ${escapeHtml(numberLabel)}</strong>
-                est confirmé à vie. Likes illimités, coup de cœur et boost de
+                est confirmé à vie. Likes illimités, flash et boost de
                 visibilité du profil offert pendant le premier mois.
               </p>
               ${until}

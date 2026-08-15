@@ -1,4 +1,4 @@
-import { Award, Sparkles, Zap } from 'lucide-react';
+import { Award, Sparkles } from 'lucide-react';
 
 export function FounderBadge({
   number,
@@ -31,7 +31,7 @@ export function BoostedBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
       className={`inline-flex items-center gap-1 rounded-full bg-rose-500 text-white font-semibold shadow-sm shadow-rose-200 ${pad}`}
       title="Profil boosté"
     >
-      <Zap className={icon} fill="currentColor" />
+      <Sparkles className={icon} />
       Boosté
     </span>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Heart,
   MapPin,
+  MessageCircle,
   Sparkles,
   AlertCircle,
   Zap,
@@ -15,6 +16,7 @@ import {
   latestBirthDateForAge,
   matchingTargetGender,
   minPartnerAge,
+  MIN_USER_AGE,
 } from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
 import type { Profile } from '@/components/ProfileSetup';
@@ -38,6 +40,7 @@ import {
   type GeoPerimeterFilter,
 } from '@/lib/geoProximity';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import { unreadMessagesLabel } from '@/components/UnreadBadge';
 
 type SortChoice = 'pertinence' | 'recents' | null;
 
@@ -55,7 +58,13 @@ interface Candidate extends Profile {
   created_at?: string;
 }
 
-export default function DiscoveryPage() {
+export default function DiscoveryPage({
+  unreadBySender = {},
+  onOpenUnreadChat,
+}: {
+  unreadBySender?: Record<string, number>;
+  onOpenUnreadChat?: (actorId: string) => void;
+} = {}) {
   const { user } = useAuth();
   const { status, refresh, loading: membershipLoading } = useMembership();
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
@@ -129,7 +138,10 @@ export default function DiscoveryPage() {
         .neq('id', user.id)
         .eq('has_children', false)
         .is('deletion_requested_at', null)
-        .lte('birth_date', latestBirthDateForAge(myMinAge));
+        .lte(
+          'birth_date',
+          latestBirthDateForAge(Math.max(MIN_USER_AGE, myMinAge))
+        );
 
       if (targetGender) {
         query = query.eq('gender', targetGender);
@@ -212,6 +224,7 @@ export default function DiscoveryPage() {
         })
         .filter((c) => {
           if (targetGender && c.gender !== targetGender) return false;
+          if (c.age < MIN_USER_AGE) return false;
           if (!isWithinAgeGap(myAge, c.age)) return false;
           if (!isWithinAgeGap(c.age, myAge)) return false;
           if (
@@ -364,7 +377,7 @@ export default function DiscoveryPage() {
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
-            : `Coup de cœur envoyé à ${candidate.display_name} ✨`
+            : `Flash envoyé à ${candidate.display_name} ✨`
         );
 
         if (
@@ -383,7 +396,7 @@ export default function DiscoveryPage() {
 
         window.setTimeout(() => setToast(null), 2800);
       } catch {
-        setError('Impossible d’envoyer le coup de cœur');
+        setError('Impossible d’envoyer le flash');
       } finally {
         setActingId(null);
       }
@@ -595,14 +608,25 @@ export default function DiscoveryPage() {
               const alreadyLiked = likedIds.has(c.id);
               const busy = actingId === c.id;
               const geoBadge = geoProximityBadge(c);
+              const unreadCount = unreadBySender[c.id] || 0;
               return (
                 <li key={c.id}>
-                  <article className="relative rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-rose-100 transition-all animate-fadeIn cursor-pointer">
+                  <article
+                    className={`relative rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
+                      unreadCount > 0
+                        ? 'border-rose-300 ring-2 ring-rose-100'
+                        : 'border-gray-100 hover:border-rose-100'
+                    }`}
+                  >
                     <button
                       type="button"
                       className="absolute inset-0 z-[1] cursor-pointer"
                       onClick={() => setOpenProfile(c)}
-                      aria-label={`Voir le profil de ${c.display_name}`}
+                      aria-label={
+                        unreadCount > 0
+                          ? `Voir le profil de ${c.display_name}, ${unreadMessagesLabel(unreadCount)}`
+                          : `Voir le profil de ${c.display_name}`
+                      }
                     />
                     <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none">
                       {c.photo_url ? (
@@ -626,6 +650,21 @@ export default function DiscoveryPage() {
                             <FounderBadge number={c.founder_number} size="sm" />
                           )}
                         </div>
+                      )}
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenUnreadChat) onOpenUnreadChat(c.id);
+                            else setOpenProfile(c);
+                          }}
+                          className="pointer-events-auto absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600"
+                          aria-label={unreadMessagesLabel(unreadCount)}
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </button>
                       )}
                       <button
                         type="button"
@@ -684,12 +723,12 @@ export default function DiscoveryPage() {
                             title={
                               alreadyFlashed
                                 ? 'Déjà flashé'
-                                : 'Envoyer un coup de cœur'
+                                : 'Envoyer un flash'
                             }
                             aria-label={
                               alreadyFlashed
                                 ? `Déjà flashé ${c.display_name}`
-                                : `Coup de cœur pour ${c.display_name}`
+                                : `Flasher ${c.display_name}`
                             }
                           >
                             <Zap className="w-4 h-4 text-white" fill="white" />
@@ -730,7 +769,7 @@ export default function DiscoveryPage() {
           <div className="pt-1 space-y-2">
             {showFlashCta && (
               <p className="text-center text-xs text-amber-700/80">
-                <Zap className="w-3 h-3 inline mb-0.5" /> Coup de cœur : notifie
+                <Zap className="w-3 h-3 inline mb-0.5" /> Flash : notifie
                 la personne
                 {status.plan !== 'premium' && !isFounderPeriodActive(status)
                   ? ' (3 / jour en freemium)'
@@ -750,10 +789,16 @@ export default function DiscoveryPage() {
           busy={actingId === openProfile.id}
           likesExhausted={likesExhausted}
           showFlashCta={showFlashCta}
+          unreadCount={unreadBySender[openProfile.id] || 0}
           onClose={() => setOpenProfile(null)}
           onLike={() => void handleLike(openProfile)}
           onFlash={() => void handleFlash(openProfile)}
           onSkip={() => handleSkip(openProfile.id)}
+          onOpenChat={
+            (unreadBySender[openProfile.id] || 0) > 0 && onOpenUnreadChat
+              ? () => onOpenUnreadChat(openProfile.id)
+              : undefined
+          }
         />
       )}
     </div>

@@ -10,12 +10,14 @@ export const FOUNDER_MAX_SLOTS = 500;
 
 export const FOUNDER_SLOTS_SUBTITLE = `6 mois offerts — Offre exclusive réservée aux ${FOUNDER_MAX_SLOTS} premiers membres.`;
 
-export const FOUNDER_BENEFIT_NO_CARD = 'Inscription sans carte bancaire';
-export const FOUNDER_BENEFIT_UNLIMITED_LIKES = 'Likes illimités';
+export const FOUNDER_BENEFIT_NO_CARD =
+  'Inscription sans carte bancaire et sans engagement';
+export const FOUNDER_BENEFIT_UNLIMITED_LIKES =
+  'Likes et Flash illimités offerts avec notification immédiate';
 export const FOUNDER_BENEFIT_BOOST_FIRST_MONTH =
-  'Boost profil offert le 1er mois';
+  'Boost profil offert le 1er mois (visibilité maximale auprès de tous les membres)';
 export const FOUNDER_BENEFIT_FLASH =
-  'Coup de cœur offert (notification immédiate)';
+  'Flash offert (notification immédiate)';
 
 /**
  * Copies de l’encart « Après tes 6 mois offerts ».

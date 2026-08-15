@@ -1,6 +1,7 @@
-import { Heart, MapPin, X, Zap } from 'lucide-react';
+import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import { geoProximityBadge } from '@/lib/geoProximity';
+import { unreadMessagesLabel } from '@/components/UnreadBadge';
 
 export type ProfileDetailCandidate = {
   id: string;
@@ -20,6 +21,12 @@ export type ProfileDetailCandidate = {
   founder_number?: number | null;
 };
 
+export type InboxHistory = {
+  origin: 'flash' | 'like';
+  originLabel: string;
+  matchedLabel?: string | null;
+};
+
 export default function ProfileDetailModal({
   candidate,
   alreadyFlashed,
@@ -27,10 +34,13 @@ export default function ProfileDetailModal({
   busy,
   likesExhausted,
   showFlashCta,
+  inboxHistory,
+  unreadCount = 0,
   onClose,
   onLike,
   onFlash,
   onSkip,
+  onOpenChat,
 }: {
   candidate: ProfileDetailCandidate;
   alreadyFlashed: boolean;
@@ -38,10 +48,13 @@ export default function ProfileDetailModal({
   busy: boolean;
   likesExhausted: boolean;
   showFlashCta: boolean;
+  inboxHistory?: InboxHistory;
+  unreadCount?: number;
   onClose: () => void;
   onLike: () => void;
   onFlash: () => void;
   onSkip: () => void;
+  onOpenChat?: () => void;
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
@@ -84,6 +97,12 @@ export default function ProfileDetailModal({
           <span className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded-full bg-black/45 text-white text-xs font-semibold backdrop-blur-sm pointer-events-none">
             {candidate.age} ans
           </span>
+          {unreadCount > 0 && (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500 text-white text-xs font-bold shadow-md">
+              <MessageCircle className="w-3.5 h-3.5" />
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
           {(candidate.is_boosted || candidate.is_founder) && (
             <div className="absolute bottom-3 left-3 flex flex-col gap-1 items-start pointer-events-none">
               {candidate.is_boosted && <BoostedBadge size="sm" />}
@@ -149,55 +168,115 @@ export default function ProfileDetailModal({
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-3 pt-1">
+          {unreadCount > 0 && onOpenChat ? (
             <button
               type="button"
-              onClick={onSkip}
-              className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 cursor-pointer"
-              title="Masquer"
-              aria-label={`Masquer ${candidate.display_name}`}
+              onClick={onOpenChat}
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <MessageCircle className="w-4 h-4" />
+              {unreadMessagesLabel(unreadCount)} — ouvrir
             </button>
-            {showFlashCta && (
+          ) : null}
+
+          {inboxHistory ? (
+            <div
+              className={`rounded-2xl px-4 py-3 space-y-2 ${
+                inboxHistory.origin === 'flash'
+                  ? 'bg-amber-50/80 border border-amber-100'
+                  : 'bg-rose-50/80 border border-rose-100'
+              }`}
+            >
+              <p
+                className={`text-sm font-medium flex items-center gap-2 ${
+                  inboxHistory.origin === 'flash'
+                    ? 'text-amber-800'
+                    : 'text-rose-700'
+                }`}
+              >
+                {inboxHistory.origin === 'flash' ? (
+                  <Zap className="w-4 h-4 shrink-0" fill="currentColor" />
+                ) : (
+                  <Heart className="w-4 h-4 shrink-0" fill="currentColor" />
+                )}
+                {inboxHistory.originLabel}
+              </p>
+              {inboxHistory.matchedLabel ? (
+                <p className="text-sm font-medium text-emerald-700 flex items-center gap-2">
+                  <Check className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+                  {inboxHistory.matchedLabel}
+                </p>
+              ) : null}
+              {inboxHistory.matchedLabel && onOpenChat && unreadCount <= 0 ? (
+                <button
+                  type="button"
+                  onClick={onOpenChat}
+                  className="w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Ouvrir la conversation
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-4 pt-2 overflow-visible">
               <button
                 type="button"
-                onClick={onFlash}
-                disabled={busy || alreadyFlashed}
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+                onClick={onSkip}
+                className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer"
+                title="Masquer"
+                aria-label={`Masquer ${candidate.display_name}`}
+              >
+                <X className="size-5 shrink-0 text-gray-400 pointer-events-none" />
+              </button>
+              {showFlashCta && (
+                <button
+                  type="button"
+                  onClick={onFlash}
+                  disabled={busy || alreadyFlashed}
+                  className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm overflow-hidden hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
+                  title={
+                    alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'
+                  }
+                  aria-label={
+                    alreadyFlashed
+                      ? `Déjà flashé ${candidate.display_name}`
+                      : `Flasher ${candidate.display_name}`
+                  }
+                >
+                  <Zap
+                    className="size-5 shrink-0 text-white pointer-events-none"
+                    fill="white"
+                    strokeWidth={2}
+                  />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onLike}
+                disabled={busy || likesExhausted || alreadyLiked}
+                className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm overflow-hidden hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                 title={
-                  alreadyFlashed ? 'Déjà flashé' : 'Envoyer un coup de cœur'
+                  alreadyLiked
+                    ? 'Déjà liké'
+                    : likesExhausted
+                      ? 'Limite de likes atteinte'
+                      : 'Liker ce profil'
                 }
                 aria-label={
-                  alreadyFlashed
-                    ? `Déjà flashé ${candidate.display_name}`
-                    : `Coup de cœur pour ${candidate.display_name}`
+                  alreadyLiked
+                    ? `Déjà liké ${candidate.display_name}`
+                    : `Liker ${candidate.display_name}`
                 }
               >
-                <Zap className="w-5 h-5 text-white" fill="white" />
+                <Heart
+                  className="size-5 shrink-0 text-white pointer-events-none"
+                  fill="white"
+                  strokeWidth={2}
+                />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onLike}
-              disabled={busy || likesExhausted || alreadyLiked}
-              className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-              title={
-                alreadyLiked
-                  ? 'Déjà liké'
-                  : likesExhausted
-                    ? 'Limite de likes atteinte'
-                    : 'Liker ce profil'
-              }
-              aria-label={
-                alreadyLiked
-                  ? `Déjà liké ${candidate.display_name}`
-                  : `Liker ${candidate.display_name}`
-              }
-            >
-              <Heart className="w-6 h-6 text-white" fill="white" />
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

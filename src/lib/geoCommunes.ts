@@ -10,6 +10,7 @@ export const CITY_SELECTION_REQUIRED_ERROR =
   'Sélectionne une ville valide dans la liste déroulante';
 
 const GEO_API = 'https://geo.api.gouv.fr/communes';
+const SEARCH_TIMEOUT_MS = 8000;
 
 export function formatCommuneLabel(
   nom: string,
@@ -35,6 +36,16 @@ function parseCommune(raw: Record<string, unknown>): GeoCommune | null {
     codesPostaux,
     label: formatCommuneLabel(nom, codesPostaux),
   };
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof DOMException && err.name === 'AbortError') ||
+    (typeof err === 'object' &&
+      err !== null &&
+      'name' in err &&
+      (err as { name: string }).name === 'AbortError')
+  );
 }
 
 /**
@@ -80,6 +91,7 @@ export async function searchFrenchCommunes(
 ): Promise<GeoCommune[]> {
   const q = query.trim();
   if (q.length < 2) return [];
+  if (signal?.aborted) return [];
 
   const params = new URLSearchParams({
     fields: 'nom,code,codesPostaux',
@@ -93,22 +105,44 @@ export async function searchFrenchCommunes(
     params.set('nom', q);
   }
 
-  const res = await fetch(`${GEO_API}?${params}`, { signal });
-  if (!res.ok) {
-    throw new Error('Impossible de charger les suggestions de villes.');
-  }
+  const local = new AbortController();
+  const onParentAbort = () => local.abort();
+  const timer = window.setTimeout(() => local.abort(), SEARCH_TIMEOUT_MS);
+  signal?.addEventListener('abort', onParentAbort);
 
-  const data: unknown = await res.json();
-  if (!Array.isArray(data)) return [];
+  try {
+    const res = await fetch(`${GEO_API}?${params.toString()}`, {
+      method: 'GET',
+      signal: local.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error('Impossible de charger les suggestions de villes.');
+    }
 
-  const seen = new Set<string>();
-  const results: GeoCommune[] = [];
-  for (const item of data) {
-    if (!item || typeof item !== 'object') continue;
-    const commune = parseCommune(item as Record<string, unknown>);
-    if (!commune || seen.has(commune.code || commune.label)) continue;
-    seen.add(commune.code || commune.label);
-    results.push(commune);
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) return [];
+
+    const seen = new Set<string>();
+    const results: GeoCommune[] = [];
+    for (const item of data) {
+      if (!item || typeof item !== 'object') continue;
+      const commune = parseCommune(item as Record<string, unknown>);
+      if (!commune || seen.has(commune.code || commune.label)) continue;
+      seen.add(commune.code || commune.label);
+      results.push(commune);
+    }
+    return results;
+  } catch (err) {
+    if (isAbortError(err)) {
+      if (signal?.aborted) return [];
+      throw new Error('La recherche de villes a pris trop de temps. Réessaie.');
+    }
+    throw err instanceof Error
+      ? err
+      : new Error('Impossible de charger les suggestions de villes.');
+  } finally {
+    window.clearTimeout(timer);
+    signal?.removeEventListener('abort', onParentAbort);
   }
-  return results;
 }

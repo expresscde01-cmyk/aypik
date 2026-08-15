@@ -13,6 +13,7 @@ function AppContent() {
   const { session, loading } = useAuth();
   const [showLegal, setShowLegal] = useState(isLegalTermsOpen);
   const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
 
   useEffect(() => {
     const sync = () => setShowLegal(isLegalTermsOpen());
@@ -64,12 +65,20 @@ function AppContent() {
   }
 
   if (showAuth) {
-    return <AuthScreen onBack={() => setShowAuth(false)} />;
+    return (
+      <AuthScreen
+        initialMode={authMode}
+        onBack={() => setShowAuth(false)}
+      />
+    );
   }
 
   return (
     <LandingPage
-      onAuthClick={() => setShowAuth(true)}
+      onAuthClick={(mode) => {
+        setAuthMode(mode ?? 'signup');
+        setShowAuth(true);
+      }}
       onLogoClick={() => setShowAuth(false)}
     />
   );

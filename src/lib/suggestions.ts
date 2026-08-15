@@ -1,12 +1,15 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile, ProfileGender } from '@/components/ProfileSetup';
-import { isWithinAgeGap, matchingTargetGender } from '@/lib/dating';
+import { isWithinAgeGap, matchingTargetGender, MIN_USER_AGE } from '@/lib/dating';
 import { geoProximityFlags } from '@/lib/geoProximity';
+
+export { displaySocialNotification } from '@/lib/interactionCopy';
 
 export type SocialNotificationKind =
   | 'flash_received'
   | 'like_received'
-  | 'match_created';
+  | 'match_created'
+  | 'message_received';
 
 export type SocialNotification = {
   id: string;
@@ -16,10 +19,41 @@ export type SocialNotification = {
   body: string;
   actor_id: string | null;
   flash_id: string | null;
+  action_type?: string | null;
+  interaction_type?: string | null;
+  source?: string | null;
+  origin?: string | null;
   read_at: string | null;
   email_sent_at: string | null;
   created_at: string;
 };
+
+/** Interlocuteurs avec au moins un message échangé (pour masquer les matchs obsolètes). */
+export async function fetchPeersWithMessages(): Promise<Set<string>> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return new Set();
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('sender_id, recipient_id')
+    .or(`sender_id.eq.${me},recipient_id.eq.${me}`)
+    .limit(800);
+
+  if (error) {
+    console.error('[notifications] fetchPeersWithMessages', error);
+    return new Set();
+  }
+
+  const peers = new Set<string>();
+  for (const row of data || []) {
+    const sender = (row as { sender_id: string }).sender_id;
+    const recipient = (row as { recipient_id: string }).recipient_id;
+    if (sender === me && recipient) peers.add(recipient);
+    else if (recipient === me && sender) peers.add(sender);
+  }
+  return peers;
+}
 
 export async function fetchSocialNotifications(
   limit = 30
@@ -45,6 +79,17 @@ export async function markSocialNotificationRead(id: string): Promise<void> {
 
 export async function markAllSocialNotificationsRead(): Promise<void> {
   await supabase.rpc('mark_all_social_notifications_read');
+}
+
+export async function sweepStaleSocialNotifications(
+  actorId?: string | null
+): Promise<void> {
+  const { error } = await supabase.rpc('sweep_stale_social_notifications', {
+    p_actor: actorId ?? null,
+  });
+  if (error) {
+    console.error('[notifications] sweep_stale_social_notifications', error);
+  }
 }
 
 export type SuggestedProfile = Profile & {
@@ -121,6 +166,9 @@ export async function fetchSuggestedProfiles(options?: {
   const targetGender = matchingTargetGender(options?.viewerGender);
 
   return mapped.filter((p) => {
+    if (myAge < MIN_USER_AGE || p.age < MIN_USER_AGE) {
+      return false;
+    }
     if (!isWithinAgeGap(myAge, p.age) || !isWithinAgeGap(p.age, myAge)) {
       return false;
     }

@@ -3,6 +3,7 @@ import {
   Compass,
   Heart,
   MapPin,
+  MessageCircle,
   Sparkles,
   UserRound,
 } from 'lucide-react';
@@ -10,6 +11,7 @@ import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLo
 import { FounderBadge } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   fetchSuggestedProfiles,
   type SuggestedProfile,
@@ -35,12 +37,16 @@ export default function HomeDashboard({
   onOpenDiscover,
   onOpenMatches,
   onOpenProfile,
+  unreadTotal = 0,
+  unreadBySender = {},
 }: {
   displayName: string;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
-  onOpenMatches: () => void;
+  onOpenMatches: (actorId?: string | null, openChat?: boolean) => void;
   onOpenProfile: () => void;
+  unreadTotal?: number;
+  unreadBySender?: Record<string, number>;
 }) {
   const { user } = useAuth();
   const { status, refresh } = useMembership();
@@ -206,7 +212,7 @@ export default function HomeDashboard({
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
-            : `Coup de cœur envoyé à ${candidate.display_name} ✨`
+            : `Flash envoyé à ${candidate.display_name} ✨`
         );
 
         if (
@@ -225,7 +231,7 @@ export default function HomeDashboard({
 
         window.setTimeout(() => setToast(null), 2800);
       } catch {
-        setError('Impossible d’envoyer le coup de cœur');
+        setError('Impossible d’envoyer le flash');
       } finally {
         setActingId(null);
       }
@@ -242,7 +248,7 @@ export default function HomeDashboard({
             <BrandLockup />
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <NotificationsBell />
+            <NotificationsBell onOpenInbox={onOpenMatches} />
             <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
               <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
               {displayName}
@@ -286,11 +292,23 @@ export default function HomeDashboard({
             </button>
             <button
               type="button"
-              onClick={onOpenMatches}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
+              onClick={() => onOpenMatches()}
+              className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
+              aria-label={
+                unreadTotal > 0
+                  ? `Mes matchs, ${unreadMessagesLabel(unreadTotal)}`
+                  : 'Mes matchs'
+              }
             >
               <Heart className="w-4 h-4 text-rose-500" />
               Mes matchs
+              {unreadTotal > 0 && (
+                <UnreadBadge
+                  count={unreadTotal}
+                  pulse
+                  className="absolute -top-1.5 -right-1.5"
+                />
+              )}
             </button>
           </div>
         </section>
@@ -349,13 +367,22 @@ export default function HomeDashboard({
             <ul className="grid grid-cols-2 gap-3 sm:gap-4">
               {suggestions.map((p) => {
                 const geoBadge = geoProximityBadge(p);
+                const unreadCount = unreadBySender[p.id] || 0;
                 return (
                 <li key={p.id}>
                   <button
                     type="button"
                     onClick={() => setOpenProfile(p)}
-                    aria-label={`Voir le profil de ${p.display_name}`}
-                    className="w-full text-left rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-rose-100 transition-all animate-fadeIn cursor-pointer"
+                    aria-label={
+                      unreadCount > 0
+                        ? `Voir le profil de ${p.display_name}, ${unreadMessagesLabel(unreadCount)}`
+                        : `Voir le profil de ${p.display_name}`
+                    }
+                    className={`w-full text-left rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
+                      unreadCount > 0
+                        ? 'border-rose-300 ring-2 ring-rose-100'
+                        : 'border-gray-100 hover:border-rose-100'
+                    }`}
                   >
                     <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative">
                       {p.photo_url ? (
@@ -376,6 +403,12 @@ export default function HomeDashboard({
                         <div className="absolute top-2 left-2 max-w-[70%]">
                           <FounderBadge number={p.founder_number} size="sm" />
                         </div>
+                      )}
+                      {unreadCount > 0 && (
+                        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
+                          <MessageCircle className="w-3 h-3" />
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
                       )}
                     </div>
                     <div className="p-3 space-y-1">
@@ -419,10 +452,16 @@ export default function HomeDashboard({
           busy={actingId === openProfile.id}
           likesExhausted={likesExhausted}
           showFlashCta={showFlashCta}
+          unreadCount={unreadBySender[openProfile.id] || 0}
           onClose={() => setOpenProfile(null)}
           onLike={() => void handleLike(openProfile)}
           onFlash={() => void handleFlash(openProfile)}
           onSkip={() => handleSkip(openProfile.id)}
+          onOpenChat={
+            (unreadBySender[openProfile.id] || 0) > 0
+              ? () => onOpenMatches(openProfile.id, true)
+              : undefined
+          }
         />
       )}
     </div>
