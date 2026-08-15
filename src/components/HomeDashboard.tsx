@@ -25,6 +25,7 @@ import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
+import type { OpenMatchesOpts } from '@/lib/matchesNav';
 
 type HomeSuggestion = SuggestedProfile & {
   is_founder?: boolean;
@@ -43,7 +44,7 @@ export default function HomeDashboard({
   displayName: string;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
-  onOpenMatches: (actorId?: string | null, openChat?: boolean) => void;
+  onOpenMatches: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
   onOpenProfile: () => void;
   unreadTotal?: number;
   unreadBySender?: Record<string, number>;

@@ -19,5 +19,17 @@ export function userErrorMessage(
 
 function friendlyDbMessage(msg: string): string {
   if (msg.includes('minors_not_allowed')) return ADULTS_ONLY_MESSAGE;
+  if (msg.includes('decision_locked_refuse')) {
+    return 'Tu as déjà refusé ce profil.';
+  }
+  if (msg.includes('decision_locked_match')) {
+    return 'Ce match est déjà validé.';
+  }
+  if (msg.includes('decision_locked_wait')) {
+    return 'Ce profil est déjà en attente.';
+  }
+  if (msg.includes('no_incoming_interest')) {
+    return 'Plus d’intérêt en attente pour ce profil.';
+  }
   return msg;
 }

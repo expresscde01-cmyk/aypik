@@ -44,6 +44,14 @@ export function originHistoryLabel(
   return date ? `Like du ${date} ❤️` : 'Like ❤️';
 }
 
+/** Carte Mes Matchs — Flash/Like reçu non encore tranché. */
+export function pendingToDecideLabel(
+  origin: InteractionOrigin,
+  iso: string
+): string {
+  return `${originHistoryLabel(origin, iso)} — à statuer`;
+}
+
 /**
  * initiated = notre Like/Flash a été accepté (CGU « Match le »)
  * accepted  = nous avons répondu à leur intérêt (CGU « Matché le »)
@@ -74,9 +82,36 @@ export function matchedHistoryLabel(
   return date ? `Matché le ${date}` : 'Matché';
 }
 
+/** Carte Mes Matchs — match validé sans aucun message. */
+export function matchedNoDialogueLabel(
+  iso: string,
+  role: MatchRole = 'accepted'
+): string {
+  return `${matchedHistoryLabel(iso, role)} — pas encore de dialogue`;
+}
+
+/** Carte Mes Matchs — match avec au moins un échange de messages. */
+export function matchedWithDialogueLabel(
+  iso: string,
+  role: MatchRole = 'accepted'
+): string {
+  return `${matchedHistoryLabel(iso, role)} — Dialogue en cours`;
+}
+
 function senderNameFromBody(body: string): string {
+  const waiting = body.match(/^(.+?)\s+a mis ton\s+/i);
+  if (waiting?.[1]?.trim()) return waiting[1].trim();
+
+  const legacyWait = body.match(/^En attente par\s+(.+?)\s*$/i);
+  if (legacyWait?.[1]?.trim()) return legacyWait[1].trim();
+
+  const reminder = body.match(
+    /Pense à valider ou à refuser le (?:Flash|Like)\s+(?:d'|de\s+)(.+?)\s*$/i
+  );
+  if (reminder?.[1]?.trim()) return reminder[1].trim();
+
   const match = body.match(
-    /^(.+?)\s+(?:t['’]a\s|a matché|a liké|a accepté)/i
+    /^(.+?)\s+(?:t['’]a\s|a matché|a liké|a accepté|a décliné)/i
   );
   const name = match?.[1]?.trim();
   return name || 'Quelqu’un';
@@ -129,6 +164,59 @@ export function matchCreatedNotification(
         : `${actor} a matché ton Like ❤️`,
   };
 }
+
+/** L’autre a mis en attente notre Flash / Like — balle dans son camp. */
+export function matchWaitingNotification(
+  name: string,
+  origin: InteractionOrigin = 'like'
+): { title: string; body: string } {
+  const actor = name.trim() || 'Quelqu’un';
+  const label = origin === 'flash' ? 'Flash' : 'Like';
+  return {
+    title: 'En attente',
+    body: `${actor} a mis ton ${label} en attente`,
+  };
+}
+
+/** Rappel notif pour celle/celui qui a choisi Attendre. */
+export function matchWaitReminderNotification(
+  actorName: string,
+  origin: InteractionOrigin = 'like'
+): { title: string; body: string } {
+  const actor = actorName.trim() || 'Quelqu’un';
+  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const de = /^[aeiouyàâäéèêëïîôùûüh]/i.test(actor.normalize('NFD'))
+    ? `d'${actor}`
+    : `de ${actor}`;
+  return {
+    title: 'À trancher',
+    body: `Pense à valider ou à refuser le ${label} ${de}`,
+  };
+}
+
+export function matchDeclinedNotification(name: string): {
+  title: string;
+  body: string;
+} {
+  const actor = name.trim() || 'Quelqu’un';
+  return {
+    title: 'Pas cette fois',
+    body: `${actor} a décliné pour le moment. Continue, le bon match arrive ! ✨`,
+  };
+}
+
+/** Rappel local (fiche / Mes Matchs) pour celle/celui qui a choisi Attendre. */
+export function waitingMatchReminder(
+  origin: InteractionOrigin,
+  viewerGender?: 'homme' | 'femme' | null
+): string {
+  const kind = origin === 'flash' ? 'Flash' : 'Like';
+  const ready = viewerGender === 'femme' ? 'prête' : 'prêt';
+  return `Tu as mis ce ${kind} en attente. Reviens ici pour Matcher ou Refuser quand tu seras ${ready}.`;
+}
+
+/** @deprecated Préférer waitingMatchReminder(origin, gender). */
+export const WAITING_MATCH_REMINDER = waitingMatchReminder('like', null);
 
 /** Nous avons validé leur intérêt (rôle accepted) — CGU « Matché le ». */
 export function matchAcceptedByUsNotification(iso?: string | null): {
@@ -265,6 +353,25 @@ export function displaySocialNotification(n: SocialCopyInput): {
     }
 
     return matchAcceptedByUsNotification(n.created_at);
+  }
+
+  if (n.kind === 'match_waiting') {
+    const origin =
+      /Flash/i.test(n.body) || resolveMatchOrigin(n) === 'flash'
+        ? 'flash'
+        : 'like';
+    return matchWaitingNotification(name, origin);
+  }
+
+  if (n.kind === 'match_wait_reminder') {
+    const origin = /Flash/i.test(n.body) ? 'flash' : 'like';
+    const actor =
+      n.body.match(/(?:d'|de\s+)(.+?)\s*$/i)?.[1]?.trim() || name;
+    return matchWaitReminderNotification(actor, origin);
+  }
+
+  if (n.kind === 'match_declined') {
+    return matchDeclinedNotification(name);
   }
 
   if (n.kind === 'like_received' || leftoverCoeur) {

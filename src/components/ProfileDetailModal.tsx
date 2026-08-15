@@ -2,6 +2,9 @@ import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import { geoProximityBadge } from '@/lib/geoProximity';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
+import { waitingMatchReminder } from '@/lib/interactionCopy';
+import type { InboxDecision } from '@/lib/inboxResponses';
+import type { ProfileGender } from '@/components/ProfileSetup';
 
 export type ProfileDetailCandidate = {
   id: string;
@@ -25,6 +28,9 @@ export type InboxHistory = {
   origin: 'flash' | 'like';
   originLabel: string;
   matchedLabel?: string | null;
+  waiting?: boolean;
+  refused?: boolean;
+  viewerGender?: ProfileGender | null;
 };
 
 export default function ProfileDetailModal({
@@ -41,6 +47,7 @@ export default function ProfileDetailModal({
   onFlash,
   onSkip,
   onOpenChat,
+  onInboxDecision,
 }: {
   candidate: ProfileDetailCandidate;
   alreadyFlashed: boolean;
@@ -55,10 +62,18 @@ export default function ProfileDetailModal({
   onFlash: () => void;
   onSkip: () => void;
   onOpenChat?: () => void;
+  onInboxDecision?: (decision: InboxDecision) => void;
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
   const geoBadge = geoProximityBadge(candidate);
+  const pendingInbox =
+    Boolean(inboxHistory) &&
+    !alreadyLiked &&
+    !inboxHistory?.matchedLabel &&
+    !inboxHistory?.refused;
+  const showInboxActions = pendingInbox && Boolean(onInboxDecision);
+  const waitingLocked = Boolean(inboxHistory?.waiting) && showInboxActions;
 
   return (
     <div
@@ -98,53 +113,46 @@ export default function ProfileDetailModal({
             {candidate.age} ans
           </span>
           {unreadCount > 0 && (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-500 text-white text-xs font-bold shadow-md">
-              <MessageCircle className="w-3.5 h-3.5" />
+            <span className="absolute top-3 left-3 min-w-[1.35rem] h-[1.35rem] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center unread-badge-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
-          {(candidate.is_boosted || candidate.is_founder) && (
-            <div className="absolute bottom-3 left-3 flex flex-col gap-1 items-start pointer-events-none">
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2
+                id="profile-detail-title"
+                className="text-xl font-bold text-gray-900"
+              >
+                {candidate.display_name}
+              </h2>
               {candidate.is_boosted && <BoostedBadge size="sm" />}
               {candidate.is_founder && (
                 <FounderBadge number={candidate.founder_number} size="sm" />
               )}
             </div>
-          )}
-        </div>
-
-        <div className="px-5 pt-4 pb-6 space-y-4">
-          <div>
-            <h2
-              id="profile-detail-title"
-              className="text-xl font-extrabold text-gray-900"
-            >
-              {candidate.display_name}
-            </h2>
             {candidate.location && (
-              <p className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                <MapPin className="w-4 h-4 shrink-0" />
+              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                <MapPin className="w-3.5 h-3.5" />
                 {candidate.location}
                 {geoBadge ? (
-                  <span className="ml-1 text-emerald-700 font-medium">
-                    · {geoBadge}
-                  </span>
+                  <span className="text-gray-400">· {geoBadge}</span>
                 ) : null}
               </p>
             )}
           </div>
 
-          {candidate.bio?.trim() ? (
+          {candidate.bio ? (
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {candidate.bio.trim()}
+              {candidate.bio}
             </p>
-          ) : (
-            <p className="text-sm text-gray-400 italic">Pas encore de bio.</p>
-          )}
+          ) : null}
 
           {interests.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
                 Centres d’intérêt
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -153,10 +161,10 @@ export default function ProfileDetailModal({
                   return (
                     <span
                       key={interest}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                         shared
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-gray-50 text-gray-600 border border-gray-200'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-gray-100 text-gray-600'
                       }`}
                     >
                       {shared ? '✦ ' : ''}
@@ -207,6 +215,19 @@ export default function ProfileDetailModal({
                   {inboxHistory.matchedLabel}
                 </p>
               ) : null}
+              {inboxHistory.refused ? (
+                <p className="text-sm text-gray-600">
+                  Tu as décliné ce profil.
+                </p>
+              ) : null}
+              {inboxHistory.waiting && !inboxHistory.matchedLabel ? (
+                <p className="text-sm text-amber-900/90 leading-relaxed">
+                  {waitingMatchReminder(
+                    inboxHistory.origin,
+                    inboxHistory.viewerGender
+                  )}
+                </p>
+              ) : null}
               {inboxHistory.matchedLabel && onOpenChat && unreadCount <= 0 ? (
                 <button
                   type="button"
@@ -216,6 +237,56 @@ export default function ProfileDetailModal({
                   <MessageCircle className="w-4 h-4" />
                   Ouvrir la conversation
                 </button>
+              ) : null}
+
+              {showInboxActions ? (
+                waitingLocked ? (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onInboxDecision?.('refuse')}
+                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      Refuser
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || likesExhausted}
+                      onClick={() => onInboxDecision?.('match')}
+                      className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+                    >
+                      Matcher
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onInboxDecision?.('refuse')}
+                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      Refuser
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onInboxDecision?.('wait')}
+                      className="py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+                    >
+                      Attendre
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || likesExhausted}
+                      onClick={() => onInboxDecision?.('match')}
+                      className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+                    >
+                      Matcher
+                    </button>
+                  </div>
+                )
               ) : null}
             </div>
           ) : (

@@ -14,6 +14,10 @@ import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalTerms';
 import type { Profile } from '@/components/ProfileSetup';
 import { useUnreadMessages } from '@/lib/messaging';
+import {
+  normalizeOpenMatchesOpts,
+  type OpenMatchesOpts,
+} from '@/lib/matchesNav';
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -29,6 +33,8 @@ export default function AppShell() {
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
   const [inboxActorId, setInboxActorId] = useState<string | null>(null);
   const [inboxOpenChat, setInboxOpenChat] = useState(false);
+  const [inboxHighlight, setInboxHighlight] = useState(false);
+  const [inboxHintName, setInboxHintName] = useState<string | null>(null);
   const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -61,9 +67,12 @@ export default function AppShell() {
     'Membre';
   const deletionPending = Boolean(profile?.deletion_requested_at);
 
-  const openMatches = (actorId?: string | null, openChat = false) => {
+  const openMatches = (actorId?: string | null, opts?: OpenMatchesOpts) => {
+    const { openChat, highlight, hintName } = normalizeOpenMatchesOpts(opts);
     setInboxActorId(actorId ?? null);
     setInboxOpenChat(openChat);
+    setInboxHighlight(highlight);
+    setInboxHintName(hintName);
     setTab('matches');
   };
 
@@ -224,10 +233,14 @@ export default function AppShell() {
             <MatchesPage
               focusActorId={inboxActorId}
               focusOpenChat={inboxOpenChat}
+              focusHighlight={inboxHighlight}
+              focusHintName={inboxHintName}
               onChatClosed={() => void unread.refresh()}
               onFocusActorConsumed={() => {
                 setInboxActorId(null);
                 setInboxOpenChat(false);
+                setInboxHighlight(false);
+                setInboxHintName(null);
               }}
             />
           </div>

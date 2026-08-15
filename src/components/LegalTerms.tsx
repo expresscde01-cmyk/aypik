@@ -387,17 +387,25 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <div>
               <p className="font-semibold text-gray-900">Matché le</p>
               <p>
-                Indique la date à laquelle l&apos;utilisateur a répondu
-                favorablement (par un Like retour ou l&apos;acceptation
-                d&apos;un Flash) à l&apos;intérêt initial d&apos;un autre
-                membre.
+                Libellé affiché lorsque c&apos;est l&apos;utilisateur connecté
+                qui valide ou accepte la sollicitation entrante d&apos;un tiers
+                (Like reçu, Flash reçu, ou intérêt en attente tranché par
+                Matcher). La date indiquée est celle de cette acceptation
+                (« Matché le [date] »). Sur Mes Matchs, ce libellé peut être
+                complété par « — pas encore de dialogue » ou « — Dialogue en
+                cours » selon l&apos;état de la messagerie.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">Match le</p>
               <p>
-                Indique la date à laquelle le Like ou le Flash initialement
-                envoyé par l&apos;utilisateur a été accepté en retour.
+                Libellé affiché lorsque le Match découle de l&apos;acceptation
+                par l&apos;autre membre de la sollicitation initiale de
+                l&apos;utilisateur connecté (Like ou Flash envoyé, puis accepté
+                en retour). La date indiquée est celle de cette acceptation
+                (« Match le [date] »). Sur Mes Matchs, ce libellé peut
+                également être complété par « — pas encore de dialogue » ou
+                « — Dialogue en cours » selon l&apos;état de la messagerie.
               </p>
             </div>
             <div>

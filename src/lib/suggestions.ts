@@ -9,7 +9,10 @@ export type SocialNotificationKind =
   | 'flash_received'
   | 'like_received'
   | 'match_created'
-  | 'message_received';
+  | 'message_received'
+  | 'match_waiting'
+  | 'match_declined'
+  | 'match_wait_reminder';
 
 export type SocialNotification = {
   id: string;

@@ -46,6 +46,7 @@ import {
   isAdult,
   latestBirthDateForAge,
 } from '@/lib/dating';
+import BirthDatePicker from '@/components/BirthDatePicker';
 
 export type ProfileGender = 'homme' | 'femme';
 
@@ -599,16 +600,18 @@ export default function ProfileSetup({
 
           {/* Birth date */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label
+              htmlFor="profile-birth-date-year"
+              className="block text-sm font-semibold text-gray-700 mb-1.5"
+            >
               Date de naissance <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="date"
+            <BirthDatePicker
+              id="profile-birth-date"
               required
               value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              max={latestBirthDateForAge(MIN_USER_AGE)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900"
+              maxAgeDate={latestBirthDateForAge(MIN_USER_AGE)}
+              onChange={setBirthDate}
             />
           </div>
 

@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  Calendar,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
@@ -21,6 +20,7 @@ import {
 } from '@/lib/dating';
 import { LegalLink, SiteFooter } from '@/components/LegalTerms';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
+import BirthDatePicker from '@/components/BirthDatePicker';
 
 type Mode = 'signin' | 'signup';
 
@@ -176,23 +176,18 @@ export default function AuthScreen({
             {mode === 'signup' && (
               <div>
                 <label
-                  htmlFor="signup-birth-date"
+                  htmlFor="signup-birth-date-year"
                   className="block text-sm font-semibold text-gray-700 mb-1.5"
                 >
                   Date de naissance
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  <input
-                    id="signup-birth-date"
-                    type="date"
-                    required
-                    value={birthDate}
-                    max={maxAdultBirthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900"
-                  />
-                </div>
+                <BirthDatePicker
+                  id="signup-birth-date"
+                  required
+                  value={birthDate}
+                  maxAgeDate={maxAdultBirthDate}
+                  onChange={setBirthDate}
+                />
               </div>
             )}
 

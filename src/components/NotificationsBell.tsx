@@ -14,6 +14,7 @@ import {
   sweepStaleSocialNotifications,
   type SocialNotification,
 } from '@/lib/suggestions';
+import type { OpenMatchesOpts } from '@/lib/matchesNav';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -31,14 +32,17 @@ function isInboxNotification(n: SocialNotification): boolean {
     n.kind === 'like_received' ||
     n.kind === 'flash_received' ||
     n.kind === 'match_created' ||
-    n.kind === 'message_received'
+    n.kind === 'message_received' ||
+    n.kind === 'match_waiting' ||
+    n.kind === 'match_declined' ||
+    n.kind === 'match_wait_reminder'
   );
 }
 
 export default function NotificationsBell({
   onOpenInbox,
 }: {
-  onOpenInbox?: (actorId?: string | null, openChat?: boolean) => void;
+  onOpenInbox?: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -196,7 +200,26 @@ export default function NotificationsBell({
   const handleItemClick = (n: SocialNotification) => {
     closePanel();
     if (isInboxNotification(n)) {
-      onOpenInbox?.(n.actor_id, n.kind === 'message_received');
+      const reminderName =
+        n.body.match(
+          /Pense à valider ou à refuser le (?:Flash|Like)\s+(?:d'|de\s+)(.+?)\s*$/i
+        )?.[1]?.trim() || null;
+      const isWaitReminder =
+        n.kind === 'match_wait_reminder' ||
+        /Pense à valider ou à refuser/i.test(n.body);
+
+      if (n.kind === 'message_received') {
+        onOpenInbox?.(n.actor_id, true);
+      } else if (n.kind === 'flash_received' || n.kind === 'like_received') {
+        onOpenInbox?.(n.actor_id, { highlight: false });
+      } else if (isWaitReminder) {
+        onOpenInbox?.(n.actor_id, {
+          highlight: true,
+          hintName: reminderName,
+        });
+      } else {
+        onOpenInbox?.(n.actor_id);
+      }
     }
     if (n.read_at) return;
     void markSocialNotificationRead(n.id)
