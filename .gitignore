@@ -20,6 +20,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets locaux — ne jamais committer
 .env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+credentials.json
+service-account*.json
+
 supabase/.temp/
 .supabase/

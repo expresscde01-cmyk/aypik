@@ -194,14 +194,18 @@ export function matchWaitReminderNotification(
   };
 }
 
-export function matchDeclinedNotification(name: string): {
+export function matchDeclinedNotification(
+  name: string,
+  origin: InteractionOrigin = 'like'
+): {
   title: string;
   body: string;
 } {
   const actor = name.trim() || 'Quelqu’un';
+  const label = origin === 'flash' ? 'Flash' : 'Like';
   return {
     title: 'Pas cette fois',
-    body: `${actor} a décliné pour le moment. Continue, le bon match arrive ! ✨`,
+    body: `${actor} a décliné ton ${label}. Continue tes recherches... Ne te décourage pas !`,
   };
 }
 
@@ -212,22 +216,23 @@ export function waitingMatchReminder(
 ): string {
   const kind = origin === 'flash' ? 'Flash' : 'Like';
   const ready = viewerGender === 'femme' ? 'prête' : 'prêt';
-  return `Tu as mis ce ${kind} en attente. Reviens ici pour Matcher ou Refuser quand tu seras ${ready}.`;
+  return `Tu as mis ce ${kind} en attente : matche (M) ou refuse (R) quand tu seras ${ready}.`;
 }
 
 /** @deprecated Préférer waitingMatchReminder(origin, gender). */
 export const WAITING_MATCH_REMINDER = waitingMatchReminder('like', null);
 
-/** Nous avons validé leur intérêt (rôle accepted) — CGU « Matché le ». */
-export function matchAcceptedByUsNotification(iso?: string | null): {
-  title: string;
-  body: string;
-} {
-  const date = iso ? formatMatchCalendarDate(iso) : '';
-  const label = date ? `Matché le ${date}` : 'Matché';
+/** Nous avons validé leur Flash / Like (rôle accepted). */
+export function matchAcceptedByUsNotification(
+  name: string,
+  origin: InteractionOrigin = 'like'
+): { title: string; body: string } {
+  const actor = name.trim() || 'Quelqu’un';
+  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const text = `Tu as validé le ${label} de ${actor} : match confirmé (la messagerie est ouverte).`;
   return {
-    title: label,
-    body: 'Tu as confirmé un intérêt mutuel. La messagerie est ouverte.',
+    title: 'Match confirmé',
+    body: text,
   };
 }
 
@@ -243,6 +248,8 @@ export type SocialCopyInput = {
   origin?: string | null;
   /** initiated = ils ont répondu à nous ; accepted = nous avons validé */
   match_role?: MatchRole | string | null;
+  /** Prénom / display_name de l’acteur (si connu hors body). */
+  actor_name?: string | null;
 };
 
 function normalizeOriginToken(
@@ -313,7 +320,9 @@ export function resolveMatchNotificationRole(
   if (
     /^matché le\b/i.test(n.title.trim()) ||
     /^matché le\b/i.test(n.body.trim()) ||
-    /^(.+?)\s+a matché\.?\s*$/i.test(n.body.trim())
+    /^(.+?)\s+a matché\.?\s*$/i.test(n.body.trim()) ||
+    /Tu as validé (un|le) (Flash|Like)/i.test(n.body) ||
+    /Tu as confirmé un intérêt/i.test(n.body)
   ) {
     return 'accepted';
   }
@@ -333,7 +342,9 @@ export function displaySocialNotification(n: SocialCopyInput): {
   title: string;
   body: string;
 } {
-  const name = senderNameFromBody(n.body);
+  const nameFromBody = senderNameFromBody(n.body);
+  const name =
+    (n.actor_name && n.actor_name.trim()) || nameFromBody;
   const leftoverCoeur = /coup de c[œe]ur/i.test(`${n.title} ${n.body}`);
 
   if (n.kind === 'message_received') {
@@ -352,7 +363,7 @@ export function displaySocialNotification(n: SocialCopyInput): {
       return matchCreatedNotification(name, origin);
     }
 
-    return matchAcceptedByUsNotification(n.created_at);
+    return matchAcceptedByUsNotification(name, origin);
   }
 
   if (n.kind === 'match_waiting') {
@@ -371,7 +382,11 @@ export function displaySocialNotification(n: SocialCopyInput): {
   }
 
   if (n.kind === 'match_declined') {
-    return matchDeclinedNotification(name);
+    const origin =
+      /Flash/i.test(n.body) || resolveMatchOrigin(n) === 'flash'
+        ? 'flash'
+        : 'like';
+    return matchDeclinedNotification(name, origin);
   }
 
   if (n.kind === 'like_received' || leftoverCoeur) {

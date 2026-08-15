@@ -101,9 +101,16 @@ export async function unreadCountsBySender(
 
 const INBOX_EVENT = 'aypik:inbox-updated';
 
-export function emitInboxUpdated() {
+export type InboxUpdatedDetail = {
+  actorId?: string | null;
+  decision?: 'wait' | 'refuse' | 'match' | null;
+};
+
+export function emitInboxUpdated(detail?: InboxUpdatedDetail) {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new Event(INBOX_EVENT));
+  window.dispatchEvent(
+    new CustomEvent(INBOX_EVENT, { detail: detail ?? {} })
+  );
 }
 
 /** Badge non lus du user connecté (recipient_id = moi, read_at IS NULL). */
@@ -196,9 +203,14 @@ export function useUnreadMessages(
   return { bySender, total, ready, refresh };
 }
 
-export function useInboxReload(onReload: () => void) {
+export function useInboxReload(
+  onReload: (detail?: InboxUpdatedDetail) => void
+) {
   useEffect(() => {
-    const handler = () => onReload();
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<InboxUpdatedDetail>).detail;
+      onReload(detail);
+    };
     window.addEventListener(INBOX_EVENT, handler);
     return () => window.removeEventListener(INBOX_EVENT, handler);
   }, [onReload]);

@@ -268,6 +268,8 @@ BEGIN
   END IF;
 
   -- refuse
+  origin_label := CASE WHEN v_origin = 'flash' THEN 'Flash' ELSE 'Like' END;
+
   DELETE FROM public.social_notifications
   WHERE user_id = me
     AND actor_id = p_actor
@@ -286,7 +288,8 @@ BEGIN
     'match_declined',
     'Pas cette fois',
     my_name
-      || ' a décliné pour le moment. Continue, le bon match arrive ! ✨',
+      || ' a décliné ton ' || origin_label
+      || '. Continue tes recherches... Ne te décourage pas !',
     me
   );
 

@@ -1,10 +1,43 @@
-# o2switch (Apache) — SPA React/Vite
-# Ce fichier est copié à la racine de dist/ au build : à uploader avec index.html et assets/.
+# o2switch (Apache) — SPA React/Vite + durcissement sécurité
+# Copié à la racine de dist/ au build : uploader avec index.html et assets/.
+# Ne déployer QUE le contenu de dist/ (ou aypik-deploy.zip), jamais le dépôt source.
+
+Options -Indexes
+ServerSignature Off
 
 <IfModule mod_mime.c>
   AddType application/javascript .js .mjs
   AddType text/css .css
   AddType image/svg+xml .svg
+</IfModule>
+
+# Bloquer fichiers / dossiers sensibles s'ils étaient uploadés par erreur
+<IfModule mod_authz_core.c>
+  <FilesMatch "(?i)^(\.env|\.env\..*|\.git|\.gitignore|\.htpasswd|composer\.(json|lock)|package(-lock)?\.json|yarn\.lock|pnpm-lock\.yaml|tsconfig.*|vite\.config\..*|Dockerfile.*)$">
+    Require all denied
+  </FilesMatch>
+  <FilesMatch "(?i)\.(sql|bak|old|orig|swp|dist|map|md|toml|yml|yaml)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Forcer HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Interdire chemins cachés / sources / config
+  RewriteRule (^|/)\. - [F,L]
+  RewriteRule (?i)^(src|supabase|node_modules|\.git|scripts|migrations)(/|$) - [F,L]
+  RewriteRule (?i)\.(env|sql|bak|old|config\.js)$ - [F,L]
+
+  # SPA fallback
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . index.html [L]
 </IfModule>
 
 <IfModule mod_headers.c>
@@ -16,13 +49,16 @@
   Header always unset Content-Security-Policy-Report-Only
 
   # script-src 'self' : JS compilé dans /assets/*.js
-  # 'unsafe-inline' : filet de sécurité si un snippet inline reste dans index.html
+  # 'unsafe-inline' / 'unsafe-eval' : filet Vite/React + Stripe
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'sha256-F9ONkTeFRjW5+xKyhVbobzanK6JR47UXTtwOTFz2xdI=' https://js.stripe.com https://*.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://geo.api.gouv.fr https://api.stripe.com https://*.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-ancestors 'none'"
 
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set X-Frame-Options "SAMEORIGIN"
-  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set X-Frame-Options "DENY"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header always set Cross-Origin-Resource-Policy "same-site"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
   # index.html sans cache : sinon le navigateur garde l'ancien hash d'assets.
   <FilesMatch "^index\.html$">
@@ -31,14 +67,4 @@
   <FilesMatch "\.(js|css|svg|woff2)$">
     Header always set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-</IfModule>
-
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteCond %{HTTPS} off
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . index.html [L]
 </IfModule>

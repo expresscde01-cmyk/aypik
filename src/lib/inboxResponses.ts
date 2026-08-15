@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase';
+import { emitInboxUpdated } from '@/lib/messaging';
+import { sweepStaleSocialNotifications } from '@/lib/suggestions';
 
 export type InboxDecision = 'wait' | 'refuse' | 'match';
 export type InboxOrigin = 'flash' | 'like';
@@ -34,6 +36,15 @@ export async function respondToInboxInterest(
     decision?: InboxDecision;
     origin?: InboxOrigin;
   };
+
+  // Synchronise immédiatement la cloche (À découvrir / Flash / Like / Attente)
+  try {
+    await sweepStaleSocialNotifications(actorId);
+  } catch {
+    /* non bloquant */
+  }
+  emitInboxUpdated({ actorId, decision: row.decision || decision });
+
   return {
     ok: row.ok !== false,
     decision: row.decision || decision,

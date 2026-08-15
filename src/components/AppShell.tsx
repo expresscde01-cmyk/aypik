@@ -18,6 +18,7 @@ import {
   normalizeOpenMatchesOpts,
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
+import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -35,6 +36,11 @@ export default function AppShell() {
   const [inboxOpenChat, setInboxOpenChat] = useState(false);
   const [inboxHighlight, setInboxHighlight] = useState(false);
   const [inboxHintName, setInboxHintName] = useState<string | null>(null);
+  const [inboxPulseCategory, setInboxPulseCategory] = useState<
+    'new' | 'wait' | null
+  >(null);
+  /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
+  const [inboxFocusKey, setInboxFocusKey] = useState(0);
   const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -68,11 +74,14 @@ export default function AppShell() {
   const deletionPending = Boolean(profile?.deletion_requested_at);
 
   const openMatches = (actorId?: string | null, opts?: OpenMatchesOpts) => {
-    const { openChat, highlight, hintName } = normalizeOpenMatchesOpts(opts);
+    const { openChat, highlight, hintName, pulseCategory } =
+      normalizeOpenMatchesOpts(opts);
     setInboxActorId(actorId ?? null);
     setInboxOpenChat(openChat);
     setInboxHighlight(highlight);
     setInboxHintName(hintName);
+    setInboxPulseCategory(pulseCategory);
+    setInboxFocusKey((k) => k + 1);
     setTab('matches');
   };
 
@@ -135,6 +144,7 @@ export default function AppShell() {
   }
 
   return (
+    <MatchesInboxSyncProvider>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {deletionPending && (
         <div className="bg-amber-50 border-b border-amber-200">
@@ -235,12 +245,15 @@ export default function AppShell() {
               focusOpenChat={inboxOpenChat}
               focusHighlight={inboxHighlight}
               focusHintName={inboxHintName}
+              focusPulseCategory={inboxPulseCategory}
+              focusKey={inboxFocusKey}
               onChatClosed={() => void unread.refresh()}
               onFocusActorConsumed={() => {
                 setInboxActorId(null);
                 setInboxOpenChat(false);
                 setInboxHighlight(false);
                 setInboxHintName(null);
+                setInboxPulseCategory(null);
               }}
             />
           </div>
@@ -299,6 +312,7 @@ export default function AppShell() {
         </div>
       </nav>
     </div>
+    </MatchesInboxSyncProvider>
   );
 }
 

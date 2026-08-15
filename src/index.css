@@ -308,7 +308,8 @@ button.group[data-matched='true'] {
   }
 }
 
-/* État 2 bis — Dernier en attente / rappel : pulsation continue */
+/* Clignotement d’attention (global à étudier OU ponctuel Attendre) */
+.match-card-attention-pulse,
 .match-card-wait-pulse {
   position: relative;
   z-index: 1;
@@ -333,6 +334,254 @@ button.group[data-matched='true'] {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* Pastilles légende dans l’intro Mes Matchs */
+.match-intro-chip {
+  display: inline;
+  padding: 0.1em 0.45em;
+  border-radius: 0.35rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.match-chip-new {
+  background-color: #e8c4a8;
+  color: #5d4037;
+  border: 1px solid #c4a482;
+}
+
+.match-chip-wait {
+  background-color: #ffe082;
+  color: #7a4f00;
+  border: 1px solid #ffb300;
+}
+
+.match-chip-matched-quiet {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.match-chip-matched-chat {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* ——— Cloche : tons par étape ——— */
+.notif-tone-new {
+  background-color: rgba(232, 196, 168, 0.42);
+  border-bottom-color: #c4a482;
+}
+.notif-tone-new:hover {
+  background-color: rgba(232, 196, 168, 0.62);
+}
+.notif-tone-new .notif-dot {
+  background-color: #a1887f;
+}
+
+.notif-tone-wait {
+  background-color: rgba(255, 224, 130, 0.45);
+  border-bottom-color: #ffb300;
+}
+.notif-tone-wait:hover {
+  background-color: rgba(255, 224, 130, 0.65);
+}
+.notif-tone-wait .notif-dot {
+  background-color: #ff8f00;
+}
+
+.notif-tone-match {
+  background-color: rgba(232, 245, 233, 0.75);
+  border-bottom-color: #a5d6a7;
+}
+.notif-tone-match:hover {
+  background-color: rgba(200, 230, 201, 0.85);
+}
+.notif-tone-match .notif-dot {
+  background-color: #43a047;
+}
+
+.notif-tone-chat {
+  background-color: rgba(255, 241, 242, 0.85);
+  border-bottom-color: #fecdd3;
+}
+.notif-tone-chat:hover {
+  background-color: rgba(255, 228, 230, 0.95);
+}
+.notif-tone-chat .notif-dot {
+  background-color: #f43f5e;
+}
+
+.notif-tone-declined {
+  background-color: rgba(243, 229, 245, 0.7);
+  border-bottom-color: #ce93d8;
+}
+.notif-tone-declined:hover {
+  background-color: rgba(225, 190, 231, 0.55);
+}
+.notif-tone-declined .notif-dot {
+  background-color: #8e24aa;
+}
+
+.notif-tone-neutral {
+  background-color: transparent;
+  border-bottom-color: #f9fafb;
+}
+.notif-tone-neutral:hover {
+  background-color: rgba(255, 241, 242, 0.4);
+}
+.notif-tone-neutral .notif-dot {
+  background-color: #f43f5e;
+}
+
+.notif-tone-read {
+  opacity: 0.78;
+}
+
+/* Blocs de couleur regroupés dans le panneau */
+.notif-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.25rem;
+}
+
+.notif-block {
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.notif-block + .notif-block {
+  box-shadow: inset 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.notif-block-priority {
+  box-shadow:
+    inset 3px 0 0 currentColor,
+    0 1px 0 rgba(17, 24, 39, 0.04);
+}
+
+.notif-block-priority.notif-block-chat {
+  color: #f43f5e;
+}
+.notif-block-priority.notif-block-match {
+  color: #43a047;
+}
+.notif-block-priority.notif-block-wait {
+  color: #ff8f00;
+}
+.notif-block-priority.notif-block-new {
+  color: #a1887f;
+}
+.notif-block-priority.notif-block-declined {
+  color: #8e24aa;
+}
+
+.notif-block li:last-child > button {
+  border-bottom-width: 0;
+}
+
+@keyframes notif-scroll-hint-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: translateY(5px) scale(1.06);
+  }
+}
+
+.notif-panel-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.notif-panel-scroll-list {
+  max-height: 18rem; /* ~max-h-72 : laisse la place au pied flèche */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Marge sous la dernière notif — isolée de la zone flèche */
+.notif-panel-list--end {
+  padding-bottom: 0.85rem;
+}
+
+.notif-scroll-footer {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 6;
+  isolation: isolate;
+  border-top: 1px solid rgba(229, 231, 235, 0.7);
+  background: #ffffff;
+  /* Zone non-navigable : absorbe les clics fantômes hors flèche */
+  pointer-events: auto;
+}
+
+.notif-scroll-footer-spacer {
+  height: 0.55rem;
+  pointer-events: none;
+}
+
+.notif-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0.35rem 0 0.45rem;
+  border: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.96) 55%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+}
+
+.notif-scroll-hint:focus-visible {
+  outline: 2px solid #1f2937;
+  outline-offset: -2px;
+}
+
+.notif-scroll-hint__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: #1f2937;
+  color: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(31, 41, 55, 0.28);
+  animation: notif-scroll-hint-pulse 1.25s ease-in-out infinite;
+  pointer-events: none; /* le bouton parent reçoit le clic */
+}
+
+.notif-scroll-hint__icon svg {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-scroll-hint__icon {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stamp-ink-appear {
     animation: none;
@@ -353,7 +602,8 @@ button.group[data-matched='true'] {
   .bell-ring,
   .bell-badge-pop,
   .unread-badge-pulse,
-  .match-card-wait-pulse {
+  .match-card-wait-pulse,
+  .match-card-attention-pulse {
     animation: none;
   }
 }

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, CheckCheck, MessageCircle, Sparkles } from 'lucide-react';
+import { Bell, CheckCheck, ChevronDown, Heart, MessageCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
+import type { InboxUpdatedDetail } from '@/lib/messaging';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   displaySocialNotification,
@@ -15,6 +16,15 @@ import {
   type SocialNotification,
 } from '@/lib/suggestions';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
+import {
+  categoryNotifSessionKey,
+  countInboxCategories,
+  mergedNewProfileNotificationCopy,
+  newProfilesNotificationCopy,
+  waitingProfilesNotificationCopy,
+  type MatchPulseCategory,
+} from '@/lib/pendingStudy';
+import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -39,30 +49,213 @@ function isInboxNotification(n: SocialNotification): boolean {
   );
 }
 
+/** Tons = blocs de couleur (haut → bas = hiérarchie de base). */
+type NotifTone = 'chat' | 'match' | 'wait' | 'new' | 'declined';
+
+const TONE_HIERARCHY_TOP_TO_BOTTOM: NotifTone[] = [
+  'chat',
+  'match',
+  'wait',
+  'new',
+  'declined',
+];
+
+function toneFromKind(
+  kind: SocialNotification['kind'] | 'category_new' | 'category_wait' | 'messages'
+): NotifTone {
+  switch (kind) {
+    case 'flash_received':
+    case 'like_received':
+    case 'category_new':
+      return 'new';
+    case 'match_waiting':
+    case 'match_wait_reminder':
+    case 'category_wait':
+      return 'wait';
+    case 'match_created':
+      return 'match';
+    case 'message_received':
+    case 'messages':
+      return 'chat';
+    case 'match_declined':
+      return 'declined';
+    default:
+      return 'new';
+  }
+}
+
+function notifToneClass(tone: NotifTone): string {
+  switch (tone) {
+    case 'new':
+      return 'notif-tone-new';
+    case 'wait':
+      return 'notif-tone-wait';
+    case 'match':
+      return 'notif-tone-match';
+    case 'chat':
+      return 'notif-tone-chat';
+    case 'declined':
+      return 'notif-tone-declined';
+  }
+}
+
+type PanelRow =
+  | {
+      key: string;
+      kind: 'social';
+      tone: NotifTone;
+      at: number;
+      n: SocialNotification;
+    }
+  | {
+      key: string;
+      kind: 'messages';
+      tone: 'chat';
+      at: number;
+    }
+  | {
+      key: string;
+      kind: 'cat_new';
+      tone: 'new';
+      at: number;
+      count: number;
+      soleId?: string | null;
+      soleName?: string | null;
+      soleOrigin?: 'like' | 'flash' | null;
+    }
+  | {
+      key: string;
+      kind: 'merged_new';
+      tone: 'new';
+      at: number;
+      actorId: string;
+      displayName: string;
+      origin: 'like' | 'flash';
+      socialId: string;
+    }
+  | {
+      key: string;
+      kind: 'cat_wait';
+      tone: 'wait';
+      at: number;
+      count: number;
+    };
+
+function orderTonesForSession(priority: NotifTone | null): NotifTone[] {
+  if (!priority) return [...TONE_HIERARCHY_TOP_TO_BOTTOM];
+  return [
+    priority,
+    ...TONE_HIERARCHY_TOP_TO_BOTTOM.filter((t) => t !== priority),
+  ];
+}
+
 export default function NotificationsBell({
   onOpenInbox,
 }: {
   onOpenInbox?: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
 }) {
   const { user } = useAuth();
+  const {
+    matchedIds,
+    entries: inboxEntries,
+    markResolved,
+  } = useMatchesInboxSync();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<SocialNotification[]>([]);
   const [peersWithMessages, setPeersWithMessages] = useState<Set<string>>(
     () => new Set()
   );
+  const [actorNames, setActorNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [ringing, setRinging] = useState(false);
   const [panelPos, setPanelPos] = useState({ top: 0, right: 16 });
+  const [catNew, setCatNew] = useState<{
+    count: number;
+    visible: boolean;
+    soleId?: string | null;
+    soleName?: string | null;
+    soleOrigin?: 'like' | 'flash' | null;
+  } | null>(null);
+  const [catWait, setCatWait] = useState<{
+    count: number;
+    visible: boolean;
+  } | null>(null);
+  /** Profils déjà matchés / refusés — jamais d’« À découvrir » pour eux. */
+  const [resolvedActorIds, setResolvedActorIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [canScrollMore, setCanScrollMore] = useState(false);
   const bellRef = useRef<HTMLButtonElement>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
   const prevMessageTotalRef = useRef(0);
   const primedRef = useRef(false);
+  const categoryPrimedRef = useRef(false);
+  /** Horodatage du dernier bump messages (priorité de session). */
+  const lastMessageEventAtRef = useRef(0);
+  /** Ton du dernier événement — reste en tête pour la session. */
+  const [sessionPriorityTone, setSessionPriorityTone] =
+    useState<NotifTone | null>(null);
   const unreadMessages = useUnreadMessages(user?.id, { channelKey: 'bell' });
+
+  /** Matchs verts Mes Matchs + résolus serveur / optimistes. */
+  const isActorResolved = (id: string | null | undefined) => {
+    if (!id) return false;
+    return resolvedActorIds.has(id) || matchedIds.has(id);
+  };
+
+  /** Snapshot Mes Matchs publié → digests dérivés des cartes, pas du compteur serveur. */
+  const syncHasSnapshot = inboxEntries.length > 0;
+
+  const syncCatNew = useMemo(() => {
+    if (!syncHasSnapshot || !user) return null;
+    const pending = inboxEntries.filter(
+      (e) => e.status === 'new' && !matchedIds.has(e.id)
+    );
+    if (pending.length === 0) return null;
+    const dismissed =
+      sessionStorage.getItem(categoryNotifSessionKey(user.id, 'new')) === '1';
+    return {
+      count: pending.length,
+      visible: !dismissed,
+      soleId: pending.length === 1 ? pending[0].id : null,
+      soleName: pending.length === 1 ? pending[0].displayName : null,
+      soleOrigin: pending.length === 1 ? pending[0].origin : null,
+    };
+  }, [syncHasSnapshot, inboxEntries, matchedIds, user]);
+
+  const syncCatWait = useMemo(() => {
+    if (!syncHasSnapshot || !user) return null;
+    const waiting = inboxEntries.filter(
+      (e) => e.status === 'wait' && !matchedIds.has(e.id)
+    );
+    if (waiting.length === 0) return null;
+    const dismissed =
+      sessionStorage.getItem(categoryNotifSessionKey(user.id, 'wait')) === '1';
+    return { count: waiting.length, visible: !dismissed };
+  }, [syncHasSnapshot, inboxEntries, matchedIds, user]);
+
+  const activeCatNew = syncHasSnapshot
+    ? syncCatNew
+    : catNew && catNew.soleId && isActorResolved(catNew.soleId)
+      ? null
+      : catNew;
+  const activeCatWait = syncHasSnapshot ? syncCatWait : catWait;
 
   const isVisibleSocial = (n: SocialNotification) => {
     if (n.kind === 'message_received') return false;
     if (
       (n.kind === 'flash_received' || n.kind === 'like_received') &&
       n.read_at
+    ) {
+      return false;
+    }
+    // Jamais de Flash/Like « à découvrir » si le profil est déjà matché / refusé
+    if (
+      (n.kind === 'flash_received' ||
+        n.kind === 'like_received' ||
+        n.kind === 'match_wait_reminder') &&
+      n.actor_id &&
+      isActorResolved(n.actor_id)
     ) {
       return false;
     }
@@ -78,9 +271,225 @@ export default function NotificationsBell({
   const socialOnlyUnread = items.filter(
     (n) => !n.read_at && isVisibleSocial(n)
   ).length;
-  const badgeCount = unreadMessages.total + socialOnlyUnread;
+  const hasNewAlert = Boolean(activeCatNew?.visible);
+  const hasWaitAlert = Boolean(activeCatWait?.visible);
+
+  const mergeNewWithSocial = useMemo(() => {
+    if (!hasNewAlert || !activeCatNew || activeCatNew.count !== 1) return null;
+    const soleId = activeCatNew.soleId;
+    if (soleId && isActorResolved(soleId)) return null;
+    const soleName = (activeCatNew.soleName || '').trim().toLowerCase();
+    const match = socialItems.find((n) => {
+      if (n.kind !== 'flash_received' && n.kind !== 'like_received') return false;
+      if (n.actor_id && isActorResolved(n.actor_id)) return false;
+      if (soleId && n.actor_id === soleId) return true;
+      if (!soleName || !n.actor_id) return false;
+      return (actorNames[n.actor_id] || '').trim().toLowerCase() === soleName;
+    });
+    if (!match?.actor_id) return null;
+    if (isActorResolved(match.actor_id)) return null;
+    const origin: 'like' | 'flash' =
+      match.kind === 'flash_received' || activeCatNew.soleOrigin === 'flash'
+        ? 'flash'
+        : 'like';
+    const displayName =
+      activeCatNew.soleName ||
+      actorNames[match.actor_id] ||
+      'Quelqu’un';
+    return {
+      social: match,
+      actorId: match.actor_id,
+      displayName,
+      origin,
+      at: Date.parse(match.created_at) || Date.now(),
+    };
+  }, [
+    hasNewAlert,
+    activeCatNew,
+    socialItems,
+    actorNames,
+    resolvedActorIds,
+    matchedIds,
+  ]);
+
+  const categoryUnread =
+    (hasNewAlert && !mergeNewWithSocial ? 1 : 0) +
+    (hasWaitAlert ? 1 : 0);
+  const badgeCount =
+    unreadMessages.total + socialOnlyUnread + categoryUnread;
   const hasMessageAlert = unreadMessages.total > 0;
-  const showMarkAll = socialOnlyUnread > 0;
+  const showMarkAll = socialOnlyUnread > 0 || categoryUnread > 0;
+
+  const orderedBlocks = useMemo(() => {
+    const rows: PanelRow[] = [];
+    const skipSocialId = mergeNewWithSocial?.social.id ?? null;
+
+    for (const n of socialItems) {
+      if (skipSocialId && n.id === skipSocialId) continue;
+      const at = Date.parse(n.created_at) || 0;
+      rows.push({
+        key: n.id,
+        kind: 'social',
+        tone: toneFromKind(n.kind),
+        at,
+        n,
+      });
+    }
+
+    if (hasMessageAlert) {
+      rows.push({
+        key: 'messages',
+        kind: 'messages',
+        tone: 'chat',
+        at: lastMessageEventAtRef.current || Date.now(),
+      });
+    }
+
+    if (mergeNewWithSocial) {
+      rows.push({
+        key: `merged-new-${mergeNewWithSocial.actorId}`,
+        kind: 'merged_new',
+        tone: 'new',
+        at: mergeNewWithSocial.at,
+        actorId: mergeNewWithSocial.actorId,
+        displayName: mergeNewWithSocial.displayName,
+        origin: mergeNewWithSocial.origin,
+        socialId: mergeNewWithSocial.social.id,
+      });
+    } else if (hasNewAlert && activeCatNew) {
+      // Garde-fou : jamais de digest « À découvrir » pour un profil déjà matché
+      if (activeCatNew.soleId && isActorResolved(activeCatNew.soleId)) {
+        /* skip */
+      } else {
+        rows.push({
+          key: 'cat-new',
+          kind: 'cat_new',
+          tone: 'new',
+          at: 0,
+          count: activeCatNew.count,
+          soleId: activeCatNew.soleId,
+          soleName: activeCatNew.soleName,
+          soleOrigin: activeCatNew.soleOrigin,
+        });
+      }
+    }
+
+    if (hasWaitAlert && activeCatWait) {
+      rows.push({
+        key: 'cat-wait',
+        kind: 'cat_wait',
+        tone: 'wait',
+        at: 0,
+        count: activeCatWait.count,
+      });
+    }
+
+    // Dernier événement chronologique (hors digests catégorie at=0)
+    let newestAt = -1;
+    let newestTone: NotifTone | null = null;
+    for (const row of rows) {
+      if (row.at <= 0) continue;
+      if (row.at >= newestAt) {
+        newestAt = row.at;
+        newestTone = row.tone;
+      }
+    }
+
+    const priority = newestTone || sessionPriorityTone;
+    const toneOrder = orderTonesForSession(priority);
+
+    const blocks: { tone: NotifTone; rows: PanelRow[] }[] = [];
+    for (const tone of toneOrder) {
+      const group = rows
+        .filter((r) => r.tone === tone)
+        .sort((a, b) => b.at - a.at);
+      if (group.length > 0) blocks.push({ tone, rows: group });
+    }
+    return { blocks, newestTone };
+  }, [
+    socialItems,
+    hasMessageAlert,
+    hasNewAlert,
+    hasWaitAlert,
+    activeCatNew,
+    activeCatWait,
+    mergeNewWithSocial,
+    sessionPriorityTone,
+    unreadMessages.total,
+    resolvedActorIds,
+    matchedIds,
+  ]);
+
+  useEffect(() => {
+    if (orderedBlocks.newestTone) {
+      setSessionPriorityTone(orderedBlocks.newestTone);
+    }
+  }, [orderedBlocks.newestTone]);
+
+  const refreshCategoryNotifs = useCallback(async () => {
+    if (!user) {
+      setCatNew(null);
+      setCatWait(null);
+      setResolvedActorIds(new Set());
+      return;
+    }
+    try {
+      const { newCount, waitCount, soleNew, resolvedActorIds: resolved } =
+        await countInboxCategories(user.id);
+
+      // Union : ne jamais écraser les matchs déjà connus (Mes Matchs / optimiste)
+      setResolvedActorIds((prev) => {
+        const next = new Set(prev);
+        for (const id of resolved) next.add(id);
+        for (const id of matchedIds) next.add(id);
+        return next;
+      });
+
+      const soleResolved =
+        Boolean(soleNew?.id) &&
+        (resolved.includes(soleNew!.id) || matchedIds.has(soleNew!.id));
+
+      const newDismissed =
+        sessionStorage.getItem(categoryNotifSessionKey(user.id, 'new')) ===
+        '1';
+      const waitDismissed =
+        sessionStorage.getItem(categoryNotifSessionKey(user.id, 'wait')) ===
+        '1';
+
+      setCatNew(
+        newCount > 0 && !soleResolved
+          ? {
+              count: newCount,
+              visible: !newDismissed,
+              soleId: soleNew?.id ?? null,
+              soleName: soleNew?.displayName ?? null,
+              soleOrigin: soleNew?.origin ?? null,
+            }
+          : null
+      );
+      // Compteur à 0 → plus jamais de digest « À découvrir » fantôme
+      if (newCount <= 0 && user) {
+        sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'new'));
+      }
+      setCatWait(
+        waitCount > 0 ? { count: waitCount, visible: !waitDismissed } : null
+      );
+      if (waitCount <= 0 && user) {
+        sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'wait'));
+      }
+
+      const anyVisible =
+        (newCount > 0 && !soleResolved && !newDismissed) ||
+        (waitCount > 0 && !waitDismissed);
+      if (anyVisible && !categoryPrimedRef.current) {
+        categoryPrimedRef.current = true;
+        setRinging(true);
+        window.setTimeout(() => setRinging(false), 1200);
+      }
+    } catch {
+      /* optionnel */
+    }
+  }, [user, matchedIds]);
 
   const refresh = useCallback(async () => {
     try {
@@ -91,6 +500,31 @@ export default function NotificationsBell({
       ]);
       setPeersWithMessages(peers);
       setItems(list);
+
+      const actorIds = [
+        ...new Set(
+          list
+            .map((n) => n.actor_id)
+            .filter((id): id is string => Boolean(id))
+        ),
+      ];
+      if (actorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', actorIds);
+        const map: Record<string, string> = {};
+        for (const p of profiles || []) {
+          const id = (p as { id: string }).id;
+          const dn = String(
+            (p as { display_name?: string | null }).display_name || ''
+          ).trim();
+          if (id && dn) map[id] = dn;
+        }
+        setActorNames(map);
+      } else {
+        setActorNames({});
+      }
     } catch {
       /* silencieux : inbox optionnelle */
     }
@@ -102,12 +536,110 @@ export default function NotificationsBell({
     return () => window.clearInterval(id);
   }, [refresh]);
 
-  useInboxReload(refresh);
+  useEffect(() => {
+    void refreshCategoryNotifs();
+  }, [refreshCategoryNotifs]);
+
+  const applyInboxDecisionLocally = useCallback(
+    (detail?: InboxUpdatedDetail) => {
+      const actorId = detail?.actorId;
+      const decision = detail?.decision;
+      if (!actorId || !decision) return;
+
+      if (decision === 'match') markResolved(actorId, 'matched');
+      else if (decision === 'refuse') markResolved(actorId, 'refused');
+      else if (decision === 'wait') markResolved(actorId, 'wait');
+
+      if (decision === 'match' || decision === 'refuse') {
+        setResolvedActorIds((prev) => {
+          const next = new Set(prev);
+          next.add(actorId);
+          return next;
+        });
+        setItems((prev) =>
+          prev.filter(
+            (n) =>
+              !(
+                n.actor_id === actorId &&
+                (n.kind === 'flash_received' ||
+                  n.kind === 'like_received' ||
+                  n.kind === 'match_wait_reminder')
+              )
+          )
+        );
+        setCatNew((prev) => {
+          if (!prev?.visible) return prev;
+          if (prev.soleId === actorId || prev.count <= 1) return null;
+          return {
+            ...prev,
+            count: Math.max(0, prev.count - 1),
+            soleId: null,
+            soleName: null,
+            soleOrigin: null,
+          };
+        });
+        if (decision === 'match') {
+          setCatWait((prev) => {
+            if (!prev?.visible) return prev;
+            if (prev.count <= 1) return null;
+            return { ...prev, count: prev.count - 1 };
+          });
+        }
+      }
+
+      if (decision === 'wait') {
+        setItems((prev) =>
+          prev.filter(
+            (n) =>
+              !(
+                n.actor_id === actorId &&
+                (n.kind === 'flash_received' || n.kind === 'like_received')
+              )
+          )
+        );
+        setCatNew((prev) => {
+          if (!prev?.visible) return prev;
+          if (prev.soleId === actorId || prev.count <= 1) return null;
+          return {
+            ...prev,
+            count: Math.max(0, prev.count - 1),
+            soleId: null,
+            soleName: null,
+            soleOrigin: null,
+          };
+        });
+      }
+    },
+    [markResolved]
+  );
+
+  useInboxReload(
+    useCallback(
+      (detail?: InboxUpdatedDetail) => {
+        applyInboxDecisionLocally(detail);
+        void (async () => {
+          try {
+            await sweepStaleSocialNotifications(detail?.actorId ?? null);
+          } catch {
+            /* non bloquant */
+          }
+          await Promise.all([refresh(), refreshCategoryNotifs()]);
+        })();
+      },
+      [applyInboxDecisionLocally, refresh, refreshCategoryNotifs]
+    )
+  );
 
   useEffect(() => {
     primedRef.current = false;
+    categoryPrimedRef.current = false;
     prevMessageTotalRef.current = 0;
+    lastMessageEventAtRef.current = 0;
+    setSessionPriorityTone(null);
     setRinging(false);
+    setCatNew(null);
+    setCatWait(null);
+    setResolvedActorIds(new Set());
   }, [user?.id]);
 
   useEffect(() => {
@@ -115,9 +647,14 @@ export default function NotificationsBell({
     if (!primedRef.current) {
       primedRef.current = true;
       prevMessageTotalRef.current = unreadMessages.total;
+      if (unreadMessages.total > 0) {
+        lastMessageEventAtRef.current = Date.now();
+      }
       return;
     }
     if (unreadMessages.total > prevMessageTotalRef.current) {
+      lastMessageEventAtRef.current = Date.now();
+      setSessionPriorityTone('chat');
       setRinging(true);
       const t = window.setTimeout(() => setRinging(false), 800);
       prevMessageTotalRef.current = unreadMessages.total;
@@ -140,13 +677,14 @@ export default function NotificationsBell({
         },
         () => {
           void refresh();
+          void refreshCategoryNotifs();
         }
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [user, refresh]);
+  }, [user, refresh, refreshCategoryNotifs]);
 
   const closePanel = useCallback(() => {
     setOpen(false);
@@ -183,7 +721,71 @@ export default function NotificationsBell({
     }
   };
 
+  const dismissCategory = (category: MatchPulseCategory) => {
+    if (!user) return;
+    sessionStorage.setItem(categoryNotifSessionKey(user.id, category), '1');
+    if (category === 'new') {
+      setCatNew((prev) => (prev ? { ...prev, visible: false } : prev));
+    } else {
+      setCatWait((prev) => (prev ? { ...prev, visible: false } : prev));
+    }
+  };
+
+  const openCategory = (category: MatchPulseCategory) => {
+    closePanel();
+    dismissCategory(category);
+    onOpenInbox?.(null, { pulseCategory: category });
+  };
+
+  const openMergedNew = (row: Extract<PanelRow, { kind: 'merged_new' }>) => {
+    closePanel();
+    dismissCategory('new');
+    onOpenInbox?.(row.actorId, { highlight: false, pulseCategory: 'new' });
+    void markSocialNotificationRead(row.socialId)
+      .then(async () => {
+        await sweepStaleSocialNotifications(row.actorId);
+        setItems((prev) => prev.filter((x) => x.id !== row.socialId));
+      })
+      .catch(() => {
+        /* panneau déjà fermé */
+      });
+  };
+
+  const updateScrollHint = useCallback(() => {
+    const el = listScrollRef.current;
+    if (!el) {
+      setCanScrollMore(false);
+      return;
+    }
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // Disparaît dès que le bas est atteint (marge de ~12px)
+    setCanScrollMore(el.scrollHeight > el.clientHeight + 8 && remaining > 12);
+  }, []);
+
+  const scrollNotificationsDown = useCallback(
+    (e: MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = listScrollRef.current;
+      if (!el) return;
+      el.scrollBy({ top: 100, behavior: 'smooth' });
+      window.setTimeout(() => updateScrollHint(), 120);
+    },
+    [updateScrollHint]
+  );
+
+  useEffect(() => {
+    if (!open) {
+      setCanScrollMore(false);
+      return;
+    }
+    const id = window.requestAnimationFrame(() => updateScrollHint());
+    return () => window.cancelAnimationFrame(id);
+  }, [open, orderedBlocks.blocks, loading, updateScrollHint]);
+
   const handleMarkAll = async () => {
+    dismissCategory('new');
+    dismissCategory('wait');
     try {
       await markAllSocialNotificationsRead();
     } catch {
@@ -200,10 +802,14 @@ export default function NotificationsBell({
   const handleItemClick = (n: SocialNotification) => {
     closePanel();
     if (isInboxNotification(n)) {
+      const actorLabel =
+        (n.actor_id && actorNames[n.actor_id]?.trim()) || null;
       const reminderName =
         n.body.match(
           /Pense à valider ou à refuser le (?:Flash|Like)\s+(?:d'|de\s+)(.+?)\s*$/i
-        )?.[1]?.trim() || null;
+        )?.[1]?.trim() ||
+        actorLabel ||
+        null;
       const isWaitReminder =
         n.kind === 'match_wait_reminder' ||
         /Pense à valider ou à refuser/i.test(n.body);
@@ -213,6 +819,7 @@ export default function NotificationsBell({
       } else if (n.kind === 'flash_received' || n.kind === 'like_received') {
         onOpenInbox?.(n.actor_id, { highlight: false });
       } else if (isWaitReminder) {
+        // Mes Matchs + carte / fiche du profil à trancher (ex. Fabrice)
         onOpenInbox?.(n.actor_id, {
           highlight: true,
           hintName: reminderName,
@@ -270,12 +877,24 @@ export default function NotificationsBell({
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
-            {loading && socialItems.length === 0 && !hasMessageAlert ? (
+          <div className="notif-panel-body">
+            <div
+              ref={listScrollRef}
+              className="notif-panel-scroll-list"
+              onScroll={updateScrollHint}
+            >
+            {loading &&
+            socialItems.length === 0 &&
+            !hasMessageAlert &&
+            !hasNewAlert &&
+            !hasWaitAlert ? (
               <p className="px-4 py-6 text-center text-xs text-gray-400">
                 Chargement…
               </p>
-            ) : socialItems.length === 0 && !hasMessageAlert ? (
+            ) : socialItems.length === 0 &&
+              !hasMessageAlert &&
+              !hasNewAlert &&
+              !hasWaitAlert ? (
               <div className="px-4 py-8 text-center">
                 <Sparkles className="w-6 h-6 text-rose-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
@@ -283,79 +902,219 @@ export default function NotificationsBell({
                 </p>
               </div>
             ) : (
-              <ul>
-                {hasMessageAlert && (
-                  <li>
-                    <button
-                      type="button"
-                      onClick={openMessageInbox}
-                      className="w-full text-left px-3 py-3 border-b border-rose-100 bg-rose-50/60 hover:bg-rose-50 transition-colors"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="mt-0.5 relative w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <UnreadBadge
-                            count={unreadMessages.total}
-                            className="absolute -top-1 -right-1"
-                          />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-rose-800">
-                            {unreadMessagesLabel(unreadMessages.total)}
-                          </p>
-                          <p className="text-xs text-rose-600 leading-relaxed mt-0.5">
-                            Ouvre tes matchs pour répondre
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </li>
-                )}
-                {socialItems.map((n) => {
-                  const copy = displaySocialNotification({
-                    kind: n.kind,
-                    title: n.title,
-                    body: n.body,
-                    flash_id: n.flash_id,
-                    created_at: n.created_at,
-                    action_type: n.action_type,
-                    interaction_type: n.interaction_type,
-                    source: n.source,
-                    origin: n.origin,
-                  });
-                  return (
-                    <li key={n.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleItemClick(n)}
-                        className={`w-full text-left px-3 py-3 border-b border-gray-50 hover:bg-rose-50/40 transition-colors ${
-                          !n.read_at ? 'bg-rose-50/30' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <span
-                            className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                              n.read_at ? 'bg-transparent' : 'bg-rose-500'
+              <div className="notif-panel-list notif-panel-list--end">
+                {orderedBlocks.blocks.map((block, blockIndex) => (
+                  <ul
+                    key={block.tone}
+                    className={`notif-block notif-block-${block.tone} ${
+                      blockIndex === 0 && sessionPriorityTone === block.tone
+                        ? 'notif-block-priority'
+                        : ''
+                    }`}
+                  >
+                    {block.rows.map((row) => {
+                      if (row.kind === 'messages') {
+                        return (
+                          <li key={row.key}>
+                            <button
+                              type="button"
+                              onClick={openMessageInbox}
+                              className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('chat')}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
+                                  <MessageCircle className="w-3.5 h-3.5" />
+
+
+                                  <UnreadBadge
+                                    count={unreadMessages.total}
+                                    className="absolute -top-1 -right-1"
+                                  />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-rose-800">
+                                    {unreadMessagesLabel(unreadMessages.total)}
+                                  </p>
+                                  <p className="text-xs text-rose-600 leading-relaxed mt-0.5">
+                                    Ouvre tes matchs pour répondre
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      }
+
+                      if (row.kind === 'merged_new') {
+                        const copy = mergedNewProfileNotificationCopy(
+                          row.displayName,
+                          row.origin
+                        );
+                        return (
+                          <li key={row.key}>
+                            <button
+                              type="button"
+                              onClick={() => openMergedNew(row)}
+                              className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('new')}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-[#c4a482] text-white flex items-center justify-center shrink-0">
+                                  <Heart
+                                    className="w-3.5 h-3.5"
+                                    fill="currentColor"
+                                  />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-stone-900">
+                                    {copy.title}
+                                  </p>
+                                  <p className="text-xs text-stone-700 leading-relaxed mt-0.5">
+                                    {copy.body}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      }
+
+                      if (row.kind === 'cat_new') {
+                        const copy = newProfilesNotificationCopy(
+                          row.count,
+                          row.count === 1 && row.soleName
+                            ? {
+                                displayName: row.soleName,
+                                origin: row.soleOrigin || 'like',
+                              }
+                            : null
+                        );
+                        return (
+                          <li key={row.key}>
+                            <button
+                              type="button"
+                              onClick={() => openCategory('new')}
+                              className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('new')}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-[#c4a482] text-white flex items-center justify-center shrink-0">
+                                  <Heart
+                                    className="w-3.5 h-3.5"
+                                    fill="currentColor"
+                                  />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-stone-900">
+                                    {copy.title}
+                                  </p>
+                                  <p className="text-xs text-stone-700 leading-relaxed mt-0.5">
+                                    {copy.body}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      }
+
+                      if (row.kind === 'cat_wait') {
+                        const copy = waitingProfilesNotificationCopy(row.count);
+                        return (
+                          <li key={row.key}>
+                            <button
+                              type="button"
+                              onClick={() => openCategory('wait')}
+                              className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('wait')}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-amber-950">
+                                    {copy.title}
+                                  </p>
+                                  <p className="text-xs text-amber-900/80 leading-relaxed mt-0.5">
+                                    {copy.body}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      }
+
+                      const n = row.n;
+                      const copy = displaySocialNotification({
+                        kind: n.kind,
+                        title: n.title,
+                        body: n.body,
+                        flash_id: n.flash_id,
+                        created_at: n.created_at,
+                        action_type: n.action_type,
+                        interaction_type: n.interaction_type,
+                        source: n.source,
+                        origin: n.origin,
+                        actor_name: n.actor_id
+                          ? actorNames[n.actor_id] || null
+                          : null,
+                      });
+                      return (
+                        <li key={row.key}>
+                          <button
+                            type="button"
+                            onClick={() => handleItemClick(n)}
+                            className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass(row.tone)} ${
+                              n.read_at ? 'notif-tone-read' : ''
                             }`}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
-                              {copy.title}
-                            </p>
-                            <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                              {copy.body}
-                            </p>
-                            <p className="text-[11px] text-gray-400 mt-1">
-                              {relativeTime(n.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                          >
+                            <div className="flex items-start gap-2">
+                              <span
+                                className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 notif-dot ${
+                                  n.read_at ? 'opacity-0' : ''
+                                }`}
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">
+                                  {copy.title}
+                                </p>
+                                <p className="text-xs text-gray-700/80 leading-relaxed mt-0.5">
+                                  {copy.body}
+                                </p>
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                  {relativeTime(n.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ))}
+              </div>
             )}
+            </div>
+            {/* Pied dédié hors liste : scroll only, jamais de navigation */}
+            <div
+              className="notif-scroll-footer"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {canScrollMore ? (
+                <button
+                  type="button"
+                  className="notif-scroll-hint"
+                  aria-label="Faire défiler les notifications"
+                  onClick={scrollNotificationsDown}
+                >
+                  <span className="notif-scroll-hint__icon" aria-hidden>
+                    <ChevronDown className="w-5 h-5" strokeWidth={2.75} />
+                  </span>
+                </button>
+              ) : (
+                <div className="notif-scroll-footer-spacer" />
+              )}
+            </div>
           </div>
         </div>
       </>,

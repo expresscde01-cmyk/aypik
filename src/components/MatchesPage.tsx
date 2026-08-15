@@ -20,6 +20,7 @@ import {
   sweepStaleSocialNotifications,
 } from '@/lib/suggestions';
 import {
+  formatInteractionDate,
   matchRoleFromDates,
   matchedHistoryLabel,
   matchedNoDialogueLabel,
@@ -40,6 +41,12 @@ import {
   respondToInboxInterest,
   type InboxDecision,
 } from '@/lib/inboxResponses';
+import type { MatchPulseCategory } from '@/lib/pendingStudy';
+import {
+  useMatchesInboxSync,
+  type MatchesInboxEntry,
+  type MatchesInboxStatus,
+} from '@/lib/matchesInboxSync';
 
 type MatchKind = 'match' | 'flash' | 'like';
 /** `flashes` table = Flash (éclair). Incoming like only = Like (cœur). */
@@ -48,6 +55,8 @@ type ReceivedOrigin = 'flash' | 'like';
 interface Match {
   profile: Profile;
   age: number;
+  /** Date de réception du Like/Flash (ou du match). */
+  date_received: string;
   matched_at: string;
   kind: MatchKind;
   origin: ReceivedOrigin;
@@ -60,6 +69,34 @@ interface Match {
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
+}
+
+type MatchFloor = 'new' | 'wait' | 'matched-quiet' | 'matched-chat';
+
+function sortByDateReceivedAsc(a: Match, b: Match): number {
+  const ta = new Date(a.date_received).getTime() || 0;
+  const tb = new Date(b.date_received).getTime() || 0;
+  return ta - tb;
+}
+
+function ColorChip({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: MatchFloor;
+}) {
+  const toneClass =
+    tone === 'new'
+      ? 'match-chip-new'
+      : tone === 'wait'
+        ? 'match-chip-wait'
+        : tone === 'matched-quiet'
+          ? 'match-chip-matched-quiet'
+          : 'match-chip-matched-chat';
+  return (
+    <span className={`match-intro-chip ${toneClass}`}>{label}</span>
+  );
 }
 
 function earliestIso(...values: (string | null | undefined)[]): string | null {
@@ -87,6 +124,9 @@ export default function MatchesPage({
   focusOpenChat = false,
   focusHighlight = false,
   focusHintName = null,
+  focusPulsePendingAll = false,
+  focusPulseCategory = null,
+  focusKey = 0,
   onChatClosed,
   onFocusActorConsumed,
 }: {
@@ -94,18 +134,29 @@ export default function MatchesPage({
   focusOpenChat?: boolean;
   focusHighlight?: boolean;
   focusHintName?: string | null;
+  /** @deprecated Préférer focusPulseCategory */
+  focusPulsePendingAll?: boolean;
+  focusPulseCategory?: MatchPulseCategory | null;
+  /** Change à chaque navigation cloche → rejoue scroll / ouverture fiche. */
+  focusKey?: number;
   onChatClosed?: () => void;
   onFocusActorConsumed?: () => void;
 } = {}) {
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
+  const { publish, markResolved } = useMatchesInboxSync();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chatPeer, setChatPeer] = useState<Profile | null>(null);
   const [openProfile, setOpenProfile] = useState<Match | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
+  /** Clignotement ponctuel (Attendre manuel ou rappel notif) — jusqu’à quitter la page. */
+  const [pulseSingleId, setPulseSingleId] = useState<string | null>(null);
+  /** Clignotement exclusif catégorie A (new) ou B (wait). */
+  const [pulseCategory, setPulseCategory] = useState<MatchPulseCategory | null>(
+    null
+  );
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
   );
@@ -115,8 +166,8 @@ export default function MatchesPage({
     openChat: boolean;
     highlight: boolean;
     hintName: string | null;
+    pulseCategory: MatchPulseCategory | null;
   } | null>(null);
-  const highlightTimerRef = useRef<number | null>(null);
   const unread = useUnreadMessages(user?.id, {
     ignoreSenderId: chatPeer?.id ?? null,
     channelKey: 'matches-list',
@@ -387,6 +438,7 @@ export default function MatchesPage({
           return {
             profile: p,
             age: ageFromBirthDate(p.birth_date),
+            date_received: at || '',
             matched_at: at || '',
             kind,
             origin,
@@ -403,10 +455,12 @@ export default function MatchesPage({
         })
         .filter((m) => !refusedActors.has(m.profile.id))
         .filter((m) => isInboxEligible(myAge, m.age))
-        .sort(
-          (a, b) =>
-            new Date(b.matched_at).getTime() - new Date(a.matched_at).getTime()
-        );
+        .sort((a, b) => {
+          const ta = new Date(a.date_received).getTime() || 0;
+          const tb = new Date(b.date_received).getTime() || 0;
+          // Plus anciens à gauche, plus récents à droite
+          return ta - tb;
+        });
 
       setMatches(list);
       setOpenProfile((open) => {
@@ -449,27 +503,71 @@ export default function MatchesPage({
   });
 
   useEffect(() => {
-    if (!focusActorId) return;
+    if (!focusKey) return;
+    const resolvedCategory: MatchPulseCategory | null =
+      focusPulseCategory ?? (focusPulsePendingAll ? 'new' : null);
+    if (
+      !focusActorId &&
+      !focusHintName &&
+      !resolvedCategory &&
+      !focusHighlight
+    ) {
+      return;
+    }
     pendingFocusRef.current = {
-      actorId: focusActorId,
+      actorId: focusActorId || '',
       openChat: focusOpenChat,
       highlight: focusHighlight,
       hintName: focusHintName,
+      pulseCategory: resolvedCategory,
     };
-  }, [focusActorId, focusOpenChat, focusHighlight, focusHintName]);
+  }, [
+    focusActorId,
+    focusOpenChat,
+    focusHighlight,
+    focusHintName,
+    focusPulseCategory,
+    focusPulsePendingAll,
+    focusKey,
+  ]);
 
   useEffect(() => {
     const pending = pendingFocusRef.current;
     if (!pending || loading) return;
 
-    const byId = matches.find((m) => m.profile.id === pending.actorId);
+    if (pending.pulseCategory) {
+      pendingFocusRef.current = null;
+      onFocusActorConsumed?.();
+      // Exclusif : A remplace B et inversement
+      setPulseCategory(pending.pulseCategory);
+      setPulseSingleId(null);
+      setOpenProfile(null);
+      window.setTimeout(() => {
+        const target =
+          pending.pulseCategory === 'wait'
+            ? matches.find((m) => m.waiting)
+            : matches.find(
+                (m) =>
+                  m.kind !== 'match' && !m.alreadyLiked && !m.waiting
+              );
+        if (target) {
+          document
+            .getElementById(`match-card-${target.profile.id}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 60);
+      return;
+    }
+
+    const byId = pending.actorId
+      ? matches.find((m) => m.profile.id === pending.actorId)
+      : undefined;
     const waitingList = matches.filter((m) => m.waiting);
     const isActionablePending = (m: Match) =>
       m.waiting || (m.kind !== 'match' && !m.alreadyLiked);
 
     let found: Match | undefined;
     if (pending.highlight) {
-      // Rappel Attendre : ne jamais mettre en avant un match déjà validé (ex. Alex)
       if (byId && isActionablePending(byId)) {
         found = byId;
       } else if (pending.hintName) {
@@ -507,19 +605,15 @@ export default function MatchesPage({
     }
 
     if (pending.highlight) {
-      if (highlightTimerRef.current) {
-        window.clearTimeout(highlightTimerRef.current);
-      }
-      setHighlightId(found.profile.id);
+      // Rappel individuel : exclusif catégorie B, une seule carte
+      setPulseCategory(null);
+      setPulseSingleId(found.profile.id);
       window.setTimeout(() => {
         document
           .getElementById(`match-card-${found.profile.id}`)
           ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 60);
-      highlightTimerRef.current = window.setTimeout(() => {
-        setHighlightId((id) => (id === found.profile.id ? null : id));
-        highlightTimerRef.current = null;
-      }, 5200);
+      setOpenProfile(found);
       return;
     }
 
@@ -531,16 +625,11 @@ export default function MatchesPage({
     focusOpenChat,
     focusHighlight,
     focusHintName,
+    focusPulseCategory,
+    focusPulsePendingAll,
+    focusKey,
     onFocusActorConsumed,
   ]);
-
-  useEffect(() => {
-    return () => {
-      if (highlightTimerRef.current) {
-        window.clearTimeout(highlightTimerRef.current);
-      }
-    };
-  }, []);
 
   const handleMatchBack = useCallback(
     async (item: Match) => {
@@ -570,6 +659,9 @@ export default function MatchesPage({
         setMatches((prev) =>
           prev.map((m) => (m.profile.id === item.profile.id ? confirmed : m))
         );
+        markResolved(item.profile.id, 'matched');
+        setPulseCategory(null);
+        setPulseSingleId(null);
         setOpenProfile(null);
         await Promise.all([loadMatches(), refreshMembership()]);
       } catch (err) {
@@ -578,7 +670,7 @@ export default function MatchesPage({
         setActingId(null);
       }
     },
-    [user, actingId, likesExhausted, loadMatches, refreshMembership]
+    [user, actingId, likesExhausted, loadMatches, refreshMembership, markResolved]
   );
 
   const handleInboxDecision = useCallback(
@@ -601,6 +693,11 @@ export default function MatchesPage({
           setMatches((prev) =>
             prev.filter((m) => m.profile.id !== item.profile.id)
           );
+          markResolved(item.profile.id, 'refused');
+          setPulseCategory(null);
+          setPulseSingleId((id) =>
+            id === item.profile.id ? null : id
+          );
         } else {
           const waiting: Match = {
             ...item,
@@ -611,6 +708,10 @@ export default function MatchesPage({
           setMatches((prev) =>
             prev.map((m) => (m.profile.id === item.profile.id ? waiting : m))
           );
+          markResolved(item.profile.id, 'wait');
+          // Clignotement ponctuel exclusif de ce profil (catégorie B)
+          setPulseCategory(null);
+          setPulseSingleId(item.profile.id);
         }
         setOpenProfile(null);
         await loadMatches();
@@ -620,25 +721,252 @@ export default function MatchesPage({
         setActingId(null);
       }
     },
-    [user, actingId, likesExhausted, loadMatches, handleMatchBack]
+    [user, actingId, likesExhausted, loadMatches, handleMatchBack, markResolved]
   );
 
-  const latestWaitingId = useMemo(() => {
-    let bestId: string | null = null;
-    let bestTime = -1;
-    for (const m of matches) {
-      if (!m.waiting) continue;
-      const t = m.waitingAt ? Date.parse(m.waitingAt) : 0;
-      if (Number.isFinite(t) && t >= bestTime) {
-        bestTime = t;
-        bestId = m.profile.id;
-      }
+  const floors = useMemo(() => {
+    const buckets: Record<MatchFloor, Match[]> = {
+      new: [],
+      wait: [],
+      'matched-quiet': [],
+      'matched-chat': [],
+    };
+    for (const match of matches) {
+      const isPending = match.kind !== 'match';
+      const isMatched = !isPending || match.alreadyLiked;
+      const hasDialogue =
+        peersWithChat.has(match.profile.id) ||
+        (unread.bySender[match.profile.id] || 0) > 0;
+      let floor: MatchFloor;
+      if (match.waiting) floor = 'wait';
+      else if (isMatched) floor = hasDialogue ? 'matched-chat' : 'matched-quiet';
+      else floor = 'new';
+      buckets[floor].push(match);
     }
-    return bestId;
-  }, [matches]);
+    return {
+      new: buckets.new.sort(sortByDateReceivedAsc),
+      wait: buckets.wait.sort(sortByDateReceivedAsc),
+      matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedAsc),
+      matchedChat: buckets['matched-chat'].sort(sortByDateReceivedAsc),
+    };
+  }, [matches, peersWithChat, unread.bySender]);
 
-  /** Pulsation : rappel notif prioritaire, sinon dernier profil mis en attente. */
-  const pulseWaitingId = highlightId || latestWaitingId;
+  /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
+  useEffect(() => {
+    const next: MatchesInboxEntry[] = matches.map((match) => {
+      const isPending = match.kind !== 'match';
+      const isMatched = !isPending || match.alreadyLiked;
+      const hasDialogue =
+        peersWithChat.has(match.profile.id) ||
+        (unread.bySender[match.profile.id] || 0) > 0;
+      let status: MatchesInboxStatus;
+      if (match.waiting) status = 'wait';
+      else if (isMatched) status = hasDialogue ? 'matched-chat' : 'matched';
+      else status = 'new';
+      return {
+        id: match.profile.id,
+        displayName: (match.profile.display_name || '').trim() || 'Quelqu’un',
+        status,
+        origin: match.origin,
+      };
+    });
+    publish(next);
+  }, [matches, peersWithChat, unread.bySender, publish]);
+
+  const renderMatchCard = (match: Match) => {
+    const isPending = match.kind !== 'match';
+    const isFlash = match.origin === 'flash';
+    const isMatched = !isPending || match.alreadyLiked;
+    const unreadCount = unread.bySender[match.profile.id] || 0;
+    const showChatButton = !isPending || unreadCount > 0;
+    const hasDialogue =
+      peersWithChat.has(match.profile.id) || unreadCount > 0;
+    const matchDateIso =
+      match.matchRole === 'initiated'
+        ? match.matched_at
+        : match.matchedBackAt || match.matched_at;
+    const statusLabel = match.waiting
+      ? waitingMatchReminder(match.origin, myGender)
+      : isMatched
+        ? hasDialogue
+          ? matchedWithDialogueLabel(matchDateIso, match.matchRole)
+          : matchedNoDialogueLabel(matchDateIso, match.matchRole)
+        : pendingToDecideLabel(match.origin, match.date_received);
+
+    const receivedLabel = formatInteractionDate(match.date_received);
+    const isToStudy = isPending && !match.waiting && !match.alreadyLiked;
+    const shouldPulse = match.waiting
+      ? pulseCategory === 'wait' || pulseSingleId === match.profile.id
+      : isToStudy &&
+        (pulseCategory === 'new' || pulseSingleId === match.profile.id);
+
+    const cardTone = (() => {
+      if (match.waiting) {
+        return shouldPulse
+          ? 'match-card-wait match-card-attention-pulse'
+          : 'match-card-wait';
+      }
+      if (isMatched) {
+        return hasDialogue
+          ? 'match-card-matched-chat'
+          : 'match-card-matched-quiet';
+      }
+      return shouldPulse
+        ? 'match-card-new match-card-attention-pulse'
+        : 'match-card-new';
+    })();
+
+    return (
+      <div
+        id={`match-card-${match.profile.id}`}
+        key={match.profile.id}
+        data-match-state={
+          match.waiting
+            ? 'wait'
+            : isMatched
+              ? hasDialogue
+                ? 'matched-chat'
+                : 'matched-quiet'
+              : 'new'
+        }
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${cardTone}`}
+      >
+        <button
+          type="button"
+          onClick={() => setOpenProfile(match)}
+          className="relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
+          aria-label={`Voir le profil de ${match.profile.display_name}`}
+        >
+          {match.profile.photo_url ? (
+            <img
+              src={match.profile.photo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-rose-400">
+              {match.profile.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isFlash && isPending && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+          {!isFlash && isPending && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -left-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-gray-900 truncate">
+              {match.profile.display_name}
+            </h3>
+            <span className="text-sm text-gray-400">{match.age} ans</span>
+            {match.is_boosted && <BoostedBadge size="sm" />}
+            {match.is_founder && (
+              <FounderBadge number={match.founder_number} size="sm" />
+            )}
+          </div>
+          {match.profile.location && (
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3" />
+              {match.profile.location}
+            </p>
+          )}
+          {match.waiting ? (
+            <>
+              {receivedLabel ? (
+                <p className="text-[11px] text-amber-900/70 mt-1">
+                  Reçu le {receivedLabel}
+                </p>
+              ) : null}
+              <p className="text-xs text-amber-950/80 mt-0.5">{statusLabel}</p>
+            </>
+          ) : isMatched ? (
+            <p
+              className={`text-xs mt-1 ${
+                hasDialogue ? 'text-gray-600' : 'text-emerald-800'
+              }`}
+            >
+              {statusLabel}
+            </p>
+          ) : (
+            <p className="text-xs text-stone-700 mt-1">{statusLabel}</p>
+          )}
+        </div>
+
+        {isPending && match.waiting ? (
+          <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5">
+            <MatcherButton
+              name={match.profile.display_name}
+              busy={actingId === match.profile.id}
+              disabled={likesExhausted}
+              matched={match.alreadyLiked}
+              tooltip="top"
+              onClick={() => void handleMatchBack(match)}
+            />
+            <RefuseButton
+              name={match.profile.display_name}
+              busy={actingId === match.profile.id}
+              tooltip="top"
+              onClick={() => void handleInboxDecision(match, 'refuse')}
+            />
+          </div>
+        ) : isPending && !showChatButton ? (
+          <MatcherButton
+            name={match.profile.display_name}
+            busy={actingId === match.profile.id}
+            disabled={likesExhausted}
+            matched={match.alreadyLiked}
+            onClick={() => void handleMatchBack(match)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setChatPeer(match.profile)}
+            className="relative w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center hover:bg-rose-100 transition-colors flex-shrink-0"
+            aria-label={`Envoyer un message à ${match.profile.display_name}`}
+            title="Ouvrir la messagerie"
+          >
+            <MessageCircle className="w-5 h-5 text-rose-500" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[1.05rem] h-[1.05rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderFloor = (
+    floor: MatchFloor,
+    title: string,
+    items: Match[]
+  ) => {
+    if (items.length === 0) return null;
+    return (
+      <section className="space-y-2" aria-label={title}>
+        <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+          <ColorChip label={title} tone={floor} />
+          <span className="text-gray-400 font-normal">({items.length})</span>
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map((m) => renderMatchCard(m))}
+        </div>
+      </section>
+    );
+  };
 
   if (loading) {
     return (
@@ -711,8 +1039,6 @@ export default function MatchesPage({
     );
   }
 
-  const pendingCount = matches.filter((m) => m.kind !== 'match').length;
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {chatPeer && (
@@ -729,10 +1055,21 @@ export default function MatchesPage({
       <h2 className="text-xl font-bold text-gray-900 mb-1">
         Tes matchs ({matches.length})
       </h2>
-      <p className="text-sm text-gray-500 mb-5">
-        {pendingCount > 0
-          ? 'Réponds pour valider ton match — ou mets en attente pour y revenir plus tard.'
-          : `Match réciproque — messagerie libre et illimitée, c’est inclus dans ${offerLabel(status)}.`}
+      <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+        Tu trouveras sur cette page tous les profils qui t&apos;ont adressé un{' '}
+        <ColorChip label="Like ou Flash — à statuer" tone="new" />. Tu pourras
+        soit les refuser (pour qu&apos;ils disparaissent de cette page), soit
+        les{' '}
+        <ColorChip label="mettre en attente" tone="wait" /> (pour les étudier
+        plus tard), soit les matcher pour voir ainsi ces profils passer à
+        l&apos;étape des matchs. Tous tes matchs seront ensuite soit classés{' '}
+        <ColorChip
+          label="en attente de conversation"
+          tone="matched-quiet"
+        />
+        , soit classés{' '}
+        <ColorChip label="en cours de dialogue" tone="matched-chat" />{' '}
+        lorsqu&apos;il y aura eu au moins un échange.
       </p>
 
       {error && (
@@ -742,171 +1079,20 @@ export default function MatchesPage({
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {matches.map((match) => {
-          const isPending = match.kind !== 'match';
-          const isFlash = match.origin === 'flash';
-          const isMatched = !isPending || match.alreadyLiked;
-          const unreadCount = unread.bySender[match.profile.id] || 0;
-          const showChatButton = !isPending || unreadCount > 0;
-          const hasDialogue =
-            peersWithChat.has(match.profile.id) || unreadCount > 0;
-          const matchDateIso =
-            match.matchRole === 'initiated'
-              ? match.matched_at
-              : match.matchedBackAt || match.matched_at;
-          const statusLabel = match.waiting
-            ? waitingMatchReminder(match.origin, myGender)
-            : isMatched
-              ? hasDialogue
-                ? matchedWithDialogueLabel(matchDateIso, match.matchRole)
-                : matchedNoDialogueLabel(matchDateIso, match.matchRole)
-              : pendingToDecideLabel(match.origin, match.matched_at);
-
-          const cardTone = (() => {
-            // État 2 — En attente
-            if (match.waiting) {
-              return pulseWaitingId === match.profile.id
-                ? 'match-card-wait match-card-wait-pulse'
-                : 'match-card-wait';
-            }
-            // État 3 / 4 — Matché
-            if (isMatched) {
-              return hasDialogue
-                ? 'match-card-matched-chat'
-                : 'match-card-matched-quiet';
-            }
-            // État 1 — Nouveau Flash / Like non étudié
-            return 'match-card-new';
-          })();
-
-          return (
-            <div
-              id={`match-card-${match.profile.id}`}
-              key={match.profile.id}
-              data-match-state={
-                match.waiting
-                  ? 'wait'
-                  : isMatched
-                    ? hasDialogue
-                      ? 'matched-chat'
-                      : 'matched-quiet'
-                    : 'new'
-              }
-              className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${cardTone}`}
-            >
-              <button
-                type="button"
-                onClick={() => setOpenProfile(match)}
-                className="relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
-                aria-label={`Voir le profil de ${match.profile.display_name}`}
-              >
-                {match.profile.photo_url ? (
-                  <img
-                    src={match.profile.photo_url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-lg font-bold text-rose-400">
-                    {match.profile.display_name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                {isFlash && isPending && (
-                  <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-                    <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
-                  </span>
-                )}
-                {!isFlash && isPending && (
-                  <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
-                    <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
-                  </span>
-                )}
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -left-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {match.profile.display_name}
-                  </h3>
-                  <span className="text-sm text-gray-400">{match.age} ans</span>
-                  {match.is_boosted && <BoostedBadge size="sm" />}
-                  {match.is_founder && (
-                    <FounderBadge number={match.founder_number} size="sm" />
-                  )}
-                </div>
-                {match.profile.location && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3" />
-                    {match.profile.location}
-                  </p>
-                )}
-                {match.waiting ? (
-                  <p className="text-xs text-amber-950/80 mt-1">
-                    {statusLabel}
-                  </p>
-                ) : isMatched ? (
-                  <p
-                    className={`text-xs mt-1 ${
-                      hasDialogue ? 'text-gray-600' : 'text-emerald-800'
-                    }`}
-                  >
-                    {statusLabel}
-                  </p>
-                ) : (
-                  <p className="text-xs text-stone-700 mt-1">{statusLabel}</p>
-                )}
-              </div>
-
-              {isPending && match.waiting ? (
-                <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5">
-                  <MatcherButton
-                    name={match.profile.display_name}
-                    busy={actingId === match.profile.id}
-                    disabled={likesExhausted}
-                    matched={match.alreadyLiked}
-                    tooltip="top"
-                    onClick={() => void handleMatchBack(match)}
-                  />
-                  <RefuseButton
-                    name={match.profile.display_name}
-                    busy={actingId === match.profile.id}
-                    tooltip="top"
-                    onClick={() => void handleInboxDecision(match, 'refuse')}
-                  />
-                </div>
-              ) : isPending && !showChatButton ? (
-                <MatcherButton
-                  name={match.profile.display_name}
-                  busy={actingId === match.profile.id}
-                  disabled={likesExhausted}
-                  matched={match.alreadyLiked}
-                  onClick={() => void handleMatchBack(match)}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setChatPeer(match.profile)}
-                  className="relative w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center hover:bg-rose-100 transition-colors flex-shrink-0"
-                  aria-label={`Envoyer un message à ${match.profile.display_name}`}
-                  title="Ouvrir la messagerie"
-                >
-                  <MessageCircle className="w-5 h-5 text-rose-500" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[1.05rem] h-[1.05rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-              )}
-            </div>
-          );
-        })}
+      {/* Étages du haut vers le bas : dialogue → match quiet → attente → à statuer */}
+      <div className="space-y-6">
+        {renderFloor(
+          'matched-chat',
+          'Dialogue en cours',
+          floors.matchedChat
+        )}
+        {renderFloor(
+          'matched-quiet',
+          'Match — en attente de conversation',
+          floors.matchedQuiet
+        )}
+        {renderFloor('wait', 'Mis en attente', floors.wait)}
+        {renderFloor('new', 'Like / Flash à statuer', floors.new)}
       </div>
 
       {openProfile && (
