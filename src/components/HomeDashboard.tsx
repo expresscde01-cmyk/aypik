@@ -40,6 +40,7 @@ export default function HomeDashboard({
   onOpenProfile,
   unreadTotal = 0,
   unreadBySender = {},
+  profileEpoch = 0,
 }: {
   displayName: string;
   onSignOut?: () => void;
@@ -48,6 +49,7 @@ export default function HomeDashboard({
   onOpenProfile: () => void;
   unreadTotal?: number;
   unreadBySender?: Record<string, number>;
+  profileEpoch?: number;
 }) {
   const { user } = useAuth();
   const { status, refresh } = useMembership();
@@ -137,7 +139,7 @@ export default function HomeDashboard({
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user?.id, profileEpoch]);
 
   useEffect(() => {
     if (!openProfile) return;
@@ -354,7 +356,7 @@ export default function HomeDashboard({
               <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-2" />
               <p className="text-sm text-gray-600">
                 Pas encore de profil dans ta ville, ton département ou ta
-                région. Parcours les autres profils ou reviens bientôt.
+                région. Parcours les autres profils ou reviens plus tard.
               </p>
               <button
                 type="button"

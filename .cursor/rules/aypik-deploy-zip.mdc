@@ -1,0 +1,27 @@
+---
+description: Rebuild aypik-deploy.zip after every frontend change so aypik.fr can be updated.
+alwaysApply: true
+---
+
+# Archive de déploiement aypik.fr
+
+Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine du projet. Sans ça, le site .fr ne peut pas être vérifié.
+
+Ne pas attendre que l’utilisateur le demande.
+
+## Procédure
+
+1. `npm run build`
+2. Remplacer `aypik-deploy.zip` par le **contenu** de `dist/` (pas le dossier `dist` lui-même) :
+   - `index.html`, `assets/`, `.htaccess`, `favicon.svg`
+3. Ne jamais y mettre `.env`, `src/`, `supabase/`, ni secrets.
+
+Exemple PowerShell :
+
+```powershell
+npm run build
+Remove-Item .\aypik-deploy.zip -Force -ErrorAction SilentlyContinue
+tar -a -cf aypik-deploy.zip -C dist .
+```
+
+Confirmer brièvement la date de modification du zip une fois généré.

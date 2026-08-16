@@ -16,6 +16,13 @@ export type OpenMatchesOpts =
        * Remplace tout clignotement précédent.
        */
       pulseCategory?: MatchPulseCategory | null;
+      /** Ouvre l’espace « Pas cette fois » (archiver / supprimer). */
+      declined?: boolean;
+      /**
+       * Notif « X a mis ton Like/Flash en attente » :
+       * ouvre la fiche de ce membre (pas dans notre liste d’attente).
+       */
+      waitingIncoming?: boolean;
       /** @deprecated Utiliser pulseCategory: 'new' */
       pulsePendingAll?: boolean;
     };
@@ -25,6 +32,8 @@ export function normalizeOpenMatchesOpts(opts?: OpenMatchesOpts): {
   highlight: boolean;
   hintName: string | null;
   pulseCategory: MatchPulseCategory | null;
+  declined: boolean;
+  waitingIncoming: boolean;
 } {
   if (opts === true) {
     return {
@@ -32,6 +41,8 @@ export function normalizeOpenMatchesOpts(opts?: OpenMatchesOpts): {
       highlight: false,
       hintName: null,
       pulseCategory: null,
+      declined: false,
+      waitingIncoming: false,
     };
   }
   if (!opts) {
@@ -40,10 +51,14 @@ export function normalizeOpenMatchesOpts(opts?: OpenMatchesOpts): {
       highlight: false,
       hintName: null,
       pulseCategory: null,
+      declined: false,
+      waitingIncoming: false,
     };
   }
   const pulseCategory: MatchPulseCategory | null =
-    opts.pulseCategory === 'new' || opts.pulseCategory === 'wait'
+    opts.pulseCategory === 'new' ||
+    opts.pulseCategory === 'wait' ||
+    opts.pulseCategory === 'first'
       ? opts.pulseCategory
       : opts.pulsePendingAll
         ? 'new'
@@ -53,5 +68,7 @@ export function normalizeOpenMatchesOpts(opts?: OpenMatchesOpts): {
     highlight: Boolean(opts.highlight),
     hintName: opts.hintName?.trim() || null,
     pulseCategory,
+    declined: Boolean(opts.declined),
+    waitingIncoming: Boolean(opts.waitingIncoming),
   };
 }

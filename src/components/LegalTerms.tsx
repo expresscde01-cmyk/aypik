@@ -283,6 +283,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 prestataires agréés (Stripe pour la carte bancaire, et PayPal).
               </p>
             </div>
+            <div>
+              <p className="font-semibold text-gray-900">Témoignages</p>
+              <p>
+                Les membres disposant d&apos;un abonnement Premium actif
+                peuvent soumettre un témoignage. La publication du texte et
+                du prénom n&apos;a lieu qu&apos;après un consentement
+                explicite, via une case à cocher non pré-cochée. La preuve
+                de ce consentement (oui/non et horodatage) est conservée
+                rattachée au profil. Le témoignage est supprimé en cas de
+                retrait du consentement ou de suppression du compte (RGPD).
+              </p>
+            </div>
           </section>
           )}
 
@@ -405,7 +417,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 en retour). La date indiquée est celle de cette acceptation
                 (« Match le [date] »). Sur Mes Matchs, ce libellé peut
                 également être complété par « — pas encore de dialogue » ou
-                « — Dialogue en cours » selon l&apos;état de la messagerie.
+                « — Discussion en cours » selon l&apos;état de la messagerie.
               </p>
             </div>
             <div>
@@ -442,6 +454,20 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 délai, toutes vos données sont définitivement effacées.
               </p>
             </div>
+            {!SITE_FREE_MODE && (
+            <div>
+              <p className="font-semibold text-gray-900">
+                Comment sont traités les témoignages&nbsp;?
+              </p>
+              <p>
+                Uniquement les membres Premium en cours d&apos;abonnement
+                peuvent en déposer un. Aucune diffusion sans case de
+                consentement cochée. Vous pouvez retirer le témoignage depuis
+                votre profil ; en cas de suppression de compte, il est
+                définitivement effacé.
+              </p>
+            </div>
+            )}
             <div>
               <p className="font-semibold text-gray-900">
                 Que devient le badge Membre Fondateur si je me désinscris&nbsp;?

@@ -249,14 +249,14 @@ BEGIN
       me
     );
 
-    -- Alex (qui a choisi Attendre) : rappel pour revenir trancher
+    -- Alex (qui a choisi Attendre) : un seul rappel CTA, pas de doublon avec le digest cloche
     INSERT INTO public.social_notifications (
       user_id, kind, title, body, actor_id
     ) VALUES (
       me,
       'match_wait_reminder',
-      'À trancher',
-      'Pense à valider ou à refuser le ' || origin_label || ' ' || de_actor,
+      'En attente',
+      'Ne laisse pas ' || actor_name || ' dans l''attente.',
       p_actor
     );
 
@@ -336,5 +336,13 @@ WHERE sn.kind = 'match_waiting'
     OR sn.body ~* 'intérêt en attente'
     OR sn.body ~* 'Pense à valider'
   );
+
+-- Un seul rappel pour celui qui a mis en attente (plus de doublon digest + statut)
+UPDATE public.social_notifications
+SET
+  title = 'En attente',
+  body = 'Ne laisse pas ce membre dans l''attente.'
+WHERE kind = 'match_wait_reminder'
+  AND body IS DISTINCT FROM 'Ne laisse pas ce membre dans l''attente.';
 
 NOTIFY pgrst, 'reload schema';

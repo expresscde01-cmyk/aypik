@@ -44,12 +44,12 @@ export function originHistoryLabel(
   return date ? `Like du ${date} ❤️` : 'Like ❤️';
 }
 
-/** Carte Mes Matchs — Flash/Like reçu non encore tranché. */
+/** Carte Mes Matchs — Flash/Like reçu non encore tranché (à étudier). */
 export function pendingToDecideLabel(
   origin: InteractionOrigin,
   iso: string
 ): string {
-  return `${originHistoryLabel(origin, iso)} — à statuer`;
+  return `${originHistoryLabel(origin, iso)} — à étudier`;
 }
 
 /**
@@ -95,7 +95,7 @@ export function matchedWithDialogueLabel(
   iso: string,
   role: MatchRole = 'accepted'
 ): string {
-  return `${matchedHistoryLabel(iso, role)} — Dialogue en cours`;
+  return `${matchedHistoryLabel(iso, role)} — Discussion en cours`;
 }
 
 function senderNameFromBody(body: string): string {
@@ -117,6 +117,13 @@ function senderNameFromBody(body: string): string {
   return name || 'Quelqu’un';
 }
 
+/** Descriptions du panneau cloche : toujours un point final unique. */
+export function withNotificationPeriod(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  return `${t.replace(/[.!?…]+$/u, '').trimEnd()}.`;
+}
+
 export function messageReceivedNotification(name: string): {
   title: string;
   body: string;
@@ -124,7 +131,7 @@ export function messageReceivedNotification(name: string): {
   const actor = name.trim() || 'Quelqu’un';
   return {
     title: 'Nouveau message',
-    body: `${actor} t'a envoyé un message`,
+    body: `${actor} t'a envoyé un message.`,
   };
 }
 
@@ -135,7 +142,7 @@ export function likeReceivedNotification(name: string): {
   const actor = name.trim() || 'Quelqu’un';
   return {
     title: 'Nouveau Like',
-    body: `${actor} t'a envoyé un Like ❤️`,
+    body: `${actor} t'a envoyé un Like ❤️.`,
   };
 }
 
@@ -146,7 +153,7 @@ export function flashReceivedNotification(name: string): {
   const actor = name.trim() || 'Quelqu’un';
   return {
     title: 'Nouveau Flash',
-    body: `${actor} t'a envoyé un Flash ⚡`,
+    body: `${actor} t'a envoyé un Flash ⚡.`,
   };
 }
 
@@ -160,8 +167,8 @@ export function matchCreatedNotification(
     title: 'C’est un match !',
     body:
       origin === 'flash'
-        ? `${actor} a matché ton Flash ⚡`
-        : `${actor} a matché ton Like ❤️`,
+        ? `${actor} a matché ton Flash ⚡.`
+        : `${actor} a matché ton Like ❤️.`,
   };
 }
 
@@ -174,23 +181,20 @@ export function matchWaitingNotification(
   const label = origin === 'flash' ? 'Flash' : 'Like';
   return {
     title: 'En attente',
-    body: `${actor} a mis ton ${label} en attente`,
+    body: `${actor} a mis ton ${label} en attente.`,
   };
 }
 
-/** Rappel notif pour celle/celui qui a choisi Attendre. */
+/** Rappel notif pour celle/celui qui a choisi Attendre — un seul CTA, pas de doublon. */
 export function matchWaitReminderNotification(
   actorName: string,
-  origin: InteractionOrigin = 'like'
+  _origin: InteractionOrigin = 'like'
 ): { title: string; body: string } {
-  const actor = actorName.trim() || 'Quelqu’un';
-  const label = origin === 'flash' ? 'Flash' : 'Like';
-  const de = /^[aeiouyàâäéèêëïîôùûüh]/i.test(actor.normalize('NFD'))
-    ? `d'${actor}`
-    : `de ${actor}`;
+  const prenom = (actorName.trim() || '').split(/\s+/)[0];
+  const who = prenom || 'ce membre';
   return {
-    title: 'À trancher',
-    body: `Pense à valider ou à refuser le ${label} ${de}`,
+    title: 'En attente',
+    body: `Ne laisse pas ${who} dans l'attente.`,
   };
 }
 
@@ -205,8 +209,40 @@ export function matchDeclinedNotification(
   const label = origin === 'flash' ? 'Flash' : 'Like';
   return {
     title: 'Pas cette fois',
-    body: `${actor} a décliné ton ${label}. Continue tes recherches... Ne te décourage pas !`,
+    body: `${actor} a décliné ton ${label}. Continue tes recherches... Ne te décourage pas.`,
   };
+}
+
+/** Fiche mauve archivée en bas de Tes Matchs. */
+export function declinedArchiveStatusLabel(
+  origin: InteractionOrigin,
+  declinedAt?: string | null,
+  source: 'theirs' | 'mine' = 'theirs'
+): string {
+  const when = declinedAt ? formatInteractionDate(declinedAt) : '';
+  if (source === 'mine') {
+    return when ? `Archivé le ${when}` : 'Archivé';
+  }
+  const label = origin === 'flash' ? 'Flash' : 'Like';
+  return when
+    ? `A décliné ton ${label} le ${when}`
+    : `A décliné ton ${label}`;
+}
+
+/** Carte jaune archivée dans « Mis en attente ». */
+export function waitArchiveStatusLabel(
+  origin: InteractionOrigin,
+  archivedAt?: string | null,
+  source: 'mine' | 'theirs' = 'mine'
+): string {
+  const when = archivedAt ? formatInteractionDate(archivedAt) : '';
+  if (source === 'theirs') {
+    const label = origin === 'flash' ? 'Flash' : 'Like';
+    return when
+      ? `A mis ton ${label} en attente — archivé le ${when}`
+      : `A mis ton ${label} en attente — archivé`;
+  }
+  return when ? `Archivé le ${when}` : 'Archivé';
 }
 
 /** Rappel local (fiche / Mes Matchs) pour celle/celui qui a choisi Attendre. */
@@ -216,7 +252,7 @@ export function waitingMatchReminder(
 ): string {
   const kind = origin === 'flash' ? 'Flash' : 'Like';
   const ready = viewerGender === 'femme' ? 'prête' : 'prêt';
-  return `Tu as mis ce ${kind} en attente : matche (M) ou refuse (R) quand tu seras ${ready}.`;
+  return `Tu as mis ce ${kind} en attente : matche ou refuse quand tu seras ${ready}.`;
 }
 
 /** @deprecated Préférer waitingMatchReminder(origin, gender). */
@@ -348,11 +384,11 @@ export function displaySocialNotification(n: SocialCopyInput): {
   const leftoverCoeur = /coup de c[œe]ur/i.test(`${n.title} ${n.body}`);
 
   if (n.kind === 'message_received') {
-    return messageReceivedNotification(name);
+    return withPeriod(messageReceivedNotification(name));
   }
 
   if (n.kind === 'flash_received') {
-    return flashReceivedNotification(name);
+    return withPeriod(flashReceivedNotification(name));
   }
 
   if (n.kind === 'match_created') {
@@ -360,10 +396,10 @@ export function displaySocialNotification(n: SocialCopyInput): {
     const role = resolveMatchNotificationRole(n);
 
     if (role === 'initiated') {
-      return matchCreatedNotification(name, origin);
+      return withPeriod(matchCreatedNotification(name, origin));
     }
 
-    return matchAcceptedByUsNotification(name, origin);
+    return withPeriod(matchAcceptedByUsNotification(name, origin));
   }
 
   if (n.kind === 'match_waiting') {
@@ -371,14 +407,11 @@ export function displaySocialNotification(n: SocialCopyInput): {
       /Flash/i.test(n.body) || resolveMatchOrigin(n) === 'flash'
         ? 'flash'
         : 'like';
-    return matchWaitingNotification(name, origin);
+    return withPeriod(matchWaitingNotification(name, origin));
   }
 
   if (n.kind === 'match_wait_reminder') {
-    const origin = /Flash/i.test(n.body) ? 'flash' : 'like';
-    const actor =
-      n.body.match(/(?:d'|de\s+)(.+?)\s*$/i)?.[1]?.trim() || name;
-    return matchWaitReminderNotification(actor, origin);
+    return withPeriod(matchWaitReminderNotification(name));
   }
 
   if (n.kind === 'match_declined') {
@@ -386,17 +419,24 @@ export function displaySocialNotification(n: SocialCopyInput): {
       /Flash/i.test(n.body) || resolveMatchOrigin(n) === 'flash'
         ? 'flash'
         : 'like';
-    return matchDeclinedNotification(name, origin);
+    return withPeriod(matchDeclinedNotification(name, origin));
   }
 
   if (n.kind === 'like_received' || leftoverCoeur) {
-    return likeReceivedNotification(name);
+    return withPeriod(likeReceivedNotification(name));
   }
 
-  return {
+  return withPeriod({
     title: n.title.replace(/coup de c[œe]ur/gi, 'Like'),
     body: n.body
       .replace(/coup de c[œe]ur/gi, 'Like')
       .replace(/\s*[—–-]\s*tu peux discuter\.?/gi, ''),
-  };
+  });
+}
+
+function withPeriod(copy: { title: string; body: string }): {
+  title: string;
+  body: string;
+} {
+  return { title: copy.title, body: withNotificationPeriod(copy.body) };
 }

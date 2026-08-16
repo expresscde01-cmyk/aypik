@@ -1,8 +1,13 @@
 import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import { geoProximityBadge } from '@/lib/geoProximity';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
-import { waitingMatchReminder } from '@/lib/interactionCopy';
+import {
+  matchWaitingNotification,
+  waitingMatchReminder,
+} from '@/lib/interactionCopy';
+import MatcherWord from '@/components/MatcherWord';
 import type { InboxDecision } from '@/lib/inboxResponses';
 import type { ProfileGender } from '@/components/ProfileSetup';
 
@@ -29,7 +34,10 @@ export type InboxHistory = {
   originLabel: string;
   matchedLabel?: string | null;
   waiting?: boolean;
+  waitingIncoming?: boolean;
   refused?: boolean;
+  declinedByThem?: boolean;
+  declinedByThemLabel?: string | null;
   viewerGender?: ProfileGender | null;
 };
 
@@ -48,6 +56,10 @@ export default function ProfileDetailModal({
   onSkip,
   onOpenChat,
   onInboxDecision,
+  onDeclinedArchive,
+  onDeclinedDelete,
+  onWaitingArchive,
+  onWaitingDiscard,
 }: {
   candidate: ProfileDetailCandidate;
   alreadyFlashed: boolean;
@@ -63,6 +75,10 @@ export default function ProfileDetailModal({
   onSkip: () => void;
   onOpenChat?: () => void;
   onInboxDecision?: (decision: InboxDecision) => void;
+  onDeclinedArchive?: () => void;
+  onDeclinedDelete?: () => void;
+  onWaitingArchive?: () => void;
+  onWaitingDiscard?: () => void;
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
@@ -71,13 +87,25 @@ export default function ProfileDetailModal({
     Boolean(inboxHistory) &&
     !alreadyLiked &&
     !inboxHistory?.matchedLabel &&
-    !inboxHistory?.refused;
+    !inboxHistory?.refused &&
+    !inboxHistory?.declinedByThem;
   const showInboxActions = pendingInbox && Boolean(onInboxDecision);
   const waitingLocked = Boolean(inboxHistory?.waiting) && showInboxActions;
+  const waitingIncomingSheet = Boolean(inboxHistory?.waitingIncoming);
+  const showWaitingSheetActions = waitingLocked || waitingIncomingSheet;
 
-  return (
+  const fireDeclined = (
+    event: { preventDefault: () => void; stopPropagation: () => void },
+    action?: () => void
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action?.();
+  };
+
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="profile-detail-title"
@@ -88,7 +116,7 @@ export default function ProfileDetailModal({
         aria-label="Fermer"
         onClick={onClose}
       />
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
+      <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
         <div className="aspect-[4/5] sm:aspect-[5/4] bg-gradient-to-br from-rose-100 to-amber-100 relative">
           {candidate.photo_url ? (
             <img
@@ -220,7 +248,47 @@ export default function ProfileDetailModal({
                   Tu as décliné ce profil.
                 </p>
               ) : null}
-              {inboxHistory.waiting && !inboxHistory.matchedLabel ? (
+              {inboxHistory.declinedByThem ? (
+                <p className="text-sm text-purple-800">
+                  {inboxHistory.declinedByThemLabel ||
+                    'A décliné ton Like ou Flash'}
+                </p>
+              ) : null}
+              {inboxHistory.declinedByThem &&
+              (onDeclinedArchive || onDeclinedDelete) ? (
+                <div className="grid grid-cols-2 gap-2 pt-1 relative z-20 pointer-events-auto">
+                  {onDeclinedDelete ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => fireDeclined(e, onDeclinedDelete)}
+                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      {busy ? '…' : 'Supprimer'}
+                    </button>
+                  ) : null}
+                  {onDeclinedArchive ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => fireDeclined(e, onDeclinedArchive)}
+                      className="py-2.5 rounded-xl bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 disabled:opacity-40 cursor-pointer"
+                    >
+                      {busy ? '…' : 'Archiver'}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+              {inboxHistory.waitingIncoming ? (
+                <p className="text-sm text-amber-900/90 leading-relaxed">
+                  {matchWaitingNotification(
+                    candidate.display_name,
+                    inboxHistory.origin
+                  ).body}
+                </p>
+              ) : inboxHistory.waiting && !inboxHistory.matchedLabel ? (
                 <p className="text-sm text-amber-900/90 leading-relaxed">
                   {waitingMatchReminder(
                     inboxHistory.origin,
@@ -239,54 +307,59 @@ export default function ProfileDetailModal({
                 </button>
               ) : null}
 
-              {showInboxActions ? (
-                waitingLocked ? (
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => onInboxDecision?.('refuse')}
-                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                    >
-                      Refuser
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy || likesExhausted}
-                      onClick={() => onInboxDecision?.('match')}
-                      className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
-                    >
-                      Matcher
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => onInboxDecision?.('refuse')}
-                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                    >
-                      Refuser
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => onInboxDecision?.('wait')}
-                      className="py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
-                    >
-                      Attendre
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy || likesExhausted}
-                      onClick={() => onInboxDecision?.('match')}
-                      className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
-                    >
-                      Matcher
-                    </button>
-                  </div>
-                )
+              {showWaitingSheetActions ? (
+                <div className="grid grid-cols-2 gap-2 pt-1 relative z-20 pointer-events-auto">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) =>
+                      fireDeclined(e, () => {
+                        if (onWaitingDiscard) onWaitingDiscard();
+                        else onInboxDecision?.('refuse');
+                      })
+                    }
+                    className="py-2.5 px-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 leading-tight cursor-pointer"
+                  >
+                    {busy ? '…' : 'Jeter'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !onWaitingArchive}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => fireDeclined(e, onWaitingArchive)}
+                    className="py-2.5 px-2 rounded-xl bg-amber-400 text-amber-950 text-sm font-semibold hover:bg-amber-300 disabled:opacity-40 cursor-pointer"
+                  >
+                    {busy ? '…' : 'Archiver'}
+                  </button>
+                </div>
+              ) : showInboxActions ? (
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onInboxDecision?.('refuse')}
+                    className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Refuser
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onInboxDecision?.('wait')}
+                    className="py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+                  >
+                    Attendre
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || likesExhausted}
+                    onClick={() => onInboxDecision?.('match')}
+                    className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+                  >
+                    <MatcherWord />
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : (
@@ -352,4 +425,7 @@ export default function ProfileDetailModal({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return modal;
+  return createPortal(modal, document.body);
 }

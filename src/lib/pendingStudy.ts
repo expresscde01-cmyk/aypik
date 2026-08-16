@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { fetchInboxResponses } from '@/lib/inboxResponses';
 
-export type MatchPulseCategory = 'new' | 'wait';
+export type MatchPulseCategory = 'new' | 'wait' | 'first';
 export type InteractionOriginLabel = 'like' | 'flash';
 
 export type SoleNewProfile = {
@@ -17,6 +17,8 @@ export type InboxCategoryCounts = {
   waitCount: number;
   /** Renseigné uniquement si newCount === 1. */
   soleNew?: SoleNewProfile | null;
+  /** Renseigné uniquement si waitCount === 1. */
+  soleWait?: SoleNewProfile | null;
   /**
    * Profils déjà résolus côté inbox (match validé, like renvoyé, ou refus).
    * Sert de garde-fou pour masquer « À découvrir » / Flash / Like obsolètes.
@@ -79,18 +81,21 @@ export async function countInboxCategories(
   for (const id of refused) resolved.add(id);
 
   const newIds: string[] = [];
-  let waitCount = 0;
+  const waitIds: string[] = [];
   for (const id of incoming) {
     if (resolved.has(id)) continue;
-    if (waiting.has(id)) waitCount += 1;
+    if (waiting.has(id)) waitIds.push(id);
     else newIds.push(id);
   }
 
   const newCount = newIds.length;
+  const waitCount = waitIds.length;
   let soleNew: SoleNewProfile | null = null;
+  let soleWait: SoleNewProfile | null = null;
 
-  if (newCount === 1) {
-    const id = newIds[0];
+  const loadSole = async (
+    id: string
+  ): Promise<SoleNewProfile> => {
     const origin: InteractionOriginLabel = flashSet.has(id) ? 'flash' : 'like';
     const { data } = await supabase
       .from('profiles')
@@ -100,17 +105,21 @@ export async function countInboxCategories(
     const displayName = String(
       (data as { display_name?: string | null } | null)?.display_name || ''
     ).trim();
-    soleNew = {
+    return {
       id,
       displayName: displayName || 'Quelqu’un',
       origin,
     };
-  }
+  };
+
+  if (newCount === 1) soleNew = await loadSole(newIds[0]);
+  if (waitCount === 1) soleWait = await loadSole(waitIds[0]);
 
   return {
     newCount,
     waitCount,
     soleNew,
+    soleWait,
     resolvedActorIds: [...resolved],
   };
 }
@@ -123,20 +132,34 @@ export async function countPendingStudyProfiles(
   return newCount;
 }
 
+function firstNameOf(name?: string | null): string | null {
+  const token = (name || '').trim().split(/\s+/)[0];
+  return token ? token : null;
+}
+
+function studyRecapBody(count: number, soleName?: string | null): string {
+  const n = Math.max(0, count);
+  const prenom = n === 1 ? firstNameOf(soleName) : null;
+  if (prenom) {
+    return `Tu as le profil de ${prenom} ci-dessus à étudier. Prends un moment pour le découvrir.`;
+  }
+  if (n <= 1) {
+    return `Tu as le profil ci-dessus à étudier. Prends un moment pour le découvrir.`;
+  }
+  return `Tu as ces ${n} profils ci-dessus à étudier. Prends un moment pour les découvrir.`;
+}
+
 export function newProfilesNotificationCopy(
   count: number,
-  sole?: Pick<SoleNewProfile, 'displayName' | 'origin'> | null
+  soleName?: string | null,
+  _viewerGender?: 'homme' | 'femme' | null
 ): {
   title: string;
   body: string;
 } {
-  const n = Math.max(0, count);
-  if (n === 1 && sole) {
-    return mergedNewProfileNotificationCopy(sole.displayName, sole.origin);
-  }
   return {
     title: 'À découvrir',
-    body: `Tu as ${n} profils en attente d'être étudiés. Prends un moment pour les découvrir !`,
+    body: studyRecapBody(count, soleName),
   };
 }
 
@@ -156,18 +179,58 @@ export function mergedNewProfileNotificationCopy(
   };
 }
 
-export function waitingProfilesNotificationCopy(count: number): {
+export function waitingProfilesNotificationCopy(
+  count: number,
+  _viewerGender?: 'homme' | 'femme' | null,
+  soleName?: string | null
+): {
   title: string;
   body: string;
 } {
   const n = Math.max(0, count);
-  const label =
-    n <= 1
-      ? 'Tu as 1 profil mis en attente.'
-      : `Tu as ${n} profils mis en attente.`;
+  const prenom = n === 1 ? firstNameOf(soleName) : null;
+  if (prenom) {
+    return {
+      title: 'En attente',
+      body: `Ne laisse pas ${prenom} dans l'attente.`,
+    };
+  }
+  if (n <= 1) {
+    return {
+      title: 'En attente',
+      body: `Ne laisse pas ce membre dans l'attente.`,
+    };
+  }
   return {
     title: 'En attente',
-    body: `${label} Reviens trancher quand tu es prêt·e.`,
+    body: `Ne laisse pas ces membres dans l'attente.`,
+  };
+}
+
+export function firstExchangeNotificationCopy(
+  count: number,
+  soleName?: string | null
+): {
+  title: string;
+  body: string;
+} {
+  const n = Math.max(0, count);
+  const prenom = n === 1 ? firstNameOf(soleName) : null;
+  if (prenom) {
+    return {
+      title: '1er mot',
+      body: `Pense à écrire le 1er mot à ${prenom} pour lancer la conversation.`,
+    };
+  }
+  if (n <= 1) {
+    return {
+      title: '1er mot',
+      body: `Pense à écrire le 1er mot pour lancer la conversation.`,
+    };
+  }
+  return {
+    title: '1er mot',
+    body: `Pense à écrire les 1ers mots à ces ${n} personnes pour lancer les conversations.`,
   };
 }
 
@@ -176,4 +239,9 @@ export function categoryNotifSessionKey(
   category: MatchPulseCategory
 ): string {
   return `aypik-inbox-cat-${category}:${userId}`;
+}
+
+/** Une seule sonnerie de digest par onglet — pas à chaque F5. */
+export function categoryRingSessionKey(userId: string): string {
+  return `aypik-cat-ring:${userId}`;
 }

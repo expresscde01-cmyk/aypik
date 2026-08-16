@@ -9,6 +9,24 @@ export function unreadMessagesLabel(count: number): string {
   return `${count} messages non lus`;
 }
 
+/** Encadré synthèse cloche — messages non lus. */
+export function unreadMessagesRecapCopy(count: number): {
+  title: string;
+  body: string;
+} {
+  const n = Math.max(0, count);
+  const qty =
+    n <= 1
+      ? '1 message non lu'
+      : n > 9
+        ? 'plus de 9 messages non lus'
+        : `${n} messages non lus`;
+  return {
+    title: `Tu as ${qty}`,
+    body: 'Ouvre tes matchs pour répondre.',
+  };
+}
+
 /** Pastille rouge numérique — même visuel que l’onglet Matchs. */
 export default function UnreadBadge({
   count,

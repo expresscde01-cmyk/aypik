@@ -249,14 +249,14 @@ BEGIN
       me
     );
 
-    -- Alex (qui a choisi Attendre) : rappel pour revenir trancher
+    -- Alex (qui a choisi Attendre) : un seul rappel CTA, pas de doublon avec le digest cloche
     INSERT INTO public.social_notifications (
       user_id, kind, title, body, actor_id
     ) VALUES (
       me,
       'match_wait_reminder',
-      'À trancher',
-      'Pense à valider ou à refuser le ' || origin_label || ' ' || de_actor,
+      'En attente',
+      'Ne laisse pas ' || actor_name || ' dans l''attente.',
       p_actor
     );
 

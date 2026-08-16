@@ -216,6 +216,16 @@ export function isFounderPeriodActive(status: MembershipStatus): boolean {
   return isFounderPrivilegeActive(status);
 }
 
+/**
+ * Abonnement Premium payant encore actif (hors période Fondateur gratuite).
+ * Seul ce statut ouvre le formulaire et la collecte de témoignages.
+ */
+export function isPaidPremiumActive(status: MembershipStatus): boolean {
+  if (!status.has_premium) return false;
+  if (status.on_founder_trial || isFounderPeriodActive(status)) return false;
+  return status.plan === 'premium';
+}
+
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */
 export function isFounderOfferOpen(status: MembershipStatus): boolean {
   return status.founders_remaining > 0;

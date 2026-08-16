@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import type { InboxUpdatedDetail } from '@/lib/messaging';
-import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
+import UnreadBadge, { unreadMessagesRecapCopy } from '@/components/UnreadBadge';
 import {
   displaySocialNotification,
   fetchPeersWithMessages,
@@ -15,16 +15,20 @@ import {
   sweepStaleSocialNotifications,
   type SocialNotification,
 } from '@/lib/suggestions';
-import type { OpenMatchesOpts } from '@/lib/matchesNav';
+import { isDismissedDeclinedNotification } from '@/lib/declinedArchives';
+import { isWaitingNoticeDismissed } from '@/lib/waitArchives';
 import {
   categoryNotifSessionKey,
+  categoryRingSessionKey,
   countInboxCategories,
   mergedNewProfileNotificationCopy,
   newProfilesNotificationCopy,
   waitingProfilesNotificationCopy,
+  firstExchangeNotificationCopy,
   type MatchPulseCategory,
 } from '@/lib/pendingStudy';
 import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
+import { withNotificationPeriod } from '@/lib/interactionCopy';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -49,13 +53,20 @@ function isInboxNotification(n: SocialNotification): boolean {
   );
 }
 
-/** Tons = blocs de couleur (haut → bas = hiérarchie de base). */
-type NotifTone = 'chat' | 'match' | 'wait' | 'new' | 'declined';
+/** Tons = blocs de couleur (haut → bas = hiérarchie figée). */
+type NotifTone =
+  | 'chat'
+  | 'match'
+  | 'wait'
+  | 'wait-other'
+  | 'new'
+  | 'declined';
 
 const TONE_HIERARCHY_TOP_TO_BOTTOM: NotifTone[] = [
   'chat',
   'match',
   'wait',
+  'wait-other',
   'new',
   'declined',
 ];
@@ -68,10 +79,11 @@ function toneFromKind(
     case 'like_received':
     case 'category_new':
       return 'new';
-    case 'match_waiting':
     case 'match_wait_reminder':
     case 'category_wait':
       return 'wait';
+    case 'match_waiting':
+      return 'wait-other';
     case 'match_created':
       return 'match';
     case 'message_received':
@@ -90,6 +102,8 @@ function notifToneClass(tone: NotifTone): string {
       return 'notif-tone-new';
     case 'wait':
       return 'notif-tone-wait';
+    case 'wait-other':
+      return 'notif-tone-wait-other';
     case 'match':
       return 'notif-tone-match';
     case 'chat':
@@ -139,14 +153,33 @@ type PanelRow =
       tone: 'wait';
       at: number;
       count: number;
+      soleId?: string | null;
+      soleName?: string | null;
+    }
+  | {
+      key: string;
+      kind: 'cat_first';
+      tone: 'match';
+      at: number;
+      count: number;
+      soleId?: string | null;
+      soleName?: string | null;
     };
 
-function orderTonesForSession(priority: NotifTone | null): NotifTone[] {
-  if (!priority) return [...TONE_HIERARCHY_TOP_TO_BOTTOM];
-  return [
-    priority,
-    ...TONE_HIERARCHY_TOP_TO_BOTTOM.filter((t) => t !== priority),
-  ];
+function sortRowsForTone(tone: NotifTone, rows: PanelRow[]): PanelRow[] {
+  return [...rows].sort((a, b) => {
+    if (tone === 'wait') {
+      const recapA = a.kind === 'cat_wait' ? 1 : 0;
+      const recapB = b.kind === 'cat_wait' ? 1 : 0;
+      if (recapA !== recapB) return recapB - recapA;
+    }
+    if (tone === 'match') {
+      const recapA = a.kind === 'cat_first' ? 1 : 0;
+      const recapB = b.kind === 'cat_first' ? 1 : 0;
+      if (recapA !== recapB) return recapB - recapA;
+    }
+    return b.at - a.at;
+  });
 }
 
 export default function NotificationsBell({
@@ -179,6 +212,8 @@ export default function NotificationsBell({
   const [catWait, setCatWait] = useState<{
     count: number;
     visible: boolean;
+    soleId?: string | null;
+    soleName?: string | null;
   } | null>(null);
   /** Profils déjà matchés / refusés — jamais d’« À découvrir » pour eux. */
   const [resolvedActorIds, setResolvedActorIds] = useState<Set<string>>(
@@ -190,12 +225,38 @@ export default function NotificationsBell({
   const prevMessageTotalRef = useRef(0);
   const primedRef = useRef(false);
   const categoryPrimedRef = useRef(false);
-  /** Horodatage du dernier bump messages (priorité de session). */
   const lastMessageEventAtRef = useRef(0);
-  /** Ton du dernier événement — reste en tête pour la session. */
-  const [sessionPriorityTone, setSessionPriorityTone] =
-    useState<NotifTone | null>(null);
   const unreadMessages = useUnreadMessages(user?.id, { channelKey: 'bell' });
+  const [viewerGender, setViewerGender] = useState<'homme' | 'femme' | null>(
+    null
+  );
+  const [waitSoleFetchedName, setWaitSoleFetchedName] = useState<string | null>(
+    null
+  );
+  const [firstDismissed, setFirstDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setViewerGender(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('gender')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const gender = (data as { gender?: string | null } | null)?.gender;
+      setViewerGender(
+        gender === 'homme' || gender === 'femme' ? gender : null
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, open]);
 
   /** Matchs verts Mes Matchs + résolus serveur / optimistes. */
   const isActorResolved = (id: string | null | undefined) => {
@@ -231,7 +292,12 @@ export default function NotificationsBell({
     if (waiting.length === 0) return null;
     const dismissed =
       sessionStorage.getItem(categoryNotifSessionKey(user.id, 'wait')) === '1';
-    return { count: waiting.length, visible: !dismissed };
+    return {
+      count: waiting.length,
+      visible: !dismissed,
+      soleId: waiting.length === 1 ? waiting[0].id : null,
+      soleName: waiting.length === 1 ? waiting[0].displayName : null,
+    };
   }, [syncHasSnapshot, inboxEntries, matchedIds, user]);
 
   const activeCatNew = syncHasSnapshot
@@ -241,8 +307,106 @@ export default function NotificationsBell({
       : catNew;
   const activeCatWait = syncHasSnapshot ? syncCatWait : catWait;
 
+  const quietMatches = useMemo(() => {
+    if (syncHasSnapshot) {
+      return inboxEntries
+        .filter((e) => e.status === 'matched')
+        .map((e) => ({
+          id: e.id,
+          displayName: e.displayName,
+        }));
+    }
+    const seen = new Map<string, { id: string; displayName: string }>();
+    for (const n of items) {
+      if (n.kind !== 'match_created' || !n.actor_id) continue;
+      if (peersWithMessages.has(n.actor_id)) continue;
+      if ((unreadMessages.bySender[n.actor_id] || 0) > 0) continue;
+      if (seen.has(n.actor_id)) continue;
+      const named = (actorNames[n.actor_id] || '').trim();
+      seen.set(n.actor_id, {
+        id: n.actor_id,
+        displayName: named || 'Quelqu’un',
+      });
+    }
+    return [...seen.values()];
+  }, [
+    syncHasSnapshot,
+    inboxEntries,
+    items,
+    peersWithMessages,
+    unreadMessages.bySender,
+    actorNames,
+  ]);
+
+  const hasFirstAlert = quietMatches.length > 0 && !firstDismissed;
+  const firstSole = quietMatches.length === 1 ? quietMatches[0] : null;
+  const prevQuietCountRef = useRef(0);
+
+  useEffect(() => {
+    const n = quietMatches.length;
+    if (n > 0) {
+      prevQuietCountRef.current = n;
+      return;
+    }
+    if (prevQuietCountRef.current > 0 && user) {
+      sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'first'));
+      setFirstDismissed(false);
+    }
+    prevQuietCountRef.current = 0;
+  }, [quietMatches.length, user]);
+
+  useEffect(() => {
+    if (!hasFirstAlert || !user) return;
+    const ringKey = categoryRingSessionKey(user.id);
+    if (categoryPrimedRef.current || sessionStorage.getItem(ringKey) === '1') {
+      categoryPrimedRef.current = true;
+      return;
+    }
+    categoryPrimedRef.current = true;
+    sessionStorage.setItem(ringKey, '1');
+    setRinging(true);
+    const t = window.setTimeout(() => setRinging(false), 1200);
+    return () => window.clearTimeout(t);
+  }, [hasFirstAlert, user]);
+
+  useEffect(() => {
+    const count = activeCatWait?.count ?? 0;
+    const known = (activeCatWait?.soleName || '').trim();
+    const id = activeCatWait?.soleId || null;
+    if (count !== 1) {
+      setWaitSoleFetchedName(null);
+      return;
+    }
+    if (known && known !== 'Quelqu’un') {
+      setWaitSoleFetchedName(known);
+      return;
+    }
+    if (!id) {
+      setWaitSoleFetchedName(known || null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', id)
+        .maybeSingle();
+      if (cancelled) return;
+      const name = String(
+        (data as { display_name?: string | null } | null)?.display_name || ''
+      ).trim();
+      setWaitSoleFetchedName(name || known || null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCatWait?.count, activeCatWait?.soleId, activeCatWait?.soleName]);
+
   const isVisibleSocial = (n: SocialNotification) => {
     if (n.kind === 'message_received') return false;
+    if (isDismissedDeclinedNotification(n, user?.id)) return false;
+    if (isWaitingNoticeDismissed(n, user?.id)) return false;
     if (
       (n.kind === 'flash_received' || n.kind === 'like_received') &&
       n.read_at
@@ -259,62 +423,41 @@ export default function NotificationsBell({
     ) {
       return false;
     }
-    // Messagerie ouverte → priorité à l’alerte message, plus de « C’est un match ! »
-    if (n.kind === 'match_created' && n.actor_id) {
-      if ((unreadMessages.bySender[n.actor_id] || 0) > 0) return false;
-      if (peersWithMessages.has(n.actor_id)) return false;
+    // Messagerie ouverte → priorité à l’alerte message
+    if (n.kind === 'match_created') {
+      return false;
     }
     return true;
   };
 
   const socialItems = items.filter(isVisibleSocial);
+  const hasWaitReminder = socialItems.some(
+    (n) => n.kind === 'match_wait_reminder'
+  );
   const socialOnlyUnread = items.filter(
     (n) => !n.read_at && isVisibleSocial(n)
   ).length;
   const hasNewAlert = Boolean(activeCatNew?.visible);
-  const hasWaitAlert = Boolean(activeCatWait?.visible);
+  const hasWaitAlert = Boolean(activeCatWait?.visible) && !hasWaitReminder;
 
-  const mergeNewWithSocial = useMemo(() => {
-    if (!hasNewAlert || !activeCatNew || activeCatNew.count !== 1) return null;
-    const soleId = activeCatNew.soleId;
-    if (soleId && isActorResolved(soleId)) return null;
-    const soleName = (activeCatNew.soleName || '').trim().toLowerCase();
-    const match = socialItems.find((n) => {
-      if (n.kind !== 'flash_received' && n.kind !== 'like_received') return false;
-      if (n.actor_id && isActorResolved(n.actor_id)) return false;
-      if (soleId && n.actor_id === soleId) return true;
-      if (!soleName || !n.actor_id) return false;
-      return (actorNames[n.actor_id] || '').trim().toLowerCase() === soleName;
-    });
-    if (!match?.actor_id) return null;
-    if (isActorResolved(match.actor_id)) return null;
-    const origin: 'like' | 'flash' =
-      match.kind === 'flash_received' || activeCatNew.soleOrigin === 'flash'
-        ? 'flash'
-        : 'like';
-    const displayName =
-      activeCatNew.soleName ||
-      actorNames[match.actor_id] ||
-      'Quelqu’un';
-    return {
-      social: match,
-      actorId: match.actor_id,
-      displayName,
-      origin,
-      at: Date.parse(match.created_at) || Date.now(),
-    };
-  }, [
-    hasNewAlert,
-    activeCatNew,
-    socialItems,
-    actorNames,
-    resolvedActorIds,
-    matchedIds,
-  ]);
+  /** Like/Flash non traités (liste cloche) ∪ compteur inbox « nouveaux ». */
+  const discoverRecapCount = useMemo(() => {
+    const actors = new Set<string>();
+    for (const n of socialItems) {
+      if (n.kind !== 'flash_received' && n.kind !== 'like_received') continue;
+      if (!n.actor_id || isActorResolved(n.actor_id)) continue;
+      actors.add(n.actor_id);
+    }
+    return Math.max(actors.size, activeCatNew?.count ?? 0);
+  }, [socialItems, activeCatNew?.count, resolvedActorIds, matchedIds]);
+
+  /** Like/Flash individuels restent au-dessus ; le récap « Tu as ces… ci-dessus » les relie. */
+  const mergeNewWithSocial = null;
 
   const categoryUnread =
     (hasNewAlert && !mergeNewWithSocial ? 1 : 0) +
-    (hasWaitAlert ? 1 : 0);
+    (hasWaitAlert ? 1 : 0) +
+    (hasFirstAlert ? 1 : 0);
   const badgeCount =
     unreadMessages.total + socialOnlyUnread + categoryUnread;
   const hasMessageAlert = unreadMessages.total > 0;
@@ -366,7 +509,7 @@ export default function NotificationsBell({
           kind: 'cat_new',
           tone: 'new',
           at: 0,
-          count: activeCatNew.count,
+          count: discoverRecapCount,
           soleId: activeCatNew.soleId,
           soleName: activeCatNew.soleName,
           soleOrigin: activeCatNew.soleOrigin,
@@ -375,56 +518,54 @@ export default function NotificationsBell({
     }
 
     if (hasWaitAlert && activeCatWait) {
+        rows.push({
+          key: 'cat-wait',
+          kind: 'cat_wait',
+          tone: 'wait',
+          at: 0,
+          count: activeCatWait.count,
+          soleId: activeCatWait.soleId,
+          soleName: activeCatWait.soleName,
+        });
+    }
+
+    if (hasFirstAlert) {
       rows.push({
-        key: 'cat-wait',
-        kind: 'cat_wait',
-        tone: 'wait',
+        key: 'cat-first',
+        kind: 'cat_first',
+        tone: 'match',
         at: 0,
-        count: activeCatWait.count,
+        count: quietMatches.length,
+        soleId: firstSole?.id ?? null,
+        soleName: firstSole?.displayName ?? null,
       });
     }
 
-    // Dernier événement chronologique (hors digests catégorie at=0)
-    let newestAt = -1;
-    let newestTone: NotifTone | null = null;
-    for (const row of rows) {
-      if (row.at <= 0) continue;
-      if (row.at >= newestAt) {
-        newestAt = row.at;
-        newestTone = row.tone;
-      }
-    }
-
-    const priority = newestTone || sessionPriorityTone;
-    const toneOrder = orderTonesForSession(priority);
-
     const blocks: { tone: NotifTone; rows: PanelRow[] }[] = [];
-    for (const tone of toneOrder) {
-      const group = rows
-        .filter((r) => r.tone === tone)
-        .sort((a, b) => b.at - a.at);
+    for (const tone of TONE_HIERARCHY_TOP_TO_BOTTOM) {
+      const group = sortRowsForTone(
+        tone,
+        rows.filter((r) => r.tone === tone)
+      );
       if (group.length > 0) blocks.push({ tone, rows: group });
     }
-    return { blocks, newestTone };
+    return { blocks };
   }, [
     socialItems,
     hasMessageAlert,
     hasNewAlert,
     hasWaitAlert,
+    hasFirstAlert,
     activeCatNew,
     activeCatWait,
+    quietMatches,
+    firstSole,
+    discoverRecapCount,
     mergeNewWithSocial,
-    sessionPriorityTone,
     unreadMessages.total,
     resolvedActorIds,
     matchedIds,
   ]);
-
-  useEffect(() => {
-    if (orderedBlocks.newestTone) {
-      setSessionPriorityTone(orderedBlocks.newestTone);
-    }
-  }, [orderedBlocks.newestTone]);
 
   const refreshCategoryNotifs = useCallback(async () => {
     if (!user) {
@@ -434,7 +575,7 @@ export default function NotificationsBell({
       return;
     }
     try {
-      const { newCount, waitCount, soleNew, resolvedActorIds: resolved } =
+      const { newCount, waitCount, soleNew, soleWait, resolvedActorIds: resolved } =
         await countInboxCategories(user.id);
 
       // Union : ne jamais écraser les matchs déjà connus (Mes Matchs / optimiste)
@@ -472,7 +613,14 @@ export default function NotificationsBell({
         sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'new'));
       }
       setCatWait(
-        waitCount > 0 ? { count: waitCount, visible: !waitDismissed } : null
+        waitCount > 0
+          ? {
+              count: waitCount,
+              visible: !waitDismissed,
+              soleId: soleWait?.id ?? null,
+              soleName: soleWait?.displayName ?? null,
+            }
+          : null
       );
       if (waitCount <= 0 && user) {
         sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'wait'));
@@ -481,10 +629,17 @@ export default function NotificationsBell({
       const anyVisible =
         (newCount > 0 && !soleResolved && !newDismissed) ||
         (waitCount > 0 && !waitDismissed);
-      if (anyVisible && !categoryPrimedRef.current) {
+      if (anyVisible && user) {
+        const ringKey = categoryRingSessionKey(user.id);
+        const rangThisTab =
+          categoryPrimedRef.current ||
+          sessionStorage.getItem(ringKey) === '1';
         categoryPrimedRef.current = true;
-        setRinging(true);
-        window.setTimeout(() => setRinging(false), 1200);
+        if (!rangThisTab) {
+          sessionStorage.setItem(ringKey, '1');
+          setRinging(true);
+          window.setTimeout(() => setRinging(false), 1200);
+        }
       }
     } catch {
       /* optionnel */
@@ -499,7 +654,13 @@ export default function NotificationsBell({
         fetchPeersWithMessages(),
       ]);
       setPeersWithMessages(peers);
-      setItems(list);
+      setItems(
+        list.filter(
+          (n) =>
+            !isDismissedDeclinedNotification(n, user?.id) &&
+            !isWaitingNoticeDismissed(n, user?.id)
+        )
+      );
 
       const actorIds = [
         ...new Set(
@@ -528,7 +689,7 @@ export default function NotificationsBell({
     } catch {
       /* silencieux : inbox optionnelle */
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     void refresh();
@@ -548,7 +709,9 @@ export default function NotificationsBell({
 
       if (decision === 'match') markResolved(actorId, 'matched');
       else if (decision === 'refuse') markResolved(actorId, 'refused');
-      else if (decision === 'wait') markResolved(actorId, 'wait');
+      else if (decision === 'wait') {
+        markResolved(actorId, 'wait');
+      }
 
       if (decision === 'match' || decision === 'refuse') {
         setResolvedActorIds((prev) => {
@@ -616,6 +779,37 @@ export default function NotificationsBell({
   useInboxReload(
     useCallback(
       (detail?: InboxUpdatedDetail) => {
+        if (detail?.decision === 'declined-dismiss') {
+          const nid = detail.notificationId;
+          const aid = detail.actorId;
+          setItems((prev) =>
+            prev.filter((n) => {
+              if (nid && n.id === nid) return false;
+              if (aid && n.kind === 'match_declined' && n.actor_id === aid) {
+                return false;
+              }
+              return !isDismissedDeclinedNotification(n, user?.id);
+            })
+          );
+        }
+        if (detail?.decision === 'wait-dismiss') {
+          const nid = detail.notificationId;
+          const aid = detail.actorId;
+          setItems((prev) =>
+            prev.filter((n) => {
+              if (nid && n.id === nid) return false;
+              if (
+                aid &&
+                (n.kind === 'match_waiting' ||
+                  n.kind === 'match_wait_reminder') &&
+                n.actor_id === aid
+              ) {
+                return false;
+              }
+              return !isWaitingNoticeDismissed(n, user?.id);
+            })
+          );
+        }
         applyInboxDecisionLocally(detail);
         void (async () => {
           try {
@@ -626,7 +820,7 @@ export default function NotificationsBell({
           await Promise.all([refresh(), refreshCategoryNotifs()]);
         })();
       },
-      [applyInboxDecisionLocally, refresh, refreshCategoryNotifs]
+      [applyInboxDecisionLocally, refresh, refreshCategoryNotifs, user?.id]
     )
   );
 
@@ -635,11 +829,17 @@ export default function NotificationsBell({
     categoryPrimedRef.current = false;
     prevMessageTotalRef.current = 0;
     lastMessageEventAtRef.current = 0;
-    setSessionPriorityTone(null);
     setRinging(false);
     setCatNew(null);
     setCatWait(null);
     setResolvedActorIds(new Set());
+    setFirstDismissed(
+      user
+        ? sessionStorage.getItem(categoryNotifSessionKey(user.id, 'first')) ===
+          '1'
+        : false
+    );
+    prevQuietCountRef.current = 0;
   }, [user?.id]);
 
   useEffect(() => {
@@ -654,7 +854,6 @@ export default function NotificationsBell({
     }
     if (unreadMessages.total > prevMessageTotalRef.current) {
       lastMessageEventAtRef.current = Date.now();
-      setSessionPriorityTone('chat');
       setRinging(true);
       const t = window.setTimeout(() => setRinging(false), 800);
       prevMessageTotalRef.current = unreadMessages.total;
@@ -726,8 +925,10 @@ export default function NotificationsBell({
     sessionStorage.setItem(categoryNotifSessionKey(user.id, category), '1');
     if (category === 'new') {
       setCatNew((prev) => (prev ? { ...prev, visible: false } : prev));
-    } else {
+    } else if (category === 'wait') {
       setCatWait((prev) => (prev ? { ...prev, visible: false } : prev));
+    } else {
+      setFirstDismissed(true);
     }
   };
 
@@ -786,6 +987,7 @@ export default function NotificationsBell({
   const handleMarkAll = async () => {
     dismissCategory('new');
     dismissCategory('wait');
+    dismissCategory('first');
     try {
       await markAllSocialNotificationsRead();
     } catch {
@@ -804,25 +1006,28 @@ export default function NotificationsBell({
     if (isInboxNotification(n)) {
       const actorLabel =
         (n.actor_id && actorNames[n.actor_id]?.trim()) || null;
-      const reminderName =
-        n.body.match(
-          /Pense à valider ou à refuser le (?:Flash|Like)\s+(?:d'|de\s+)(.+?)\s*$/i
-        )?.[1]?.trim() ||
-        actorLabel ||
-        null;
-      const isWaitReminder =
-        n.kind === 'match_wait_reminder' ||
-        /Pense à valider ou à refuser/i.test(n.body);
+      const reminderName = actorLabel;
+      const isWaitReminder = n.kind === 'match_wait_reminder';
 
       if (n.kind === 'message_received') {
         onOpenInbox?.(n.actor_id, true);
       } else if (n.kind === 'flash_received' || n.kind === 'like_received') {
         onOpenInbox?.(n.actor_id, { highlight: false });
+      } else if (n.kind === 'match_declined') {
+        onOpenInbox?.(n.actor_id, {
+          declined: true,
+          hintName: actorLabel,
+        });
       } else if (isWaitReminder) {
-        // Mes Matchs + carte / fiche du profil à trancher (ex. Fabrice)
         onOpenInbox?.(n.actor_id, {
           highlight: true,
           hintName: reminderName,
+        });
+      } else if (n.kind === 'match_waiting') {
+        onOpenInbox?.(n.actor_id, {
+          highlight: true,
+          hintName: actorLabel,
+          waitingIncoming: true,
         });
       } else {
         onOpenInbox?.(n.actor_id);
@@ -887,14 +1092,16 @@ export default function NotificationsBell({
             socialItems.length === 0 &&
             !hasMessageAlert &&
             !hasNewAlert &&
-            !hasWaitAlert ? (
+            !hasWaitAlert &&
+            !hasFirstAlert ? (
               <p className="px-4 py-6 text-center text-xs text-gray-400">
                 Chargement…
               </p>
             ) : socialItems.length === 0 &&
               !hasMessageAlert &&
               !hasNewAlert &&
-              !hasWaitAlert ? (
+              !hasWaitAlert &&
+              !hasFirstAlert ? (
               <div className="px-4 py-8 text-center">
                 <Sparkles className="w-6 h-6 text-rose-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
@@ -903,17 +1110,16 @@ export default function NotificationsBell({
               </div>
             ) : (
               <div className="notif-panel-list notif-panel-list--end">
-                {orderedBlocks.blocks.map((block, blockIndex) => (
+                {orderedBlocks.blocks.map((block) => (
                   <ul
                     key={block.tone}
-                    className={`notif-block notif-block-${block.tone} ${
-                      blockIndex === 0 && sessionPriorityTone === block.tone
-                        ? 'notif-block-priority'
-                        : ''
-                    }`}
+                    className={`notif-block notif-block-${block.tone}`}
                   >
                     {block.rows.map((row) => {
                       if (row.kind === 'messages') {
+                        const copy = unreadMessagesRecapCopy(
+                          unreadMessages.total
+                        );
                         return (
                           <li key={row.key}>
                             <button
@@ -924,8 +1130,6 @@ export default function NotificationsBell({
                               <div className="flex items-start gap-2">
                                 <span className="mt-0.5 relative w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
                                   <MessageCircle className="w-3.5 h-3.5" />
-
-
                                   <UnreadBadge
                                     count={unreadMessages.total}
                                     className="absolute -top-1 -right-1"
@@ -933,10 +1137,10 @@ export default function NotificationsBell({
                                 </span>
                                 <div className="min-w-0">
                                   <p className="text-sm font-semibold text-rose-800">
-                                    {unreadMessagesLabel(unreadMessages.total)}
+                                    {copy.title}
                                   </p>
                                   <p className="text-xs text-rose-600 leading-relaxed mt-0.5">
-                                    Ouvre tes matchs pour répondre
+                                    {withNotificationPeriod(copy.body)}
                                   </p>
                                 </div>
                               </div>
@@ -969,7 +1173,7 @@ export default function NotificationsBell({
                                     {copy.title}
                                   </p>
                                   <p className="text-xs text-stone-700 leading-relaxed mt-0.5">
-                                    {copy.body}
+                                    {withNotificationPeriod(copy.body)}
                                   </p>
                                 </div>
                               </div>
@@ -979,14 +1183,16 @@ export default function NotificationsBell({
                       }
 
                       if (row.kind === 'cat_new') {
+                        const count = discoverRecapCount || row.count;
+                        const soleName =
+                          count === 1
+                            ? row.soleName ||
+                              (row.soleId ? actorNames[row.soleId] : null)
+                            : null;
                         const copy = newProfilesNotificationCopy(
-                          row.count,
-                          row.count === 1 && row.soleName
-                            ? {
-                                displayName: row.soleName,
-                                origin: row.soleOrigin || 'like',
-                              }
-                            : null
+                          count,
+                          soleName,
+                          viewerGender
                         );
                         return (
                           <li key={row.key}>
@@ -1007,7 +1213,7 @@ export default function NotificationsBell({
                                     {copy.title}
                                   </p>
                                   <p className="text-xs text-stone-700 leading-relaxed mt-0.5">
-                                    {copy.body}
+                                    {withNotificationPeriod(copy.body)}
                                   </p>
                                 </div>
                               </div>
@@ -1017,7 +1223,15 @@ export default function NotificationsBell({
                       }
 
                       if (row.kind === 'cat_wait') {
-                        const copy = waitingProfilesNotificationCopy(row.count);
+                        const copy = waitingProfilesNotificationCopy(
+                          row.count,
+                          viewerGender,
+                          row.count === 1
+                            ? waitSoleFetchedName ||
+                              row.soleName ||
+                              (row.soleId ? actorNames[row.soleId] : null)
+                            : null
+                        );
                         return (
                           <li key={row.key}>
                             <button
@@ -1034,7 +1248,40 @@ export default function NotificationsBell({
                                     {copy.title}
                                   </p>
                                   <p className="text-xs text-amber-900/80 leading-relaxed mt-0.5">
-                                    {copy.body}
+                                    {withNotificationPeriod(copy.body)}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      }
+
+                      if (row.kind === 'cat_first') {
+                        const copy = firstExchangeNotificationCopy(
+                          row.count,
+                          row.count === 1
+                            ? row.soleName ||
+                              (row.soleId ? actorNames[row.soleId] : null)
+                            : null
+                        );
+                        return (
+                          <li key={row.key}>
+                            <button
+                              type="button"
+                              onClick={() => openCategory('first')}
+                              className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('match')}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-emerald-900">
+                                    {copy.title}
+                                  </p>
+                                  <p className="text-xs text-emerald-800/80 leading-relaxed mt-0.5">
+                                    {withNotificationPeriod(copy.body)}
                                   </p>
                                 </div>
                               </div>
@@ -1058,6 +1305,7 @@ export default function NotificationsBell({
                           ? actorNames[n.actor_id] || null
                           : null,
                       });
+
                       return (
                         <li key={row.key}>
                           <button
@@ -1078,7 +1326,7 @@ export default function NotificationsBell({
                                   {copy.title}
                                 </p>
                                 <p className="text-xs text-gray-700/80 leading-relaxed mt-0.5">
-                                  {copy.body}
+                                  {withNotificationPeriod(copy.body)}
                                 </p>
                                 <p className="text-[11px] text-gray-500 mt-1">
                                   {relativeTime(n.created_at)}

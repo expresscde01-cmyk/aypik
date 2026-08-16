@@ -61,11 +61,15 @@ interface Candidate extends Profile {
 export default function DiscoveryPage({
   unreadBySender = {},
   onOpenUnreadChat,
+  profileEpoch = 0,
 }: {
   unreadBySender?: Record<string, number>;
   onOpenUnreadChat?: (actorId: string) => void;
+  /** Incrémenté après une MAJ profil / à chaque visite Découvrir : force un reload DB. */
+  profileEpoch?: number;
 } = {}) {
   const { user } = useAuth();
+  const userId = user?.id;
   const { status, refresh, loading: membershipLoading } = useMembership();
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -94,13 +98,17 @@ export default function DiscoveryPage({
   }, [geoPerimeter, minOverlap]);
 
   useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    setSearching(true);
     (async () => {
-      if (!user) return;
       const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .maybeSingle();
+
+      if (cancelled) return;
 
       if (profileErr || !profile) {
         setError('Impossible de charger ton profil');
@@ -111,18 +119,22 @@ export default function DiscoveryPage({
       setMyProfile(profile as Profile);
 
       const [{ data: likes }, { data: flashes }] = await Promise.all([
-        supabase.from('likes').select('to_user').eq('from_user', user.id),
-        supabase.from('flashes').select('to_user').eq('from_user', user.id),
+        supabase.from('likes').select('to_user').eq('from_user', userId),
+        supabase.from('flashes').select('to_user').eq('from_user', userId),
       ]);
 
+      if (cancelled) return;
       setLikedIds(new Set((likes || []).map((l) => l.to_user)));
       setFlashedIds(new Set((flashes || []).map((f) => f.to_user)));
       setLoading(false);
     })();
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, profileEpoch]);
 
   useEffect(() => {
-    if (!myProfile || !user || membershipLoading) return;
+    if (!myProfile || !userId || membershipLoading) return;
 
     let cancelled = false;
     setSearching(true);
@@ -135,7 +147,7 @@ export default function DiscoveryPage({
       let query = supabase
         .from('profiles')
         .select('*')
-        .neq('id', user.id)
+        .neq('id', userId)
         .eq('has_children', false)
         .is('deletion_requested_at', null)
         .lte(
@@ -255,7 +267,8 @@ export default function DiscoveryPage({
     };
   }, [
     myProfile,
-    user,
+    myProfile?.gender,
+    userId,
     membershipLoading,
     canFilter,
     geoPerimeter,
@@ -768,12 +781,22 @@ export default function DiscoveryPage({
 
           <div className="pt-1 space-y-2">
             {showFlashCta && (
-              <p className="text-center text-xs text-amber-700/80">
-                <Zap className="w-3 h-3 inline mb-0.5" /> Flash : notifie
-                la personne
-                {status.plan !== 'premium' && !isFounderPeriodActive(status)
-                  ? ' (3 / jour en freemium)'
-                  : ''}
+              <p className="flex items-center justify-center flex-wrap gap-x-1 gap-y-0.5 text-center text-xs text-amber-700/80">
+                <span className="inline-flex items-center gap-0.5">
+                  <Zap className="w-3 h-3" aria-hidden />
+                  Flash
+                </span>
+                <span aria-hidden>&amp;</span>
+                <span className="inline-flex items-center gap-0.5">
+                  <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+                  Like
+                </span>
+                <span>
+                  : notifient la personne
+                  {status.plan !== 'premium' && !isFounderPeriodActive(status)
+                    ? ' (3 / jour en freemium)'
+                    : ''}
+                </span>
               </p>
             )}
             <LikesQuotaHint status={status} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, MapPin, AlertCircle, MessageCircle, Zap } from 'lucide-react';
+import { Heart, MapPin, AlertCircle, Zap, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import {
@@ -28,12 +28,16 @@ import {
   pendingToDecideLabel,
   originHistoryLabel,
   waitingMatchReminder,
+  declinedArchiveStatusLabel,
+  waitArchiveStatusLabel,
   type MatchRole,
 } from '@/lib/interactionCopy';
 import type { ProfileGender } from '@/components/ProfileSetup';
 import ChatScreen from '@/components/ChatScreen';
+import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
 import RefuseButton from '@/components/RefuseButton';
+import WaitButton from '@/components/WaitButton';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
@@ -41,7 +45,24 @@ import {
   respondToInboxInterest,
   type InboxDecision,
 } from '@/lib/inboxResponses';
-import type { MatchPulseCategory } from '@/lib/pendingStudy';
+import { type MatchPulseCategory } from '@/lib/pendingStudy';
+import {
+  fetchDeclinedArchives,
+  fetchPendingDeclinedNotices,
+  dismissDeclinedNotification,
+  rememberDeclinedHandled,
+  isDeclinedHandled,
+  deleteDeclinedArchive,
+} from '@/lib/declinedArchives';
+import {
+  dismissWaitingNotification,
+  fetchPendingWaitingNotices,
+  forgetWaitArchive,
+  isMineWaitArchived,
+  listAllWaitArchives,
+  rememberMineWaitArchive,
+  rememberTheirsWaitArchive,
+} from '@/lib/waitArchives';
 import {
   useMatchesInboxSync,
   type MatchesInboxEntry,
@@ -72,6 +93,55 @@ interface Match {
 }
 
 type MatchFloor = 'new' | 'wait' | 'matched-quiet' | 'matched-chat';
+
+type DeclinedArchiveCard = {
+  archiveId: string;
+  archivedAt: string;
+  declinedAt: string;
+  origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+  source?: 'theirs' | 'mine';
+};
+
+type PendingDeclinedCard = {
+  notificationId: string;
+  declinedAt: string;
+  origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+};
+
+type WaitArchiveCard = {
+  archiveId: string;
+  archivedAt: string;
+  receivedAt: string;
+  origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+  source: 'mine' | 'theirs';
+  notificationId?: string | null;
+};
+
+type PendingWaitingCard = {
+  notificationId: string;
+  receivedAt: string;
+  origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+};
 
 function sortByDateReceivedAsc(a: Match, b: Match): number {
   const ta = new Date(a.date_received).getTime() || 0;
@@ -119,6 +189,43 @@ function isInboxEligible(myAge: number | null, theirAge: number): boolean {
   return isWithinAgeGap(myAge, theirAge);
 }
 
+async function fetchProfileBundle(ids: string[]): Promise<{
+  byId: Map<string, Profile>;
+  founderMap: Map<string, number | null>;
+  boostSet: Set<string>;
+}> {
+  if (ids.length === 0) {
+    return { byId: new Map(), founderMap: new Map(), boostSet: new Set() };
+  }
+  const [{ data: profiles }, { data: memberships }, { data: boosts }] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .in('id', ids)
+        .is('deletion_requested_at', null),
+      supabase
+        .from('memberships')
+        .select('user_id, is_founder, founder_number')
+        .in('user_id', ids),
+      supabase
+        .from('profile_boosts')
+        .select('user_id')
+        .in('user_id', ids)
+        .in('payment_status', ['paid', 'simulated'])
+        .gt('ends_at', new Date().toISOString()),
+    ]);
+  const founderMap = new Map<string, number | null>();
+  (memberships || []).forEach((m) => {
+    if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
+  });
+  const boostSet = new Set((boosts || []).map((b) => b.user_id as string));
+  const byId = new Map(
+    ((profiles || []) as Profile[]).map((p) => [p.id, p])
+  );
+  return { byId, founderMap, boostSet };
+}
+
 export default function MatchesPage({
   focusActorId = null,
   focusOpenChat = false,
@@ -126,9 +233,12 @@ export default function MatchesPage({
   focusHintName = null,
   focusPulsePendingAll = false,
   focusPulseCategory = null,
+  focusDeclined = false,
+  focusWaitingIncoming = false,
   focusKey = 0,
   onChatClosed,
   onFocusActorConsumed,
+  profileEpoch = 0,
 }: {
   focusActorId?: string | null;
   focusOpenChat?: boolean;
@@ -137,19 +247,46 @@ export default function MatchesPage({
   /** @deprecated Préférer focusPulseCategory */
   focusPulsePendingAll?: boolean;
   focusPulseCategory?: MatchPulseCategory | null;
+  /** Navigation depuis une notif « Pas cette fois ». */
+  focusDeclined?: boolean;
+  /** Notif « X a mis ton Like/Flash en attente ». */
+  focusWaitingIncoming?: boolean;
   /** Change à chaque navigation cloche → rejoue scroll / ouverture fiche. */
   focusKey?: number;
   onChatClosed?: () => void;
   onFocusActorConsumed?: () => void;
+  profileEpoch?: number;
 } = {}) {
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
   const { publish, markResolved } = useMatchesInboxSync();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [declinedArchives, setDeclinedArchives] = useState<
+    DeclinedArchiveCard[]
+  >([]);
+  const [pendingDeclined, setPendingDeclined] = useState<PendingDeclinedCard[]>(
+    []
+  );
+  const [waitArchives, setWaitArchives] = useState<WaitArchiveCard[]>([]);
+  const [pendingWaiting, setPendingWaiting] = useState<PendingWaitingCard[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chatPeer, setChatPeer] = useState<Profile | null>(null);
   const [openProfile, setOpenProfile] = useState<Match | null>(null);
+  const [openArchive, setOpenArchive] = useState<DeclinedArchiveCard | null>(
+    null
+  );
+  const [openPendingDeclined, setOpenPendingDeclined] =
+    useState<PendingDeclinedCard | null>(null);
+  const [openWaitArchive, setOpenWaitArchive] = useState<WaitArchiveCard | null>(
+    null
+  );
+  const [openPendingWaiting, setOpenPendingWaiting] =
+    useState<PendingWaitingCard | null>(null);
+  const [declinedBusyId, setDeclinedBusyId] = useState<string | null>(null);
+  const declinedBusyRef = useRef(false);
   const [actingId, setActingId] = useState<string | null>(null);
   /** Clignotement ponctuel (Attendre manuel ou rappel notif) — jusqu’à quitter la page. */
   const [pulseSingleId, setPulseSingleId] = useState<string | null>(null);
@@ -167,6 +304,8 @@ export default function MatchesPage({
     highlight: boolean;
     hintName: string | null;
     pulseCategory: MatchPulseCategory | null;
+    declined: boolean;
+    waitingIncoming: boolean;
   } | null>(null);
   const unread = useUnreadMessages(user?.id, {
     ignoreSenderId: chatPeer?.id ?? null,
@@ -470,6 +609,224 @@ export default function MatchesPage({
     } catch (err) {
       setError(userErrorMessage(err));
     }
+  }, [user, profileEpoch]);
+
+  const loadDeclinedArchives = useCallback(async () => {
+    if (!user) {
+      setDeclinedArchives([]);
+      return;
+    }
+    try {
+      const rows = await fetchDeclinedArchives();
+      if (rows.length === 0) {
+        setDeclinedArchives([]);
+        return;
+      }
+      const ids = [...new Set(rows.map((r) => r.actor_id))];
+      const [{ data: profiles }, { data: memberships }, { data: boosts }] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .in('id', ids)
+            .is('deletion_requested_at', null),
+          supabase
+            .from('memberships')
+            .select('user_id, is_founder, founder_number')
+            .in('user_id', ids),
+          supabase
+            .from('profile_boosts')
+            .select('user_id')
+            .in('user_id', ids)
+            .in('payment_status', ['paid', 'simulated'])
+            .gt('ends_at', new Date().toISOString()),
+        ]);
+
+      const founderMap = new Map<string, number | null>();
+      (memberships || []).forEach((m) => {
+        if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
+      });
+      const boostSet = new Set((boosts || []).map((b) => b.user_id));
+      const byId = new Map(
+        ((profiles || []) as Profile[]).map((p) => [p.id, p])
+      );
+
+      const list: DeclinedArchiveCard[] = [];
+      for (const row of rows) {
+        const profile = byId.get(row.actor_id);
+        if (!profile) continue;
+        list.push({
+          archiveId: row.id,
+          archivedAt: row.archived_at,
+          declinedAt: row.declined_at,
+          origin: row.origin,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+          source: row.source === 'mine' ? 'mine' : 'theirs',
+        });
+      }
+      setDeclinedArchives(list);
+      setOpenArchive((open) => {
+        if (!open) return open;
+        return list.find((c) => c.archiveId === open.archiveId) ?? null;
+      });
+    } catch {
+      setDeclinedArchives([]);
+    }
+  }, [user]);
+
+  const loadPendingDeclined = useCallback(async () => {
+    if (!user) {
+      setPendingDeclined([]);
+      return;
+    }
+    try {
+      const notices = await fetchPendingDeclinedNotices();
+      if (notices.length === 0) {
+        setPendingDeclined([]);
+        return;
+      }
+      const ids = [...new Set(notices.map((n) => n.actorId))];
+      const [{ data: profiles }, { data: memberships }, { data: boosts }] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .in('id', ids)
+            .is('deletion_requested_at', null),
+          supabase
+            .from('memberships')
+            .select('user_id, is_founder, founder_number')
+            .in('user_id', ids),
+          supabase
+            .from('profile_boosts')
+            .select('user_id')
+            .in('user_id', ids)
+            .in('payment_status', ['paid', 'simulated'])
+            .gt('ends_at', new Date().toISOString()),
+        ]);
+
+      const founderMap = new Map<string, number | null>();
+      (memberships || []).forEach((m) => {
+        if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
+      });
+      const boostSet = new Set((boosts || []).map((b) => b.user_id));
+      const byId = new Map(
+        ((profiles || []) as Profile[]).map((p) => [p.id, p])
+      );
+
+      const list: PendingDeclinedCard[] = [];
+      for (const notice of notices) {
+        if (
+          isDeclinedHandled(user.id, notice.notificationId, notice.actorId)
+        ) {
+          continue;
+        }
+        const profile = byId.get(notice.actorId);
+        if (!profile) continue;
+        list.push({
+          notificationId: notice.notificationId,
+          declinedAt: notice.createdAt,
+          origin: notice.origin,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+        });
+      }
+      setPendingDeclined(list);
+      setOpenPendingDeclined((open) => {
+        if (!open) return open;
+        return (
+          list.find((c) => c.notificationId === open.notificationId) ?? null
+        );
+      });
+    } catch {
+      setPendingDeclined([]);
+    }
+  }, [user]);
+
+  const loadWaitArchives = useCallback(async () => {
+    if (!user) {
+      setWaitArchives([]);
+      return;
+    }
+    try {
+      const rows = listAllWaitArchives(user.id);
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(
+        [...new Set(rows.map((r) => r.actorId))]
+      );
+      const list: WaitArchiveCard[] = [];
+      for (const row of rows) {
+        const profile = byId.get(row.actorId);
+        if (!profile) continue;
+        list.push({
+          archiveId: `${row.source}-${row.actorId}`,
+          archivedAt: row.archivedAt,
+          receivedAt: row.receivedAt,
+          origin: row.origin,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+          source: row.source,
+          notificationId: row.notificationId,
+        });
+      }
+      setWaitArchives(list);
+      setOpenWaitArchive((open) => {
+        if (!open) return open;
+        return list.find((c) => c.archiveId === open.archiveId) ?? null;
+      });
+    } catch {
+      setWaitArchives([]);
+    }
+  }, [user]);
+
+  const loadPendingWaiting = useCallback(async () => {
+    if (!user) {
+      setPendingWaiting([]);
+      return;
+    }
+    try {
+      const notices = await fetchPendingWaitingNotices();
+      if (notices.length === 0) {
+        setPendingWaiting([]);
+        return;
+      }
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(
+        [...new Set(notices.map((n) => n.actorId))]
+      );
+      const list: PendingWaitingCard[] = [];
+      for (const notice of notices) {
+        const profile = byId.get(notice.actorId);
+        if (!profile) continue;
+        list.push({
+          notificationId: notice.notificationId,
+          receivedAt: notice.createdAt,
+          origin: notice.origin,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+        });
+      }
+      setPendingWaiting(list);
+      setOpenPendingWaiting((open) => {
+        if (!open) return open;
+        return (
+          list.find((c) => c.notificationId === open.notificationId) ?? null
+        );
+      });
+    } catch {
+      setPendingWaiting([]);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -477,17 +834,35 @@ export default function MatchesPage({
     (async () => {
       setLoading(true);
       setError(null);
-      await loadMatches();
+      await Promise.all([
+        loadMatches(),
+        loadDeclinedArchives(),
+        loadPendingDeclined(),
+        loadWaitArchives(),
+        loadPendingWaiting(),
+      ]);
       if (active) setLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, [loadMatches]);
+  }, [
+    loadMatches,
+    loadDeclinedArchives,
+    loadPendingDeclined,
+    loadWaitArchives,
+    loadPendingWaiting,
+  ]);
 
   useEffect(() => {
     const refreshInbox = () => {
-      if (document.visibilityState === 'visible') void loadMatches();
+      if (document.visibilityState === 'visible') {
+        void loadMatches();
+        void loadDeclinedArchives();
+        void loadPendingDeclined();
+        void loadWaitArchives();
+        void loadPendingWaiting();
+      }
     };
     window.addEventListener('focus', refreshInbox);
     document.addEventListener('visibilitychange', refreshInbox);
@@ -495,10 +870,20 @@ export default function MatchesPage({
       window.removeEventListener('focus', refreshInbox);
       document.removeEventListener('visibilitychange', refreshInbox);
     };
-  }, [loadMatches]);
+  }, [
+    loadMatches,
+    loadDeclinedArchives,
+    loadPendingDeclined,
+    loadWaitArchives,
+    loadPendingWaiting,
+  ]);
 
   useInboxReload(() => {
     void loadMatches();
+    void loadDeclinedArchives();
+    void loadPendingDeclined();
+    void loadWaitArchives();
+    void loadPendingWaiting();
     void unread.refresh();
   });
 
@@ -510,7 +895,9 @@ export default function MatchesPage({
       !focusActorId &&
       !focusHintName &&
       !resolvedCategory &&
-      !focusHighlight
+      !focusHighlight &&
+      !focusDeclined &&
+      !focusWaitingIncoming
     ) {
       return;
     }
@@ -520,6 +907,8 @@ export default function MatchesPage({
       highlight: focusHighlight,
       hintName: focusHintName,
       pulseCategory: resolvedCategory,
+      declined: focusDeclined,
+      waitingIncoming: focusWaitingIncoming,
     };
   }, [
     focusActorId,
@@ -528,6 +917,8 @@ export default function MatchesPage({
     focusHintName,
     focusPulseCategory,
     focusPulsePendingAll,
+    focusDeclined,
+    focusWaitingIncoming,
     focusKey,
   ]);
 
@@ -535,7 +926,97 @@ export default function MatchesPage({
     const pending = pendingFocusRef.current;
     if (!pending || loading) return;
 
-    if (pending.pulseCategory) {
+    if (pending.declined) {
+      const needle = (pending.hintName || '').trim().toLowerCase();
+      const pendingCard =
+        pendingDeclined.find((c) => c.profile.id === pending.actorId) ||
+        (needle
+          ? pendingDeclined.find(
+              (c) =>
+                c.profile.display_name.trim().toLowerCase() === needle ||
+                c.profile.display_name.trim().toLowerCase().includes(needle)
+            )
+          : undefined);
+      const archivedCard =
+        declinedArchives.find((c) => c.profile.id === pending.actorId) ||
+        (needle
+          ? declinedArchives.find(
+              (c) =>
+                c.profile.display_name.trim().toLowerCase() === needle ||
+                c.profile.display_name.trim().toLowerCase().includes(needle)
+            )
+          : undefined);
+      const card = pendingCard || archivedCard || pendingDeclined[0];
+      pendingFocusRef.current = null;
+      onFocusActorConsumed?.();
+      if (!card) return;
+      window.setTimeout(() => {
+        const elId =
+          'notificationId' in card
+            ? `match-card-declined-${card.notificationId}`
+            : `match-card-archive-${card.archiveId}`;
+        document
+          .getElementById(elId)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 60);
+      if ('notificationId' in card) setOpenPendingDeclined(card);
+      else setOpenArchive(card);
+      return;
+    }
+
+    const needle = (pending.hintName || '').trim().toLowerCase();
+    const findByHint = <
+      T extends { profile: { id: string; display_name: string } },
+    >(
+      list: T[]
+    ) =>
+      list.find((c) => c.profile.id === pending.actorId) ||
+      (needle
+        ? list.find(
+            (c) =>
+              c.profile.display_name.trim().toLowerCase() === needle ||
+              c.profile.display_name.trim().toLowerCase().includes(needle)
+          )
+        : undefined);
+
+    if (pending.waitingIncoming) {
+      const pendingCard = findByHint(pendingWaiting);
+      const archivedCard = findByHint(waitArchives);
+      const card = pendingCard || archivedCard;
+      pendingFocusRef.current = null;
+      onFocusActorConsumed?.();
+      if (!card) return;
+      window.setTimeout(() => {
+        const elId = pendingCard
+          ? `match-card-wait-pending-${pendingCard.notificationId}`
+          : `match-card-wait-archive-${archivedCard?.archiveId ?? ''}`;
+        document
+          .getElementById(elId)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 60);
+      if (pendingCard) setOpenPendingWaiting(pendingCard);
+      else setOpenWaitArchive(archivedCard!);
+      return;
+    }
+
+    if (pending.highlight) {
+      const archivedMine = findByHint(
+        waitArchives.filter((c) => c.source === 'mine')
+      );
+      if (archivedMine) {
+        pendingFocusRef.current = null;
+        onFocusActorConsumed?.();
+        window.setTimeout(() => {
+          document
+            .getElementById(`match-card-wait-archive-${archivedMine.archiveId}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 60);
+        setOpenWaitArchive(archivedMine);
+        return;
+      }
+    }
+
+    if (pending.pulseCategory && !pending.highlight) {
       pendingFocusRef.current = null;
       onFocusActorConsumed?.();
       // Exclusif : A remplace B et inversement
@@ -546,10 +1027,19 @@ export default function MatchesPage({
         const target =
           pending.pulseCategory === 'wait'
             ? matches.find((m) => m.waiting)
-            : matches.find(
-                (m) =>
-                  m.kind !== 'match' && !m.alreadyLiked && !m.waiting
-              );
+            : pending.pulseCategory === 'first'
+              ? matches.find((m) => {
+                  const isPending = m.kind !== 'match';
+                  const isMatched = !isPending || m.alreadyLiked;
+                  const hasDialogue =
+                    peersWithChat.has(m.profile.id) ||
+                    (unread.bySender[m.profile.id] || 0) > 0;
+                  return isMatched && !m.waiting && !hasDialogue;
+                })
+              : matches.find(
+                  (m) =>
+                    m.kind !== 'match' && !m.alreadyLiked && !m.waiting
+                );
         if (target) {
           document
             .getElementById(`match-card-${target.profile.id}`)
@@ -571,18 +1061,18 @@ export default function MatchesPage({
       if (byId && isActionablePending(byId)) {
         found = byId;
       } else if (pending.hintName) {
-        const needle = pending.hintName.toLowerCase();
+        const hint = pending.hintName.toLowerCase();
         found =
           waitingList.find(
-            (m) => m.profile.display_name.trim().toLowerCase() === needle
+            (m) => m.profile.display_name.trim().toLowerCase() === hint
           ) ||
           waitingList.find((m) =>
-            m.profile.display_name.trim().toLowerCase().includes(needle)
+            m.profile.display_name.trim().toLowerCase().includes(hint)
           ) ||
           matches.find(
             (m) =>
               isActionablePending(m) &&
-              m.profile.display_name.trim().toLowerCase() === needle
+              m.profile.display_name.trim().toLowerCase() === hint
           );
       } else if (waitingList.length === 1) {
         found = waitingList[0];
@@ -605,7 +1095,6 @@ export default function MatchesPage({
     }
 
     if (pending.highlight) {
-      // Rappel individuel : exclusif catégorie B, une seule carte
       setPulseCategory(null);
       setPulseSingleId(found.profile.id);
       window.setTimeout(() => {
@@ -629,6 +1118,12 @@ export default function MatchesPage({
     focusPulsePendingAll,
     focusKey,
     onFocusActorConsumed,
+    peersWithChat,
+    unread.bySender,
+    pendingDeclined,
+    declinedArchives,
+    pendingWaiting,
+    waitArchives,
   ]);
 
   const handleMatchBack = useCallback(
@@ -690,6 +1185,10 @@ export default function MatchesPage({
       try {
         await respondToInboxInterest(item.profile.id, decision, item.origin);
         if (decision === 'refuse') {
+          forgetWaitArchive(user.id, item.profile.id);
+          setWaitArchives((prev) =>
+            prev.filter((c) => c.profile.id !== item.profile.id)
+          );
           setMatches((prev) =>
             prev.filter((m) => m.profile.id !== item.profile.id)
           );
@@ -724,6 +1223,250 @@ export default function MatchesPage({
     [user, actingId, likesExhausted, loadMatches, handleMatchBack, markResolved]
   );
 
+  const handlePendingDeclined = useCallback(
+    async (card: PendingDeclinedCard, archive: boolean) => {
+      if (declinedBusyRef.current) return;
+      declinedBusyRef.current = true;
+      setDeclinedBusyId(card.notificationId);
+      setError(null);
+      if (user?.id) {
+        rememberDeclinedHandled(user.id, {
+          notificationId: card.notificationId,
+          actorId: card.profile.id,
+          archive,
+          origin: card.origin,
+          declinedAt: card.declinedAt,
+        });
+      }
+      setOpenPendingDeclined(null);
+      setPendingDeclined((prev) =>
+        prev.filter(
+          (c) =>
+            c.notificationId !== card.notificationId &&
+            c.profile.id !== card.profile.id
+        )
+      );
+      const tempArchiveId = `tmp-${card.notificationId}`;
+      if (archive) {
+        setDeclinedArchives((prev) => [
+          {
+            archiveId: tempArchiveId,
+            archivedAt: new Date().toISOString(),
+            declinedAt: card.declinedAt,
+            origin: card.origin,
+            profile: card.profile,
+            age: card.age,
+            is_founder: card.is_founder,
+            founder_number: card.founder_number,
+            is_boosted: card.is_boosted,
+          },
+          ...prev.filter((c) => c.profile.id !== card.profile.id),
+        ]);
+      }
+      try {
+        await dismissDeclinedNotification(
+          card.notificationId,
+          archive,
+          card.origin,
+          card.profile.id,
+          card.declinedAt
+        );
+        if (archive) await loadDeclinedArchives();
+      } catch (err) {
+        setError(
+          userErrorMessage(
+            err,
+            archive
+              ? 'Impossible d’archiver ce profil.'
+              : 'Impossible de supprimer cette notification.'
+          )
+        );
+        if (archive) await loadDeclinedArchives();
+      } finally {
+        declinedBusyRef.current = false;
+        setDeclinedBusyId(null);
+      }
+    },
+    [user, loadDeclinedArchives]
+  );
+
+  const handleArchiveWaiting = useCallback(
+    async (item: Match) => {
+      if (!user || actingId) return;
+      if (item.kind === 'match' || item.alreadyLiked) return;
+      rememberMineWaitArchive(user.id, {
+        actorId: item.profile.id,
+        origin: item.origin,
+        receivedAt: item.date_received,
+      });
+      setActingId(item.profile.id);
+      setError(null);
+      setOpenProfile(null);
+      setWaitArchives((prev) => [
+        {
+          archiveId: `mine-${item.profile.id}`,
+          archivedAt: new Date().toISOString(),
+          receivedAt: item.date_received,
+          origin: item.origin,
+          profile: item.profile,
+          age: item.age,
+          is_founder: item.is_founder,
+          founder_number: item.founder_number,
+          is_boosted: item.is_boosted,
+          source: 'mine',
+        },
+        ...prev.filter((c) => c.profile.id !== item.profile.id),
+      ]);
+      try {
+        await dismissWaitingNotification({
+          actorId: item.profile.id,
+          kinds: ['match_wait_reminder'],
+        });
+      } catch (err) {
+        setError(
+          userErrorMessage(err, 'Impossible d’archiver ce profil.')
+        );
+      } finally {
+        setActingId(null);
+      }
+    },
+    [user, actingId]
+  );
+
+  const handlePendingWaiting = useCallback(
+    async (card: PendingWaitingCard, archive: boolean) => {
+      if (!user || declinedBusyRef.current) return;
+      declinedBusyRef.current = true;
+      setDeclinedBusyId(card.notificationId);
+      setError(null);
+      setOpenPendingWaiting(null);
+      setPendingWaiting((prev) =>
+        prev.filter(
+          (c) =>
+            c.notificationId !== card.notificationId &&
+            c.profile.id !== card.profile.id
+        )
+      );
+      if (archive) {
+        rememberTheirsWaitArchive(user.id, {
+          actorId: card.profile.id,
+          origin: card.origin,
+          receivedAt: card.receivedAt,
+          notificationId: card.notificationId,
+        });
+        setWaitArchives((prev) => [
+          {
+            archiveId: `theirs-${card.profile.id}`,
+            archivedAt: new Date().toISOString(),
+            receivedAt: card.receivedAt,
+            origin: card.origin,
+            profile: card.profile,
+            age: card.age,
+            is_founder: card.is_founder,
+            founder_number: card.founder_number,
+            is_boosted: card.is_boosted,
+            source: 'theirs',
+            notificationId: card.notificationId,
+          },
+          ...prev.filter((c) => c.profile.id !== card.profile.id),
+        ]);
+      }
+      try {
+        await dismissWaitingNotification({
+          notificationId: card.notificationId,
+          actorId: card.profile.id,
+          kinds: ['match_waiting'],
+        });
+      } catch (err) {
+        setError(
+          userErrorMessage(
+            err,
+            archive
+              ? 'Impossible d’archiver ce profil.'
+              : 'Impossible de supprimer cette notification.'
+          )
+        );
+        await loadPendingWaiting();
+        await loadWaitArchives();
+      } finally {
+        declinedBusyRef.current = false;
+        setDeclinedBusyId(null);
+      }
+    },
+    [user, loadPendingWaiting, loadWaitArchives]
+  );
+
+  const handleDeleteWaitArchive = useCallback(
+    async (card: WaitArchiveCard) => {
+      if (!user || declinedBusyRef.current) return;
+      declinedBusyRef.current = true;
+      setDeclinedBusyId(card.archiveId);
+      setError(null);
+      setOpenWaitArchive((open) =>
+        open?.archiveId === card.archiveId ? null : open
+      );
+      setWaitArchives((prev) =>
+        prev.filter(
+          (c) =>
+            c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
+        )
+      );
+      forgetWaitArchive(user.id, card.profile.id);
+      try {
+        if (card.source === 'mine') {
+          setMatches((prev) =>
+            prev.filter((m) => m.profile.id !== card.profile.id)
+          );
+          markResolved(card.profile.id, 'refused');
+          await respondToInboxInterest(
+            card.profile.id,
+            'refuse',
+            card.origin
+          );
+        }
+      } catch (err) {
+        setError(
+          userErrorMessage(err, 'Impossible de supprimer cette archive.')
+        );
+        await loadWaitArchives();
+        await loadMatches();
+      } finally {
+        declinedBusyRef.current = false;
+        setDeclinedBusyId(null);
+      }
+    },
+    [user, markResolved, loadWaitArchives, loadMatches]
+  );
+
+  const handleDeleteArchived = useCallback(
+    async (card: DeclinedArchiveCard) => {
+      if (declinedBusyRef.current) return;
+      declinedBusyRef.current = true;
+      setDeclinedBusyId(card.archiveId);
+      setError(null);
+      setOpenArchive((open) =>
+        open?.archiveId === card.archiveId ? null : open
+      );
+      setDeclinedArchives((prev) =>
+        prev.filter(
+          (c) =>
+            c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
+        )
+      );
+      try {
+        await deleteDeclinedArchive(card.archiveId, card.profile.id);
+      } catch (err) {
+        setError(
+          userErrorMessage(err, 'Impossible de supprimer cette archive.')
+        );
+      } finally {
+        declinedBusyRef.current = false;
+        setDeclinedBusyId(null);
+      }
+    },
+    []
+  );
+
   const floors = useMemo(() => {
     const buckets: Record<MatchFloor, Match[]> = {
       new: [],
@@ -745,11 +1488,28 @@ export default function MatchesPage({
     }
     return {
       new: buckets.new.sort(sortByDateReceivedAsc),
-      wait: buckets.wait.sort(sortByDateReceivedAsc),
+      wait: buckets.wait
+        .filter(
+          (m) => !user || !isMineWaitArchived(user.id, m.profile.id)
+        )
+        .sort(sortByDateReceivedAsc),
       matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedAsc),
       matchedChat: buckets['matched-chat'].sort(sortByDateReceivedAsc),
     };
-  }, [matches, peersWithChat, unread.bySender]);
+  }, [matches, peersWithChat, unread.bySender, user, waitArchives]);
+
+  const visibleWaitArchives = useMemo(() => {
+    const matchedIds = new Set(
+      matches
+        .filter((m) => m.kind === 'match' || m.alreadyLiked)
+        .map((m) => m.profile.id)
+    );
+    return waitArchives
+      .filter((card) => !matchedIds.has(card.profile.id))
+      .sort(
+        (a, b) => Date.parse(b.archivedAt) - Date.parse(a.archivedAt)
+      );
+  }, [waitArchives, matches]);
 
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
@@ -778,7 +1538,6 @@ export default function MatchesPage({
     const isFlash = match.origin === 'flash';
     const isMatched = !isPending || match.alreadyLiked;
     const unreadCount = unread.bySender[match.profile.id] || 0;
-    const showChatButton = !isPending || unreadCount > 0;
     const hasDialogue =
       peersWithChat.has(match.profile.id) || unreadCount > 0;
     const matchDateIso =
@@ -795,10 +1554,14 @@ export default function MatchesPage({
 
     const receivedLabel = formatInteractionDate(match.date_received);
     const isToStudy = isPending && !match.waiting && !match.alreadyLiked;
+    const isQuietMatch = isMatched && !hasDialogue && !match.waiting;
     const shouldPulse = match.waiting
       ? pulseCategory === 'wait' || pulseSingleId === match.profile.id
       : isToStudy &&
-        (pulseCategory === 'new' || pulseSingleId === match.profile.id);
+        (pulseCategory === 'new' || pulseSingleId === match.profile.id)
+        ? true
+        : isQuietMatch &&
+          (pulseCategory === 'first' || pulseSingleId === match.profile.id);
 
     const cardTone = (() => {
       if (match.waiting) {
@@ -807,8 +1570,9 @@ export default function MatchesPage({
           : 'match-card-wait';
       }
       if (isMatched) {
-        return hasDialogue
-          ? 'match-card-matched-chat'
+        if (hasDialogue) return 'match-card-matched-chat';
+        return shouldPulse
+          ? 'match-card-matched-quiet match-card-attention-pulse'
           : 'match-card-matched-quiet';
       }
       return shouldPulse
@@ -834,7 +1598,7 @@ export default function MatchesPage({
         <button
           type="button"
           onClick={() => setOpenProfile(match)}
-          className="relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
           aria-label={`Voir le profil de ${match.profile.display_name}`}
         >
           {match.profile.photo_url ? (
@@ -904,8 +1668,8 @@ export default function MatchesPage({
           )}
         </div>
 
-        {isPending && match.waiting ? (
-          <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5">
+        {isPending && !match.alreadyLiked ? (
+          <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
             <MatcherButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
@@ -914,36 +1678,33 @@ export default function MatchesPage({
               tooltip="top"
               onClick={() => void handleMatchBack(match)}
             />
+            {isToStudy ? (
+              <WaitButton
+                name={match.profile.display_name}
+                busy={actingId === match.profile.id}
+                tooltip="top"
+                onClick={() => void handleInboxDecision(match, 'wait')}
+              />
+            ) : null}
             <RefuseButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
               tooltip="top"
-              onClick={() => void handleInboxDecision(match, 'refuse')}
+              onClick={() => {
+                if (match.waiting) {
+                  setOpenProfile(match);
+                  return;
+                }
+                void handleInboxDecision(match, 'refuse');
+              }}
             />
           </div>
-        ) : isPending && !showChatButton ? (
-          <MatcherButton
-            name={match.profile.display_name}
-            busy={actingId === match.profile.id}
-            disabled={likesExhausted}
-            matched={match.alreadyLiked}
-            onClick={() => void handleMatchBack(match)}
-          />
         ) : (
-          <button
-            type="button"
+          <ChatBubbleButton
+            name={match.profile.display_name}
+            unreadCount={unreadCount}
             onClick={() => setChatPeer(match.profile)}
-            className="relative w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center hover:bg-rose-100 transition-colors flex-shrink-0"
-            aria-label={`Envoyer un message à ${match.profile.display_name}`}
-            title="Ouvrir la messagerie"
-          >
-            <MessageCircle className="w-5 h-5 text-rose-500" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[1.05rem] h-[1.05rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
+          />
         )}
       </div>
     );
@@ -968,6 +1729,336 @@ export default function MatchesPage({
     );
   };
 
+  const renderWaitArchiveCard = (card: WaitArchiveCard) => {
+    const isFlash = card.origin === 'flash';
+    const theirs = card.source === 'theirs';
+    return (
+      <div
+        id={`match-card-wait-archive-${card.archiveId}`}
+        key={card.archiveId}
+        data-match-state="wait-archive"
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
+          theirs ? 'match-card-wait-theirs' : 'match-card-wait'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setOpenWaitArchive(card)}
+          className={`match-card-photo relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 ${
+            theirs
+              ? 'bg-gradient-to-br from-amber-50 to-yellow-50'
+              : 'bg-gradient-to-br from-amber-100 to-yellow-100'
+          }`}
+          aria-label={`Voir le profil de ${card.profile.display_name}`}
+        >
+          {card.profile.photo_url ? (
+            <img
+              src={card.profile.photo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className={`w-full h-full flex items-center justify-center text-lg font-bold ${
+                theirs ? 'text-amber-600/50' : 'text-amber-700/70'
+              }`}
+            >
+              {card.profile.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isFlash ? (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3
+              className={`font-semibold truncate ${
+                theirs ? 'text-amber-950/90' : 'text-amber-950'
+              }`}
+            >
+              {card.profile.display_name}
+            </h3>
+            <span
+              className={`text-sm ${
+                theirs ? 'text-amber-900/50' : 'text-amber-900/60'
+              }`}
+            >
+              {card.age} ans
+            </span>
+            {card.is_boosted && <BoostedBadge size="sm" />}
+            {card.is_founder && (
+              <FounderBadge number={card.founder_number} size="sm" />
+            )}
+          </div>
+          {card.profile.location && (
+            <p
+              className={`text-xs flex items-center gap-1 mt-0.5 ${
+                theirs ? 'text-amber-900/55' : 'text-amber-900/70'
+              }`}
+            >
+              <MapPin className="w-3 h-3" />
+              {card.profile.location}
+            </p>
+          )}
+          <p
+            className={`text-xs mt-1 ${
+              theirs ? 'text-amber-950/70' : 'text-amber-950/80'
+            }`}
+          >
+            {waitArchiveStatusLabel(
+              card.origin,
+              card.archivedAt,
+              card.source
+            )}
+          </p>
+        </div>
+
+        <RefuseButton
+          name={card.profile.display_name}
+          busy={declinedBusyId === card.archiveId}
+          onClick={() => void handleDeleteWaitArchive(card)}
+        />
+      </div>
+    );
+  };
+
+  const renderWaitFloor = () => {
+    const mineActive = floors.wait;
+    const mineArchived = visibleWaitArchives.filter((c) => c.source === 'mine');
+    const theirsArchived = visibleWaitArchives.filter(
+      (c) => c.source === 'theirs'
+    );
+    const mineCount = mineActive.length + mineArchived.length;
+    if (mineCount === 0 && theirsArchived.length === 0) return null;
+    return (
+      <section className="space-y-2" aria-label="Mis en attente">
+        {mineCount > 0 ? (
+          <>
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <ColorChip label="Mis en attente par toi" tone="wait" />
+              <span className="text-gray-400 font-normal">({mineCount})</span>
+            </h3>
+            {mineActive.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {mineActive.map((m) => renderMatchCard(m))}
+              </div>
+            ) : null}
+            {mineArchived.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {mineArchived.map((card) => renderWaitArchiveCard(card))}
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        {theirsArchived.length > 0 ? (
+          <div
+            className={mineCount > 0 ? 'match-wait-split space-y-2' : 'space-y-2'}
+          >
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <span className="match-intro-chip match-chip-wait-theirs">
+                Mis en attente par l&apos;autre
+              </span>
+              <span className="text-gray-400 font-normal">
+                ({theirsArchived.length})
+              </span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {theirsArchived.map((card) => renderWaitArchiveCard(card))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    );
+  };
+
+  const renderPendingDeclinedCard = (card: PendingDeclinedCard) => {
+    const isFlash = card.origin === 'flash';
+    return (
+      <button
+        type="button"
+        id={`match-card-declined-${card.notificationId}`}
+        key={card.notificationId}
+        data-match-state="declined-pending"
+        onClick={() => setOpenPendingDeclined(card)}
+        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined w-full text-left cursor-pointer hover:shadow-md"
+        aria-label={`Voir le profil de ${card.profile.display_name}`}
+      >
+        <span className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0">
+          {card.profile.photo_url ? (
+            <img
+              src={card.profile.photo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400">
+              {card.profile.display_name.charAt(0).toUpperCase()}
+            </span>
+          )}
+          {isFlash ? (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+        </span>
+
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-purple-950 truncate">
+              {card.profile.display_name}
+            </span>
+            <span className="text-sm text-purple-800/60">{card.age} ans</span>
+            {card.is_boosted && <BoostedBadge size="sm" />}
+            {card.is_founder && (
+              <FounderBadge number={card.founder_number} size="sm" />
+            )}
+          </span>
+          {card.profile.location && (
+            <span className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3" />
+              {card.profile.location}
+            </span>
+          )}
+          <span className="block text-xs text-purple-900/80 mt-1">
+            {declinedArchiveStatusLabel(card.origin, card.declinedAt)}
+          </span>
+        </span>
+      </button>
+    );
+  };
+
+  const renderPendingDeclinedFloor = () => {
+    if (pendingDeclined.length === 0) return null;
+    return (
+      <section className="space-y-2" aria-label="Pas cette fois">
+        <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+          <span className="match-intro-chip match-chip-declined">
+            Pas cette fois
+          </span>
+          <span className="text-gray-400 font-normal">
+            ({pendingDeclined.length})
+          </span>
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {pendingDeclined.map((card) => renderPendingDeclinedCard(card))}
+        </div>
+      </section>
+    );
+  };
+
+  const renderDeclinedArchiveCard = (card: DeclinedArchiveCard) => {
+    const isFlash = card.origin === 'flash';
+    return (
+      <div
+        id={`match-card-archive-${card.archiveId}`}
+        key={card.archiveId}
+        data-match-state="declined-archive"
+        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined"
+      >
+        <button
+          type="button"
+          onClick={() => setOpenArchive(card)}
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0"
+          aria-label={`Voir le profil de ${card.profile.display_name}`}
+        >
+          {card.profile.photo_url ? (
+            <img
+              src={card.profile.photo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400">
+              {card.profile.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isFlash ? (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-purple-950 truncate">
+              {card.profile.display_name}
+            </h3>
+            <span className="text-sm text-purple-800/60">{card.age} ans</span>
+            {card.is_boosted && <BoostedBadge size="sm" />}
+            {card.is_founder && (
+              <FounderBadge number={card.founder_number} size="sm" />
+            )}
+          </div>
+          {card.profile.location && (
+            <p className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3" />
+              {card.profile.location}
+            </p>
+          )}
+          <p className="text-xs text-purple-900/80 mt-1">
+            {declinedArchiveStatusLabel(
+              card.origin,
+              card.declinedAt,
+              card.source
+            )}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          disabled={declinedBusyId === card.archiveId}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleDeleteArchived(card);
+          }}
+          className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 flex items-center justify-center flex-shrink-0 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 disabled:opacity-40 cursor-pointer"
+          title="Supprimer"
+          aria-label={`Supprimer ${card.profile.display_name} des archives`}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
+
+  const renderDeclinedArchiveFloor = () => {
+    if (declinedArchives.length === 0) return null;
+    return (
+      <section className="space-y-2" aria-label="Pas cette fois — archives">
+        <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+          <span className="match-intro-chip match-chip-declined">
+            Pas cette fois — archives
+          </span>
+          <span className="text-gray-400 font-normal">
+            ({declinedArchives.length})
+          </span>
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {declinedArchives.map((card) => renderDeclinedArchiveCard(card))}
+        </div>
+      </section>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -979,7 +2070,7 @@ export default function MatchesPage({
     );
   }
 
-  if (error && matches.length === 0) {
+  if (error && matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
@@ -990,7 +2081,7 @@ export default function MatchesPage({
     );
   }
 
-  if (matches.length === 0) {
+  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -1057,18 +2148,15 @@ export default function MatchesPage({
       </h2>
       <p className="text-sm text-gray-600 mb-5 leading-relaxed">
         Tu trouveras sur cette page tous les profils qui t&apos;ont adressé un{' '}
-        <ColorChip label="Like ou Flash — à statuer" tone="new" />. Tu pourras
+        <ColorChip label="like ou flash — à étudier" tone="new" />. Tu pourras
         soit les refuser (pour qu&apos;ils disparaissent de cette page), soit
         les{' '}
         <ColorChip label="mettre en attente" tone="wait" /> (pour les étudier
         plus tard), soit les matcher pour voir ainsi ces profils passer à
         l&apos;étape des matchs. Tous tes matchs seront ensuite soit classés{' '}
-        <ColorChip
-          label="en attente de conversation"
-          tone="matched-quiet"
-        />
+        <ColorChip label="1er mot" tone="matched-quiet" />
         , soit classés{' '}
-        <ColorChip label="en cours de dialogue" tone="matched-chat" />{' '}
+        <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
         lorsqu&apos;il y aura eu au moins un échange.
       </p>
 
@@ -1079,20 +2167,22 @@ export default function MatchesPage({
         </div>
       )}
 
-      {/* Étages du haut vers le bas : dialogue → match quiet → attente → à statuer */}
+      {/* Étages du haut vers le bas : dialogue → match quiet → attente → à étudier */}
       <div className="space-y-6">
         {renderFloor(
           'matched-chat',
-          'Dialogue en cours',
+          'Discussion en cours',
           floors.matchedChat
         )}
         {renderFloor(
           'matched-quiet',
-          'Match — en attente de conversation',
+          '1er mot',
           floors.matchedQuiet
         )}
-        {renderFloor('wait', 'Mis en attente', floors.wait)}
-        {renderFloor('new', 'Like / Flash à statuer', floors.new)}
+        {renderWaitFloor()}
+        {renderFloor('new', 'Like / Flash à étudier', floors.new)}
+        {renderPendingDeclinedFloor()}
+        {renderDeclinedArchiveFloor()}
       </div>
 
       {openProfile && (
@@ -1145,6 +2235,16 @@ export default function MatchesPage({
               ? (decision) => void handleInboxDecision(openProfile, decision)
               : undefined
           }
+          onWaitingArchive={
+            openProfile.waiting
+              ? () => void handleArchiveWaiting(openProfile)
+              : undefined
+          }
+          onWaitingDiscard={
+            openProfile.waiting
+              ? () => void handleInboxDecision(openProfile, 'refuse')
+              : undefined
+          }
           onOpenChat={
             openProfile.kind === 'match' ||
             openProfile.alreadyLiked ||
@@ -1155,6 +2255,173 @@ export default function MatchesPage({
                 }
               : undefined
           }
+        />
+      )}
+
+      {openArchive && (
+        <ProfileDetailModal
+          candidate={{
+            id: openArchive.profile.id,
+            display_name: openArchive.profile.display_name,
+            photo_url: openArchive.profile.photo_url,
+            age: openArchive.age,
+            bio: openArchive.profile.bio,
+            location: openArchive.profile.location,
+            interests: openArchive.profile.interests,
+            is_boosted: openArchive.is_boosted,
+            is_founder: openArchive.is_founder,
+            founder_number: openArchive.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
+          busy={false}
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openArchive.origin,
+            originLabel: originHistoryLabel(
+              openArchive.origin,
+              openArchive.declinedAt
+            ),
+            waiting: false,
+            refused: false,
+            declinedByThem: true,
+            declinedByThemLabel: declinedArchiveStatusLabel(
+              openArchive.origin,
+              openArchive.declinedAt,
+              openArchive.source
+            ),
+            viewerGender: myGender,
+          }}
+          onClose={() => setOpenArchive(null)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenArchive(null)}
+        />
+      )}
+
+      {openPendingDeclined && (
+        <ProfileDetailModal
+          candidate={{
+            id: openPendingDeclined.profile.id,
+            display_name: openPendingDeclined.profile.display_name,
+            photo_url: openPendingDeclined.profile.photo_url,
+            age: openPendingDeclined.age,
+            bio: openPendingDeclined.profile.bio,
+            location: openPendingDeclined.profile.location,
+            interests: openPendingDeclined.profile.interests,
+            is_boosted: openPendingDeclined.is_boosted,
+            is_founder: openPendingDeclined.is_founder,
+            founder_number: openPendingDeclined.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
+          busy={declinedBusyId === openPendingDeclined.notificationId}
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openPendingDeclined.origin,
+            originLabel: originHistoryLabel(
+              openPendingDeclined.origin,
+              openPendingDeclined.declinedAt
+            ),
+            waiting: false,
+            refused: false,
+            declinedByThem: true,
+            declinedByThemLabel: declinedArchiveStatusLabel(
+              openPendingDeclined.origin,
+              openPendingDeclined.declinedAt
+            ),
+            viewerGender: myGender,
+          }}
+          onClose={() => setOpenPendingDeclined(null)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenPendingDeclined(null)}
+          onDeclinedArchive={() =>
+            void handlePendingDeclined(openPendingDeclined, true)
+          }
+          onDeclinedDelete={() =>
+            void handlePendingDeclined(openPendingDeclined, false)
+          }
+        />
+      )}
+
+      {openPendingWaiting && (
+        <ProfileDetailModal
+          candidate={{
+            id: openPendingWaiting.profile.id,
+            display_name: openPendingWaiting.profile.display_name,
+            photo_url: openPendingWaiting.profile.photo_url,
+            age: openPendingWaiting.age,
+            bio: openPendingWaiting.profile.bio,
+            location: openPendingWaiting.profile.location,
+            interests: openPendingWaiting.profile.interests,
+            is_boosted: openPendingWaiting.is_boosted,
+            is_founder: openPendingWaiting.is_founder,
+            founder_number: openPendingWaiting.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
+          busy={declinedBusyId === openPendingWaiting.notificationId}
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openPendingWaiting.origin,
+            originLabel: originHistoryLabel(
+              openPendingWaiting.origin,
+              openPendingWaiting.receivedAt
+            ),
+            waitingIncoming: true,
+            refused: false,
+            viewerGender: myGender,
+          }}
+          onClose={() => setOpenPendingWaiting(null)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenPendingWaiting(null)}
+          onWaitingArchive={() =>
+            void handlePendingWaiting(openPendingWaiting, true)
+          }
+          onWaitingDiscard={() =>
+            void handlePendingWaiting(openPendingWaiting, false)
+          }
+        />
+      )}
+
+      {openWaitArchive && (
+        <ProfileDetailModal
+          candidate={{
+            id: openWaitArchive.profile.id,
+            display_name: openWaitArchive.profile.display_name,
+            photo_url: openWaitArchive.profile.photo_url,
+            age: openWaitArchive.age,
+            bio: openWaitArchive.profile.bio,
+            location: openWaitArchive.profile.location,
+            interests: openWaitArchive.profile.interests,
+            is_boosted: openWaitArchive.is_boosted,
+            is_founder: openWaitArchive.is_founder,
+            founder_number: openWaitArchive.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
+          busy={declinedBusyId === openWaitArchive.archiveId}
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openWaitArchive.origin,
+            originLabel: waitArchiveStatusLabel(
+              openWaitArchive.origin,
+              openWaitArchive.archivedAt,
+              openWaitArchive.source
+            ),
+            refused: false,
+            viewerGender: myGender,
+          }}
+          onClose={() => setOpenWaitArchive(null)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenWaitArchive(null)}
         />
       )}
     </div>

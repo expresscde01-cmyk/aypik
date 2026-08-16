@@ -106,11 +106,185 @@ body {
   animation: stamp-ink-appear 0.38s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
 }
 
-.matcher-m-zoom {
-  width: 2.5rem;
-  height: 2.5rem;
-  transform-origin: center center;
-  transition: transform 0.2s ease;
+/* Zoom tampon hero : transform uniquement (aucun reflow des voisins). */
+.hero-stamp-zoom {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1);
+  transform-origin: 50% 50%;
+  transition: transform 300ms ease-in-out;
+  will-change: transform;
+  touch-action: manipulation;
+}
+
+.hero-headline-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-headline {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+}
+
+.hero-childfree-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.85rem;
+  padding-block: 0.25rem;
+}
+
+.hero-childfree-line {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  gap: 0.95rem;
+}
+
+.hero-childfree-bracket {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex: 0 0 1.2rem;
+  width: 1.2rem;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  font-weight: 800;
+  font-size: 3.35rem;
+  line-height: 0.7;
+  color: #0f172a;
+  -webkit-text-stroke: 0.55px currentColor;
+}
+
+.hero-childfree-bracket--open {
+  justify-content: flex-end;
+}
+
+.hero-childfree-bracket--close {
+  justify-content: flex-start;
+}
+
+.hero-childfree-phrase {
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-weight: 300;
+  font-size: clamp(0.66rem, 2.05vw, 0.82rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #1e293b;
+}
+
+.hero-loupe {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: visible;
+  margin: -0.9rem 0;
+  padding: 0.9rem 0.2rem;
+  cursor: zoom-in;
+  touch-action: none;
+}
+
+.hero-loupe.is-on {
+  cursor: none;
+}
+
+.hero-loupe-lens {
+  position: absolute;
+  z-index: 2;
+  width: 128px;
+  height: 128px;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff8f5;
+  box-shadow:
+    0 0 0 1.5px rgba(15, 23, 42, 0.18),
+    0 10px 24px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 280ms ease-in-out;
+}
+
+.hero-loupe.is-on .hero-loupe-lens {
+  opacity: 1;
+}
+
+.hero-loupe-falloff {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  -webkit-mask-image: radial-gradient(
+    circle,
+    #000 46%,
+    rgba(0, 0, 0, 0.65) 62%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    circle,
+    #000 46%,
+    rgba(0, 0, 0, 0.65) 62%,
+    transparent 78%
+  );
+}
+
+.hero-loupe-clone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  transform-origin: 0 0;
+}
+
+@media (min-width: 640px) {
+  .hero-childfree-line {
+    gap: 1.15rem;
+  }
+
+  .hero-childfree-bracket {
+    flex-basis: 1.35rem;
+    width: 1.35rem;
+    font-size: 3.85rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-stamp-zoom:hover,
+  .hero-stamp-zoom:focus-visible {
+    transform: scale(1.08);
+  }
+}
+
+.hero-stamp-zoom:active,
+.hero-stamp-zoom.is-pressed {
+  transform: scale(1.08);
 }
 
 button.group:disabled,
@@ -119,40 +293,191 @@ button.group[data-matched='true'] {
   cursor: default;
 }
 
-.group:hover .matcher-m-zoom,
-.group:focus-visible .matcher-m-zoom {
-  transform: scale(1.15);
+.matcher-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.06em;
+  line-height: 1;
 }
 
-.group:disabled .matcher-m-zoom,
-.group[disabled] .matcher-m-zoom,
-.group[data-matched='true'] .matcher-m-zoom,
-.group[data-matched='true']:hover .matcher-m-zoom,
-.group[data-matched='true']:focus-visible .matcher-m-zoom {
-  transform: none;
+.matcher-crown-mark {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.14em;
 }
 
-.matcher-m-glyph {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  filter:
-    drop-shadow(0 0 4px rgba(233, 67, 117, 0.4))
-    drop-shadow(0 0 8px rgba(30, 136, 229, 0.28));
+.matcher-crown-wrap {
+  overflow: visible;
 }
 
-@keyframes matcher-sparkle {
+.matcher-sparks {
+  position: absolute;
+  inset: -12px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.matcher-sparkle {
+  position: absolute;
+  clip-path: polygon(
+    50% 0%,
+    62% 38%,
+    100% 50%,
+    62% 62%,
+    50% 100%,
+    38% 62%,
+    0% 50%,
+    38% 38%
+  );
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.35);
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s ease;
+}
+
+.matcher-sparkle--pink {
+  background: #e91e63;
+}
+
+.matcher-sparkle--gold {
+  background: #e8c04a;
+}
+
+.matcher-sparkle--white {
+  background: #ffffff;
+}
+
+.matcher-btn:hover:not(:disabled):not([data-matched='true']) .matcher-sparkle,
+.matcher-btn:focus-visible:not(:disabled):not([data-matched='true']) .matcher-sparkle {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: matcher-sparkle-twinkle 1.1s ease-in-out infinite;
+}
+
+@keyframes matcher-sparkle-twinkle {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(0.55);
   }
   50% {
-    opacity: 0.95;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
   }
 }
 
-.matcher-spark {
-  animation: matcher-sparkle 2.6s ease-in-out infinite;
+.chat-bubble-disk {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #fff1f2;
+  color: #f43f5e;
+}
+
+.chat-bubble-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+}
+
+.chat-bubble-outline {
+  stroke-width: 1.75;
+}
+
+.chat-typing-dot {
+  opacity: 0;
+}
+
+.chat-bubble-btn:hover .chat-typing-dot--1,
+.chat-bubble-btn:focus-visible .chat-typing-dot--1 {
+  animation: chat-typing-dot-1 1.35s ease-in-out infinite;
+}
+
+.chat-bubble-btn:hover .chat-typing-dot--2,
+.chat-bubble-btn:focus-visible .chat-typing-dot--2 {
+  animation: chat-typing-dot-2 1.35s ease-in-out infinite;
+}
+
+.chat-bubble-btn:hover .chat-typing-dot--3,
+.chat-bubble-btn:focus-visible .chat-typing-dot--3 {
+  animation: chat-typing-dot-3 1.35s ease-in-out infinite;
+}
+
+@keyframes chat-typing-dot-1 {
+  0%,
+  8% {
+    opacity: 0;
+  }
+  16%,
+  70% {
+    opacity: 0.9;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes chat-typing-dot-2 {
+  0%,
+  22% {
+    opacity: 0;
+  }
+  30%,
+  70% {
+    opacity: 0.9;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes chat-typing-dot-3 {
+  0%,
+  36% {
+    opacity: 0;
+  }
+  44%,
+  70% {
+    opacity: 0.9;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.wait-hourglass {
+  transform-origin: center;
+  transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.2, 1);
+}
+
+.group:hover:not(:disabled) .wait-hourglass,
+.group:focus-visible:not(:disabled) .wait-hourglass {
+  transform: rotate(180deg);
+}
+
+.refuse-trash {
+  overflow: visible;
+  transition: color 0.2s ease;
+}
+
+.refuse-trash-lid {
+  transform-box: fill-box;
+  transform-origin: 0% 90%;
+  transition: transform 0.32s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.group:hover:not(:disabled) .refuse-trash-lid,
+.group:focus-visible:not(:disabled) .refuse-trash-lid {
+  transform: rotate(-28deg);
 }
 
 .message-bubble {
@@ -248,7 +573,23 @@ button.group[data-matched='true'] {
 
 /* ——— Mes Matchs : 4 états de carte ——— */
 
-/* État 1 — Nouveau Flash / Like (à statuer) — marron chaleureux */
+.match-card-photo {
+  cursor: pointer;
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.match-card-photo:hover,
+.match-card-photo:focus-visible {
+  z-index: 1;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+/* État 1 — Nouveau Flash / Like (à étudier) — marron chaleureux */
 .match-card-new {
   background-color: #e8c4a8;
   border: 1px solid #c4a482;
@@ -357,6 +698,25 @@ button.group[data-matched='true'] {
   border: 1px solid #ffb300;
 }
 
+/* Archives « mis en attente par l’autre » — même or, un ton plus clair */
+.match-card-wait-theirs {
+  background-color: #ffecb3;
+  border: 1.5px solid #ffd54f;
+  box-shadow: 0 1px 2px rgba(255, 160, 0, 0.1);
+}
+
+.match-chip-wait-theirs {
+  background-color: #ffecb3;
+  color: #7a4f00;
+  border: 1px solid #ffd54f;
+}
+
+.match-wait-split {
+  border-top: 1px solid #cfd2d6;
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+}
+
 .match-chip-matched-quiet {
   background-color: #e8f5e9;
   color: #1b5e20;
@@ -368,6 +728,19 @@ button.group[data-matched='true'] {
   color: #374151;
   border: 1px solid #d1d5db;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* Archives « Pas cette fois » (refus subi) — même mauve poudré que la notif */
+.match-card-declined {
+  background-color: rgba(243, 229, 245, 0.7);
+  border: 1px solid #ce93d8;
+  box-shadow: 0 1px 2px rgba(123, 31, 162, 0.08);
+}
+
+.match-chip-declined {
+  background-color: rgba(243, 229, 245, 0.7);
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
 }
 
 /* ——— Cloche : tons par étape ——— */
@@ -391,6 +764,18 @@ button.group[data-matched='true'] {
 }
 .notif-tone-wait .notif-dot {
   background-color: #ff8f00;
+}
+
+/* Attente subie (un tiers a mis notre Like/Flash de côté) — jaune plus pâle */
+.notif-tone-wait-other {
+  background-color: rgba(255, 249, 196, 0.72);
+  border-bottom-color: #fdd835;
+}
+.notif-tone-wait-other:hover {
+  background-color: rgba(255, 249, 196, 0.95);
+}
+.notif-tone-wait-other .notif-dot {
+  background-color: #f9a825;
 }
 
 .notif-tone-match {
@@ -458,29 +843,8 @@ button.group[data-matched='true'] {
   box-shadow: inset 0 1px 0 rgba(17, 24, 39, 0.06);
 }
 
-.notif-block-priority {
-  box-shadow:
-    inset 3px 0 0 currentColor,
-    0 1px 0 rgba(17, 24, 39, 0.04);
-}
-
-.notif-block-priority.notif-block-chat {
-  color: #f43f5e;
-}
-.notif-block-priority.notif-block-match {
-  color: #43a047;
-}
-.notif-block-priority.notif-block-wait {
-  color: #ff8f00;
-}
-.notif-block-priority.notif-block-new {
-  color: #a1887f;
-}
-.notif-block-priority.notif-block-declined {
-  color: #8e24aa;
-}
-
-.notif-block li:last-child > button {
+.notif-block li:last-child > button,
+.notif-block li:last-child > div {
   border-bottom-width: 0;
 }
 
@@ -589,14 +953,21 @@ button.group[data-matched='true'] {
     transform: none;
   }
 
-  .matcher-spark {
-    animation: none;
-    opacity: 0.7;
+  .hero-stamp-zoom,
+  .hero-stamp-zoom:hover,
+  .hero-stamp-zoom:focus-visible,
+  .hero-stamp-zoom:active,
+  .hero-stamp-zoom.is-pressed {
+    transition: none;
+    transform: none;
   }
 
-  .group:hover .matcher-m-zoom,
-  .group:focus-visible .matcher-m-zoom {
+  .match-card-photo,
+  .match-card-photo:hover,
+  .match-card-photo:focus-visible {
+    transition: none;
     transform: none;
+    box-shadow: none;
   }
 
   .bell-ring,
@@ -605,5 +976,34 @@ button.group[data-matched='true'] {
   .match-card-wait-pulse,
   .match-card-attention-pulse {
     animation: none;
+  }
+
+  .matcher-sparkle,
+  .matcher-btn:hover:not(:disabled):not([data-matched='true']) .matcher-sparkle,
+  .matcher-btn:focus-visible:not(:disabled):not([data-matched='true']) .matcher-sparkle {
+    animation: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+
+  .wait-hourglass,
+  .group:hover:not(:disabled) .wait-hourglass,
+  .group:focus-visible:not(:disabled) .wait-hourglass,
+  .refuse-trash-lid,
+  .group:hover:not(:disabled) .refuse-trash-lid,
+  .group:focus-visible:not(:disabled) .refuse-trash-lid {
+    transition: none;
+    transform: none;
+  }
+
+  .chat-typing-dot,
+  .chat-bubble-btn:hover .chat-typing-dot--1,
+  .chat-bubble-btn:focus-visible .chat-typing-dot--1,
+  .chat-bubble-btn:hover .chat-typing-dot--2,
+  .chat-bubble-btn:focus-visible .chat-typing-dot--2,
+  .chat-bubble-btn:hover .chat-typing-dot--3,
+  .chat-bubble-btn:focus-visible .chat-typing-dot--3 {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -21,7 +21,11 @@ import {
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
+import TestimonialForm from '@/components/testimonials/TestimonialForm';
+import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import { ContactLink, LegalLink } from '@/components/LegalTerms';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { isPaidPremiumActive } from '@/lib/membership';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import {
   CITY_SELECTION_REQUIRED_ERROR,
@@ -118,6 +122,7 @@ export default function ProfileSetup({
   const [profileExists, setProfileExists] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const preferencesRef = useRef<HTMLDivElement>(null);
+  const testimonialRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -181,11 +186,16 @@ export default function ProfileSetup({
   useEffect(() => {
     if (loading) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('open') !== 'preferences') return;
+    const open = params.get('open');
+    if (open !== 'preferences' && open !== 'temoignage') return;
 
-    setPrefsHint(true);
+    if (open === 'preferences') setPrefsHint(true);
     const t = window.setTimeout(() => {
-      preferencesRef.current?.scrollIntoView({
+      const target =
+        open === 'temoignage'
+          ? testimonialRef.current
+          : preferencesRef.current;
+      target?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
@@ -495,6 +505,13 @@ export default function ProfileSetup({
             onClaimFreemium={() => void handleClaimOffer('free')}
           />
         </div>
+
+        {!isSignup && !SITE_FREE_MODE && isPaidPremiumActive(status) && (
+          <div ref={testimonialRef} className="mb-6 space-y-4">
+            <TestimonialsSection variant="app" />
+            <TestimonialForm status={status} />
+          </div>
+        )}
 
         {error && isSignup && !canEditProfile && (
           <div className="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">

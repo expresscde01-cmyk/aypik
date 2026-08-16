@@ -1,6 +1,8 @@
+import { useState, useRef, type PointerEvent } from 'react';
 import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalTerms';
+import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
   FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
   FOUNDER_BENEFIT_NO_CARD,
@@ -73,102 +75,90 @@ const OFFERS = SITE_FREE_MODE ? [FOUNDER_OFFER] : [FOUNDER_OFFER, ...PAID_OFFERS
 const HERO_CHILD_FREE_PHRASE =
   'Réservé exclusivement aux personnes sans enfants';
 
+const HERO_LOUPE_SIZE = 128;
+const HERO_LOUPE_MAG = 2.7;
+
 const HERO_TITLE_GRADIENT =
   'linear-gradient(to right, #F9C8D0, #E94375, #D32F2F, #1E88E5, #0D47A1)';
 
-/** Phrase droite, typo tampon, liseret arrondi, taches discrètes. */
+/** Phrase entre grands crochets, comme sur le visuel d’accueil. */
 function HeroChildFreeStamp() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [loupe, setLoupe] = useState({
+    on: false,
+    lensX: 0,
+    lensY: 0,
+    cloneX: 0,
+    cloneY: 0,
+    fontSize: 13,
+  });
+
+  const moveLoupe = (event: PointerEvent<HTMLDivElement>) => {
+    const text = textRef.current;
+    const stage = stageRef.current;
+    if (!text || !stage) return;
+    const textBox = text.getBoundingClientRect();
+    const stageBox = stage.getBoundingClientRect();
+    const tx = event.clientX - textBox.left;
+    const ty = event.clientY - textBox.top;
+    setLoupe({
+      on: true,
+      lensX: event.clientX - stageBox.left,
+      lensY: event.clientY - stageBox.top,
+      cloneX: HERO_LOUPE_SIZE / 2 - tx * HERO_LOUPE_MAG,
+      cloneY: HERO_LOUPE_SIZE / 2 - ty * HERO_LOUPE_MAG,
+      fontSize: parseFloat(getComputedStyle(text).fontSize),
+    });
+  };
+
+  const hideLoupe = () => setLoupe((prev) => ({ ...prev, on: false }));
+
   return (
-    <div className="stamp-ink-appear mt-[0.62em] w-[92%] mx-auto">
-        <svg
-          role="img"
-          aria-label={HERO_CHILD_FREE_PHRASE}
-          viewBox="0 0 640 116"
-          className="h-auto w-full mix-blend-multiply select-none"
+    <div className="hero-childfree-wrap">
+      <div className="hero-childfree-line" role="img" aria-label={HERO_CHILD_FREE_PHRASE}>
+        <span aria-hidden className="hero-childfree-bracket hero-childfree-bracket--open">[</span>
+        <div
+          ref={stageRef}
+          className={`hero-loupe${loupe.on ? ' is-on' : ''}`}
+          onPointerEnter={moveLoupe}
+          onPointerMove={moveLoupe}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            moveLoupe(event);
+          }}
+          onPointerUp={(event) => {
+            if (event.pointerType !== 'mouse') hideLoupe();
+          }}
+          onPointerCancel={hideLoupe}
+          onPointerLeave={hideLoupe}
         >
-          <title>{HERO_CHILD_FREE_PHRASE}</title>
-          <defs>
-            <filter
-              id="aypik-stamp-ink"
-              x="-8%"
-              y="-28%"
-              width="116%"
-              height="156%"
-              colorInterpolationFilters="sRGB"
-            >
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.62"
-                numOctaves="3"
-                seed="9"
-                result="noise"
-              />
-              <feColorMatrix
-                in="noise"
-                type="matrix"
-                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3.6 -1.15"
-                result="speckle"
-              />
-              <feComposite
-                in="SourceGraphic"
-                in2="speckle"
-                operator="in"
-                result="punched"
-              />
-              <feDisplacementMap
-                in="punched"
-                in2="noise"
-                scale="0.7"
-                xChannelSelector="R"
-                yChannelSelector="G"
-              />
-            </filter>
-          </defs>
-          <g filter="url(#aypik-stamp-ink)" fill="currentColor" stroke="currentColor">
-            <rect
-              x="10"
-              y="10"
-              width="620"
-              height="96"
-              rx="16"
-              ry="16"
-              fill="none"
-              strokeWidth="2.6"
-            />
-            <ellipse cx="22" cy="26" rx="2.6" ry="1.7" opacity="0.28" stroke="none" />
-            <circle cx="618" cy="34" r="1.7" opacity="0.22" stroke="none" />
-            <ellipse cx="36" cy="98" rx="2.2" ry="1.4" opacity="0.2" stroke="none" />
-            <circle cx="604" cy="94" r="1.45" opacity="0.18" stroke="none" />
-            <ellipse cx="320" cy="6" rx="1.8" ry="1.15" opacity="0.16" stroke="none" />
-            <circle cx="214" cy="108" r="1.2" opacity="0.14" stroke="none" />
-            <text
-              x="320"
-              y="50"
-              textAnchor="middle"
-              fill="currentColor"
-              stroke="none"
-              fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
-              fontWeight="800"
-              fontSize="28"
-              letterSpacing="3.4"
-            >
-              RÉSERVÉ EXCLUSIVEMENT
-            </text>
-            <text
-              x="320"
-              y="84"
-              textAnchor="middle"
-              fill="currentColor"
-              stroke="none"
-              fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
-              fontWeight="800"
-              fontSize="21"
-              letterSpacing="2.5"
-            >
-              AUX PERSONNES SANS ENFANTS
-            </text>
-          </g>
-        </svg>
+          <p ref={textRef} className="hero-childfree-phrase">
+            {HERO_CHILD_FREE_PHRASE}
+          </p>
+          <div
+            className="hero-loupe-lens"
+            aria-hidden
+            style={{
+              left: loupe.lensX,
+              top: loupe.lensY,
+            }}
+          >
+            <div className="hero-loupe-falloff">
+              <p
+                className="hero-loupe-clone"
+                style={{
+                  fontSize: `${loupe.fontSize * HERO_LOUPE_MAG}px`,
+                  transform: `translate(${loupe.cloneX}px, ${loupe.cloneY}px)`,
+                }}
+              >
+                {HERO_CHILD_FREE_PHRASE}
+              </p>
+            </div>
+          </div>
+        </div>
+        <span aria-hidden className="hero-childfree-bracket hero-childfree-bracket--close">]</span>
+      </div>
     </div>
   );
 }
@@ -363,7 +353,7 @@ export default function LandingPage({
       />
 
       {/* Hero / Philosophie — une composition, brand first */}
-      <section className="relative isolate overflow-hidden">
+      <section className="relative isolate overflow-x-hidden">
         <div
           className="absolute inset-0 -z-10"
           style={{
@@ -372,9 +362,9 @@ export default function LandingPage({
           }}
         />
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
-          <div className="mx-auto flex w-fit max-w-full flex-col items-stretch text-4xl sm:text-5xl md:text-[3.25rem]">
+          <div className="hero-headline-stack">
             <h1
-              className="text-center text-[1em] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
+              className="hero-headline text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
               style={{ backgroundImage: HERO_TITLE_GRADIENT }}
             >
               Un espace de rencontre
@@ -443,6 +433,8 @@ export default function LandingPage({
           ))}
         </ul>
       </section>
+
+      {!SITE_FREE_MODE && <TestimonialsSection variant="landing" />}
 
       {/* Offres : Fondateur seul en mode gratuit ; Premium / Boost / Freemium si SITE_FREE_MODE === false */}
       <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">

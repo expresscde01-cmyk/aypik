@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -25,7 +25,13 @@ type Tab = 'home' | 'discover' | 'matches' | 'profile';
 function initialTabFromQuery(): Tab {
   if (typeof window === 'undefined') return 'home';
   const open = new URLSearchParams(window.location.search).get('open');
-  if (open === 'preferences' || open === 'profile') return 'profile';
+  if (
+    open === 'preferences' ||
+    open === 'profile' ||
+    open === 'temoignage'
+  ) {
+    return 'profile';
+  }
   return 'home';
 }
 
@@ -37,8 +43,10 @@ export default function AppShell() {
   const [inboxHighlight, setInboxHighlight] = useState(false);
   const [inboxHintName, setInboxHintName] = useState<string | null>(null);
   const [inboxPulseCategory, setInboxPulseCategory] = useState<
-    'new' | 'wait' | null
+    'new' | 'wait' | 'first' | null
   >(null);
+  const [inboxDeclined, setInboxDeclined] = useState(false);
+  const [inboxWaitingIncoming, setInboxWaitingIncoming] = useState(false);
   /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
   const [inboxFocusKey, setInboxFocusKey] = useState(0);
   const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
@@ -46,6 +54,30 @@ export default function AppShell() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [cancelingDeletion, setCancelingDeletion] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  /** Invalide le cache profil (genre, etc.) pour Découvrir / Accueil / Matchs. */
+  const [profileEpoch, setProfileEpoch] = useState(0);
+
+  const reloadViewerProfile = useCallback(async () => {
+    if (!user) return null;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    setProfile(data as Profile | null);
+    setProfileEpoch((n) => n + 1);
+    return data as Profile | null;
+  }, [user]);
+
+  const openTab = useCallback(
+    (next: Tab) => {
+      if (next === 'discover' || next === 'home' || next === 'matches') {
+        void reloadViewerProfile();
+      }
+      setTab(next);
+    },
+    [reloadViewerProfile]
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -74,15 +106,23 @@ export default function AppShell() {
   const deletionPending = Boolean(profile?.deletion_requested_at);
 
   const openMatches = (actorId?: string | null, opts?: OpenMatchesOpts) => {
-    const { openChat, highlight, hintName, pulseCategory } =
-      normalizeOpenMatchesOpts(opts);
+    const {
+      openChat,
+      highlight,
+      hintName,
+      pulseCategory,
+      declined,
+      waitingIncoming,
+    } = normalizeOpenMatchesOpts(opts);
     setInboxActorId(actorId ?? null);
     setInboxOpenChat(openChat);
     setInboxHighlight(highlight);
     setInboxHintName(hintName);
     setInboxPulseCategory(pulseCategory);
+    setInboxDeclined(declined);
+    setInboxWaitingIncoming(waitingIncoming);
     setInboxFocusKey((k) => k + 1);
-    setTab('matches');
+    openTab('matches');
   };
 
   const handleCancelDeletion = async () => {
@@ -113,12 +153,7 @@ export default function AppShell() {
     return (
       <ProfileSetup
         onDone={async () => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user!.id)
-            .maybeSingle();
-          setProfile(data as Profile);
+          await reloadViewerProfile();
         }}
       />
     );
@@ -176,11 +211,12 @@ export default function AppShell() {
           <HomeDashboard
             displayName={displayName}
             onSignOut={signOut}
-            onOpenDiscover={() => setTab('discover')}
+            onOpenDiscover={() => openTab('discover')}
             onOpenMatches={openMatches}
             onOpenProfile={() => setTab('profile')}
             unreadTotal={unread.total}
             unreadBySender={unread.bySender}
+            profileEpoch={profileEpoch}
           />
         )}
         {tab === 'discover' && (
@@ -191,7 +227,7 @@ export default function AppShell() {
                   <div className="min-w-0 flex-1">
                     <button
                       type="button"
-                      onClick={() => setTab('home')}
+                      onClick={() => openTab('home')}
                       className="inline-flex items-center gap-1.5 h-8 pl-1 pr-2.5 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 text-[13px] font-semibold transition-colors"
                       aria-label="Retour à l’accueil"
                     >
@@ -220,6 +256,7 @@ export default function AppShell() {
             <DiscoveryPage
               unreadBySender={unread.bySender}
               onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
+              profileEpoch={profileEpoch}
             />
           </div>
         )}
@@ -229,7 +266,7 @@ export default function AppShell() {
               <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => setTab('home')}
+                  onClick={() => openTab('home')}
                   className="text-sm font-semibold text-rose-600 hover:text-rose-700"
                 >
                   ← Accueil
@@ -246,7 +283,10 @@ export default function AppShell() {
               focusHighlight={inboxHighlight}
               focusHintName={inboxHintName}
               focusPulseCategory={inboxPulseCategory}
+              focusDeclined={inboxDeclined}
+              focusWaitingIncoming={inboxWaitingIncoming}
               focusKey={inboxFocusKey}
+              profileEpoch={profileEpoch}
               onChatClosed={() => void unread.refresh()}
               onFocusActorConsumed={() => {
                 setInboxActorId(null);
@@ -254,6 +294,8 @@ export default function AppShell() {
                 setInboxHighlight(false);
                 setInboxHintName(null);
                 setInboxPulseCategory(null);
+                setInboxDeclined(false);
+                setInboxWaitingIncoming(false);
               }}
             />
           </div>
@@ -268,12 +310,7 @@ export default function AppShell() {
               );
             }}
             onDone={async () => {
-              const { data } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user!.id)
-                .maybeSingle();
-              setProfile(data as Profile);
+              await reloadViewerProfile();
               setTab('home');
             }}
           />
@@ -288,13 +325,13 @@ export default function AppShell() {
             icon={<Home className="w-5 h-5" />}
             label="Accueil"
             active={tab === 'home'}
-            onClick={() => setTab('home')}
+            onClick={() => openTab('home')}
           />
           <NavButton
             icon={<Compass className="w-5 h-5" />}
             label="Découvrir"
             active={tab === 'discover'}
-            onClick={() => setTab('discover')}
+            onClick={() => openTab('discover')}
           />
           <NavButton
             icon={<Heart className="w-5 h-5" />}

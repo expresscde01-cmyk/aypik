@@ -103,7 +103,14 @@ const INBOX_EVENT = 'aypik:inbox-updated';
 
 export type InboxUpdatedDetail = {
   actorId?: string | null;
-  decision?: 'wait' | 'refuse' | 'match' | null;
+  decision?:
+    | 'wait'
+    | 'refuse'
+    | 'match'
+    | 'declined-dismiss'
+    | 'wait-dismiss'
+    | null;
+  notificationId?: string | null;
 };
 
 export function emitInboxUpdated(detail?: InboxUpdatedDetail) {

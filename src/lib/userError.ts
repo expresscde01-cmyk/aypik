@@ -31,5 +31,24 @@ function friendlyDbMessage(msg: string): string {
   if (msg.includes('no_incoming_interest')) {
     return 'Plus d’intérêt en attente pour ce profil.';
   }
+  if (msg.includes('not_paid_premium')) {
+    return 'Les témoignages sont réservés aux membres Premium en cours d’abonnement.';
+  }
+  if (msg.includes('consent_required')) {
+    return 'Coche la case de consentement pour autoriser la diffusion de ton témoignage.';
+  }
+  if (msg.includes('testimonial_too_short')) {
+    return 'Ton témoignage est trop court (40 caractères minimum).';
+  }
+  if (msg.includes('testimonial_too_long')) {
+    return 'Ton témoignage est trop long (800 caractères maximum).';
+  }
+  if (
+    /schema cache/i.test(msg) ||
+    /could not find the function/i.test(msg) ||
+    msg.includes('dismiss_declined_notification')
+  ) {
+    return 'Action indisponible : colle COLLER-DECLINED-ARCHIVES.sql dans l’éditeur SQL Supabase, puis Run.';
+  }
   return msg;
 }
