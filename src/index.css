@@ -480,6 +480,24 @@ button.group[data-matched='true'] {
   transform: rotate(-28deg);
 }
 
+.refuse-ban-wrap {
+  perspective: 260px;
+}
+
+.refuse-ban {
+  overflow: visible;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+  transition: transform 0.48s cubic-bezier(0.22, 1.15, 0.36, 1);
+}
+
+.group:hover:not(:disabled) .refuse-ban,
+.group:focus-visible:not(:disabled) .refuse-ban,
+.group:active:not(:disabled) .refuse-ban {
+  transform: rotateY(180deg);
+}
+
 .message-bubble {
   max-width: 78%;
   padding: 0.5rem 0.875rem;
@@ -661,6 +679,11 @@ button.group[data-matched='true'] {
     infinite;
 }
 
+.match-card-declined.match-card-attention-pulse {
+  animation: match-card-waiting-heartbeat 1.85s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite;
+}
+
 /* État 3 — Matché sans dialogue */
 .match-card-matched-quiet {
   background-color: #e8f5e9;
@@ -673,6 +696,17 @@ button.group[data-matched='true'] {
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Intro Mes Matchs : deux phrases compactes, sans gros blanc */
+.match-intro {
+  line-height: 1.5;
+}
+.match-intro p {
+  margin: 0;
+}
+.match-intro p + p {
+  margin-top: 0.2em;
 }
 
 /* Pastilles légende dans l’intro Mes Matchs */
@@ -989,11 +1023,26 @@ button.group[data-matched='true'] {
   .wait-hourglass,
   .group:hover:not(:disabled) .wait-hourglass,
   .group:focus-visible:not(:disabled) .wait-hourglass,
+  .archive-folder,
+  .group:hover:not(:disabled) .archive-folder,
+  .group:focus-visible:not(:disabled) .archive-folder,
   .refuse-trash-lid,
   .group:hover:not(:disabled) .refuse-trash-lid,
-  .group:focus-visible:not(:disabled) .refuse-trash-lid {
+  .group:focus-visible:not(:disabled) .refuse-trash-lid,
+  .refuse-ban,
+  .group:hover:not(:disabled) .refuse-ban,
+  .group:focus-visible:not(:disabled) .refuse-ban,
+  .group:active:not(:disabled) .refuse-ban {
     transition: none;
     transform: none;
+    filter: none;
+  }
+
+  .refuse-ban-wrap,
+  .group:hover:not(:disabled) .refuse-ban-wrap,
+  .group:focus-visible:not(:disabled) .refuse-ban-wrap,
+  .group:active:not(:disabled) .refuse-ban-wrap {
+    box-shadow: none;
   }
 
   .chat-typing-dot,

@@ -1002,6 +1002,16 @@ export default function NotificationsBell({
   };
 
   const handleItemClick = (n: SocialNotification) => {
+    const wasUnread = !n.read_at;
+    if (wasUnread) {
+      setItems((prev) =>
+        n.kind === 'flash_received' || n.kind === 'like_received'
+          ? prev.filter((x) => x.id !== n.id)
+          : prev.map((x) =>
+              x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x
+            )
+      );
+    }
     closePanel();
     if (isInboxNotification(n)) {
       const actorLabel =
@@ -1033,19 +1043,12 @@ export default function NotificationsBell({
         onOpenInbox?.(n.actor_id);
       }
     }
-    if (n.read_at) return;
+    if (!wasUnread) return;
     void markSocialNotificationRead(n.id)
       .then(async () => {
         if (n.kind === 'flash_received' || n.kind === 'like_received') {
           await sweepStaleSocialNotifications(n.actor_id);
         }
-        setItems((prev) =>
-          n.kind === 'flash_received' || n.kind === 'like_received'
-            ? prev.filter((x) => x.id !== n.id)
-            : prev.map((x) =>
-                x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x
-              )
-        );
       })
       .catch(() => {
         /* le panneau est déjà fermé */

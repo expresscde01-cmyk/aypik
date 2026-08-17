@@ -1,7 +1,7 @@
-import { Hourglass } from 'lucide-react';
+import { Folder, FolderOpen } from 'lucide-react';
 
-/** Bouton rapide Attendre — capsule jaune vif, sablier sombre, comme le R. */
-export default function WaitButton({
+/** Bouton rapide Archiver — capsule blanche, dossier jaune, rabat qui s’ouvre. */
+export default function ArchiveButton({
   disabled,
   busy,
   onClick,
@@ -12,7 +12,7 @@ export default function WaitButton({
   busy?: boolean;
   onClick: () => void;
   name: string;
-  tooltip?: 'right' | 'top' | 'left' | 'logo' | 'logo-tr';
+  tooltip?: 'left' | 'top' | 'right' | 'logo' | 'logo-tr';
 }) {
   const blocked = Boolean(disabled || busy);
 
@@ -24,13 +24,18 @@ export default function WaitButton({
         onClick();
       }}
       disabled={blocked}
-      aria-label={`Mettre ${name} en attente`}
+      aria-label={`Archiver ${name}`}
       className="group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default disabled:opacity-40"
     >
-      <span className="pointer-events-none relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 bg-[#FFC107] shadow-sm transition-colors group-hover:bg-[#FFD54F] group-focus-visible:bg-[#FFD54F]">
-        <Hourglass
-          className="wait-hourglass w-3.5 h-3.5 text-gray-500"
-          strokeWidth={1.75}
+      <span className="pointer-events-none relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm">
+        <Folder
+          className="archive-folder w-3.5 h-3.5 text-[#FFC107] transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0"
+          strokeWidth={2.4}
+          aria-hidden
+        />
+        <FolderOpen
+          className="archive-folder absolute left-1/2 top-1/2 w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 text-[#FFC107] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+          strokeWidth={2.4}
           aria-hidden
         />
       </span>
@@ -47,7 +52,7 @@ export default function WaitButton({
                   : 'top-[calc(100%-6px)] left-[calc(100%-4px)]'
         }`}
       >
-        Attendre
+        Archiver
       </span>
     </button>
   );

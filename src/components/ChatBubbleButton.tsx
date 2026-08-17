@@ -1,4 +1,4 @@
-/** Bouton messagerie — bulle rose, typing au survol. */
+/** Bouton messagerie — bulle rose, typing au survol. Infobulle toujours au-dessus. */
 export default function ChatBubbleButton({
   name,
   unreadCount = 0,
@@ -12,9 +12,8 @@ export default function ChatBubbleButton({
     <button
       type="button"
       onClick={onClick}
-      className="chat-bubble-btn relative w-10 h-10 flex items-center justify-center flex-shrink-0 bg-transparent cursor-pointer"
+      className="chat-bubble-btn group relative z-10 w-10 h-10 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer"
       aria-label={`Envoyer un message à ${name}`}
-      title="Ouvrir la messagerie"
     >
       <span className="chat-bubble-disk pointer-events-none">
         <svg
@@ -40,6 +39,9 @@ export default function ChatBubbleButton({
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       ) : null}
+      <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+        Ouvrir la messagerie
+      </span>
     </button>
   );
 }

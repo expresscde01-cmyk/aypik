@@ -71,12 +71,13 @@ export default function AppShell() {
 
   const openTab = useCallback(
     (next: Tab) => {
+      if (next === tab) return;
       if (next === 'discover' || next === 'home' || next === 'matches') {
         void reloadViewerProfile();
       }
       setTab(next);
     },
-    [reloadViewerProfile]
+    [reloadViewerProfile, tab]
   );
 
   useEffect(() => {
@@ -122,7 +123,8 @@ export default function AppShell() {
     setInboxDeclined(declined);
     setInboxWaitingIncoming(waitingIncoming);
     setInboxFocusKey((k) => k + 1);
-    openTab('matches');
+    // Pas de reload profil / epoch : ça démontait la liste (spinner) et cassait le scroll.
+    setTab('matches');
   };
 
   const handleCancelDeletion = async () => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, MapPin, AlertCircle, Zap, Trash2 } from 'lucide-react';
+import { Heart, MapPin, AlertCircle, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import {
@@ -37,6 +37,7 @@ import ChatScreen from '@/components/ChatScreen';
 import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
 import RefuseButton from '@/components/RefuseButton';
+import ArchiveButton from '@/components/ArchiveButton';
 import WaitButton from '@/components/WaitButton';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
@@ -226,6 +227,16 @@ async function fetchProfileBundle(ids: string[]): Promise<{
   return { byId, founderMap, boostSet };
 }
 
+function scrollMatchCardIntoView(elementId: string) {
+  const run = () => {
+    document
+      .getElementById(elementId)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  window.setTimeout(run, 80);
+  window.setTimeout(run, 320);
+}
+
 export default function MatchesPage({
   focusActorId = null,
   focusOpenChat = false,
@@ -306,6 +317,7 @@ export default function MatchesPage({
     pulseCategory: MatchPulseCategory | null;
     declined: boolean;
     waitingIncoming: boolean;
+    attempts?: number;
   } | null>(null);
   const unread = useUnreadMessages(user?.id, {
     ignoreSenderId: chatPeer?.id ?? null,
@@ -946,21 +958,36 @@ export default function MatchesPage({
                 c.profile.display_name.trim().toLowerCase().includes(needle)
             )
           : undefined);
-      const card = pendingCard || archivedCard || pendingDeclined[0];
+      const card = pendingCard || archivedCard;
+      if (!card) {
+        if (loading) return;
+        if (!pending.attempts) {
+          pending.attempts = 1;
+          void loadPendingDeclined();
+          void loadDeclinedArchives();
+          return;
+        }
+        pendingFocusRef.current = null;
+        onFocusActorConsumed?.();
+        return;
+      }
       pendingFocusRef.current = null;
       onFocusActorConsumed?.();
-      if (!card) return;
-      window.setTimeout(() => {
-        const elId =
-          'notificationId' in card
-            ? `match-card-declined-${card.notificationId}`
-            : `match-card-archive-${card.archiveId}`;
-        document
-          .getElementById(elId)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 60);
-      if ('notificationId' in card) setOpenPendingDeclined(card);
-      else setOpenArchive(card);
+      setChatPeer(null);
+      setOpenPendingDeclined(null);
+      setOpenArchive(null);
+      setOpenProfile(null);
+      setOpenPendingWaiting(null);
+      setOpenWaitArchive(null);
+      setPulseCategory(null);
+      setPulseSingleId(null);
+      const profileId = card.profile.id;
+      const elId =
+        'notificationId' in card
+          ? `match-card-declined-${card.notificationId}`
+          : `match-card-archive-${card.archiveId}`;
+      window.setTimeout(() => setPulseSingleId(profileId), 0);
+      scrollMatchCardIntoView(elId);
       return;
     }
 
@@ -986,14 +1013,12 @@ export default function MatchesPage({
       pendingFocusRef.current = null;
       onFocusActorConsumed?.();
       if (!card) return;
-      window.setTimeout(() => {
-        const elId = pendingCard
-          ? `match-card-wait-pending-${pendingCard.notificationId}`
-          : `match-card-wait-archive-${archivedCard?.archiveId ?? ''}`;
-        document
-          .getElementById(elId)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 60);
+      setPulseCategory(null);
+      setPulseSingleId(card.profile.id);
+      const elId = pendingCard
+        ? `match-card-wait-pending-${pendingCard.notificationId}`
+        : `match-card-wait-archive-${archivedCard?.archiveId ?? ''}`;
+      scrollMatchCardIntoView(elId);
       if (pendingCard) setOpenPendingWaiting(pendingCard);
       else setOpenWaitArchive(archivedCard!);
       return;
@@ -1006,11 +1031,11 @@ export default function MatchesPage({
       if (archivedMine) {
         pendingFocusRef.current = null;
         onFocusActorConsumed?.();
-        window.setTimeout(() => {
-          document
-            .getElementById(`match-card-wait-archive-${archivedMine.archiveId}`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 60);
+        setPulseCategory(null);
+        setPulseSingleId(archivedMine.profile.id);
+        scrollMatchCardIntoView(
+          `match-card-wait-archive-${archivedMine.archiveId}`
+        );
         setOpenWaitArchive(archivedMine);
         return;
       }
@@ -1041,9 +1066,7 @@ export default function MatchesPage({
                     m.kind !== 'match' && !m.alreadyLiked && !m.waiting
                 );
         if (target) {
-          document
-            .getElementById(`match-card-${target.profile.id}`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          scrollMatchCardIntoView(`match-card-${target.profile.id}`);
         }
       }, 60);
       return;
@@ -1097,15 +1120,14 @@ export default function MatchesPage({
     if (pending.highlight) {
       setPulseCategory(null);
       setPulseSingleId(found.profile.id);
-      window.setTimeout(() => {
-        document
-          .getElementById(`match-card-${found.profile.id}`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 60);
+      scrollMatchCardIntoView(`match-card-${found.profile.id}`);
       setOpenProfile(found);
       return;
     }
 
+    setPulseCategory(null);
+    setPulseSingleId(found.profile.id);
+    scrollMatchCardIntoView(`match-card-${found.profile.id}`);
     setOpenProfile(found);
   }, [
     loading,
@@ -1124,6 +1146,8 @@ export default function MatchesPage({
     declinedArchives,
     pendingWaiting,
     waitArchives,
+    loadPendingDeclined,
+    loadDeclinedArchives,
   ]);
 
   const handleMatchBack = useCallback(
@@ -1259,6 +1283,7 @@ export default function MatchesPage({
             is_founder: card.is_founder,
             founder_number: card.founder_number,
             is_boosted: card.is_boosted,
+            source: 'theirs' as const,
           },
           ...prev.filter((c) => c.profile.id !== card.profile.id),
         ]);
@@ -1675,21 +1700,22 @@ export default function MatchesPage({
               busy={actingId === match.profile.id}
               disabled={likesExhausted}
               matched={match.alreadyLiked}
-              tooltip="top"
+              tooltip="logo-tr"
               onClick={() => void handleMatchBack(match)}
             />
             {isToStudy ? (
               <WaitButton
                 name={match.profile.display_name}
                 busy={actingId === match.profile.id}
-                tooltip="top"
+                tooltip="logo-tr"
                 onClick={() => void handleInboxDecision(match, 'wait')}
               />
             ) : null}
             <RefuseButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
-              tooltip="top"
+              tooltip="logo"
+              variant={match.waiting ? 'ban' : 'trash'}
               onClick={() => {
                 if (match.waiting) {
                   setOpenProfile(match);
@@ -1739,6 +1765,8 @@ export default function MatchesPage({
         data-match-state="wait-archive"
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
           theirs ? 'match-card-wait-theirs' : 'match-card-wait'
+        }${
+          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
       >
         <button
@@ -1824,6 +1852,7 @@ export default function MatchesPage({
         <RefuseButton
           name={card.profile.display_name}
           busy={declinedBusyId === card.archiveId}
+          variant="ban"
           onClick={() => void handleDeleteWaitArchive(card)}
         />
       </div>
@@ -1881,17 +1910,22 @@ export default function MatchesPage({
 
   const renderPendingDeclinedCard = (card: PendingDeclinedCard) => {
     const isFlash = card.origin === 'flash';
+    const busy = declinedBusyId === card.notificationId;
     return (
-      <button
-        type="button"
+      <div
         id={`match-card-declined-${card.notificationId}`}
         key={card.notificationId}
         data-match-state="declined-pending"
-        onClick={() => setOpenPendingDeclined(card)}
-        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined w-full text-left cursor-pointer hover:shadow-md"
-        aria-label={`Voir le profil de ${card.profile.display_name}`}
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
+          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+        }`}
       >
-        <span className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setOpenPendingDeclined(card)}
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0"
+          aria-label={`Voir le profil de ${card.profile.display_name}`}
+        >
           {card.profile.photo_url ? (
             <img
               src={card.profile.photo_url}
@@ -1899,9 +1933,9 @@ export default function MatchesPage({
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400">
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400">
               {card.profile.display_name.charAt(0).toUpperCase()}
-            </span>
+            </div>
           )}
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
@@ -1912,30 +1946,46 @@ export default function MatchesPage({
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
-        </span>
+        </button>
 
-        <span className="flex-1 min-w-0">
-          <span className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-purple-950 truncate">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-purple-950 truncate">
               {card.profile.display_name}
-            </span>
+            </h3>
             <span className="text-sm text-purple-800/60">{card.age} ans</span>
             {card.is_boosted && <BoostedBadge size="sm" />}
             {card.is_founder && (
               <FounderBadge number={card.founder_number} size="sm" />
             )}
-          </span>
+          </div>
           {card.profile.location && (
-            <span className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
+            <p className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" />
               {card.profile.location}
-            </span>
+            </p>
           )}
-          <span className="block text-xs text-purple-900/80 mt-1">
+          <p className="text-xs text-purple-900/80 mt-1">
             {declinedArchiveStatusLabel(card.origin, card.declinedAt)}
-          </span>
-        </span>
-      </button>
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
+          <ArchiveButton
+            name={card.profile.display_name}
+            busy={busy}
+            tooltip="logo-tr"
+            onClick={() => void handlePendingDeclined(card, true)}
+          />
+          <RefuseButton
+            name={card.profile.display_name}
+            busy={busy}
+            label="Supprimer"
+            tooltip="logo"
+            onClick={() => void handlePendingDeclined(card, false)}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -1965,7 +2015,9 @@ export default function MatchesPage({
         id={`match-card-archive-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="declined-archive"
-        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined"
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
+          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+        }`}
       >
         <button
           type="button"
@@ -2021,21 +2073,12 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <button
-          type="button"
-          disabled={declinedBusyId === card.archiveId}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void handleDeleteArchived(card);
-          }}
-          className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 flex items-center justify-center flex-shrink-0 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 disabled:opacity-40 cursor-pointer"
-          title="Supprimer"
-          aria-label={`Supprimer ${card.profile.display_name} des archives`}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <RefuseButton
+          name={card.profile.display_name}
+          busy={declinedBusyId === card.archiveId}
+          label="Supprimer"
+          onClick={() => void handleDeleteArchived(card)}
+        />
       </div>
     );
   };
@@ -2146,19 +2189,29 @@ export default function MatchesPage({
       <h2 className="text-xl font-bold text-gray-900 mb-1">
         Tes matchs ({matches.length})
       </h2>
-      <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-        Tu trouveras sur cette page tous les profils qui t&apos;ont adressé un{' '}
-        <ColorChip label="like ou flash — à étudier" tone="new" />. Tu pourras
-        soit les refuser (pour qu&apos;ils disparaissent de cette page), soit
-        les{' '}
-        <ColorChip label="mettre en attente" tone="wait" /> (pour les étudier
-        plus tard), soit les matcher pour voir ainsi ces profils passer à
-        l&apos;étape des matchs. Tous tes matchs seront ensuite soit classés{' '}
-        <ColorChip label="1er mot" tone="matched-quiet" />
-        , soit classés{' '}
-        <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
-        lorsqu&apos;il y aura eu au moins un échange.
-      </p>
+      <div className="match-intro text-sm text-gray-600 mb-5">
+        <p>
+          Tu trouveras sur cette page tous les profils qui t&apos;ont adressé un{' '}
+          <ColorChip label="like ou flash — à étudier" tone="new" />. Tu pourras
+          soit les refuser (pour qu&apos;ils disparaissent de cette page), soit
+          les{' '}
+          <ColorChip label="mettre en attente" tone="wait" /> (pour les étudier
+          plus tard), soit les matcher pour voir ainsi ces profils passer à
+          l&apos;étape des matchs. Tous tes matchs seront ensuite soit classés{' '}
+          <ColorChip label="1er mot" tone="matched-quiet" />
+          , soit classés{' '}
+          <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
+          lorsqu&apos;il y aura eu au moins un échange.
+        </p>
+        <p>
+          Tu trouveras également sur cette page tous les profils qui ont décliné
+          un de tes likes ou de tes flashs. Tu pourras choisir ensuite entre{' '}
+          <span className="match-intro-chip match-chip-declined">
+            les archiver ou les supprimer
+          </span>
+          .
+        </p>
+      </div>
 
       {error && (
         <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
