@@ -146,3 +146,155 @@ export async function searchFrenchCommunes(
     signal?.removeEventListener('abort', onParentAbort);
   }
 }
+
+export type GeoPoint = { lat: number; lng: number };
+
+const EARTH_RADIUS_KM = 6371;
+const CENTRE_LOOKUP_CONCURRENCY = 6;
+const centreCache = new Map<string, GeoPoint | null>();
+
+function foldName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function parseCentre(raw: unknown): GeoPoint | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const coords = (raw as { coordinates?: unknown }).coordinates;
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+  const lng = Number(coords[0]);
+  const lat = Number(coords[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
+function pickCommuneCentre(
+  rows: unknown[],
+  nom: string
+): GeoPoint | null {
+  const wanted = foldName(nom);
+  let fallback: GeoPoint | null = null;
+  for (const item of rows) {
+    if (!item || typeof item !== 'object') continue;
+    const row = item as Record<string, unknown>;
+    const point = parseCentre(row.centre);
+    if (!point) continue;
+    if (!fallback) fallback = point;
+    const rowNom = typeof row.nom === 'string' ? foldName(row.nom) : '';
+    if (wanted && rowNom && (rowNom === wanted || rowNom.includes(wanted) || wanted.includes(rowNom))) {
+      return point;
+    }
+  }
+  return fallback;
+}
+
+async function fetchCommuneCentre(
+  query: { codePostal?: string; nom?: string },
+  signal?: AbortSignal
+): Promise<GeoPoint | null> {
+  if (signal?.aborted) return null;
+
+  const params = new URLSearchParams({
+    fields: 'nom,code,codesPostaux,centre',
+    limit: '8',
+  });
+  if (query.codePostal) params.set('codePostal', query.codePostal);
+  else if (query.nom) params.set('nom', query.nom);
+  else return null;
+
+  const local = new AbortController();
+  const onParentAbort = () => local.abort();
+  const timer = window.setTimeout(() => local.abort(), SEARCH_TIMEOUT_MS);
+  signal?.addEventListener('abort', onParentAbort);
+
+  try {
+    const res = await fetch(`${GEO_API}?${params.toString()}`, {
+      method: 'GET',
+      signal: local.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) return null;
+    return pickCommuneCentre(data, query.nom || '');
+  } catch (err) {
+    if (isAbortError(err)) {
+      if (signal?.aborted) return null;
+      return null;
+    }
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+    signal?.removeEventListener('abort', onParentAbort);
+  }
+}
+
+/** Distance à vol d’oiseau entre deux points (km). */
+export function distanceKmBetween(a: GeoPoint, b: GeoPoint): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/**
+ * Centre géographique d’une commune à partir du libellé stocké « Ville (CP) ».
+ * Résultat mis en cache pour la session (filtre rayon Découvrir).
+ */
+export async function lookupLocationCentre(
+  location: string,
+  signal?: AbortSignal
+): Promise<GeoPoint | null> {
+  const trimmed = location.trim();
+  if (!trimmed) return null;
+  const key = trimmed.toLowerCase();
+  if (centreCache.has(key)) return centreCache.get(key) ?? null;
+  if (signal?.aborted) return null;
+
+  const commune = communeFromStoredLabel(trimmed);
+  const cp = commune?.codesPostaux[0] || '';
+  const nom = commune?.nom || trimmed;
+
+  let point: GeoPoint | null = null;
+  if (cp) {
+    point = await fetchCommuneCentre({ codePostal: cp, nom }, signal);
+  }
+  if (!point && nom) {
+    point = await fetchCommuneCentre({ nom }, signal);
+  }
+
+  if (!signal?.aborted) centreCache.set(key, point);
+  return point;
+}
+
+export async function lookupLocationCentres(
+  locations: string[],
+  signal?: AbortSignal
+): Promise<Map<string, GeoPoint | null>> {
+  const result = new Map<string, GeoPoint | null>();
+  const unique = [...new Set(locations.map((l) => l.trim()).filter(Boolean))];
+  if (unique.length === 0) return result;
+
+  let index = 0;
+  const worker = async () => {
+    while (index < unique.length) {
+      if (signal?.aborted) return;
+      const loc = unique[index++];
+      result.set(loc, await lookupLocationCentre(loc, signal));
+    }
+  };
+
+  const n = Math.min(CENTRE_LOOKUP_CONCURRENCY, unique.length);
+  await Promise.all(Array.from({ length: n }, () => worker()));
+  return result;
+}

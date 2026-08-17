@@ -5,12 +5,22 @@ export const MIN_USER_AGE = 18;
 export const ADULTS_ONLY_MESSAGE =
   'Ce service est exclusivement réservé aux personnes majeures.';
 
-/** Homme → femmes, femme → hommes, non renseigné → pas de filtre. */
+export function parseProfileGender(
+  value: string | null | undefined
+): ProfileGender | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim().toLowerCase();
+  if (v === 'homme' || v === 'femme') return v;
+  return null;
+}
+
+/** Homme → femmes, femme → hommes, non renseigné → pas de filtre (hommes et femmes). */
 export function matchingTargetGender(
   viewerGender: string | null | undefined
 ): ProfileGender | null {
-  if (viewerGender === 'homme') return 'femme';
-  if (viewerGender === 'femme') return 'homme';
+  const gender = parseProfileGender(viewerGender);
+  if (gender === 'homme') return 'femme';
+  if (gender === 'femme') return 'homme';
   return null;
 }
 

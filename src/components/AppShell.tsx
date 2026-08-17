@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { cancelAccountDeletion } from '@/lib/deleteAccount';
-import { userErrorMessage } from '@/lib/userError';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import MatchesPage from '@/components/MatchesPage';
 import ProfileSetup from '@/components/ProfileSetup';
@@ -19,6 +17,7 @@ import {
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
+import { flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -52,10 +51,14 @@ export default function AppShell() {
   const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [cancelingDeletion, setCancelingDeletion] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
   /** Invalide le cache profil (genre, etc.) pour Découvrir / Accueil / Matchs. */
   const [profileEpoch, setProfileEpoch] = useState(0);
+  const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
+
+  const persistDiscoverPrefs = useCallback(() => {
+    flushDiscoverPrefs(user?.id);
+    setSuggestionPrefsEpoch((n) => n + 1);
+  }, [user?.id]);
 
   const reloadViewerProfile = useCallback(async () => {
     if (!user) return null;
@@ -72,12 +75,15 @@ export default function AppShell() {
   const openTab = useCallback(
     (next: Tab) => {
       if (next === tab) return;
+      if (tab === 'discover' && next !== 'discover') {
+        persistDiscoverPrefs();
+      }
       if (next === 'discover' || next === 'home' || next === 'matches') {
         void reloadViewerProfile();
       }
       setTab(next);
     },
-    [reloadViewerProfile, tab]
+    [persistDiscoverPrefs, reloadViewerProfile, tab]
   );
 
   useEffect(() => {
@@ -104,7 +110,7 @@ export default function AppShell() {
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
     'Membre';
-  const deletionPending = Boolean(profile?.deletion_requested_at);
+  const accountDeleted = Boolean(profile?.deletion_requested_at);
 
   const openMatches = (actorId?: string | null, opts?: OpenMatchesOpts) => {
     const {
@@ -123,24 +129,11 @@ export default function AppShell() {
     setInboxDeclined(declined);
     setInboxWaitingIncoming(waitingIncoming);
     setInboxFocusKey((k) => k + 1);
+    if (tab === 'discover') {
+      persistDiscoverPrefs();
+    }
     // Pas de reload profil / epoch : ça démontait la liste (spinner) et cassait le scroll.
     setTab('matches');
-  };
-
-  const handleCancelDeletion = async () => {
-    setCancelError(null);
-    setCancelingDeletion(true);
-    try {
-      const err = await cancelAccountDeletion();
-      if (err) throw new Error(err);
-      setProfile((prev) =>
-        prev ? { ...prev, deletion_requested_at: null } : prev
-      );
-    } catch (err) {
-      setCancelError(userErrorMessage(err));
-    } finally {
-      setCancelingDeletion(false);
-    }
   };
 
   if (profileLoading) {
@@ -158,6 +151,25 @@ export default function AppShell() {
           await reloadViewerProfile();
         }}
       />
+    );
+  }
+
+  if (accountDeleted) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+          <p className="text-gray-800 text-sm leading-relaxed">
+            Ce compte a été supprimé.
+          </p>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -183,31 +195,6 @@ export default function AppShell() {
   return (
     <MatchesInboxSyncProvider>
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {deletionPending && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
-            <p className="flex-1 text-sm text-amber-900">
-              Compte en cours de suppression — reconnecte-toi dans les 30
-              jours pour annuler.
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleCancelDeletion()}
-              disabled={cancelingDeletion}
-              className="shrink-0 px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-60"
-            >
-              {cancelingDeletion
-                ? 'Annulation...'
-                : 'Annuler la suppression'}
-            </button>
-          </div>
-          {cancelError && (
-            <p className="max-w-2xl mx-auto px-4 pb-3 text-sm text-red-700">
-              {cancelError}
-            </p>
-          )}
-        </div>
-      )}
       <main className="flex-1 min-h-0">
         {tab === 'home' && (
           <HomeDashboard
@@ -219,6 +206,7 @@ export default function AppShell() {
             unreadTotal={unread.total}
             unreadBySender={unread.bySender}
             profileEpoch={profileEpoch}
+            suggestionPrefsEpoch={suggestionPrefsEpoch}
           />
         )}
         {tab === 'discover' && (
@@ -247,6 +235,14 @@ export default function AppShell() {
                     />
                     <p className="mt-1.5 text-sm text-gray-500 leading-snug">
                       Découvre des profils qui pourraient te plaire
+                    </p>
+                    <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
+                      <em>
+                        Les filtres sélectionnés ici s’appliqueront
+                        automatiquement dès que vous quitterez cette page pour
+                        personnaliser les suggestions qui vous seront faites
+                        sur votre page Accueil.
+                      </em>
                     </p>
                   </div>
                   <div className="shrink-0 -mr-1 -mt-0.5">
@@ -305,12 +301,6 @@ export default function AppShell() {
         {tab === 'profile' && (
           <ProfileSetup
             allowAccountDeletion
-            accountDeletionPending={deletionPending}
-            onDeletionStatusChange={(requestedAt) => {
-              setProfile((prev) =>
-                prev ? { ...prev, deletion_requested_at: requestedAt } : prev
-              );
-            }}
             onDone={async () => {
               await reloadViewerProfile();
               setTab('home');
@@ -346,7 +336,12 @@ export default function AppShell() {
             icon={<User className="w-5 h-5" />}
             label="Profil"
             active={tab === 'profile'}
-            onClick={() => setTab('profile')}
+            onClick={() => {
+              if (tab === 'discover') {
+                persistDiscoverPrefs();
+              }
+              setTab('profile');
+            }}
           />
         </div>
       </nav>

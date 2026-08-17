@@ -14,9 +14,10 @@ import ProfileDetailModal from '@/components/ProfileDetailModal';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   fetchSuggestedProfiles,
+  HOME_SUGGESTIONS_MAX,
   type SuggestedProfile,
 } from '@/lib/suggestions';
-import { geoProximityBadge } from '@/lib/geoProximity';
+import { loadSuggestionPrefs } from '@/lib/suggestionPrefs';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
@@ -41,6 +42,7 @@ export default function HomeDashboard({
   unreadTotal = 0,
   unreadBySender = {},
   profileEpoch = 0,
+  suggestionPrefsEpoch = 0,
 }: {
   displayName: string;
   onSignOut?: () => void;
@@ -50,6 +52,8 @@ export default function HomeDashboard({
   unreadTotal?: number;
   unreadBySender?: Record<string, number>;
   profileEpoch?: number;
+  /** Incrémenté à chaque sortie de Découvrir : force la relecture des filtres. */
+  suggestionPrefsEpoch?: number;
 }) {
   const { user } = useAuth();
   const { status, refresh } = useMembership();
@@ -71,25 +75,29 @@ export default function HomeDashboard({
   useEffect(() => {
     if (!user) return;
     let active = true;
+    setLoading(true);
     (async () => {
       try {
         const { data: me } = await supabase
           .from('profiles')
-          .select('interests, birth_date, gender')
+          .select('interests, birth_date, gender, location')
           .eq('id', user.id)
           .maybeSingle();
 
         const meProfile = me as Profile | null;
+        const prefs = loadSuggestionPrefs(user.id);
         const list = await fetchSuggestedProfiles({
-          limit: 8,
+          limit: HOME_SUGGESTIONS_MAX,
           myInterests: (meProfile?.interests || []) as string[],
           myAge: meProfile?.birth_date
             ? ageFromBirthDate(meProfile.birth_date)
             : undefined,
+          myLocation: meProfile?.location || '',
           viewerGender:
             meProfile?.gender === 'homme' || meProfile?.gender === 'femme'
               ? meProfile.gender
               : null,
+          prefs,
         });
 
         const ids = list.map((p) => p.id);
@@ -139,7 +147,7 @@ export default function HomeDashboard({
     return () => {
       active = false;
     };
-  }, [user?.id, profileEpoch]);
+  }, [user?.id, profileEpoch, suggestionPrefsEpoch]);
 
   useEffect(() => {
     if (!openProfile) return;
@@ -354,22 +362,27 @@ export default function HomeDashboard({
           ) : suggestions.length === 0 && error ? null : suggestions.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-rose-200 bg-white/70 px-5 py-10 text-center">
               <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">
-                Pas encore de profil dans ta ville, ton département ou ta
-                région. Parcours les autres profils ou reviens plus tard.
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Aucun profil ne correspond actuellement à ta zone
+                géographique et à tes centres d’intérêt. Modifie tes
+                préférences dans la section{' '}
+                <strong className="font-semibold text-gray-800">
+                  Découvrir
+                </strong>{' '}
+                ou reviens plus tard.
               </p>
               <button
                 type="button"
                 onClick={onOpenDiscover}
                 className="mt-4 text-sm font-semibold text-rose-600"
               >
-                Parcourir les profils →
+                Découvrir les profils →
               </button>
             </div>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:gap-4">
-              {suggestions.map((p) => {
-                const geoBadge = geoProximityBadge(p);
+              {suggestions.slice(0, HOME_SUGGESTIONS_MAX).map((p) => {
+                const geoBadge = p.geo_badge;
                 const unreadCount = unreadBySender[p.id] || 0;
                 return (
                 <li key={p.id}>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import AuthScreen from '@/components/AuthScreen';
+import ResetPasswordScreen from '@/components/ResetPasswordScreen';
 import AppShell from '@/components/AppShell';
 import LandingPage from '@/components/LandingPage';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -10,7 +11,7 @@ import LegalTermsPage, {
 } from '@/components/LegalTerms';
 
 function AppContent() {
-  const { session, loading } = useAuth();
+  const { session, loading, passwordRecovery, finishPasswordRecovery } = useAuth();
   const [showLegal, setShowLegal] = useState(isLegalTermsOpen);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
@@ -57,6 +58,14 @@ function AppContent() {
           <div className="text-gray-400 text-sm">Chargement...</div>
         </div>
       </div>
+    );
+  }
+
+  if (session && passwordRecovery) {
+    return (
+      <ResetPasswordScreen
+        onDone={finishPasswordRecovery}
+      />
     );
   }
 

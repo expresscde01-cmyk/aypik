@@ -1,6 +1,8 @@
 import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import { geoProximityBadge } from '@/lib/geoProximity';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
@@ -24,6 +26,8 @@ export type ProfileDetailCandidate = {
   same_department?: boolean;
   same_region?: boolean;
   neighboring_region?: boolean;
+  distance_km?: number | null;
+  geo_badge?: string | null;
   is_boosted?: boolean;
   is_founder?: boolean;
   founder_number?: number | null;
@@ -82,7 +86,7 @@ export default function ProfileDetailModal({
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
-  const geoBadge = geoProximityBadge(candidate);
+  const geoBadge = candidate.geo_badge ?? geoProximityBadge(candidate);
   const pendingInbox =
     Boolean(inboxHistory) &&
     !alreadyLiked &&
@@ -94,6 +98,10 @@ export default function ProfileDetailModal({
   const waitingIncomingSheet = Boolean(inboxHistory?.waitingIncoming);
   const showWaitingSheetActions = waitingLocked || waitingIncomingSheet;
 
+  const [confirmDelete, setConfirmDelete] = useState<(() => void) | null>(
+    null
+  );
+
   const fireDeclined = (
     event: { preventDefault: () => void; stopPropagation: () => void },
     action?: () => void
@@ -101,6 +109,16 @@ export default function ProfileDetailModal({
     event.preventDefault();
     event.stopPropagation();
     action?.();
+  };
+
+  const requestDelete = (
+    event: { preventDefault: () => void; stopPropagation: () => void },
+    action?: () => void
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!action) return;
+    setConfirmDelete(() => action);
   };
 
   const modal = (
@@ -262,7 +280,7 @@ export default function ProfileDetailModal({
                       type="button"
                       disabled={busy}
                       onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => fireDeclined(e, onDeclinedDelete)}
+                      onClick={(e) => requestDelete(e, onDeclinedDelete)}
                       className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
                     >
                       {busy ? '…' : 'Supprimer'}
@@ -314,7 +332,7 @@ export default function ProfileDetailModal({
                     disabled={busy}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) =>
-                      fireDeclined(e, () => {
+                      requestDelete(e, () => {
                         if (onWaitingDiscard) onWaitingDiscard();
                         else onInboxDecision?.('refuse');
                       })
@@ -426,6 +444,23 @@ export default function ProfileDetailModal({
     </div>
   );
 
-  if (typeof document === 'undefined') return modal;
-  return createPortal(modal, document.body);
+  const tree = (
+    <>
+      {modal}
+      {confirmDelete ? (
+        <ConfirmDeleteModal
+          busy={busy}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => {
+            const run = confirmDelete;
+            setConfirmDelete(null);
+            run();
+          }}
+        />
+      ) : null}
+    </>
+  );
+
+  if (typeof document === 'undefined') return tree;
+  return createPortal(tree, document.body);
 }

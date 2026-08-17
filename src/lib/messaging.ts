@@ -109,6 +109,10 @@ export type InboxUpdatedDetail = {
     | 'match'
     | 'declined-dismiss'
     | 'wait-dismiss'
+    | 'match-archive'
+    | 'match-break'
+    | 'match-restore'
+    | 'match-purge'
     | null;
   notificationId?: string | null;
 };

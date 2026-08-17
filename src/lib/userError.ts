@@ -46,8 +46,20 @@ function friendlyDbMessage(msg: string): string {
   if (
     /schema cache/i.test(msg) ||
     /could not find the function/i.test(msg) ||
-    msg.includes('dismiss_declined_notification')
+    msg.includes('dismiss_declined_notification') ||
+    msg.includes('manage_active_match') ||
+    msg.includes('restore_broken_match') ||
+    msg.includes('purge_broken_match') ||
+    msg.includes('match_breaks')
   ) {
+    if (
+      msg.includes('manage_active_match') ||
+      msg.includes('restore_broken_match') ||
+      msg.includes('purge_broken_match') ||
+      msg.includes('match_breaks')
+    ) {
+      return 'Action indisponible : colle COLLER-MATCH-BREAKS.sql dans l’éditeur SQL Supabase, puis Run.';
+    }
     return 'Action indisponible : colle COLLER-DECLINED-ARCHIVES.sql dans l’éditeur SQL Supabase, puis Run.';
   }
   return msg;

@@ -12,6 +12,18 @@ export function getPublicSiteUrl(): string {
   return raw.replace(/\/$/, "");
 }
 
+/** Lien de reset hébergé sur le site (évite les Redirect URLs Auth). */
+export function buildPasswordRecoveryPageUrl(
+  tokenHash: string,
+  siteUrl = getPublicSiteUrl(),
+): string {
+  const url = new URL(siteUrl);
+  url.searchParams.set("reset", "1");
+  url.searchParams.set("type", "recovery");
+  url.searchParams.set("token_hash", tokenHash);
+  return url.toString();
+}
+
 export function preferencesUrl(siteUrl = getPublicSiteUrl()): string {
   return `${siteUrl}/?open=preferences`;
 }
@@ -46,6 +58,76 @@ export function escapeHtml(value: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+export const PASSWORD_RESET_SUBJECT = "Réinitialisation de votre mot de passe";
+
+export function buildPasswordResetBodyHtml(resetUrl: string): string {
+  const url = escapeHtml(resetUrl);
+  return `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Bonjour,</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+      Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le lien ci-dessous pour en définir un nouveau :
+    </p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;word-break:break-all;">
+      <a href="${url}">${url}</a>
+    </p>
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
+      Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+    </p>
+  `;
+}
+
+export function buildPasswordResetEmailHtml(
+  resetUrl: string,
+  siteUrl = getPublicSiteUrl(),
+): string {
+  return wrapTransactionalEmailHtml({
+    title: PASSWORD_RESET_SUBJECT,
+    siteUrl,
+    bodyHtml: buildPasswordResetBodyHtml(resetUrl),
+  });
+}
+
+export async function sendResendEmail(params: {
+  resendKey: string;
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
+  const from =
+    Deno.env.get("RESEND_FROM_EMAIL") ?? "Aypik <onboarding@resend.dev>";
+  const resendRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${params.resendKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [params.to],
+      subject: params.subject,
+      html: params.html,
+    }),
+  });
+  const resendData = await resendRes.json().catch(() => ({}));
+  if (!resendRes.ok) {
+    const raw =
+      typeof resendData?.message === "string"
+        ? resendData.message
+        : "Échec d'envoi Resend";
+    const testingOnly = /only send testing emails to your own/i.test(raw);
+    return {
+      ok: false,
+      error: testingOnly
+        ? "Resend est en mode test : vérifie le domaine d'expéditeur (RESEND_FROM_EMAIL) ou n'envoie qu'à l'e-mail du compte Resend."
+        : raw,
+    };
+  }
+  return {
+    ok: true,
+    id: typeof resendData?.id === "string" ? resendData.id : null,
+  };
 }
 
 /** Pied de page légal + lien de gestion des préférences (tous les e-mails sortants). */

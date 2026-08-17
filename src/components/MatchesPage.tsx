@@ -30,6 +30,7 @@ import {
   waitingMatchReminder,
   declinedArchiveStatusLabel,
   waitArchiveStatusLabel,
+  brokenMatchStatusLabel,
   type MatchRole,
 } from '@/lib/interactionCopy';
 import type { ProfileGender } from '@/components/ProfileSetup';
@@ -38,8 +39,10 @@ import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
 import RefuseButton from '@/components/RefuseButton';
 import ArchiveButton from '@/components/ArchiveButton';
+import RestoreLinkButton from '@/components/RestoreLinkButton';
 import WaitButton from '@/components/WaitButton';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import MatchManageModal from '@/components/MatchManageModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
   fetchInboxResponses,
@@ -69,6 +72,12 @@ import {
   type MatchesInboxEntry,
   type MatchesInboxStatus,
 } from '@/lib/matchesInboxSync';
+import {
+  fetchMatchBreaks,
+  restoreBrokenMatch,
+  purgeBrokenMatch,
+  type MatchBreakAction,
+} from '@/lib/matchBreaks';
 
 type MatchKind = 'match' | 'flash' | 'like';
 /** `flashes` table = Flash (éclair). Incoming like only = Like (cœur). */
@@ -137,6 +146,18 @@ type PendingWaitingCard = {
   notificationId: string;
   receivedAt: string;
   origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+};
+
+type BrokenMatchCard = {
+  archiveId: string;
+  createdAt: string;
+  origin: ReceivedOrigin;
+  action: MatchBreakAction;
   profile: Profile;
   age: number;
   is_founder?: boolean;
@@ -282,6 +303,7 @@ export default function MatchesPage({
   const [pendingWaiting, setPendingWaiting] = useState<PendingWaitingCard[]>(
     []
   );
+  const [brokenMatches, setBrokenMatches] = useState<BrokenMatchCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chatPeer, setChatPeer] = useState<Profile | null>(null);
@@ -296,15 +318,25 @@ export default function MatchesPage({
   );
   const [openPendingWaiting, setOpenPendingWaiting] =
     useState<PendingWaitingCard | null>(null);
+  const [openBroken, setOpenBroken] = useState<BrokenMatchCard | null>(null);
+  const [brokenBusyId, setBrokenBusyId] = useState<string | null>(null);
+  const restoredChatPeersRef = useRef<Set<string>>(new Set());
   const [declinedBusyId, setDeclinedBusyId] = useState<string | null>(null);
   const declinedBusyRef = useRef(false);
   const [actingId, setActingId] = useState<string | null>(null);
-  /** Clignotement ponctuel (Attendre manuel ou rappel notif) — jusqu’à quitter la page. */
+  /** Clignotement ponctuel (notif / focus) — retiré dès la 1re interaction. */
   const [pulseSingleId, setPulseSingleId] = useState<string | null>(null);
   /** Clignotement exclusif catégorie A (new) ou B (wait). */
   const [pulseCategory, setPulseCategory] = useState<MatchPulseCategory | null>(
     null
   );
+  const consumeAttentionPulse = useCallback((profileId?: string | null) => {
+    setPulseSingleId((current) => {
+      if (!profileId || current === profileId) return null;
+      return current;
+    });
+    setPulseCategory(null);
+  }, []);
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
   );
@@ -560,6 +592,7 @@ export default function MatchesPage({
       } catch {
         peersChat = new Set();
       }
+      for (const id of restoredChatPeersRef.current) peersChat.add(id);
       setPeersWithChat(peersChat);
 
       const list: Match[] = (profiles || [])
@@ -841,6 +874,48 @@ export default function MatchesPage({
     }
   }, [user]);
 
+  const loadBrokenMatches = useCallback(async () => {
+    if (!user) {
+      setBrokenMatches([]);
+      return;
+    }
+    try {
+      const rows = await fetchMatchBreaks();
+      if (rows.length === 0) {
+        setBrokenMatches([]);
+        setOpenBroken(null);
+        return;
+      }
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(
+        [...new Set(rows.map((r) => r.peer_id))]
+      );
+      const list: BrokenMatchCard[] = [];
+      for (const row of rows) {
+        const profile = byId.get(row.peer_id);
+        if (!profile) continue;
+        list.push({
+          archiveId: row.id,
+          createdAt: row.created_at,
+          origin: row.origin,
+          action: row.action,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+        });
+      }
+      setBrokenMatches(list);
+      setOpenBroken((open) => {
+        if (!open) return open;
+        return list.find((c) => c.archiveId === open.archiveId) ?? null;
+      });
+    } catch (err) {
+      setError(userErrorMessage(err, 'Impossible de charger les matchs rompus.'));
+      setBrokenMatches([]);
+    }
+  }, [user]);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -852,6 +927,7 @@ export default function MatchesPage({
         loadPendingDeclined(),
         loadWaitArchives(),
         loadPendingWaiting(),
+        loadBrokenMatches(),
       ]);
       if (active) setLoading(false);
     })();
@@ -864,6 +940,7 @@ export default function MatchesPage({
     loadPendingDeclined,
     loadWaitArchives,
     loadPendingWaiting,
+    loadBrokenMatches,
   ]);
 
   useEffect(() => {
@@ -874,6 +951,7 @@ export default function MatchesPage({
         void loadPendingDeclined();
         void loadWaitArchives();
         void loadPendingWaiting();
+        void loadBrokenMatches();
       }
     };
     window.addEventListener('focus', refreshInbox);
@@ -888,6 +966,7 @@ export default function MatchesPage({
     loadPendingDeclined,
     loadWaitArchives,
     loadPendingWaiting,
+    loadBrokenMatches,
   ]);
 
   useInboxReload(() => {
@@ -896,6 +975,7 @@ export default function MatchesPage({
     void loadPendingDeclined();
     void loadWaitArchives();
     void loadPendingWaiting();
+    void loadBrokenMatches();
     void unread.refresh();
   });
 
@@ -1251,6 +1331,7 @@ export default function MatchesPage({
     async (card: PendingDeclinedCard, archive: boolean) => {
       if (declinedBusyRef.current) return;
       declinedBusyRef.current = true;
+      consumeAttentionPulse(card.profile.id);
       setDeclinedBusyId(card.notificationId);
       setError(null);
       if (user?.id) {
@@ -1312,7 +1393,7 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    [user, loadDeclinedArchives]
+    [user, loadDeclinedArchives, consumeAttentionPulse]
   );
 
   const handleArchiveWaiting = useCallback(
@@ -1467,6 +1548,7 @@ export default function MatchesPage({
     async (card: DeclinedArchiveCard) => {
       if (declinedBusyRef.current) return;
       declinedBusyRef.current = true;
+      consumeAttentionPulse(card.profile.id);
       setDeclinedBusyId(card.archiveId);
       setError(null);
       setOpenArchive((open) =>
@@ -1489,7 +1571,70 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    []
+    [consumeAttentionPulse]
+  );
+
+  const handleBrokenRestore = useCallback(
+    async (card: BrokenMatchCard) => {
+      if (brokenBusyId) return;
+      setBrokenBusyId(card.archiveId);
+      setError(null);
+      try {
+        await restoreBrokenMatch(card.profile.id);
+        restoredChatPeersRef.current.add(card.profile.id);
+        setOpenBroken(null);
+        setBrokenMatches((prev) =>
+          prev.filter((c) => c.archiveId !== card.archiveId)
+        );
+        await Promise.all([loadMatches(), loadBrokenMatches()]);
+        setPeersWithChat((prev) => {
+          const next = new Set(prev);
+          next.add(card.profile.id);
+          return next;
+        });
+      } catch (err) {
+        setError(userErrorMessage(err, 'Impossible de rétablir ce match.'));
+        await loadBrokenMatches();
+      } finally {
+        setBrokenBusyId(null);
+      }
+    },
+    [brokenBusyId, loadMatches, loadBrokenMatches]
+  );
+
+  const handleBrokenPurge = useCallback(
+    async (card: BrokenMatchCard) => {
+      if (brokenBusyId) return;
+      setBrokenBusyId(card.archiveId);
+      setError(null);
+      try {
+        await purgeBrokenMatch(card.profile.id);
+        restoredChatPeersRef.current.delete(card.profile.id);
+        setOpenBroken(null);
+        setBrokenMatches((prev) =>
+          prev.filter((c) => c.archiveId !== card.archiveId)
+        );
+        setPeersWithChat((prev) => {
+          if (!prev.has(card.profile.id)) return prev;
+          const next = new Set(prev);
+          next.delete(card.profile.id);
+          return next;
+        });
+      } catch (err) {
+        setError(
+          userErrorMessage(err, 'Impossible de supprimer définitivement ce lien.')
+        );
+        await loadBrokenMatches();
+      } finally {
+        setBrokenBusyId(null);
+      }
+    },
+    [brokenBusyId, loadBrokenMatches]
+  );
+
+  const brokenPeerIds = useMemo(
+    () => new Set(brokenMatches.map((c) => c.profile.id)),
+    [brokenMatches]
   );
 
   const floors = useMemo(() => {
@@ -1500,6 +1645,7 @@ export default function MatchesPage({
       'matched-chat': [],
     };
     for (const match of matches) {
+      if (brokenPeerIds.has(match.profile.id)) continue;
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
       const hasDialogue =
@@ -1521,7 +1667,14 @@ export default function MatchesPage({
       matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedAsc),
       matchedChat: buckets['matched-chat'].sort(sortByDateReceivedAsc),
     };
-  }, [matches, peersWithChat, unread.bySender, user, waitArchives]);
+  }, [
+    matches,
+    peersWithChat,
+    unread.bySender,
+    user,
+    waitArchives,
+    brokenPeerIds,
+  ]);
 
   const visibleWaitArchives = useMemo(() => {
     const matchedIds = new Set(
@@ -1538,7 +1691,9 @@ export default function MatchesPage({
 
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
-    const next: MatchesInboxEntry[] = matches.map((match) => {
+    const next: MatchesInboxEntry[] = matches
+      .filter((match) => !brokenPeerIds.has(match.profile.id))
+      .map((match) => {
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
       const hasDialogue =
@@ -1556,7 +1711,7 @@ export default function MatchesPage({
       };
     });
     publish(next);
-  }, [matches, peersWithChat, unread.bySender, publish]);
+  }, [matches, peersWithChat, unread.bySender, publish, brokenPeerIds]);
 
   const renderMatchCard = (match: Match) => {
     const isPending = match.kind !== 'match';
@@ -1715,14 +1870,8 @@ export default function MatchesPage({
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
               tooltip="logo"
-              variant={match.waiting ? 'ban' : 'trash'}
-              onClick={() => {
-                if (match.waiting) {
-                  setOpenProfile(match);
-                  return;
-                }
-                void handleInboxDecision(match, 'refuse');
-              }}
+              label="Supprimer"
+              onClick={() => void handleInboxDecision(match, 'refuse')}
             />
           </div>
         ) : (
@@ -1771,7 +1920,10 @@ export default function MatchesPage({
       >
         <button
           type="button"
-          onClick={() => setOpenWaitArchive(card)}
+          onClick={() => {
+            consumeAttentionPulse(card.profile.id);
+            setOpenWaitArchive(card);
+          }}
           className={`match-card-photo relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 ${
             theirs
               ? 'bg-gradient-to-br from-amber-50 to-yellow-50'
@@ -1852,7 +2004,7 @@ export default function MatchesPage({
         <RefuseButton
           name={card.profile.display_name}
           busy={declinedBusyId === card.archiveId}
-          variant="ban"
+          label="Supprimer"
           onClick={() => void handleDeleteWaitArchive(card)}
         />
       </div>
@@ -1922,7 +2074,10 @@ export default function MatchesPage({
       >
         <button
           type="button"
-          onClick={() => setOpenPendingDeclined(card)}
+          onClick={() => {
+            consumeAttentionPulse(card.profile.id);
+            setOpenPendingDeclined(card);
+          }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0"
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
@@ -2021,7 +2176,10 @@ export default function MatchesPage({
       >
         <button
           type="button"
-          onClick={() => setOpenArchive(card)}
+          onClick={() => {
+            consumeAttentionPulse(card.profile.id);
+            setOpenArchive(card);
+          }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-fuchsia-100 flex-shrink-0"
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
@@ -2102,6 +2260,102 @@ export default function MatchesPage({
     );
   };
 
+  const renderBrokenCard = (card: BrokenMatchCard) => {
+    const isFlash = card.origin === 'flash';
+    const busy = brokenBusyId === card.archiveId;
+    return (
+      <div
+        id={`match-card-broken-${card.archiveId}`}
+        key={card.archiveId}
+        data-match-state="broken"
+        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-broken"
+      >
+        <button
+          type="button"
+          onClick={() => setOpenBroken(card)}
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0"
+          aria-label={`Gérer le match rompu avec ${card.profile.display_name}`}
+        >
+          {card.profile.photo_url ? (
+            <img
+              src={card.profile.photo_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-slate-400">
+              {card.profile.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isFlash ? (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-slate-800 truncate">
+              {card.profile.display_name}
+            </h3>
+            <span className="text-sm text-slate-500">{card.age} ans</span>
+            {card.is_boosted && <BoostedBadge size="sm" />}
+            {card.is_founder && (
+              <FounderBadge number={card.founder_number} size="sm" />
+            )}
+          </div>
+          {card.profile.location && (
+            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+              <MapPin className="w-3 h-3" />
+              {card.profile.location}
+            </p>
+          )}
+          <p className="text-xs text-slate-600 mt-1">
+            {brokenMatchStatusLabel(card.action, card.createdAt)}
+          </p>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
+          <RestoreLinkButton
+            name={card.profile.display_name}
+            busy={busy}
+            tooltip="logo-tr"
+            onClick={() => void handleBrokenRestore(card)}
+          />
+          <RefuseButton
+            name={card.profile.display_name}
+            busy={busy}
+            label="Supprimer"
+            tooltip="logo"
+            onClick={() => void handleBrokenPurge(card)}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderBrokenFloor = () => {
+    if (brokenMatches.length === 0) return null;
+    return (
+      <section className="space-y-2" aria-label="Matchs rompus">
+        <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+          <span className="match-intro-chip match-chip-broken">
+            Matchs rompus
+          </span>
+          <span className="text-gray-400 font-normal">
+            ({brokenMatches.length})
+          </span>
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {brokenMatches.map((card) => renderBrokenCard(card))}
+        </div>
+      </section>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -2113,7 +2367,7 @@ export default function MatchesPage({
     );
   }
 
-  if (error && matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0) {
+  if (error && matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && brokenMatches.length === 0) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
@@ -2124,7 +2378,7 @@ export default function MatchesPage({
     );
   }
 
-  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0) {
+  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && brokenMatches.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -2183,11 +2437,19 @@ export default function MatchesPage({
             void unread.refresh();
             onChatClosed?.();
           }}
+          onMatchHidden={() => {
+            setChatPeer(null);
+            void loadMatches();
+            void loadBrokenMatches();
+            void unread.refresh();
+            onChatClosed?.();
+          }}
         />
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        Tes matchs ({matches.length})
+        Tes matchs (
+        {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
       <div className="match-intro text-sm text-gray-600 mb-5">
         <p>
@@ -2210,6 +2472,14 @@ export default function MatchesPage({
             les archiver ou les supprimer
           </span>
           .
+        </p>
+        <p>
+          Un match déjà validé peut être archivé ou rompu depuis la conversation.
+          Tu le retrouveras alors dans{' '}
+          <span className="match-intro-chip match-chip-broken">
+            Matchs rompus
+          </span>
+          , pour le rétablir ou le supprimer définitivement.
         </p>
       </div>
 
@@ -2236,6 +2506,7 @@ export default function MatchesPage({
         {renderFloor('new', 'Like / Flash à étudier', floors.new)}
         {renderPendingDeclinedFloor()}
         {renderDeclinedArchiveFloor()}
+        {renderBrokenFloor()}
       </div>
 
       {openProfile && (
@@ -2475,6 +2746,18 @@ export default function MatchesPage({
           onLike={() => undefined}
           onFlash={() => undefined}
           onSkip={() => setOpenWaitArchive(null)}
+        />
+      )}
+
+      {openBroken && (
+        <MatchManageModal
+          peer={openBroken.profile}
+          mode="broken"
+          busy={brokenBusyId === openBroken.archiveId}
+          error={null}
+          onClose={() => setOpenBroken(null)}
+          onRestore={() => void handleBrokenRestore(openBroken)}
+          onPurge={() => void handleBrokenPurge(openBroken)}
         />
       )}
     </div>

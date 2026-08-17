@@ -464,6 +464,91 @@ button.group[data-matched='true'] {
   transform: rotate(180deg);
 }
 
+.restore-chain-capsule {
+  transition:
+    border-color 0.26s ease,
+    background-color 0.26s ease;
+}
+
+.restore-chain {
+  overflow: visible;
+  color: #94a3b8;
+  opacity: 0.68;
+  transition:
+    color 0.26s ease,
+    opacity 0.26s ease;
+}
+
+.restore-chain-left,
+.restore-chain-right,
+.restore-chain-bar {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease;
+}
+
+.restore-chain-left {
+  transform: translate(-2.4px, 0.7px) rotate(-14deg);
+}
+
+.restore-chain-right {
+  transform: translate(2.4px, -0.7px) rotate(14deg);
+}
+
+.restore-chain-bar {
+  opacity: 0;
+  transform: scaleX(0.15);
+}
+
+.group:focus-visible:not(:disabled) .restore-chain-capsule,
+.group:active:not(:disabled) .restore-chain-capsule {
+  border-color: #a7f3d0;
+  background-color: #ecfdf5;
+}
+
+.group:focus-visible:not(:disabled) .restore-chain,
+.group:active:not(:disabled) .restore-chain {
+  color: #059669;
+  opacity: 1;
+}
+
+.group:focus-visible:not(:disabled) .restore-chain-left,
+.group:active:not(:disabled) .restore-chain-left,
+.group:focus-visible:not(:disabled) .restore-chain-right,
+.group:active:not(:disabled) .restore-chain-right {
+  transform: translate(0, 0) rotate(0deg);
+}
+
+.group:focus-visible:not(:disabled) .restore-chain-bar,
+.group:active:not(:disabled) .restore-chain-bar {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .group:hover:not(:disabled) .restore-chain-capsule {
+    border-color: #a7f3d0;
+    background-color: #ecfdf5;
+  }
+
+  .group:hover:not(:disabled) .restore-chain {
+    color: #059669;
+    opacity: 1;
+  }
+
+  .group:hover:not(:disabled) .restore-chain-left,
+  .group:hover:not(:disabled) .restore-chain-right {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  .group:hover:not(:disabled) .restore-chain-bar {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
 .refuse-trash {
   overflow: visible;
   transition: color 0.2s ease;
@@ -777,6 +862,19 @@ button.group[data-matched='true'] {
   border: 1px solid #ce93d8;
 }
 
+/* Matchs rompus / archivés — gris-bleu pastel, distinct des autres étages */
+.match-card-broken {
+  background-color: #eceff1;
+  border: 1.5px solid #b0bec5;
+  box-shadow: 0 1px 2px rgba(69, 90, 100, 0.08);
+}
+
+.match-chip-broken {
+  background-color: #cfd8dc;
+  color: #37474f;
+  border: 1px solid #90a4ae;
+}
+
 /* ——— Cloche : tons par étape ——— */
 .notif-tone-new {
   background-color: rgba(232, 196, 168, 0.42);
@@ -1036,6 +1134,14 @@ button.group[data-matched='true'] {
     transition: none;
     transform: none;
     filter: none;
+  }
+
+  .restore-chain,
+  .restore-chain-left,
+  .restore-chain-right,
+  .restore-chain-bar,
+  .restore-chain-capsule {
+    transition: none;
   }
 
   .refuse-ban-wrap,

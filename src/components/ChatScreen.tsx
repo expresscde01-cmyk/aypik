@@ -15,13 +15,24 @@ import {
   markConversationRead,
   sendMessage,
 } from '@/lib/messaging';
+import {
+  archiveActiveMatch,
+  breakActiveMatch,
+} from '@/lib/matchBreaks';
+import { userErrorMessage } from '@/lib/userError';
+import MatchManageModal from '@/components/MatchManageModal';
 
 type ChatScreenProps = {
   peer: Profile;
   onClose: () => void;
+  onMatchHidden?: () => void;
 };
 
-export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
+export default function ChatScreen({
+  peer,
+  onClose,
+  onMatchHidden,
+}: ChatScreenProps) {
   const { user } = useAuth();
   const { status } = useMembership();
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -30,6 +41,9 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showManage, setShowManage] = useState(false);
+  const [manageBusy, setManageBusy] = useState(false);
+  const [manageError, setManageError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -220,6 +234,30 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
     }
   };
 
+  const runManage = async (action: 'archive' | 'break') => {
+    if (manageBusy) return;
+    setManageBusy(true);
+    setManageError(null);
+    try {
+      if (action === 'break') await breakActiveMatch(peer.id);
+      else await archiveActiveMatch(peer.id);
+      setShowManage(false);
+      onMatchHidden?.();
+      onClose();
+    } catch (err) {
+      setManageError(
+        userErrorMessage(
+          err,
+          action === 'break'
+            ? 'Impossible de rompre ce match.'
+            : 'Impossible d’archiver ce match.'
+        )
+      );
+    } finally {
+      setManageBusy(false);
+    }
+  };
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -376,9 +414,32 @@ export default function ChatScreen({ peer, onClose }: ChatScreenProps) {
                 <Send className="w-5 h-5" />
               </button>
             </form>
+            <p className="text-center pt-2.5 pb-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setManageError(null);
+                  setShowManage(true);
+                }}
+                className="text-[12px] text-gray-500 underline decoration-gray-400/80 underline-offset-2 decoration-from-font bg-amber-50/90 px-1 rounded-sm hover:text-slate-700 hover:bg-amber-100/80"
+              >
+                Gérer ce match
+              </button>
+            </p>
           </div>
         </footer>
       </aside>
+      {showManage ? (
+        <MatchManageModal
+          peer={peer}
+          mode="manage"
+          busy={manageBusy}
+          error={manageError}
+          onClose={() => setShowManage(false)}
+          onArchive={() => void runManage('archive')}
+          onBreak={() => void runManage('break')}
+        />
+      ) : null}
     </div>,
     document.body
   );

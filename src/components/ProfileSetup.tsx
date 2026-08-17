@@ -24,6 +24,7 @@ import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import { ContactLink, LegalLink } from '@/components/LegalTerms';
+import ChangePasswordSection from '@/components/ChangePasswordSection';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { isPaidPremiumActive } from '@/lib/membership';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
@@ -71,13 +72,9 @@ export interface Profile {
 export default function ProfileSetup({
   onDone,
   allowAccountDeletion = false,
-  onDeletionStatusChange,
-  accountDeletionPending,
 }: {
   onDone: () => void;
   allowAccountDeletion?: boolean;
-  onDeletionStatusChange?: (requestedAt: string | null) => void;
-  accountDeletionPending?: boolean;
 }) {
   const { user, signOut } = useAuth();
   const {
@@ -93,10 +90,6 @@ export default function ProfileSetup({
   const [claimingOffer, setClaimingOffer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deletionRequestedAt, setDeletionRequestedAt] = useState<string | null>(
-    null
-  );
-  const [deletionRequested, setDeletionRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [displayName, setDisplayName] = useState('');
@@ -164,7 +157,6 @@ export default function ProfileSetup({
         setEmailNotificationsEnabled(
           data.email_notifications_enabled !== false
         );
-        setDeletionRequestedAt(data.deletion_requested_at || null);
       } else {
         setProfileExists(false);
         const metaDob = user.user_metadata?.birth_date;
@@ -173,15 +165,6 @@ export default function ProfileSetup({
       setLoading(false);
     })();
   }, [user]);
-
-  useEffect(() => {
-    if (accountDeletionPending === true) {
-      setDeletionRequestedAt((prev) => prev ?? new Date().toISOString());
-    } else if (accountDeletionPending === false) {
-      setDeletionRequestedAt(null);
-      setDeletionRequested(false);
-    }
-  }, [accountDeletionPending]);
 
   useEffect(() => {
     if (loading) return;
@@ -460,10 +443,8 @@ export default function ProfileSetup({
       const deleteError = await requestAccountDeletion();
       if (deleteError) throw new Error(deleteError);
 
-      setDeletionRequested(true);
-      setDeletionRequestedAt(new Date().toISOString());
       setConfirmDelete(false);
-      onDeletionStatusChange?.(new Date().toISOString());
+      await signOut();
     } catch (err) {
       setError(userErrorMessage(err));
     } finally {
@@ -884,7 +865,7 @@ export default function ProfileSetup({
                 Préférences
               </h2>
               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                Gère les e-mails de notification envoyés par Aypik (flashes,
+                Gère les e-mails de notification envoyés par Aypik (flashs,
                 actualisations, messages d’accueil, etc.).
               </p>
             </div>
@@ -903,9 +884,11 @@ export default function ProfileSetup({
                   Recevoir les notifications et actualisations par e-mail
                 </span>
                 <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
-                  {profileExists
-                    ? 'Ce choix est enregistré immédiatement. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'
-                    : 'Ce choix sera enregistré avec ton profil. Les e-mails strictement nécessaires au service (sécurité, facturation) peuvent rester envoyés.'}
+                  En cochant cette option, vous acceptez de recevoir les
+                  communications non essentielles de la plateforme, telles que
+                  les nouveautés, les flashs ou les actualités du site. Les
+                  e-mails strictement nécessaires au bon fonctionnement du
+                  compte pourront toujours vous être envoyés.
                 </span>
                 {(prefsSaving || prefsSaved) && (
                   <span
@@ -950,6 +933,8 @@ export default function ProfileSetup({
           </>
         )}
 
+        {allowAccountDeletion && <ChangePasswordSection />}
+
         {allowAccountDeletion && (
           <p className="mt-6 text-center text-xs text-gray-400 leading-relaxed">
             Vous avez des questions ? <ContactLink />
@@ -965,36 +950,20 @@ export default function ProfileSetup({
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
             <h2 className="text-sm font-semibold text-gray-900 mb-1">SUPPRESSION DU COMPTE</h2>
             <p className="text-sm text-gray-500 mb-4">
-              Tu pars ? La suppression devient définitive après 30 jours.
-              Ton profil, tes likes et tes matchs seront alors effacés.
+              La suppression de ton compte est immédiate et définitive.
+              Ton profil, tes likes et tes matchs seront effacés.
             </p>
 
-            {deletionRequested || deletionRequestedAt ? (
-              <div className="space-y-3">
-                <p className="text-sm text-amber-800 bg-amber-50 rounded-xl p-3">
-                  Compte en cours de suppression — reconnecte-toi dans les
-                  30 jours pour annuler.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void signOut()}
-                  className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
-                >
-                  Se déconnecter
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="w-full py-3 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Supprimer mon compte
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="w-full py-3 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Supprimer mon compte
+            </button>
 
-            {confirmDelete && !deletionRequested && !deletionRequestedAt && (
+            {confirmDelete && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
                 <div
                   role="dialog"
@@ -1009,11 +978,10 @@ export default function ProfileSetup({
                     Attention
                   </h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    Attention : La suppression de ton compte sera définitive
-                    après un délai de 30 jours. Toutes tes données seront
-                    effacées. Si tu es Membre Fondateur, ton statut et
-                    ton numéro d&apos;inscription seront également perdus et
-                    ne pourront pas être récupérés.
+                    Cette action est immédiate et définitive. Toutes tes
+                    données seront effacées. Si tu es Membre Fondateur, ton
+                    statut et ton numéro d&apos;inscription seront également
+                    perdus et ne pourront pas être récupérés.
                   </p>
                   <div className="flex gap-3 pt-1">
                     <button

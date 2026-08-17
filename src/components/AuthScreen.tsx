@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Mail,
   Lock,
@@ -10,8 +10,19 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { translateAuthError } from '@/lib/authErrors';
+import { isInvalidLoginCredentials, shouldCountLoginFailure, translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
+import {
+  ACCOUNT_LOCKED_MESSAGE,
+  LOGIN_FAILURE_LIMIT,
+  RESET_EMAIL_SENT_MESSAGE,
+  clearLoginFailuresIfAllowed,
+  fetchLoginLockStatus,
+  notifyAccountLocked,
+  recordLoginFailure,
+  isValidResetEmail,
+  sendPasswordResetEmail,
+} from '@/lib/loginSecurity';
 import {
   ADULTS_ONLY_MESSAGE,
   MIN_USER_AGE,
@@ -38,11 +49,93 @@ export default function AuthScreen({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [accountLocked, setAccountLocked] = useState(false);
+  const [offerPasswordReset, setOfferPasswordReset] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const failCountByEmail = useRef<Map<string, number>>(new Map());
+  const notifiedLockEmails = useRef<Set<string>>(new Set());
   const maxAdultBirthDate = latestBirthDateForAge(MIN_USER_AGE);
+
+  const emailKey = (value: string) => value.trim().toLowerCase();
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+    setAccountLocked(false);
+    setOfferPasswordReset(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError('Saisis ton adresse e-mail pour réinitialiser ton mot de passe.');
+      return;
+    }
+    if (!isValidResetEmail(email)) {
+      setError('Adresse e-mail invalide.');
+      return;
+    }
+    if (resetBusy) return;
+    setResetBusy(true);
+    setInfo(null);
+    try {
+      await sendPasswordResetEmail(email);
+      setError(null);
+      setOfferPasswordReset(false);
+      setInfo(RESET_EMAIL_SENT_MESSAGE);
+    } catch (err) {
+      console.error(err);
+      setOfferPasswordReset(true);
+      setError(translateAuthError(err));
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
+  const applyLock = async (currentEmail: string, sendAlert: boolean) => {
+    setAccountLocked(true);
+    setOfferPasswordReset(false);
+    setError(ACCOUNT_LOCKED_MESSAGE);
+    const key = emailKey(currentEmail);
+    if (!sendAlert || notifiedLockEmails.current.has(key)) return;
+    notifiedLockEmails.current.add(key);
+    const emailed = await notifyAccountLocked(currentEmail);
+    if (!emailed) {
+      try {
+        await sendPasswordResetEmail(currentEmail);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handlePasswordFailure = async (currentEmail: string) => {
+    const key = emailKey(currentEmail);
+    const localCount = (failCountByEmail.current.get(key) || 0) + 1;
+    failCountByEmail.current.set(key, localCount);
+
+    const result = await recordLoginFailure(currentEmail);
+    const locked =
+      result.locked || localCount >= LOGIN_FAILURE_LIMIT;
+    if (locked) {
+      await applyLock(
+        currentEmail,
+        result.justLocked || localCount >= LOGIN_FAILURE_LIMIT
+      );
+      return;
+    }
+
+    setAccountLocked(false);
+    setOfferPasswordReset(true);
+    setError('Mot de passe incorrect.');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
+    if (!accountLocked) setOfferPasswordReset(false);
 
     if (!email.trim()) {
       setError('Saisis ton adresse e-mail.');
@@ -63,8 +156,14 @@ export default function AuthScreen({
         setError(passwordError);
         return;
       }
-    } else if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.');
+    } else if (password.length < 1) {
+      setError('Saisis ton mot de passe.');
+      return;
+    }
+
+    if (mode === 'signin' && accountLocked) {
+      setOfferPasswordReset(false);
+      setError(ACCOUNT_LOCKED_MESSAGE);
       return;
     }
 
@@ -78,14 +177,49 @@ export default function AuthScreen({
           options: { data: { birth_date: birthDate } },
         });
         if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        return;
+      }
+
+      const alreadyBlocked =
+        (failCountByEmail.current.get(emailKey(email)) || 0) >=
+        LOGIN_FAILURE_LIMIT;
+      if (alreadyBlocked) {
+        await applyLock(email, false);
+        return;
+      }
+
+      const locked = await fetchLoginLockStatus(email);
+      if (locked) {
+        await applyLock(email, false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      if (!data.session) {
+        await handlePasswordFailure(email);
+        return;
+      }
+
+      failCountByEmail.current.delete(emailKey(email));
+      const stillLocked = await clearLoginFailuresIfAllowed();
+      if (stillLocked) {
+        await supabase.auth.signOut();
+        await applyLock(email, false);
       }
     } catch (err) {
+      if (mode === 'signin' && shouldCountLoginFailure(err)) {
+        await handlePasswordFailure(email);
+        return;
+      }
+      if (mode === 'signin' && isInvalidLoginCredentials(err)) {
+        setOfferPasswordReset(true);
+        setError('Mot de passe incorrect.');
+        return;
+      }
       setError(translateAuthError(err));
     } finally {
       setLoading(false);
@@ -133,7 +267,7 @@ export default function AuthScreen({
           <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-6">
             <button
               type="button"
-              onClick={() => setMode('signup')}
+              onClick={() => switchMode('signup')}
               className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 mode === 'signup'
                   ? 'bg-white text-gray-900 shadow-sm'
@@ -144,7 +278,7 @@ export default function AuthScreen({
             </button>
             <button
               type="button"
-              onClick={() => setMode('signin')}
+              onClick={() => switchMode('signin')}
               className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 mode === 'signin'
                   ? 'bg-white text-gray-900 shadow-sm'
@@ -166,7 +300,13 @@ export default function AuthScreen({
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setEmail(next);
+                    const count =
+                      failCountByEmail.current.get(emailKey(next)) || 0;
+                    setAccountLocked(count >= LOGIN_FAILURE_LIMIT);
+                  }}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
                   placeholder="toi@exemple.com"
                 />
@@ -233,23 +373,44 @@ export default function AuthScreen({
               )}
             </div>
 
+            {info && (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-50 text-emerald-800 text-sm animate-fadeIn">
+                <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{info}</span>
+              </div>
+            )}
+
             {error && (
               <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
+                <div className="min-w-0 space-y-2">
+                  <p>{error}</p>
+                  {mode === 'signin' && offerPasswordReset && (
+                    <button
+                      type="button"
+                      onClick={() => void handleForgotPassword()}
+                      disabled={resetBusy}
+                      className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
+                    >
+                      {resetBusy ? 'Envoi du lien...' : 'Mot de passe oublié ?'}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === 'signin' && accountLocked)}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading
                 ? 'Chargement...'
                 : mode === 'signup'
                   ? 'Créer mon compte'
-                  : 'Se connecter'}
+                  : accountLocked
+                    ? 'Compte bloqué'
+                    : 'Se connecter'}
             </button>
           </form>
 

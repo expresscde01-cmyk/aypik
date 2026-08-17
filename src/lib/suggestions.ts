@@ -1,7 +1,23 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile, ProfileGender } from '@/components/ProfileSetup';
-import { isWithinAgeGap, matchingTargetGender, MIN_USER_AGE } from '@/lib/dating';
+import {
+  ageFromBirthDate,
+  latestBirthDateForAge,
+  matchingTargetGender,
+  minPartnerAge,
+  parseProfileGender,
+  MIN_USER_AGE,
+} from '@/lib/dating';
 import { geoProximityFlags } from '@/lib/geoProximity';
+import {
+  passesSuggestionPillars,
+  resolveProfileDistances,
+  suggestionGeoBadge,
+} from '@/lib/suggestionMatch';
+import {
+  DEFAULT_SUGGESTION_PREFS,
+  type SuggestionPrefs,
+} from '@/lib/suggestionPrefs';
 
 export { displaySocialNotification } from '@/lib/interactionCopy';
 
@@ -95,6 +111,9 @@ export async function sweepStaleSocialNotifications(
   }
 }
 
+/** Vitrine Accueil : shortlist qualitative, le catalogue complet est sur Découvrir. */
+export const HOME_SUGGESTIONS_MAX = 8;
+
 export type SuggestedProfile = Profile & {
   score: number;
   mutual_interest_count: number;
@@ -105,86 +124,165 @@ export type SuggestedProfile = Profile & {
   age: number;
   is_boosted: boolean;
   mutual_interests: string[];
+  distance_km: number | null;
+  geo_badge: string | null;
 };
-
-function parseProfileGender(value: unknown): ProfileGender | null {
-  return value === 'homme' || value === 'femme' ? value : null;
-}
 
 export async function fetchSuggestedProfiles(options?: {
   limit?: number;
-  sameCityOnly?: boolean;
-  minInterestOverlap?: number;
   myInterests?: string[];
   myAge?: number;
+  myLocation?: string;
   viewerGender?: ProfileGender | null;
+  prefs?: SuggestionPrefs;
+  excludeLikedAndFlashed?: boolean;
+  signal?: AbortSignal;
 }): Promise<SuggestedProfile[]> {
-  const minOverlap = options?.minInterestOverlap ?? 0;
-
-  const { data, error } = await supabase.rpc('suggest_profiles', {
-    p_limit: options?.limit ?? 12,
-    p_same_city_only: options?.sameCityOnly ?? false,
-    p_min_interest_overlap: minOverlap,
-  });
-
-  if (error) throw error;
-
-  const myInterests = options?.myInterests || [];
-
-  const mapped = ((data || []) as Array<Record<string, unknown>>).map((row) => {
-    const interests = Array.isArray(row.interests)
-      ? (row.interests as string[])
-      : [];
-    const mutual = myInterests.length
-      ? interests.filter((i) => myInterests.includes(i))
-      : interests.slice(0, row.mutual_interest_count as number);
-
-    return {
-      id: String(row.id),
-      display_name: String(row.display_name || ''),
-      birth_date: String(row.birth_date || ''),
-      bio: String(row.bio || ''),
-      has_children: Boolean(row.has_children),
-      location: String(row.location || ''),
-      interests,
-      photo_url: String(row.photo_url || ''),
-      gender: parseProfileGender(row.gender),
-      score: Number(row.score) || 0,
-      mutual_interest_count: Number(row.mutual_interest_count) || 0,
-      same_city: Boolean(row.same_city),
-      same_department: Boolean(row.same_department),
-      same_region: Boolean(row.same_region),
-      neighboring_region: Boolean(row.neighboring_region),
-      age: Number(row.age) || 0,
-      is_boosted: Boolean(row.is_boosted),
-      mutual_interests: mutual,
-    };
-  });
-
   const myAge = options?.myAge;
   if (typeof myAge !== 'number' || !Number.isFinite(myAge)) {
     return [];
   }
 
-  const targetGender = matchingTargetGender(options?.viewerGender);
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return [];
 
-  return mapped.filter((p) => {
-    if (myAge < MIN_USER_AGE || p.age < MIN_USER_AGE) {
-      return false;
+  const prefs = options?.prefs ?? DEFAULT_SUGGESTION_PREFS;
+  const myInterests = options?.myInterests || [];
+  const myLocation = options?.myLocation || '';
+  const targetGender = matchingTargetGender(options?.viewerGender);
+  const myMinAge = minPartnerAge(myAge);
+  const excludeInteracted = options?.excludeLikedAndFlashed !== false;
+  const limit = Math.min(
+    Math.max(options?.limit ?? HOME_SUGGESTIONS_MAX, 1),
+    HOME_SUGGESTIONS_MAX
+  );
+
+  const rows: Profile[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    if (options?.signal?.aborted) return [];
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .neq('id', me)
+      .eq('has_children', false)
+      .is('deletion_requested_at', null)
+      .lte('birth_date', latestBirthDateForAge(Math.max(MIN_USER_AGE, myMinAge)))
+      .order('id', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+    const page = (data || []) as Profile[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  if (options?.signal?.aborted) return [];
+  const ids = rows.map((p) => p.id);
+
+  const excluded = new Set<string>();
+  const boostSet = new Set<string>();
+
+  if (ids.length > 0) {
+    const [likesRes, flashesRes] = await Promise.all([
+      excludeInteracted
+        ? supabase.from('likes').select('to_user').eq('from_user', me)
+        : Promise.resolve({ data: [] as { to_user: string }[] }),
+      excludeInteracted
+        ? supabase.from('flashes').select('to_user').eq('from_user', me)
+        : Promise.resolve({ data: [] as { to_user: string }[] }),
+    ]);
+
+    (likesRes.data || []).forEach((row) => excluded.add(row.to_user));
+    (flashesRes.data || []).forEach((row) => excluded.add(row.to_user));
+
+    try {
+      for (let i = 0; i < ids.length; i += 80) {
+        const chunk = ids.slice(i, i + 80);
+        const { data: boosts } = await supabase
+          .from('profile_boosts')
+          .select('user_id')
+          .in('user_id', chunk)
+          .in('payment_status', ['paid', 'simulated'])
+          .gt('ends_at', new Date().toISOString());
+        (boosts || []).forEach((row) => boostSet.add(row.user_id));
+      }
+    } catch {
+      /* badges optionnels */
     }
-    if (!isWithinAgeGap(myAge, p.age) || !isWithinAgeGap(p.age, myAge)) {
-      return false;
-    }
-    if (targetGender && p.gender !== targetGender) {
-      return false;
-    }
-    // Accueil : ville / département / région uniquement.
-    // Région voisine + intérêts (même 3–4) ne suffisent pas.
-    if (!p.same_city && !p.same_department && !p.same_region) {
-      return false;
-    }
-    return true;
-  });
+  }
+
+  if (options?.signal?.aborted) return [];
+
+  const withFlags = rows
+    .filter((profile) => !excluded.has(profile.id))
+    .map((profile) => {
+      const age = ageFromBirthDate(profile.birth_date);
+      const interests = profile.interests || [];
+      const mutual = myInterests.filter((i) => interests.includes(i));
+      const flags = geoProximityFlags(myLocation, profile.location || '');
+      const is_boosted = boostSet.has(profile.id);
+      return {
+        ...profile,
+        gender: parseProfileGender(profile.gender),
+        age,
+        interests,
+        mutual_interests: mutual,
+        mutual_interest_count: mutual.length,
+        is_boosted,
+        same_city: flags.same_city,
+        same_department: flags.same_department,
+        same_region: flags.same_region,
+        neighboring_region: flags.neighboring_region,
+        score: rankProfileScore({
+          myAge,
+          theirAge: age,
+          myLocation,
+          theirLocation: profile.location || '',
+          mutualInterestCount: mutual.length,
+          isBoosted: is_boosted,
+        }),
+        distance_km: null as number | null,
+        geo_badge: null as string | null,
+      };
+    });
+
+  const distances = await resolveProfileDistances(
+    myLocation,
+    withFlags,
+    prefs,
+    options?.signal
+  );
+  if (options?.signal?.aborted) return [];
+
+  return withFlags
+    .map((profile) => {
+      const distance_km = distances.get(profile.id) ?? null;
+      return {
+        ...profile,
+        distance_km,
+        geo_badge: suggestionGeoBadge(profile, distance_km, prefs),
+      };
+    })
+    .filter((profile) =>
+      passesSuggestionPillars(
+        {
+          gender: profile.gender,
+          age: profile.age,
+          mutualCount: profile.mutual_interest_count,
+          flags: profile,
+          distanceKm: profile.distance_km,
+        },
+        myAge,
+        targetGender,
+        prefs
+      )
+    )
+    .sort(
+      (a, b) =>
+        b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted)
+    )
+    .slice(0, limit);
 }
 
 /** Affinité géographique à partir des libellés « Ville (CP) » (sans lat/lng). */

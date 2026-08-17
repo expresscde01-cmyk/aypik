@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Heart,
   MapPin,
@@ -10,14 +10,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import {
-  ageFromBirthDate,
-  isWithinAgeGap,
-  latestBirthDateForAge,
-  matchingTargetGender,
-  minPartnerAge,
-  MIN_USER_AGE,
-} from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
 import type { Profile } from '@/components/ProfileSetup';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
@@ -30,33 +22,24 @@ import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
-import { rankProfileScore } from '@/lib/suggestions';
 import {
   GEO_PERIMETER_FILTER_LABEL,
   GEO_PERIMETER_OPTIONS,
-  geoProximityBadge,
-  geoProximityFlags,
-  matchesGeoPerimeter,
-  type GeoPerimeterFilter,
+  GEO_RADIUS_KM_OPTIONS,
+  isGeoPerimeterFilter,
+  isGeoRadiusKm,
 } from '@/lib/geoProximity';
+import {
+  fetchDiscoveryCatalog,
+  type DiscoveryCandidate,
+} from '@/lib/discoveryCatalog';
+import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 
 type SortChoice = 'pertinence' | 'recents' | null;
 
-interface Candidate extends Profile {
-  age: number;
-  mutual_interests: string[];
-  is_boosted?: boolean;
-  is_founder?: boolean;
-  founder_number?: number | null;
-  score: number;
-  same_city: boolean;
-  same_department: boolean;
-  same_region: boolean;
-  neighboring_region: boolean;
-  created_at?: string;
-}
+type Candidate = DiscoveryCandidate;
 
 export default function DiscoveryPage({
   unreadBySender = {},
@@ -78,24 +61,56 @@ export default function DiscoveryPage({
   const [actingId, setActingId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
-  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showFiltersHint, setShowFiltersHint] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [geoPerimeter, setGeoPerimeter] =
-    useState<GeoPerimeterFilter>('anywhere');
-  const [minOverlap, setMinOverlap] = useState<number | null>(null);
+  const [prefs, setPrefs] = useSuggestionPrefs(userId, {
+    listen: false,
+    persistOnChange: false,
+  });
+  const { geoPerimeter, geoRadiusKm, minOverlap } = prefs;
   const [sortChoice, setSortChoice] = useState<SortChoice>(null);
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
   const geoFilterActive = geoPerimeter !== 'anywhere';
-  const hasActiveFilter = geoFilterActive || minOverlap !== null;
-  const catalogAllProfiles = minOverlap === null && !geoFilterActive;
+  const hasActiveFilter = geoFilterActive || minOverlap > 0;
+  /**
+   * Exclusions de la visite Découvrir (vu / like / flash).
+   * Vidée uniquement en quittant la page (démontage).
+   */
+  const [sessionExcludedIds, setSessionExcludedIds] = useState(
+    () => new Set<string>()
+  );
+  const fetchGenRef = useRef(0);
 
-  useEffect(() => {
-    setSkippedIds(new Set());
-  }, [geoPerimeter, minOverlap]);
+  const excludeFromSession = useCallback((id: string) => {
+    if (!id) return;
+    setSessionExcludedIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  if (userId) syncDiscoverPrefs(userId, prefs);
+
+  useLayoutEffect(() => {
+    if (!userId) return;
+    const flush = () => {
+      flushDiscoverPrefs(userId);
+    };
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onHidden);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onHidden);
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -134,146 +149,40 @@ export default function DiscoveryPage({
   }, [userId, profileEpoch]);
 
   useEffect(() => {
-    if (!myProfile || !userId || membershipLoading) return;
+    if (!myProfile || !userId) return;
 
+    const gen = ++fetchGenRef.current;
     let cancelled = false;
+    const abort = new AbortController();
     setSearching(true);
+    setError(null);
 
     (async () => {
-      const myAge = ageFromBirthDate(myProfile.birth_date);
-      const myMinAge = minPartnerAge(myAge);
-      const targetGender = matchingTargetGender(myProfile.gender);
-
-      let query = supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', userId)
-        .eq('has_children', false)
-        .is('deletion_requested_at', null)
-        .lte(
-          'birth_date',
-          latestBirthDateForAge(Math.max(MIN_USER_AGE, myMinAge))
-        );
-
-      if (targetGender) {
-        query = query.eq('gender', targetGender);
-      }
-
-      const { data, error: candErr } = await query;
-
-      if (cancelled) return;
-
-      if (candErr) {
-        setError(candErr.message);
-        setSearching(false);
-        return;
-      }
-
-      const ids = (data || []).map((p) => (p as Profile).id);
-
-      const boostSet = new Set<string>();
-      const founderMap = new Map<string, number | null>();
-
-      if (ids.length > 0) {
-        const { data: boosts } = await supabase
-          .from('profile_boosts')
-          .select('user_id')
-          .in('user_id', ids)
-          .in('payment_status', ['paid', 'simulated'])
-          .gt('ends_at', new Date().toISOString());
-
-        (boosts || []).forEach((b) => boostSet.add(b.user_id));
-
-        const { data: memberships } = await supabase
-          .from('memberships')
-          .select('user_id, is_founder, founder_number')
-          .in('user_id', ids);
-
-        (memberships || []).forEach((m) => {
-          if (m.is_founder) {
-            founderMap.set(m.user_id, m.founder_number ?? null);
-          }
+      try {
+        const filtered = await fetchDiscoveryCatalog({
+          userId,
+          myProfile,
+          prefs,
+          signal: abort.signal,
         });
+        if (cancelled || gen !== fetchGenRef.current) return;
+        setCandidates(filtered);
+      } catch (err) {
+        if (cancelled || gen !== fetchGenRef.current) return;
+        setCandidates([]);
+        setError(
+          err instanceof Error ? err.message : 'Impossible de charger les profils'
+        );
       }
-
-      const filtered: Candidate[] = (data || [])
-        .map((p) => {
-          const profile = p as Profile;
-          const age = ageFromBirthDate(profile.birth_date);
-          const mutual_interests = (profile.interests || []).filter((i) =>
-            (myProfile.interests || []).includes(i)
-          );
-          const is_boosted = boostSet.has(profile.id);
-          const flags = geoProximityFlags(
-            myProfile.location || '',
-            profile.location || ''
-          );
-
-          return {
-            ...profile,
-            age,
-            mutual_interests,
-            is_boosted,
-            is_founder: founderMap.has(profile.id),
-            founder_number: founderMap.get(profile.id) ?? null,
-            same_city: flags.same_city,
-            same_department: flags.same_department,
-            same_region: flags.same_region,
-            neighboring_region: flags.neighboring_region,
-            created_at:
-              typeof (profile as Candidate).created_at === 'string'
-                ? (profile as Candidate).created_at
-                : undefined,
-            score: rankProfileScore({
-              myAge,
-              theirAge: age,
-              myLocation: myProfile.location || '',
-              theirLocation: profile.location || '',
-              mutualInterestCount: mutual_interests.length,
-              isBoosted: is_boosted,
-            }),
-          };
-        })
-        .filter((c) => {
-          if (targetGender && c.gender !== targetGender) return false;
-          if (c.age < MIN_USER_AGE) return false;
-          if (!isWithinAgeGap(myAge, c.age)) return false;
-          if (!isWithinAgeGap(c.age, myAge)) return false;
-          if (
-            canFilter &&
-            !matchesGeoPerimeter(c, geoPerimeter)
-          ) {
-            return false;
-          }
-          if (
-            canFilter &&
-            typeof minOverlap === 'number' &&
-            minOverlap > 0 &&
-            c.mutual_interests.length < minOverlap
-          ) {
-            return false;
-          }
-          return true;
-        })
-        .sort((a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted));
-
-      if (cancelled) return;
-      setCandidates(filtered);
-      setSearching(false);
-    })();
+    })().finally(() => {
+      if (!cancelled && gen === fetchGenRef.current) setSearching(false);
+    });
 
     return () => {
       cancelled = true;
+      abort.abort();
     };
-  }, [
-    myProfile,
-    myProfile?.gender,
-    userId,
-    membershipLoading,
-    canFilter,
-    geoPerimeter,
-    minOverlap,
-  ]);
+  }, [myProfile, userId, prefs]);
 
   const founderActive = isFounderPeriodActive(status);
   const likesUnlimited = status.unlimited_likes || founderActive;
@@ -288,11 +197,7 @@ export default function DiscoveryPage({
         status.premium_interval
       );
 
-  const visible = candidates.filter((c) => {
-    if (skippedIds.has(c.id)) return false;
-    if (!catalogAllProfiles && likedIds.has(c.id)) return false;
-    return true;
-  });
+  const visible = candidates.filter((c) => !sessionExcludedIds.has(c.id));
   const displayed = useMemo(() => {
     const list = [...visible];
     if (sortChoice === 'recents') {
@@ -340,6 +245,7 @@ export default function DiscoveryPage({
           to_user: candidate.id,
         });
         if (likeErr) throw likeErr;
+        excludeFromSession(candidate.id);
         setLikedIds((prev) => new Set(prev).add(candidate.id));
         setOpenProfile((open) => (open?.id === candidate.id ? null : open));
 
@@ -362,13 +268,24 @@ export default function DiscoveryPage({
         setActingId(null);
       }
     },
-    [user, actingId, likesExhausted, likedIds, refresh]
+    [user, actingId, likesExhausted, likedIds, refresh, excludeFromSession]
   );
 
-  const handleSkip = useCallback((id: string) => {
-    setSkippedIds((prev) => new Set(prev).add(id));
-    setOpenProfile((open) => (open?.id === id ? null : open));
-  }, []);
+  const handleSkip = useCallback(
+    (id: string) => {
+      excludeFromSession(id);
+      setOpenProfile((open) => (open?.id === id ? null : open));
+    },
+    [excludeFromSession]
+  );
+
+  const openCandidate = useCallback(
+    (candidate: Candidate) => {
+      excludeFromSession(candidate.id);
+      setOpenProfile(candidate);
+    },
+    [excludeFromSession]
+  );
 
   const handleFlash = useCallback(
     async (candidate: Candidate) => {
@@ -387,6 +304,7 @@ export default function DiscoveryPage({
         }
 
         setFlashedIds((prev) => new Set(prev).add(candidate.id));
+        excludeFromSession(candidate.id);
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
@@ -414,7 +332,7 @@ export default function DiscoveryPage({
         setActingId(null);
       }
     },
-    [user, actingId, flashedIds, status, showFlashCta]
+    [user, actingId, flashedIds, status, showFlashCta, excludeFromSession]
   );
 
   if (loading || membershipLoading) {
@@ -448,7 +366,7 @@ export default function DiscoveryPage({
             expanded={showFilters}
             onToggle={() => setShowFilters((open) => !open)}
             activeCount={
-              [geoFilterActive, minOverlap !== null].filter(Boolean).length
+              [geoFilterActive, minOverlap > 0].filter(Boolean).length
             }
             priceLabel={priceLabel}
             status={status}
@@ -466,9 +384,12 @@ export default function DiscoveryPage({
                 Périmètre géographique
                 <select
                   value={geoPerimeter}
-                  onChange={(e) =>
-                    setGeoPerimeter(e.target.value as GeoPerimeterFilter)
-                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (isGeoPerimeterFilter(v)) {
+                      setPrefs((prev) => ({ ...prev, geoPerimeter: v }));
+                    }
+                  }}
                   className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
                 >
                   {GEO_PERIMETER_OPTIONS.map((option) => (
@@ -478,14 +399,37 @@ export default function DiscoveryPage({
                   ))}
                 </select>
               </label>
+              {geoPerimeter === 'radius' && (
+                <label className="flex flex-col gap-1 text-sm text-gray-700">
+                  Distance
+                  <select
+                    value={geoRadiusKm}
+                    onChange={(e) => {
+                      const km = Number(e.target.value);
+                      if (isGeoRadiusKm(km)) {
+                        setPrefs((prev) => ({ ...prev, geoRadiusKm: km }));
+                      }
+                    }}
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  >
+                    {GEO_RADIUS_KM_OPTIONS.map((km) => (
+                      <option key={km} value={km}>
+                        {km} km
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
                 <select
-                  value={minOverlap === null ? '' : minOverlap}
+                  value={minOverlap === 0 ? '' : minOverlap}
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (v === '') setMinOverlap(null);
-                    else setMinOverlap(Number(v));
+                    setPrefs((prev) => ({
+                      ...prev,
+                      minOverlap: v === '' ? 0 : Number(v),
+                    }));
                   }}
                   className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
                 >
@@ -620,7 +564,7 @@ export default function DiscoveryPage({
               const alreadyFlashed = flashedIds.has(c.id);
               const alreadyLiked = likedIds.has(c.id);
               const busy = actingId === c.id;
-              const geoBadge = geoProximityBadge(c);
+              const geoBadge = c.geo_badge;
               const unreadCount = unreadBySender[c.id] || 0;
               return (
                 <li key={c.id}>
@@ -634,7 +578,7 @@ export default function DiscoveryPage({
                     <button
                       type="button"
                       className="absolute inset-0 z-[1] cursor-pointer"
-                      onClick={() => setOpenProfile(c)}
+                      onClick={() => openCandidate(c)}
                       aria-label={
                         unreadCount > 0
                           ? `Voir le profil de ${c.display_name}, ${unreadMessagesLabel(unreadCount)}`
@@ -670,7 +614,7 @@ export default function DiscoveryPage({
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onOpenUnreadChat) onOpenUnreadChat(c.id);
-                            else setOpenProfile(c);
+                            else openCandidate(c);
                           }}
                           className="pointer-events-auto absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600"
                           aria-label={unreadMessagesLabel(unreadCount)}

@@ -23,7 +23,7 @@ function mapDeletionError(error: {
   }
 
   if (error.message.includes('deletion_already_processed')) {
-    return 'Le délai de 30 jours est écoulé : le compte ne peut plus être restauré.';
+    return 'Ce compte a déjà été supprimé.';
   }
 
   return error.message;
@@ -41,7 +41,7 @@ export async function cancelAccountDeletion(): Promise<string | null> {
   return mapDeletionError(error);
 }
 
-/** @deprecated Utiliser requestAccountDeletion (délai de 30 jours). */
+/** @deprecated Utiliser requestAccountDeletion. */
 export async function deleteAccount(): Promise<string | null> {
   return requestAccountDeletion();
 }

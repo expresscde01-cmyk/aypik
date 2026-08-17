@@ -194,12 +194,27 @@ export function parseLocation(loc: string): ParsedLocation {
   if (range) {
     const cp = range[2];
     return {
-      name: range[1].trim().toLowerCase(),
+      name: normalizeCityName(range[1]),
       cp,
       dept: deptCodeFromPostal(cp),
     };
   }
-  return { name: trimmed.toLowerCase(), cp: '', dept: '' };
+  const anyCp = trimmed.match(/\b(\d{5})\b/);
+  if (anyCp) {
+    const cp = anyCp[1];
+    const name = normalizeCityName(trimmed.replace(anyCp[0], ''));
+    return { name, cp, dept: deptCodeFromPostal(cp) };
+  }
+  return { name: normalizeCityName(trimmed), cp: '', dept: '' };
+}
+
+function normalizeCityName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 export function regionFromDept(dept: string): string | null {
@@ -230,12 +245,17 @@ export function geoProximityFlags(a: string, b: string): GeoProximityFlags {
 
   const A = parseLocation(a);
   const B = parseLocation(b);
-  const sameCity =
-    a.trim() === b.trim() || Boolean(A.name && B.name && A.name === B.name);
   const sameDept = Boolean(A.dept && B.dept && A.dept === B.dept);
+  const sameName = Boolean(A.name && B.name && A.name === B.name);
+  // Homonymes (Montreuil 93 vs 28) : le CP tranche. Sans CP, le nom suffit.
+  const sameCity =
+    a.trim() === b.trim() ||
+    (sameName && (!A.dept || !B.dept || A.dept === B.dept));
   const regionA = regionFromDept(A.dept);
   const regionB = regionFromDept(B.dept);
-  const sameRegion = Boolean(regionA && regionB && regionA === regionB);
+  const sameRegion = Boolean(
+    (regionA && regionB && regionA === regionB) || sameDept
+  );
   const neighboring =
     Boolean(regionA && regionB) &&
     !sameRegion &&
@@ -244,7 +264,7 @@ export function geoProximityFlags(a: string, b: string): GeoProximityFlags {
   return {
     same_city: sameCity,
     same_department: sameDept,
-    same_region: sameRegion,
+    same_region: sameRegion || sameDept,
     neighboring_region: neighboring,
   };
 }
@@ -282,8 +302,13 @@ export function geoProximityBadgeFromLocations(
   return geoProximityBadge(geoProximityFlags(a, b));
 }
 
-/** Filtre Découvrir : périmètre expansif (le plus large inclut les plus proches). */
-export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel;
+/** Filtre Découvrir : une seule option à la fois (la nouvelle remplace la précédente). */
+export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel | 'radius';
+
+/** Paliers de recherche ciblée. Sans limite geo → « Partout ». */
+export const GEO_RADIUS_KM_OPTIONS = [30, 50, 100, 200, 300, 400, 500] as const;
+export type GeoRadiusKm = (typeof GEO_RADIUS_KM_OPTIONS)[number];
+export const GEO_RADIUS_KM_DEFAULT: GeoRadiusKm = 100;
 
 const GEO_PERIMETER_RANK: Record<GeoProximityLevel, number> = {
   city: 1,
@@ -292,12 +317,14 @@ const GEO_PERIMETER_RANK: Record<GeoProximityLevel, number> = {
   neighboring_region: 4,
 };
 
+/** Libellés du menu Découvrir. « Jusqu’à » = le palier choisi + tous les cercles plus proches. */
 export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
   anywhere: 'Partout',
-  city: GEO_PROXIMITY_LABEL.city,
-  department: GEO_PROXIMITY_LABEL.department,
-  region: GEO_PROXIMITY_LABEL.region,
-  neighboring_region: GEO_PROXIMITY_LABEL.neighboring_region,
+  city: 'Même ville',
+  department: 'Jusqu’au département',
+  region: 'Jusqu’à la région',
+  neighboring_region: 'Jusqu’aux régions voisines',
+  radius: 'Jusqu’à un rayon de...',
 };
 
 export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
@@ -306,19 +333,107 @@ export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
   'department',
   'region',
   'neighboring_region',
+  'radius',
 ];
 
+export function geoScopeWidth(
+  perimeter: GeoPerimeterFilter,
+  radiusKm: number
+): number {
+  if (perimeter === 'anywhere') return Number.POSITIVE_INFINITY;
+  if (perimeter === 'radius') return 100 + radiusKm;
+  return GEO_PERIMETER_RANK[perimeter];
+}
+
+/** True si le nouveau périmètre englobe un cercle plus large que le précédent. */
+export function isGeoScopeWider(
+  prev: { geoPerimeter: GeoPerimeterFilter; geoRadiusKm: number },
+  next: { geoPerimeter: GeoPerimeterFilter; geoRadiusKm: number }
+): boolean {
+  return (
+    geoScopeWidth(next.geoPerimeter, next.geoRadiusKm) >
+    geoScopeWidth(prev.geoPerimeter, prev.geoRadiusKm)
+  );
+}
+
+export function isGeoPerimeterFilter(
+  value: string
+): value is GeoPerimeterFilter {
+  return (GEO_PERIMETER_OPTIONS as readonly string[]).includes(value);
+}
+
+export function isGeoRadiusKm(value: number): value is GeoRadiusKm {
+  return (GEO_RADIUS_KM_OPTIONS as readonly number[]).includes(value);
+}
+
 /**
- * Périmètre expansif, pas un niveau exclusif :
- * ville ⊂ département ⊂ région ⊂ région voisine.
- * « Partout » = aucun filtre geo (ancienne case décochée).
+ * Périmètre cumulatif progressif (ET avec âge / intérêts, pas entre options) :
+ *   Même ville              → ville
+ *   Jusqu’au département    → ville OU département
+ *   Jusqu’à la région       → ville OU département OU région
+ *   Jusqu’aux régions voisines → ville OU département OU région OU voisine
+ *   Jusqu’à un rayon de...  → distance ≤ rayon (km)
+ *   Partout                 → aucune barrière géographique
  */
 export function matchesGeoPerimeter(
   flags: Partial<GeoProximityFlags> | null | undefined,
-  perimeter: GeoPerimeterFilter
+  perimeter: GeoPerimeterFilter,
+  opts?: { distanceKm?: number | null; radiusKm?: number }
 ): boolean {
   if (perimeter === 'anywhere') return true;
-  const level = geoProximityLevelFromFlags(flags);
-  if (!level) return false;
-  return GEO_PERIMETER_RANK[level] <= GEO_PERIMETER_RANK[perimeter];
+
+  if (perimeter === 'radius') {
+    const distanceKm = opts?.distanceKm;
+    const radiusKm = opts?.radiusKm;
+    if (
+      typeof distanceKm === 'number' &&
+      Number.isFinite(distanceKm) &&
+      typeof radiusKm === 'number' &&
+      Number.isFinite(radiusKm)
+    ) {
+      return distanceKm <= radiusKm;
+    }
+    return Boolean(flags?.same_city);
+  }
+
+  const city = Boolean(flags?.same_city);
+  const department = Boolean(flags?.same_department);
+  const region = Boolean(flags?.same_region);
+  const neighboring = Boolean(flags?.neighboring_region);
+
+  switch (perimeter) {
+    case 'city':
+      return city;
+    case 'department':
+      return city || department;
+    case 'region':
+      return city || department || region;
+    case 'neighboring_region':
+      return city || department || region || neighboring;
+    default:
+      return false;
+  }
+}
+
+export function formatDistanceKmBadge(
+  distanceKm: number | null | undefined
+): string | null {
+  if (typeof distanceKm !== 'number' || !Number.isFinite(distanceKm) || distanceKm < 0) {
+    return null;
+  }
+  return `À ${Math.max(1, Math.round(distanceKm))} km`;
+}
+
+/**
+ * Badge unique sous le nom (Découvrir / Accueil) :
+ * - proximité admin (ville, département, région, région voisine) → texte sémantique
+ * - au-delà (rayon / Partout hors de ces cercles) → « À X km »
+ */
+export function discoveryLocationBadge(
+  flags: Partial<GeoProximityFlags> | null | undefined,
+  distanceKm: number | null | undefined
+): string | null {
+  const adminBadge = geoProximityBadge(flags);
+  if (adminBadge) return adminBadge;
+  return formatDistanceKmBadge(distanceKm);
 }

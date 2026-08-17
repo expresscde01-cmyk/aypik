@@ -245,6 +245,18 @@ export function waitArchiveStatusLabel(
   return when ? `Archivé le ${when}` : 'Archivé';
 }
 
+/** Carte « Matchs rompus ». */
+export function brokenMatchStatusLabel(
+  action: 'archive' | 'break',
+  at?: string | null
+): string {
+  const when = at ? formatInteractionDate(at) : '';
+  if (action === 'archive') {
+    return when ? `Archivé le ${when}` : 'Match archivé';
+  }
+  return when ? `Match rompu le ${when}` : 'Match rompu';
+}
+
 /** Rappel local (fiche / Mes Matchs) pour celle/celui qui a choisi Attendre. */
 export function waitingMatchReminder(
   origin: InteractionOrigin,

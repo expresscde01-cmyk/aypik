@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { BRAND_NAME, BRAND_BASELINE, BRAND_FULL } from '@/components/BrandLockup';
+import { BRAND_NAME, BRAND_BASELINE } from '@/components/BrandLockup';
 import { SITE_FREE_MODE, FOUNDER_MAX_SLOTS } from '@/lib/founderCopy';
 
 export function openLegalTerms() {
@@ -344,11 +344,13 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               L&apos;utilisateur peut à tout moment demander la suppression de
               son compte et de l&apos;intégralité de ses données personnelles
               depuis les paramètres de son profil, conformément à la
-              réglementation sur la protection des données (RGPD). La
-              suppression n&apos;est pas immédiate : le compte passe au statut
-              « en cours de suppression » pendant 30 jours. Une reconnexion
-              pendant ce délai permet d&apos;annuler la demande. Passé ce délai,
-              toutes les données sont effacées définitivement.
+              réglementation sur la protection des données (RGPD). Pour
+              l&apos;utilisateur, cette suppression est définitive : le profil
+              n&apos;est plus visible et n&apos;est plus utilisé. Pour des
+              raisons techniques et de sécurité (correction d&apos;une erreur
+              de manipulation, obligations légales), les données peuvent être
+              conservées de manière interne pendant un délai de purge de
+              30 jours, après lequel elles sont irrémédiablement effacées.
             </p>
             <p>
               Le statut de Membre Fondateur et son numéro associé sont
@@ -449,9 +451,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Comment se passe la suppression de mon compte&nbsp;?
               </p>
               <p>
-                La suppression n&apos;est pas immédiate : vous disposez d&apos;un
-                délai de 30 jours pour vous reconnecter et annuler. Passé ce
-                délai, toutes vos données sont définitivement effacées.
+                La suppression demandée depuis votre profil est définitive :
+                votre profil n&apos;est plus visible et vos données ne sont plus
+                utilisées. Les modalités de conservation technique figurent à
+                l&apos;article 7 des présentes CGU.
               </p>
             </div>
             {!SITE_FREE_MODE && (
@@ -487,8 +490,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <ContactLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
             </p>
             <p>
-              En utilisant {BRAND_FULL}, vous confirmez avoir lu et
-              accepté les présentes CGU / CGV.
+              En utilisant {BRAND_NAME} — {BRAND_BASELINE} — vous confirmez
+              avoir lu et accepté les présentes CGU / CGV.
             </p>
           </footer>
         </article>
