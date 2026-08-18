@@ -3,15 +3,17 @@ import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
-import MatchesPage from '@/components/MatchesPage';
-import ProfileSetup from '@/components/ProfileSetup';
 import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
+import MatchesPage from '@/components/MatchesPage';
 import NotificationsBell from '@/components/NotificationsBell';
 import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalTerms';
-import type { Profile } from '@/components/ProfileSetup';
-import { useUnreadMessages } from '@/lib/messaging';
+import ProfileSetup, {
+  PROFILE_CARD_COLUMNS,
+  type Profile,
+} from '@/components/ProfileSetup';
+import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
   normalizeOpenMatchesOpts,
   type OpenMatchesOpts,
@@ -35,8 +37,21 @@ function initialTabFromQuery(): Tab {
 }
 
 export default function AppShell() {
+  return (
+    <UnreadMessagesProvider>
+      <MatchesInboxSyncProvider>
+        <AppShellView />
+      </MatchesInboxSyncProvider>
+    </UnreadMessagesProvider>
+  );
+}
+
+function AppShellView() {
   const { user, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
+  const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(
+    () => new Set([initialTabFromQuery()])
+  );
   const [inboxActorId, setInboxActorId] = useState<string | null>(null);
   const [inboxOpenChat, setInboxOpenChat] = useState(false);
   const [inboxHighlight, setInboxHighlight] = useState(false);
@@ -48,10 +63,10 @@ export default function AppShell() {
   const [inboxWaitingIncoming, setInboxWaitingIncoming] = useState(false);
   /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
   const [inboxFocusKey, setInboxFocusKey] = useState(0);
-  const unread = useUnreadMessages(user?.id, { channelKey: 'nav' });
+  const unread = useUnreadMessages();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  /** Invalide le cache profil (genre, etc.) pour Découvrir / Accueil / Matchs. */
+  /** Invalide Accueil / Découvrir / Matchs uniquement après une vraie sauvegarde de profil. */
   const [profileEpoch, setProfileEpoch] = useState(0);
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
 
@@ -60,11 +75,20 @@ export default function AppShell() {
     setSuggestionPrefsEpoch((n) => n + 1);
   }, [user?.id]);
 
+  const mountTab = useCallback((next: Tab) => {
+    setMountedTabs((prev) => {
+      if (prev.has(next)) return prev;
+      const copy = new Set(prev);
+      copy.add(next);
+      return copy;
+    });
+  }, []);
+
   const reloadViewerProfile = useCallback(async () => {
     if (!user) return null;
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_CARD_COLUMNS)
       .eq('id', user.id)
       .maybeSingle();
     setProfile(data as Profile | null);
@@ -78,12 +102,10 @@ export default function AppShell() {
       if (tab === 'discover' && next !== 'discover') {
         persistDiscoverPrefs();
       }
-      if (next === 'discover' || next === 'home' || next === 'matches') {
-        void reloadViewerProfile();
-      }
+      mountTab(next);
       setTab(next);
     },
-    [persistDiscoverPrefs, reloadViewerProfile, tab]
+    [mountTab, persistDiscoverPrefs, tab]
   );
 
   useEffect(() => {
@@ -92,7 +114,7 @@ export default function AppShell() {
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select(PROFILE_CARD_COLUMNS)
         .eq('id', user.id)
         .maybeSingle();
       if (active) {
@@ -132,7 +154,7 @@ export default function AppShell() {
     if (tab === 'discover') {
       persistDiscoverPrefs();
     }
-    // Pas de reload profil / epoch : ça démontait la liste (spinner) et cassait le scroll.
+    mountTab('matches');
     setTab('matches');
   };
 
@@ -193,24 +215,30 @@ export default function AppShell() {
   }
 
   return (
-    <MatchesInboxSyncProvider>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 min-h-0">
-        {tab === 'home' && (
-          <HomeDashboard
-            displayName={displayName}
-            onSignOut={signOut}
-            onOpenDiscover={() => openTab('discover')}
-            onOpenMatches={openMatches}
-            onOpenProfile={() => setTab('profile')}
-            unreadTotal={unread.total}
-            unreadBySender={unread.bySender}
-            profileEpoch={profileEpoch}
-            suggestionPrefsEpoch={suggestionPrefsEpoch}
-          />
+        {mountedTabs.has('home') && (
+          <div className={tab === 'home' ? undefined : 'hidden'}>
+            <HomeDashboard
+              displayName={displayName}
+              onSignOut={signOut}
+              onOpenDiscover={() => openTab('discover')}
+              onOpenMatches={openMatches}
+              onOpenProfile={() => setTab('profile')}
+              unreadTotal={unread.total}
+              unreadBySender={unread.bySender}
+              profileEpoch={profileEpoch}
+              suggestionPrefsEpoch={suggestionPrefsEpoch}
+              notificationsActive={tab === 'home'}
+            />
+          </div>
         )}
-        {tab === 'discover' && (
-          <div className="min-h-full flex flex-col">
+        {mountedTabs.has('discover') && (
+          <div
+            className={
+              tab === 'discover' ? 'min-h-full flex flex-col' : 'hidden'
+            }
+          >
             <header className="sticky top-0 z-10 discover-sticky-header">
               <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
                 <div className="flex items-start justify-between gap-3">
@@ -239,14 +267,17 @@ export default function AppShell() {
                     <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
                       <em>
                         Les filtres sélectionnés ici s’appliqueront
-                        automatiquement dès que vous quitterez cette page pour
-                        personnaliser les suggestions qui vous seront faites
-                        sur votre page Accueil.
+                        automatiquement dès que tu quitteras cette page pour
+                        personnaliser les suggestions qui te seront faites
+                        sur ta page Accueil.
                       </em>
                     </p>
                   </div>
                   <div className="shrink-0 -mr-1 -mt-0.5">
-                    <NotificationsBell onOpenInbox={openMatches} />
+                    <NotificationsBell
+                      onOpenInbox={openMatches}
+                      active={tab === 'discover'}
+                    />
                   </div>
                 </div>
               </div>
@@ -258,8 +289,12 @@ export default function AppShell() {
             />
           </div>
         )}
-        {tab === 'matches' && (
-          <div className="min-h-full flex flex-col">
+        {mountedTabs.has('matches') && (
+          <div
+            className={
+              tab === 'matches' ? 'min-h-full flex flex-col' : 'hidden'
+            }
+          >
             <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
               <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
                 <button
@@ -272,10 +307,14 @@ export default function AppShell() {
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
-                <NotificationsBell onOpenInbox={openMatches} />
+                <NotificationsBell
+                  onOpenInbox={openMatches}
+                  active={tab === 'matches'}
+                />
               </div>
             </div>
             <MatchesPage
+              pageActive={tab === 'matches'}
               focusActorId={inboxActorId}
               focusOpenChat={inboxOpenChat}
               focusHighlight={inboxHighlight}
@@ -303,6 +342,7 @@ export default function AppShell() {
             allowAccountDeletion
             onDone={async () => {
               await reloadViewerProfile();
+              mountTab('home');
               setTab('home');
             }}
           />
@@ -346,7 +386,6 @@ export default function AppShell() {
         </div>
       </nav>
     </div>
-    </MatchesInboxSyncProvider>
   );
 }
 

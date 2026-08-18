@@ -1,0 +1,36 @@
+---
+description: Infobulle de tri Découvrir — style aérien figé, ne plus itérer
+alwaysApply: true
+---
+
+# Infobulle de tri (Découvrir) — style verrouillé
+
+Le rendu de `.discovery-sort-hint-inner` est **validé et figé**. Ne pas proposer ni appliquer de nouvelles itérations visuelles (bordure, ombre, teinte, rayon, padding, typo).
+
+Structure obligatoire :
+
+- `border: none` (jamais de trait dur, jamais `border-top-color` / `border-bottom-color`)
+- contour **uniquement** via `box-shadow` **3 couches** (valeurs exactes ci-dessous)
+- fond `#ffffff` ; actif `#ede7f6` avec le même principe d’ombre (teinte violette)
+
+```css
+.discovery-sort-hint-inner {
+  border: none;
+  background: #ffffff;
+  box-shadow:
+    0 -1px 2px rgba(15, 23, 42, 0.01),
+    0 2px 10px rgba(15, 23, 42, 0.022),
+    0 3px 5px rgba(15, 23, 42, 0.028);
+}
+
+.discovery-sort-pill--active .discovery-sort-hint-inner {
+  background: #ede7f6;
+  border: none;
+  box-shadow:
+    0 -1px 2px rgba(109, 40, 217, 0.011),
+    0 2px 10px rgba(109, 40, 217, 0.025),
+    0 3px 5px rgba(109, 40, 217, 0.032);
+}
+```
+
+Si une demande touche l’infobulle (position, animation, copy), **ne pas** modifier ces propriétés d’ombre / bordure / fond.

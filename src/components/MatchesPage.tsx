@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, MapPin, AlertCircle, Zap } from 'lucide-react';
+import { Folder, Heart, MapPin, AlertCircle, Zap, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import ChatScreen from '@/components/ChatScreen';
 import {
   ageFromBirthDate,
   isWithinAgeGap,
@@ -9,7 +10,7 @@ import {
 } from '@/lib/dating';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
-import type { Profile } from '@/components/ProfileSetup';
+import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
 import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
@@ -17,7 +18,6 @@ import { userErrorMessage } from '@/lib/userError';
 import {
   fetchPeersWithMessages,
   fetchSocialNotifications,
-  sweepStaleSocialNotifications,
 } from '@/lib/suggestions';
 import {
   formatInteractionDate,
@@ -34,7 +34,6 @@ import {
   type MatchRole,
 } from '@/lib/interactionCopy';
 import type { ProfileGender } from '@/components/ProfileSetup';
-import ChatScreen from '@/components/ChatScreen';
 import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
 import RefuseButton from '@/components/RefuseButton';
@@ -42,11 +41,13 @@ import ArchiveButton from '@/components/ArchiveButton';
 import RestoreLinkButton from '@/components/RestoreLinkButton';
 import WaitButton from '@/components/WaitButton';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import MatchManageModal from '@/components/MatchManageModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
   fetchInboxResponses,
   respondToInboxInterest,
+  restoreWaitFromArchive,
   type InboxDecision,
 } from '@/lib/inboxResponses';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
@@ -61,9 +62,12 @@ import {
 import {
   dismissWaitingNotification,
   fetchPendingWaitingNotices,
+  forgetClearedWait,
   forgetWaitArchive,
   isMineWaitArchived,
+  isWaitCleared,
   listAllWaitArchives,
+  releaseWaitCycle,
   rememberMineWaitArchive,
   rememberTheirsWaitArchive,
 } from '@/lib/waitArchives';
@@ -211,6 +215,23 @@ function isInboxEligible(myAge: number | null, theirAge: number): boolean {
   return isWithinAgeGap(myAge, theirAge);
 }
 
+const PROFILE_IN_CHUNK = 80;
+
+async function fetchByIdChunks<T>(
+  ids: string[],
+  run: (chunk: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const unique = [...new Set(ids)].filter(Boolean);
+  const rows: T[] = [];
+  for (let i = 0; i < unique.length; i += PROFILE_IN_CHUNK) {
+    const chunk = unique.slice(i, i + PROFILE_IN_CHUNK);
+    const { data, error } = await run(chunk);
+    if (error) throw error;
+    if (data?.length) rows.push(...data);
+  }
+  return rows;
+}
+
 async function fetchProfileBundle(ids: string[]): Promise<{
   byId: Map<string, Profile>;
   founderMap: Map<string, number | null>;
@@ -219,32 +240,40 @@ async function fetchProfileBundle(ids: string[]): Promise<{
   if (ids.length === 0) {
     return { byId: new Map(), founderMap: new Map(), boostSet: new Set() };
   }
-  const [{ data: profiles }, { data: memberships }, { data: boosts }] =
-    await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [profiles, memberships, boosts] = await Promise.all([
+    fetchByIdChunks<Profile>(ids, (chunk) =>
       supabase
         .from('profiles')
-        .select('*')
-        .in('id', ids)
-        .is('deletion_requested_at', null),
+        .select(PROFILE_CARD_COLUMNS)
+        .in('id', chunk)
+        .is('deletion_requested_at', null)
+    ),
+    fetchByIdChunks<{
+      user_id: string;
+      is_founder: boolean | null;
+      founder_number: number | null;
+    }>(ids, (chunk) =>
       supabase
         .from('memberships')
         .select('user_id, is_founder, founder_number')
-        .in('user_id', ids),
+        .in('user_id', chunk)
+    ),
+    fetchByIdChunks<{ user_id: string }>(ids, (chunk) =>
       supabase
         .from('profile_boosts')
         .select('user_id')
-        .in('user_id', ids)
+        .in('user_id', chunk)
         .in('payment_status', ['paid', 'simulated'])
-        .gt('ends_at', new Date().toISOString()),
-    ]);
+        .gt('ends_at', nowIso)
+    ),
+  ]);
   const founderMap = new Map<string, number | null>();
-  (memberships || []).forEach((m) => {
+  memberships.forEach((m) => {
     if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
   });
-  const boostSet = new Set((boosts || []).map((b) => b.user_id as string));
-  const byId = new Map(
-    ((profiles || []) as Profile[]).map((p) => [p.id, p])
-  );
+  const boostSet = new Set(boosts.map((b) => b.user_id));
+  const byId = new Map(profiles.map((p) => [p.id, p]));
   return { byId, founderMap, boostSet };
 }
 
@@ -256,6 +285,133 @@ function scrollMatchCardIntoView(elementId: string) {
   };
   window.setTimeout(run, 80);
   window.setTimeout(run, 320);
+}
+
+function HintActionIcon({
+  kind,
+}: {
+  kind: 'archive' | 'delete';
+}) {
+  return (
+    <span
+      className="mx-0.5 inline-flex h-[1.35rem] w-[1.35rem] shrink-0 translate-y-px items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm align-text-bottom"
+      aria-hidden
+    >
+      {kind === 'archive' ? (
+        <Folder
+          className="archive-folder h-3 w-3 text-[#FFC107]"
+          strokeWidth={2.4}
+        />
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          className="refuse-trash h-3 w-3 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <g className="refuse-trash-lid">
+            <path d="M3 6h18" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          </g>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+          <line x1="10" x2="10" y1="11" y2="17" />
+          <line x1="14" x2="14" y1="11" y2="17" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
+function DeclinedActionHint({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="false"
+      aria-label="Que faire de ce profil"
+      className="absolute bottom-full left-1/2 z-30 mb-2 w-[min(calc(100vw-2rem),19rem)] -translate-x-1/2"
+    >
+      <div className="relative rounded-2xl bg-[#FFF8E1] px-3.5 py-3 pr-9 text-xs leading-relaxed text-gray-700 shadow-lg shadow-amber-100/70 ring-1 ring-amber-100">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-amber-100/70 transition-colors"
+          aria-label="Fermer"
+        >
+          <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+        </button>
+        <p>
+          Tu peux soit archiver ce profil{' '}
+          <HintActionIcon kind="archive" /> pour le conserver dans ta page
+          &quot;Mes Matchs&quot;, soit le supprimer{' '}
+          <HintActionIcon kind="delete" /> pour le faire disparaître
+          définitivement de ta page.
+        </p>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[calc(100%-1px)] -translate-x-1/2 border-[7px] border-transparent border-t-[#FFF8E1]"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Infobulles des icônes de fiche : haut-droite / côté droit / bas-droite. */
+type CardActionTooltip = 'logo-tr' | 'right' | 'logo';
+
+/** Trash is always last when other icons share the stack. */
+function cardActionTooltip(
+  index: number,
+  count: number
+): CardActionTooltip {
+  if (count <= 1 || index === 0) return 'logo-tr';
+  if (index === count - 1) return 'logo';
+  return 'right';
+}
+
+const CARD_ACTIONS_COL =
+  'match-card-actions flex flex-col flex-nowrap items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible';
+
+function CardIdentity({
+  name,
+  age,
+  isBoosted,
+  isFounder,
+  founderNumber,
+  nameClass = 'text-gray-900',
+  ageClass = 'text-gray-400',
+}: {
+  name: string;
+  age: number;
+  isBoosted?: boolean;
+  isFounder?: boolean;
+  founderNumber?: number | null;
+  nameClass?: string;
+  ageClass?: string;
+}) {
+  return (
+    <>
+      <div className="flex items-center gap-2 min-w-0">
+        <h3 className={`font-semibold truncate ${nameClass}`}>{name}</h3>
+        <span className={`text-sm shrink-0 ${ageClass}`}>{age} ans</span>
+      </div>
+      {isBoosted ? (
+        <div className="mt-0.5">
+          <BoostedBadge size="sm" />
+        </div>
+      ) : null}
+      {isFounder ? (
+        <div className="mt-0.5">
+          <FounderBadge number={founderNumber} size="sm" />
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 export default function MatchesPage({
@@ -271,6 +427,7 @@ export default function MatchesPage({
   onChatClosed,
   onFocusActorConsumed,
   profileEpoch = 0,
+  pageActive = true,
 }: {
   focusActorId?: string | null;
   focusOpenChat?: boolean;
@@ -288,6 +445,8 @@ export default function MatchesPage({
   onChatClosed?: () => void;
   onFocusActorConsumed?: () => void;
   profileEpoch?: number;
+  /** Onglet Matchs visible : resync inbox à la réouverture, sans poll. */
+  pageActive?: boolean;
 } = {}) {
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
@@ -321,11 +480,19 @@ export default function MatchesPage({
   const [openBroken, setOpenBroken] = useState<BrokenMatchCard | null>(null);
   const [brokenBusyId, setBrokenBusyId] = useState<string | null>(null);
   const restoredChatPeersRef = useRef<Set<string>>(new Set());
+  const matchesLoadGen = useRef(0);
+  const waitArchivesLoadGen = useRef(0);
+  const restoredWaitActorsRef = useRef<Set<string>>(new Set());
+  const waitCycleLockRef = useRef<Set<string>>(new Set());
   const [declinedBusyId, setDeclinedBusyId] = useState<string | null>(null);
   const declinedBusyRef = useRef(false);
   const [actingId, setActingId] = useState<string | null>(null);
   /** Clignotement ponctuel (notif / focus) — retiré dès la 1re interaction. */
   const [pulseSingleId, setPulseSingleId] = useState<string | null>(null);
+  /** Infobulle « Pas cette fois » au-dessus de la fiche ciblée par la notif. */
+  const [declinedActionHintId, setDeclinedActionHintId] = useState<
+    string | null
+  >(null);
   /** Clignotement exclusif catégorie A (new) ou B (wait). */
   const [pulseCategory, setPulseCategory] = useState<MatchPulseCategory | null>(
     null
@@ -336,6 +503,10 @@ export default function MatchesPage({
       return current;
     });
     setPulseCategory(null);
+    setDeclinedActionHintId((current) => {
+      if (!profileId || current === profileId) return null;
+      return current;
+    });
   }, []);
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
@@ -351,9 +522,8 @@ export default function MatchesPage({
     waitingIncoming: boolean;
     attempts?: number;
   } | null>(null);
-  const unread = useUnreadMessages(user?.id, {
+  const unread = useUnreadMessages({
     ignoreSenderId: chatPeer?.id ?? null,
-    channelKey: 'matches-list',
   });
 
   const founderActive = isFounderPeriodActive(status);
@@ -363,9 +533,8 @@ export default function MatchesPage({
 
   const loadMatches = useCallback(async () => {
     if (!user) return;
+    const gen = ++matchesLoadGen.current;
     try {
-      await sweepStaleSocialNotifications();
-
       const { data: meRow } = await supabase
         .from('profiles')
         .select('birth_date, gender')
@@ -530,38 +699,12 @@ export default function MatchesPage({
       ];
 
       if (allIds.length === 0) {
+        if (gen !== matchesLoadGen.current) return;
         setMatches([]);
         return;
       }
 
-      const { data: profiles, error: profErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', allIds)
-        .is('deletion_requested_at', null);
-
-      if (profErr) throw profErr;
-
-      const founderMap = new Map<string, number | null>();
-      const boostSet = new Set<string>();
-
-      const [{ data: memberships }, { data: boosts }] = await Promise.all([
-        supabase
-          .from('memberships')
-          .select('user_id, is_founder, founder_number')
-          .in('user_id', allIds),
-        supabase
-          .from('profile_boosts')
-          .select('user_id')
-          .in('user_id', allIds)
-          .in('payment_status', ['paid', 'simulated'])
-          .gt('ends_at', new Date().toISOString()),
-      ]);
-
-      (memberships || []).forEach((m) => {
-        if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
-      });
-      (boosts || []).forEach((b) => boostSet.add(b.user_id));
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(allIds);
 
       const matchAt = new Map(matchEntries.map((m) => [m.id, m.at]));
       const matchOrigin = new Map(matchEntries.map((m) => [m.id, m.origin]));
@@ -585,6 +728,7 @@ export default function MatchesPage({
           .map((r) => [r.actor_id, r.updated_at] as const)
       );
       const waitingActors = new Set(waitingAtMap.keys());
+      const forceWait = restoredWaitActorsRef.current;
 
       let peersChat = new Set<string>();
       try {
@@ -595,9 +739,7 @@ export default function MatchesPage({
       for (const id of restoredChatPeersRef.current) peersChat.add(id);
       setPeersWithChat(peersChat);
 
-      const list: Match[] = (profiles || [])
-        .map((row) => {
-          const p = row as Profile;
+      const list: Match[] = [...byId.values()].map((p) => {
           const kind: MatchKind = matchIdSet.has(p.id)
             ? 'match'
             : flashIdSet.has(p.id)
@@ -619,6 +761,10 @@ export default function MatchesPage({
           const matchRole =
             matchRoleMap.get(p.id) || matchRoleFromDates(mine, theirs);
           const isMatched = kind === 'match';
+          const waiting =
+            !isMatched &&
+            (forceWait.has(p.id) ||
+              (waitingActors.has(p.id) && !isWaitCleared(user.id, p.id)));
           return {
             profile: p,
             age: ageFromBirthDate(p.birth_date),
@@ -629,15 +775,17 @@ export default function MatchesPage({
             matchedBackAt: matchBackAt.get(p.id) || mine || null,
             alreadyLiked: sentSet.has(p.id),
             matchRole,
-            waiting: !isMatched && waitingActors.has(p.id),
-            waitingAt: waitingAtMap.get(p.id) ?? null,
+            waiting,
+            waitingAt: waiting ? waitingAtMap.get(p.id) ?? null : null,
             refused: false,
             is_founder: founderMap.has(p.id),
             founder_number: founderMap.get(p.id) ?? null,
             is_boosted: boostSet.has(p.id),
           };
         })
-        .filter((m) => !refusedActors.has(m.profile.id))
+        .filter(
+          (m) => forceWait.has(m.profile.id) || !refusedActors.has(m.profile.id)
+        )
         .filter((m) => isInboxEligible(myAge, m.age))
         .sort((a, b) => {
           const ta = new Date(a.date_received).getTime() || 0;
@@ -646,10 +794,23 @@ export default function MatchesPage({
           return ta - tb;
         });
 
+      if (gen !== matchesLoadGen.current) return;
+      for (const m of list) {
+        if (waitingActors.has(m.profile.id)) forceWait.delete(m.profile.id);
+      }
       setMatches(list);
       setOpenProfile((open) => {
         if (!open) return open;
-        return list.find((m) => m.profile.id === open.profile.id) ?? open;
+        const next = list.find((m) => m.profile.id === open.profile.id);
+        if (!next) return open;
+        if (
+          next.waiting === open.waiting &&
+          next.refused === open.refused &&
+          next.kind === open.kind
+        ) {
+          return open;
+        }
+        return next;
       });
     } catch (err) {
       setError(userErrorMessage(err));
@@ -668,33 +829,7 @@ export default function MatchesPage({
         return;
       }
       const ids = [...new Set(rows.map((r) => r.actor_id))];
-      const [{ data: profiles }, { data: memberships }, { data: boosts }] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('*')
-            .in('id', ids)
-            .is('deletion_requested_at', null),
-          supabase
-            .from('memberships')
-            .select('user_id, is_founder, founder_number')
-            .in('user_id', ids),
-          supabase
-            .from('profile_boosts')
-            .select('user_id')
-            .in('user_id', ids)
-            .in('payment_status', ['paid', 'simulated'])
-            .gt('ends_at', new Date().toISOString()),
-        ]);
-
-      const founderMap = new Map<string, number | null>();
-      (memberships || []).forEach((m) => {
-        if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
-      });
-      const boostSet = new Set((boosts || []).map((b) => b.user_id));
-      const byId = new Map(
-        ((profiles || []) as Profile[]).map((p) => [p.id, p])
-      );
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(ids);
 
       const list: DeclinedArchiveCard[] = [];
       for (const row of rows) {
@@ -735,33 +870,7 @@ export default function MatchesPage({
         return;
       }
       const ids = [...new Set(notices.map((n) => n.actorId))];
-      const [{ data: profiles }, { data: memberships }, { data: boosts }] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('*')
-            .in('id', ids)
-            .is('deletion_requested_at', null),
-          supabase
-            .from('memberships')
-            .select('user_id, is_founder, founder_number')
-            .in('user_id', ids),
-          supabase
-            .from('profile_boosts')
-            .select('user_id')
-            .in('user_id', ids)
-            .in('payment_status', ['paid', 'simulated'])
-            .gt('ends_at', new Date().toISOString()),
-        ]);
-
-      const founderMap = new Map<string, number | null>();
-      (memberships || []).forEach((m) => {
-        if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
-      });
-      const boostSet = new Set((boosts || []).map((b) => b.user_id));
-      const byId = new Map(
-        ((profiles || []) as Profile[]).map((p) => [p.id, p])
-      );
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(ids);
 
       const list: PendingDeclinedCard[] = [];
       for (const notice of notices) {
@@ -800,13 +909,27 @@ export default function MatchesPage({
       setWaitArchives([]);
       return;
     }
+    const gen = ++waitArchivesLoadGen.current;
     try {
-      const rows = listAllWaitArchives(user.id);
       const { byId, founderMap, boostSet } = await fetchProfileBundle(
-        [...new Set(rows.map((r) => r.actorId))]
+        [...new Set(listAllWaitArchives(user.id).map((r) => r.actorId))]
       );
+      if (gen !== waitArchivesLoadGen.current) return;
+      const latest = listAllWaitArchives(user.id);
+      const missing = [
+        ...new Set(
+          latest.map((r) => r.actorId).filter((id) => !byId.has(id))
+        ),
+      ];
+      if (missing.length > 0) {
+        const extra = await fetchProfileBundle(missing);
+        if (gen !== waitArchivesLoadGen.current) return;
+        for (const [id, profile] of extra.byId) byId.set(id, profile);
+        for (const [id, n] of extra.founderMap) founderMap.set(id, n);
+        for (const id of extra.boostSet) boostSet.add(id);
+      }
       const list: WaitArchiveCard[] = [];
-      for (const row of rows) {
+      for (const row of listAllWaitArchives(user.id)) {
         const profile = byId.get(row.actorId);
         if (!profile) continue;
         list.push({
@@ -826,9 +949,11 @@ export default function MatchesPage({
       setWaitArchives(list);
       setOpenWaitArchive((open) => {
         if (!open) return open;
-        return list.find((c) => c.archiveId === open.archiveId) ?? null;
+        const next = list.find((c) => c.archiveId === open.archiveId);
+        return next ?? open;
       });
     } catch {
+      if (gen !== waitArchivesLoadGen.current) return;
       setWaitArchives([]);
     }
   }, [user]);
@@ -943,24 +1068,21 @@ export default function MatchesPage({
     loadBrokenMatches,
   ]);
 
+  const inboxLoadedRef = useRef(false);
   useEffect(() => {
-    const refreshInbox = () => {
-      if (document.visibilityState === 'visible') {
-        void loadMatches();
-        void loadDeclinedArchives();
-        void loadPendingDeclined();
-        void loadWaitArchives();
-        void loadPendingWaiting();
-        void loadBrokenMatches();
-      }
-    };
-    window.addEventListener('focus', refreshInbox);
-    document.addEventListener('visibilitychange', refreshInbox);
-    return () => {
-      window.removeEventListener('focus', refreshInbox);
-      document.removeEventListener('visibilitychange', refreshInbox);
-    };
+    if (!pageActive) return;
+    if (!inboxLoadedRef.current) {
+      inboxLoadedRef.current = true;
+      return;
+    }
+    void loadMatches();
+    void loadDeclinedArchives();
+    void loadPendingDeclined();
+    void loadWaitArchives();
+    void loadPendingWaiting();
+    void loadBrokenMatches();
   }, [
+    pageActive,
     loadMatches,
     loadDeclinedArchives,
     loadPendingDeclined,
@@ -969,15 +1091,38 @@ export default function MatchesPage({
     loadBrokenMatches,
   ]);
 
-  useInboxReload(() => {
-    void loadMatches();
-    void loadDeclinedArchives();
-    void loadPendingDeclined();
-    void loadWaitArchives();
-    void loadPendingWaiting();
-    void loadBrokenMatches();
-    void unread.refresh();
+  const inboxReloadTimer = useRef<number | null>(null);
+  useInboxReload((detail) => {
+    const decision = detail?.decision;
+    if (
+      decision === 'wait' ||
+      decision === 'wait-dismiss' ||
+      decision === 'reset'
+    ) {
+      return;
+    }
+    if (inboxReloadTimer.current != null) {
+      window.clearTimeout(inboxReloadTimer.current);
+    }
+    inboxReloadTimer.current = window.setTimeout(() => {
+      inboxReloadTimer.current = null;
+      void loadMatches();
+      void loadDeclinedArchives();
+      void loadPendingDeclined();
+      void loadWaitArchives();
+      void loadPendingWaiting();
+      void loadBrokenMatches();
+      void unread.refresh();
+    }, 180);
   });
+
+  useEffect(() => {
+    return () => {
+      if (inboxReloadTimer.current != null) {
+        window.clearTimeout(inboxReloadTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!focusKey) return;
@@ -1061,12 +1206,16 @@ export default function MatchesPage({
       setOpenWaitArchive(null);
       setPulseCategory(null);
       setPulseSingleId(null);
+      setDeclinedActionHintId(null);
       const profileId = card.profile.id;
       const elId =
         'notificationId' in card
           ? `match-card-declined-${card.notificationId}`
           : `match-card-archive-${card.archiveId}`;
-      window.setTimeout(() => setPulseSingleId(profileId), 0);
+      window.setTimeout(() => {
+        setPulseSingleId(profileId);
+        setDeclinedActionHintId(profileId);
+      }, 0);
       scrollMatchCardIntoView(elId);
       return;
     }
@@ -1244,6 +1393,7 @@ export default function MatchesPage({
       setActingId(item.profile.id);
       setError(null);
       try {
+        forgetClearedWait(user.id, item.profile.id);
         await respondToInboxInterest(item.profile.id, 'match', item.origin);
         const confirmed: Match = {
           ...item,
@@ -1287,6 +1437,7 @@ export default function MatchesPage({
       setActingId(item.profile.id);
       setError(null);
       try {
+        forgetClearedWait(user.id, item.profile.id);
         await respondToInboxInterest(item.profile.id, decision, item.origin);
         if (decision === 'refuse') {
           forgetWaitArchive(user.id, item.profile.id);
@@ -1317,14 +1468,48 @@ export default function MatchesPage({
           setPulseSingleId(item.profile.id);
         }
         setOpenProfile(null);
-        await loadMatches();
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
         setActingId(null);
       }
     },
-    [user, actingId, likesExhausted, loadMatches, handleMatchBack, markResolved]
+    [user, actingId, likesExhausted, handleMatchBack, markResolved]
+  );
+
+  const handleRefuseWaiting = useCallback(
+    async (item: Match) => {
+      if (!user || actingId) return;
+      if (item.kind === 'match' || item.alreadyLiked) return;
+
+      const refused: Match = {
+        ...item,
+        waiting: false,
+        refused: true,
+      };
+      setOpenProfile(refused);
+      setError(null);
+      matchesLoadGen.current += 1;
+      forgetClearedWait(user.id, item.profile.id);
+      restoredWaitActorsRef.current.delete(item.profile.id);
+      try {
+        await respondToInboxInterest(item.profile.id, 'refuse', item.origin);
+        forgetWaitArchive(user.id, item.profile.id);
+        setWaitArchives((prev) =>
+          prev.filter((c) => c.profile.id !== item.profile.id)
+        );
+        setMatches((prev) =>
+          prev.filter((m) => m.profile.id !== item.profile.id)
+        );
+        markResolved(item.profile.id, 'refused');
+        setPulseCategory(null);
+        setPulseSingleId((id) => (id === item.profile.id ? null : id));
+      } catch (err) {
+        setOpenProfile(item);
+        setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
+      }
+    },
+    [user, actingId, markResolved]
   );
 
   const handlePendingDeclined = useCallback(
@@ -1397,20 +1582,27 @@ export default function MatchesPage({
   );
 
   const handleArchiveWaiting = useCallback(
-    async (item: Match) => {
-      if (!user || actingId) return;
+    (item: Match) => {
+      if (!user) return;
       if (item.kind === 'match' || item.alreadyLiked) return;
+      const actorId = item.profile.id;
+      if (waitCycleLockRef.current.has(actorId)) return;
+      waitCycleLockRef.current.add(actorId);
+      waitArchivesLoadGen.current += 1;
+      matchesLoadGen.current += 1;
+      restoredWaitActorsRef.current.delete(actorId);
       rememberMineWaitArchive(user.id, {
-        actorId: item.profile.id,
+        actorId,
         origin: item.origin,
         receivedAt: item.date_received,
       });
-      setActingId(item.profile.id);
       setError(null);
       setOpenProfile(null);
+      setPulseCategory(null);
+      setPulseSingleId((id) => (id === actorId ? null : id));
       setWaitArchives((prev) => [
         {
-          archiveId: `mine-${item.profile.id}`,
+          archiveId: `mine-${actorId}`,
           archivedAt: new Date().toISOString(),
           receivedAt: item.date_received,
           origin: item.origin,
@@ -1421,22 +1613,18 @@ export default function MatchesPage({
           is_boosted: item.is_boosted,
           source: 'mine',
         },
-        ...prev.filter((c) => c.profile.id !== item.profile.id),
+        ...prev.filter((c) => c.profile.id !== actorId),
       ]);
-      try {
-        await dismissWaitingNotification({
-          actorId: item.profile.id,
-          kinds: ['match_wait_reminder'],
-        });
-      } catch (err) {
-        setError(
-          userErrorMessage(err, 'Impossible d’archiver ce profil.')
-        );
-      } finally {
-        setActingId(null);
+      waitCycleLockRef.current.delete(actorId);
+      if (item.refused) {
+        void restoreWaitFromArchive(actorId, item.origin, { silent: true });
       }
+      void dismissWaitingNotification({
+        actorId,
+        kinds: ['match_wait_reminder'],
+      }).catch(() => undefined);
     },
-    [user, actingId]
+    [user]
   );
 
   const handlePendingWaiting = useCallback(
@@ -1520,6 +1708,7 @@ export default function MatchesPage({
       forgetWaitArchive(user.id, card.profile.id);
       try {
         if (card.source === 'mine') {
+          forgetClearedWait(user.id, card.profile.id);
           setMatches((prev) =>
             prev.filter((m) => m.profile.id !== card.profile.id)
           );
@@ -1542,6 +1731,68 @@ export default function MatchesPage({
       }
     },
     [user, markResolved, loadWaitArchives, loadMatches]
+  );
+
+  const handleRestoreWaitArchive = useCallback(
+    (card: WaitArchiveCard) => {
+      if (!user) return;
+      if (card.source !== 'mine') return;
+      const actorId = card.profile.id;
+      if (waitCycleLockRef.current.has(actorId)) return;
+      waitCycleLockRef.current.add(actorId);
+      setError(null);
+      setOpenWaitArchive((open) =>
+        open?.archiveId === card.archiveId ? null : open
+      );
+      matchesLoadGen.current += 1;
+      waitArchivesLoadGen.current += 1;
+      restoredWaitActorsRef.current.add(actorId);
+      releaseWaitCycle(user.id, actorId);
+      setWaitArchives((prev) =>
+        prev.filter(
+          (c) =>
+            c.archiveId !== card.archiveId && c.profile.id !== actorId
+        )
+      );
+      const restoredAt = new Date().toISOString();
+      setMatches((prev) => {
+        const exists = prev.some((m) => m.profile.id === actorId);
+        if (exists) {
+          return prev.map((m) =>
+            m.profile.id === actorId
+              ? {
+                  ...m,
+                  waiting: true,
+                  waitingAt: m.waitingAt || restoredAt,
+                  refused: false,
+                }
+              : m
+          );
+        }
+        const incoming: Match = {
+          profile: card.profile,
+          age: card.age,
+          date_received: card.receivedAt,
+          matched_at: card.receivedAt,
+          kind: card.origin === 'flash' ? 'flash' : 'like',
+          origin: card.origin,
+          matchedBackAt: null,
+          alreadyLiked: false,
+          matchRole: 'accepted',
+          waiting: true,
+          waitingAt: restoredAt,
+          refused: false,
+          is_founder: card.is_founder,
+          founder_number: card.founder_number,
+          is_boosted: card.is_boosted,
+        };
+        return [incoming, ...prev];
+      });
+      markResolved(actorId, 'wait');
+      waitCycleLockRef.current.delete(actorId);
+      void restoreWaitFromArchive(actorId, card.origin, { silent: true });
+    },
+    [user, markResolved]
   );
 
   const handleDeleteArchived = useCallback(
@@ -1782,9 +2033,9 @@ export default function MatchesPage({
           aria-label={`Voir le profil de ${match.profile.display_name}`}
         >
           {match.profile.photo_url ? (
-            <img
+            <ProfilePhoto
               src={match.profile.photo_url}
-              alt=""
+              width={112}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -1810,16 +2061,13 @@ export default function MatchesPage({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-gray-900 truncate">
-              {match.profile.display_name}
-            </h3>
-            <span className="text-sm text-gray-400">{match.age} ans</span>
-            {match.is_boosted && <BoostedBadge size="sm" />}
-            {match.is_founder && (
-              <FounderBadge number={match.founder_number} size="sm" />
-            )}
-          </div>
+          <CardIdentity
+            name={match.profile.display_name}
+            age={match.age}
+            isBoosted={match.is_boosted}
+            isFounder={match.is_founder}
+            founderNumber={match.founder_number}
+          />
           {match.profile.location && (
             <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" />
@@ -1849,29 +2097,36 @@ export default function MatchesPage({
         </div>
 
         {isPending && !match.alreadyLiked ? (
-          <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
+          <div className={CARD_ACTIONS_COL}>
             <MatcherButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
               disabled={likesExhausted}
               matched={match.alreadyLiked}
-              tooltip="logo-tr"
+              tooltip={cardActionTooltip(0, isToStudy ? 3 : 2)}
               onClick={() => void handleMatchBack(match)}
             />
             {isToStudy ? (
               <WaitButton
                 name={match.profile.display_name}
                 busy={actingId === match.profile.id}
-                tooltip="logo-tr"
+                tooltip={cardActionTooltip(1, 3)}
                 onClick={() => void handleInboxDecision(match, 'wait')}
               />
             ) : null}
             <RefuseButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
-              tooltip="logo"
-              label="Supprimer"
-              onClick={() => void handleInboxDecision(match, 'refuse')}
+              tooltip={cardActionTooltip(isToStudy ? 2 : 1, isToStudy ? 3 : 2)}
+              variant={match.waiting ? 'ban' : 'trash'}
+              label={match.waiting ? 'Refuser' : 'Supprimer'}
+              onClick={() => {
+                if (match.waiting) {
+                  void handleRefuseWaiting(match);
+                  return;
+                }
+                void handleInboxDecision(match, 'refuse');
+              }}
             />
           </div>
         ) : (
@@ -1913,7 +2168,7 @@ export default function MatchesPage({
         key={card.archiveId}
         data-match-state="wait-archive"
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
-          theirs ? 'match-card-wait-theirs' : 'match-card-wait'
+          theirs ? 'match-card-wait-theirs' : 'match-card-wait-archive'
         }${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
@@ -1932,9 +2187,9 @@ export default function MatchesPage({
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
-            <img
+            <ProfilePhoto
               src={card.profile.photo_url}
-              alt=""
+              width={112}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -1958,26 +2213,15 @@ export default function MatchesPage({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3
-              className={`font-semibold truncate ${
-                theirs ? 'text-amber-950/90' : 'text-amber-950'
-              }`}
-            >
-              {card.profile.display_name}
-            </h3>
-            <span
-              className={`text-sm ${
-                theirs ? 'text-amber-900/50' : 'text-amber-900/60'
-              }`}
-            >
-              {card.age} ans
-            </span>
-            {card.is_boosted && <BoostedBadge size="sm" />}
-            {card.is_founder && (
-              <FounderBadge number={card.founder_number} size="sm" />
-            )}
-          </div>
+          <CardIdentity
+            name={card.profile.display_name}
+            age={card.age}
+            isBoosted={card.is_boosted}
+            isFounder={card.is_founder}
+            founderNumber={card.founder_number}
+            nameClass={theirs ? 'text-amber-950/90' : 'text-amber-950'}
+            ageClass={theirs ? 'text-amber-900/50' : 'text-amber-900/60'}
+          />
           {card.profile.location && (
             <p
               className={`text-xs flex items-center gap-1 mt-0.5 ${
@@ -2001,12 +2245,27 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <RefuseButton
-          name={card.profile.display_name}
-          busy={declinedBusyId === card.archiveId}
-          label="Supprimer"
-          onClick={() => void handleDeleteWaitArchive(card)}
-        />
+        <div className={CARD_ACTIONS_COL}>
+          {card.source === 'mine' ? (
+            <RestoreLinkButton
+              name={card.profile.display_name}
+              busy={declinedBusyId === card.archiveId}
+              tooltip={cardActionTooltip(0, 2)}
+              onClick={() => void handleRestoreWaitArchive(card)}
+            />
+          ) : null}
+          <RefuseButton
+            name={card.profile.display_name}
+            busy={declinedBusyId === card.archiveId}
+            variant="trash"
+            label="Supprimer"
+            tooltip={cardActionTooltip(
+              card.source === 'mine' ? 1 : 0,
+              card.source === 'mine' ? 2 : 1
+            )}
+            onClick={() => void handleDeleteWaitArchive(card)}
+          />
+        </div>
       </div>
     );
   };
@@ -2017,32 +2276,45 @@ export default function MatchesPage({
     const theirsArchived = visibleWaitArchives.filter(
       (c) => c.source === 'theirs'
     );
-    const mineCount = mineActive.length + mineArchived.length;
-    if (mineCount === 0 && theirsArchived.length === 0) return null;
+    if (
+      mineActive.length === 0 &&
+      mineArchived.length === 0 &&
+      theirsArchived.length === 0
+    ) {
+      return null;
+    }
     return (
-      <section className="space-y-2" aria-label="Mis en attente">
-        {mineCount > 0 ? (
-          <>
+      <section className="space-y-6" aria-label="Mis en attente">
+        {mineActive.length > 0 ? (
+          <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <ColorChip label="Mis en attente par toi" tone="wait" />
-              <span className="text-gray-400 font-normal">({mineCount})</span>
+              <span className="text-gray-400 font-normal">
+                ({mineActive.length})
+              </span>
             </h3>
-            {mineActive.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {mineActive.map((m) => renderMatchCard(m))}
-              </div>
-            ) : null}
-            {mineArchived.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {mineArchived.map((card) => renderWaitArchiveCard(card))}
-              </div>
-            ) : null}
-          </>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {mineActive.map((m) => renderMatchCard(m))}
+            </div>
+          </div>
+        ) : null}
+        {mineArchived.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <span className="match-intro-chip match-chip-wait-archive">
+                Mis en attente par toi - archive
+              </span>
+              <span className="text-gray-400 font-normal">
+                ({mineArchived.length})
+              </span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {mineArchived.map((card) => renderWaitArchiveCard(card))}
+            </div>
+          </div>
         ) : null}
         {theirsArchived.length > 0 ? (
-          <div
-            className={mineCount > 0 ? 'match-wait-split space-y-2' : 'space-y-2'}
-          >
+          <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-wait-theirs">
                 Mis en attente par l&apos;autre
@@ -2063,10 +2335,19 @@ export default function MatchesPage({
   const renderPendingDeclinedCard = (card: PendingDeclinedCard) => {
     const isFlash = card.origin === 'flash';
     const busy = declinedBusyId === card.notificationId;
+    const showHint = declinedActionHintId === card.profile.id;
     return (
       <div
-        id={`match-card-declined-${card.notificationId}`}
+        className={`relative${showHint ? ' z-20' : ''}`}
         key={card.notificationId}
+      >
+        {showHint && (
+          <DeclinedActionHint
+            onClose={() => consumeAttentionPulse(card.profile.id)}
+          />
+        )}
+      <div
+        id={`match-card-declined-${card.notificationId}`}
         data-match-state="declined-pending"
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
@@ -2082,9 +2363,9 @@ export default function MatchesPage({
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
-            <img
+            <ProfilePhoto
               src={card.profile.photo_url}
-              alt=""
+              width={112}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -2104,16 +2385,15 @@ export default function MatchesPage({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-purple-950 truncate">
-              {card.profile.display_name}
-            </h3>
-            <span className="text-sm text-purple-800/60">{card.age} ans</span>
-            {card.is_boosted && <BoostedBadge size="sm" />}
-            {card.is_founder && (
-              <FounderBadge number={card.founder_number} size="sm" />
-            )}
-          </div>
+          <CardIdentity
+            name={card.profile.display_name}
+            age={card.age}
+            isBoosted={card.is_boosted}
+            isFounder={card.is_founder}
+            founderNumber={card.founder_number}
+            nameClass="text-purple-950"
+            ageClass="text-purple-800/60"
+          />
           {card.profile.location && (
             <p className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" />
@@ -2125,21 +2405,22 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
+        <div className={CARD_ACTIONS_COL}>
           <ArchiveButton
             name={card.profile.display_name}
             busy={busy}
-            tooltip="logo-tr"
+            tooltip={cardActionTooltip(0, 2)}
             onClick={() => void handlePendingDeclined(card, true)}
           />
           <RefuseButton
             name={card.profile.display_name}
             busy={busy}
             label="Supprimer"
-            tooltip="logo"
+            tooltip={cardActionTooltip(1, 2)}
             onClick={() => void handlePendingDeclined(card, false)}
           />
         </div>
+      </div>
       </div>
     );
   };
@@ -2165,10 +2446,19 @@ export default function MatchesPage({
 
   const renderDeclinedArchiveCard = (card: DeclinedArchiveCard) => {
     const isFlash = card.origin === 'flash';
+    const showHint = declinedActionHintId === card.profile.id;
     return (
       <div
-        id={`match-card-archive-${card.archiveId}`}
+        className={`relative${showHint ? ' z-20' : ''}`}
         key={card.archiveId}
+      >
+        {showHint && (
+          <DeclinedActionHint
+            onClose={() => consumeAttentionPulse(card.profile.id)}
+          />
+        )}
+      <div
+        id={`match-card-archive-${card.archiveId}`}
         data-match-state="declined-archive"
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
@@ -2184,9 +2474,9 @@ export default function MatchesPage({
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
-            <img
+            <ProfilePhoto
               src={card.profile.photo_url}
-              alt=""
+              width={112}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -2206,16 +2496,15 @@ export default function MatchesPage({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-purple-950 truncate">
-              {card.profile.display_name}
-            </h3>
-            <span className="text-sm text-purple-800/60">{card.age} ans</span>
-            {card.is_boosted && <BoostedBadge size="sm" />}
-            {card.is_founder && (
-              <FounderBadge number={card.founder_number} size="sm" />
-            )}
-          </div>
+          <CardIdentity
+            name={card.profile.display_name}
+            age={card.age}
+            isBoosted={card.is_boosted}
+            isFounder={card.is_founder}
+            founderNumber={card.founder_number}
+            nameClass="text-purple-950"
+            ageClass="text-purple-800/60"
+          />
           {card.profile.location && (
             <p className="text-xs text-purple-900/60 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" />
@@ -2231,12 +2520,16 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <RefuseButton
-          name={card.profile.display_name}
-          busy={declinedBusyId === card.archiveId}
-          label="Supprimer"
-          onClick={() => void handleDeleteArchived(card)}
-        />
+        <div className={CARD_ACTIONS_COL}>
+          <RefuseButton
+            name={card.profile.display_name}
+            busy={declinedBusyId === card.archiveId}
+            label="Supprimer"
+            tooltip={cardActionTooltip(0, 1)}
+            onClick={() => void handleDeleteArchived(card)}
+          />
+        </div>
+      </div>
       </div>
     );
   };
@@ -2277,9 +2570,9 @@ export default function MatchesPage({
           aria-label={`Gérer le match rompu avec ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
-            <img
+            <ProfilePhoto
               src={card.profile.photo_url}
-              alt=""
+              width={112}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -2298,16 +2591,15 @@ export default function MatchesPage({
           )}
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-slate-800 truncate">
-              {card.profile.display_name}
-            </h3>
-            <span className="text-sm text-slate-500">{card.age} ans</span>
-            {card.is_boosted && <BoostedBadge size="sm" />}
-            {card.is_founder && (
-              <FounderBadge number={card.founder_number} size="sm" />
-            )}
-          </div>
+          <CardIdentity
+            name={card.profile.display_name}
+            age={card.age}
+            isBoosted={card.is_boosted}
+            isFounder={card.is_founder}
+            founderNumber={card.founder_number}
+            nameClass="text-slate-800"
+            ageClass="text-slate-500"
+          />
           {card.profile.location && (
             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" />
@@ -2318,18 +2610,18 @@ export default function MatchesPage({
             {brokenMatchStatusLabel(card.action, card.createdAt)}
           </p>
         </div>
-        <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible">
+        <div className={CARD_ACTIONS_COL}>
           <RestoreLinkButton
             name={card.profile.display_name}
             busy={busy}
-            tooltip="logo-tr"
+            tooltip={cardActionTooltip(0, 2)}
             onClick={() => void handleBrokenRestore(card)}
           />
           <RefuseButton
             name={card.profile.display_name}
             busy={busy}
             label="Supprimer"
-            tooltip="logo"
+            tooltip={cardActionTooltip(1, 2)}
             onClick={() => void handleBrokenPurge(card)}
           />
         </div>
@@ -2448,7 +2740,7 @@ export default function MatchesPage({
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        Tes matchs (
+        Mes Matchs (
         {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
       <div className="match-intro text-sm text-gray-600 mb-5">
@@ -2555,19 +2847,23 @@ export default function MatchesPage({
           onFlash={() => undefined}
           onSkip={() => setOpenProfile(null)}
           onInboxDecision={
-            openProfile.kind !== 'match' && !openProfile.alreadyLiked
+            openProfile.kind !== 'match' &&
+            !openProfile.alreadyLiked &&
+            !openProfile.refused
               ? (decision) => void handleInboxDecision(openProfile, decision)
               : undefined
           }
           onWaitingArchive={
-            openProfile.waiting
+            openProfile.waiting || openProfile.refused
               ? () => void handleArchiveWaiting(openProfile)
               : undefined
           }
           onWaitingDiscard={
-            openProfile.waiting
-              ? () => void handleInboxDecision(openProfile, 'refuse')
-              : undefined
+            openProfile.refused
+              ? () => setOpenProfile(null)
+              : openProfile.waiting
+                ? () => void handleRefuseWaiting(openProfile)
+                : undefined
           }
           onOpenChat={
             openProfile.kind === 'match' ||

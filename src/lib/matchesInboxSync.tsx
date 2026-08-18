@@ -32,7 +32,10 @@ type MatchesInboxSyncValue = {
   /** Publie l’état courant des cartes Mes Matchs. */
   publish: (entries: MatchesInboxEntry[]) => void;
   /** Marque un profil comme résolu (match / refus) sans attendre le rechargement. */
-  markResolved: (profileId: string, as: 'matched' | 'refused' | 'wait') => void;
+  markResolved: (
+    profileId: string,
+    as: 'matched' | 'refused' | 'wait' | 'new'
+  ) => void;
 };
 
 const MatchesInboxSyncContext = createContext<MatchesInboxSyncValue | null>(
@@ -61,13 +64,15 @@ export function MatchesInboxSyncProvider({
   }, []);
 
   const markResolved = useCallback(
-    (profileId: string, as: 'matched' | 'refused' | 'wait') => {
+    (profileId: string, as: 'matched' | 'refused' | 'wait' | 'new') => {
       if (as === 'matched') {
         matchedRef.current.add(profileId);
         refusedRef.current.delete(profileId);
       } else if (as === 'refused') {
         refusedRef.current.add(profileId);
         matchedRef.current.delete(profileId);
+      } else if (as === 'new' || as === 'wait') {
+        refusedRef.current.delete(profileId);
       }
       setEntries((prev) => {
         if (as === 'refused') {
@@ -83,6 +88,11 @@ export function MatchesInboxSyncProvider({
         if (as === 'wait') {
           return prev.map((e) =>
             e.id === profileId ? { ...e, status: 'wait' as const } : e
+          );
+        }
+        if (as === 'new') {
+          return prev.map((e) =>
+            e.id === profileId ? { ...e, status: 'new' as const } : e
           );
         }
         return prev;

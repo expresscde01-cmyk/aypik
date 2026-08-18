@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import type { Profile } from '@/components/ProfileSetup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 
 function firstName(name: string): string {
   const trimmed = name.trim();
@@ -67,9 +68,10 @@ export default function MatchManageModal({
         <header className="px-5 pt-5 pb-3 border-b border-gray-100 flex items-start gap-3">
           <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 shrink-0">
             {peer.photo_url ? (
-              <img
+              <ProfilePhoto
                 src={peer.photo_url}
-                alt=""
+                eager
+                width={96}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -88,7 +90,7 @@ export default function MatchManageModal({
             <p className="text-xs text-gray-500 mt-1">
               {mode === 'broken'
                 ? 'Rétablis ce match ou supprime définitivement ce lien.'
-                : 'Supprime ce match ou romps-le pour le retrouver alors dans Matchs rompus.'}
+                : 'Archive ce match pour le retrouver dans Matchs rompus, ou supprime-le définitivement.'}
             </p>
           </div>
           <button
@@ -108,41 +110,41 @@ export default function MatchManageModal({
         ) : null}
 
         {mode === 'manage' ? (
-          <div className="p-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onBreak}
-              className="py-2.5 px-2 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 leading-tight"
-            >
-              {busy ? '…' : 'Supprimer le Match'}
-            </button>
+          <div className="p-4 flex flex-col gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={onArchive}
-              className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-slate-50 disabled:opacity-40"
+              className="w-full py-2.5 rounded-xl bg-amber-100 text-amber-950 text-sm font-semibold hover:bg-amber-200 disabled:opacity-40"
             >
               {busy ? '…' : 'Archiver'}
             </button>
-          </div>
-        ) : (
-          <div className="p-4 grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => setConfirmPurge(true)}
-              className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-slate-50 disabled:opacity-40"
+              className="w-full py-2.5 px-2 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 leading-tight"
             >
               {busy ? '…' : 'Supprimer définitivement'}
             </button>
+          </div>
+        ) : (
+          <div className="p-4 flex flex-col gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={onRestore}
-              className="py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40"
+              className="w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40"
             >
               {busy ? '…' : 'Rétablir'}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setConfirmPurge(true)}
+              className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              {busy ? '…' : 'Supprimer définitivement'}
             </button>
           </div>
         )}

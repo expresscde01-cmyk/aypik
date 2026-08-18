@@ -65,23 +65,40 @@ export function getRecoveryTokenFromUrl(): RecoveryToken | null {
   return { tokenHash, type };
 }
 
+const AUTH_URL_KEYS = [
+  'reset',
+  'type',
+  'token_hash',
+  'token',
+  'code',
+  'access_token',
+  'refresh_token',
+  'expires_in',
+  'expires_at',
+  'token_type',
+  'provider_token',
+  'provider_refresh_token',
+] as const;
+
+/** Retire tokens / codes d’auth de l’URL (query + hash) après consommation. */
 export function consumeRecoveryParamsFromUrl(): void {
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
-  url.searchParams.delete('reset');
-  url.searchParams.delete('type');
-  url.searchParams.delete('token_hash');
-  url.searchParams.delete('token');
+  for (const key of AUTH_URL_KEYS) {
+    url.searchParams.delete(key);
+  }
   if (url.hash) {
     const hash = new URLSearchParams(url.hash.replace(/^#/, ''));
-    hash.delete('reset');
-    hash.delete('type');
-    hash.delete('token_hash');
-    hash.delete('token');
+    for (const key of AUTH_URL_KEYS) {
+      hash.delete(key);
+    }
     const nextHash = hash.toString();
     url.hash = nextHash ? nextHash : '';
   }
-  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+    window.history.replaceState({}, '', next);
+  }
 }
 
 export function isPasswordRecoveryRedirect(): boolean {
@@ -214,12 +231,12 @@ async function sendResetViaResend(email: string): Promise<boolean> {
   }
 
   const detail = await functionErrorDetail(error, payload);
-  console.error(error ?? new Error(detail || 'login-security reset failed'), {
-    via: 'login-security',
-    email,
-    detail,
-    payload,
-  });
+  if (import.meta.env.DEV) {
+    console.error(error ?? new Error(detail || 'login-security reset failed'), {
+      via: 'login-security',
+      detail,
+    });
+  }
   return false;
 }
 
@@ -228,9 +245,7 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
   const redirectTo = recoveryRedirectUrl();
 
   if (!isValidResetEmail(trimmed)) {
-    const err = new Error('Adresse e-mail invalide');
-    console.error(err, { email, trimmed, redirectTo });
-    throw err;
+    throw new Error('Adresse e-mail invalide');
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
@@ -239,14 +254,13 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
 
   if (!error) return;
 
-  console.error(error, {
-    via: 'resetPasswordForEmail',
-    email: trimmed,
-    redirectTo,
-    code: error.code,
-    status: error.status,
-    message: error.message,
-  });
+  if (import.meta.env.DEV) {
+    console.error(error, {
+      via: 'resetPasswordForEmail',
+      code: error.code,
+      status: error.status,
+    });
+  }
 
   const resent = await sendResetViaResend(trimmed);
   if (resent) return;

@@ -29,6 +29,7 @@ import {
 } from '@/lib/pendingStudy';
 import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
 import { withNotificationPeriod } from '@/lib/interactionCopy';
+import type { OpenMatchesOpts } from '@/lib/matchesNav';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -184,8 +185,11 @@ function sortRowsForTone(tone: NotifTone, rows: PanelRow[]): PanelRow[] {
 
 export default function NotificationsBell({
   onOpenInbox,
+  active = true,
 }: {
   onOpenInbox?: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
+  /** Une seule cloche écoute le temps réel social : celle de l’onglet visible. */
+  active?: boolean;
 }) {
   const { user } = useAuth();
   const {
@@ -226,7 +230,7 @@ export default function NotificationsBell({
   const primedRef = useRef(false);
   const categoryPrimedRef = useRef(false);
   const lastMessageEventAtRef = useRef(0);
-  const unreadMessages = useUnreadMessages(user?.id, { channelKey: 'bell' });
+  const unreadMessages = useUnreadMessages();
   const [viewerGender, setViewerGender] = useState<'homme' | 'femme' | null>(
     null
   );
@@ -407,12 +411,7 @@ export default function NotificationsBell({
     if (n.kind === 'message_received') return false;
     if (isDismissedDeclinedNotification(n, user?.id)) return false;
     if (isWaitingNoticeDismissed(n, user?.id)) return false;
-    if (
-      (n.kind === 'flash_received' || n.kind === 'like_received') &&
-      n.read_at
-    ) {
-      return false;
-    }
+    if (n.read_at) return false;
     // Jamais de Flash/Like « à découvrir » si le profil est déjà matché / refusé
     if (
       (n.kind === 'flash_received' ||
@@ -692,14 +691,13 @@ export default function NotificationsBell({
   }, [user?.id]);
 
   useEffect(() => {
+    if (!active) {
+      setOpen(false);
+      return;
+    }
     void refresh();
-    const id = window.setInterval(() => void refresh(), 20000);
-    return () => window.clearInterval(id);
-  }, [refresh]);
-
-  useEffect(() => {
     void refreshCategoryNotifs();
-  }, [refreshCategoryNotifs]);
+  }, [active, refresh, refreshCategoryNotifs]);
 
   const applyInboxDecisionLocally = useCallback(
     (detail?: InboxUpdatedDetail) => {
@@ -711,6 +709,21 @@ export default function NotificationsBell({
       else if (decision === 'refuse') markResolved(actorId, 'refused');
       else if (decision === 'wait') {
         markResolved(actorId, 'wait');
+      } else if (decision === 'reset') {
+        markResolved(actorId, 'new');
+        setItems((prev) =>
+          prev.filter(
+            (n) =>
+              !(
+                n.actor_id === actorId && n.kind === 'match_wait_reminder'
+              )
+          )
+        );
+        setCatWait((prev) => {
+          if (!prev?.visible) return prev;
+          if (prev.count <= 1) return null;
+          return { ...prev, count: prev.count - 1 };
+        });
       }
 
       if (decision === 'match' || decision === 'refuse') {
@@ -863,7 +876,7 @@ export default function NotificationsBell({
   }, [unreadMessages.ready, unreadMessages.total]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !active) return;
     const channel = supabase
       .channel(`social-inbox:${user.id}`)
       .on(
@@ -883,7 +896,7 @@ export default function NotificationsBell({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [user, refresh, refreshCategoryNotifs]);
+  }, [user, active, refresh, refreshCategoryNotifs]);
 
   const closePanel = useCallback(() => {
     setOpen(false);
@@ -941,11 +954,11 @@ export default function NotificationsBell({
   const openMergedNew = (row: Extract<PanelRow, { kind: 'merged_new' }>) => {
     closePanel();
     dismissCategory('new');
+    setItems((prev) => prev.filter((x) => x.id !== row.socialId));
     onOpenInbox?.(row.actorId, { highlight: false, pulseCategory: 'new' });
     void markSocialNotificationRead(row.socialId)
       .then(async () => {
         await sweepStaleSocialNotifications(row.actorId);
-        setItems((prev) => prev.filter((x) => x.id !== row.socialId));
       })
       .catch(() => {
         /* panneau déjà fermé */
@@ -1002,16 +1015,7 @@ export default function NotificationsBell({
   };
 
   const handleItemClick = (n: SocialNotification) => {
-    const wasUnread = !n.read_at;
-    if (wasUnread) {
-      setItems((prev) =>
-        n.kind === 'flash_received' || n.kind === 'like_received'
-          ? prev.filter((x) => x.id !== n.id)
-          : prev.map((x) =>
-              x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x
-            )
-      );
-    }
+    setItems((prev) => prev.filter((x) => x.id !== n.id));
     closePanel();
     if (isInboxNotification(n)) {
       const actorLabel =
@@ -1043,7 +1047,6 @@ export default function NotificationsBell({
         onOpenInbox?.(n.actor_id);
       }
     }
-    if (!wasUnread) return;
     void markSocialNotificationRead(n.id)
       .then(async () => {
         if (n.kind === 'flash_received' || n.kind === 'like_received') {
@@ -1295,6 +1298,7 @@ export default function NotificationsBell({
 
                       const n = row.n;
                       const copy = displaySocialNotification({
+                        id: n.id,
                         kind: n.kind,
                         title: n.title,
                         body: n.body,

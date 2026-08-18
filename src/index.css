@@ -28,6 +28,137 @@ body {
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* Icônes de tri uniquement — jamais les autres icônes du site */
+.discovery-sort-pills .sort-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 1;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.discovery-sort-pills .sort-icon svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.discovery-sort-pill-active {
+  color: #fff;
+  border-color: #8b5cf6;
+  background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(0, 0, 0, 0) 100%
+    ),
+    #8b5cf6;
+  box-shadow: none;
+}
+
+.discovery-sort-pills {
+  overflow: visible;
+}
+
+.discovery-sort-pill {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
+  z-index: 1;
+  overflow: visible;
+}
+
+.discovery-sort-pill > button {
+  position: relative;
+  z-index: 2;
+}
+
+.discovery-sort-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 10px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: max-content;
+  max-width: min(16rem, calc(100vw - 2rem));
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  transition: height 0.34s cubic-bezier(0.32, 0.08, 0.24, 1);
+}
+
+.discovery-sort-hint-panel {
+  display: block;
+  transform: scaleX(0);
+  transform-origin: 50% 100%;
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: transform 0.34s cubic-bezier(0.32, 0.08, 0.24, 1);
+}
+
+.discovery-sort-hint-inner {
+  display: block;
+  margin-bottom: 16px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  border: none;
+  background: #ffffff;
+  opacity: 1;
+  box-shadow:
+    0 -1px 2px rgba(15, 23, 42, 0.01),
+    0 2px 10px rgba(15, 23, 42, 0.022),
+    0 3px 5px rgba(15, 23, 42, 0.028);
+  color: rgb(107 114 128);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.discovery-sort-pill--active .discovery-sort-hint-inner {
+  background: #ede7f6;
+  border: none;
+  box-shadow:
+    0 -1px 2px rgba(109, 40, 217, 0.011),
+    0 2px 10px rgba(109, 40, 217, 0.025),
+    0 3px 5px rgba(109, 40, 217, 0.032);
+  opacity: 1;
+}
+
+.discovery-sort-pill:hover,
+.discovery-sort-pill:focus-within,
+.discovery-sort-pill:active {
+  z-index: 6;
+}
+
+.discovery-sort-pill:hover .discovery-sort-hint,
+.discovery-sort-pill:focus-within .discovery-sort-hint,
+.discovery-sort-pill:active .discovery-sort-hint {
+  height: 3.75rem;
+}
+
+.discovery-sort-pill:hover .discovery-sort-hint-panel,
+.discovery-sort-pill:focus-within .discovery-sort-hint-panel,
+.discovery-sort-pill:active .discovery-sort-hint-panel {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discovery-sort-hint,
+  .discovery-sort-hint-panel {
+    transition: none;
+  }
+}
+
 .discover-sticky-header::after {
   content: '';
   position: absolute;
@@ -676,6 +807,17 @@ button.group[data-matched='true'] {
 
 /* ——— Mes Matchs : 4 états de carte ——— */
 
+/* Fiches Mes Matchs : actions toujours empilées, jamais côte à côte */
+.match-card-actions {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 .match-card-photo {
   cursor: pointer;
   transform: scale(1);
@@ -818,22 +960,18 @@ button.group[data-matched='true'] {
 }
 
 /* Archives « mis en attente par l’autre » — même or, un ton plus clair */
-.match-card-wait-theirs {
+.match-card-wait-theirs,
+.match-card-wait-archive {
   background-color: #ffecb3;
   border: 1.5px solid #ffd54f;
   box-shadow: 0 1px 2px rgba(255, 160, 0, 0.1);
 }
 
-.match-chip-wait-theirs {
+.match-chip-wait-theirs,
+.match-chip-wait-archive {
   background-color: #ffecb3;
   color: #7a4f00;
   border: 1px solid #ffd54f;
-}
-
-.match-wait-split {
-  border-top: 1px solid #cfd2d6;
-  margin-top: 0.15rem;
-  padding-top: 0.85rem;
 }
 
 .match-chip-matched-quiet {

@@ -5,9 +5,9 @@ import {
   formatPriceCents,
   type MembershipStatus,
 } from '@/lib/membership';
-import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 
 const PREMIUM_PERKS = [
   'Voir qui a liké ton profil',
@@ -182,7 +182,7 @@ export function PremiumConversionCard({
         </div>
       </div>
 
-      {!disabled && (
+      {!disabled && checkoutOpen && (
         <PaymentCheckoutModal
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}

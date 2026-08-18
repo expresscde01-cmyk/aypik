@@ -17,10 +17,11 @@ import {
 } from '@/lib/messaging';
 import {
   archiveActiveMatch,
-  breakActiveMatch,
+  purgeActiveMatch,
 } from '@/lib/matchBreaks';
 import { userErrorMessage } from '@/lib/userError';
 import MatchManageModal from '@/components/MatchManageModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 
 type ChatScreenProps = {
   peer: Profile;
@@ -200,27 +201,10 @@ export default function ChatScreen({
         return [...withoutLocal, message];
       });
     } catch (err) {
-      console.error('Erreur Supabase détaillée:', err);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);
-      const raw = err as {
-        message?: unknown;
-        details?: unknown;
-        hint?: unknown;
-        code?: unknown;
-      };
-      const parts = [raw?.message, raw?.details, raw?.hint, raw?.code]
-        .filter((part) => typeof part === 'string' && part.trim())
-        .map((part) => (part as string).trim());
-      const diagnostic = parts[0] ? parts.join(' — ') : String(err);
-      const needsSql =
-        /42501|row-level security|insert_chat_message|schema cache|PGRST202/i.test(
-          diagnostic
-        );
       setError(
-        needsSql
-          ? `${diagnostic}\n\nOuvre COLLER-DANS-SUPABASE.sql sur le Bureau, colle tout le texte dans Supabase → SQL Editor, puis Run.`
-          : diagnostic
+        userErrorMessage(err, 'Impossible d’envoyer le message. Réessaie.')
       );
     } finally {
       setSending(false);
@@ -234,12 +218,12 @@ export default function ChatScreen({
     }
   };
 
-  const runManage = async (action: 'archive' | 'break') => {
+  const runManage = async (action: 'archive' | 'purge') => {
     if (manageBusy) return;
     setManageBusy(true);
     setManageError(null);
     try {
-      if (action === 'break') await breakActiveMatch(peer.id);
+      if (action === 'purge') await purgeActiveMatch(peer.id);
       else await archiveActiveMatch(peer.id);
       setShowManage(false);
       onMatchHidden?.();
@@ -248,8 +232,8 @@ export default function ChatScreen({
       setManageError(
         userErrorMessage(
           err,
-          action === 'break'
-            ? 'Impossible de rompre ce match.'
+          action === 'purge'
+            ? 'Impossible de supprimer définitivement ce lien.'
             : 'Impossible d’archiver ce match.'
         )
       );
@@ -287,9 +271,10 @@ export default function ChatScreen({
             </button>
             <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 shrink-0">
               {peer.photo_url ? (
-                <img
+                <ProfilePhoto
                   src={peer.photo_url}
-                  alt=""
+                  eager
+                  width={96}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -437,7 +422,7 @@ export default function ChatScreen({
           error={manageError}
           onClose={() => setShowManage(false)}
           onArchive={() => void runManage('archive')}
-          onBreak={() => void runManage('break')}
+          onPurge={() => void runManage('purge')}
         />
       ) : null}
     </div>,

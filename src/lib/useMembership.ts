@@ -45,6 +45,20 @@ function publicErrorMessage(error: { code?: string; message: string }) {
   return error.message;
 }
 
+const PURGE_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+const PURGE_STORAGE_KEY = 'aypik-purge-deletions-at';
+
+function maybePurgeExpiredDeletions() {
+  try {
+    const last = Number(localStorage.getItem(PURGE_STORAGE_KEY) || '0');
+    if (Number.isFinite(last) && Date.now() - last < PURGE_COOLDOWN_MS) return;
+    localStorage.setItem(PURGE_STORAGE_KEY, String(Date.now()));
+  } catch {
+    return;
+  }
+  void purgeExpiredDeletions();
+}
+
 async function claimOfferFallback(
   offer: SignupOffer,
   userId: string
@@ -107,7 +121,7 @@ export function useMembership() {
     }
 
     setError(null);
-    void purgeExpiredDeletions();
+    maybePurgeExpiredDeletions();
     const { data, error: rpcError } = await supabase.rpc(
       'get_my_membership_status'
     );

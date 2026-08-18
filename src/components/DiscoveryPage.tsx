@@ -1,4 +1,5 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Heart,
   MapPin,
@@ -11,7 +12,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
-import type { Profile } from '@/components/ProfileSetup';
+import { PROFILE_OWN_COLUMNS, type Profile } from '@/components/ProfileSetup';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import {
   AdvancedFiltersTeaser,
@@ -31,13 +32,76 @@ import {
 } from '@/lib/geoProximity';
 import {
   fetchDiscoveryCatalog,
+  fetchPlatformSignupCount,
   type DiscoveryCandidate,
+  type DiscoverySortId,
 } from '@/lib/discoveryCatalog';
+import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
+import {
+  ACTIFS_SORT_HINT,
+  DISTANCE_SORT_HINT,
+  INTERESTS_SORT_HINT,
+  newProfilesCutoffIso,
+  newProfilesSortHint,
+  newProfilesWindowMonths,
+  sortDiscoveryCandidates,
+} from '@/lib/discoverySort';
 import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
+import { userErrorMessage } from '@/lib/userError';
+import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 
-type SortChoice = 'pertinence' | 'recents' | null;
+const SORT_OPTIONS = [
+  {
+    id: 'nouveaux',
+    label: 'Nouveaux profils',
+    icon: '🕒',
+  },
+  {
+    id: 'distance',
+    label: 'Distance',
+    icon: '📍',
+  },
+  {
+    id: 'interests',
+    label: 'Centres d’intérêt',
+    icon: 'palette',
+  },
+  {
+    id: 'actifs',
+    label: 'Actifs',
+    icon: '💫',
+  },
+] as const;
+
+type SortChoice = (typeof SORT_OPTIONS)[number]['id'];
+
+/** Palette jaune + taches franches, sans teinte rose du bouton. */
+function PaletteSortIcon() {
+  return (
+    <svg
+      viewBox="2.2 2 14.2 12.4"
+      width="1em"
+      height="1em"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden
+      focusable="false"
+    >
+      <path
+        fill="#E8C36A"
+        d="M10.2 2.2c-4.3 0-7.8 3.2-7.8 7.6 0 2.6 1.4 4.4 3.3 4.4 1.1 0 1.6-.6 2.2-1.4.4-.6.9-1.3 1.8-1.3h.6c3.2 0 5.8-2.4 5.8-5.4 0-2.3-2.5-3.9-5.9-3.9Z"
+      />
+      <circle cx="7.1" cy="6.6" r="1.25" fill="#E53935" />
+      <circle cx="10.4" cy="5.5" r="1.2" fill="#FB8C00" />
+      <circle cx="13.4" cy="7" r="1.2" fill="#FDD835" />
+      <circle cx="8.1" cy="10.4" r="1.2" fill="#43A047" />
+      <circle cx="11.6" cy="10.1" r="1.15" fill="#1E88E5" />
+      <circle cx="14.2" cy="9.4" r="1.05" fill="#5C6BC0" />
+    </svg>
+  );
+}
 
 type Candidate = DiscoveryCandidate;
 
@@ -54,10 +118,6 @@ export default function DiscoveryPage({
   const { user } = useAuth();
   const userId = user?.id;
   const { status, refresh, loading: membershipLoading } = useMembership();
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
@@ -70,28 +130,40 @@ export default function DiscoveryPage({
     persistOnChange: false,
   });
   const { geoPerimeter, geoRadiusKm, minOverlap } = prefs;
-  const [sortChoice, setSortChoice] = useState<SortChoice>(null);
+  const [sortChoice, setSortChoice] = useState<SortChoice>('nouveaux');
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
   const geoFilterActive = geoPerimeter !== 'anywhere';
   const hasActiveFilter = geoFilterActive || minOverlap > 0;
   /**
-   * Exclusions de la visite Découvrir (vu / like / flash).
-   * Vidée uniquement en quittant la page (démontage).
+   * Masqués tout de suite dans la grille du filtre actif (like / flash / masquer).
+   * Conservés pour les fetches suivants de la visite.
    */
-  const [sessionExcludedIds, setSessionExcludedIds] = useState(
+  const [sessionHiddenIds, setSessionHiddenIds] = useState(
     () => new Set<string>()
   );
-  const fetchGenRef = useRef(0);
+  /**
+   * Consultés sans like ni flash : restent visibles sur le filtre en cours,
+   * exclus seulement au changement de filtres / périmètre élargi.
+   */
+  const sessionViewedIdsRef = useRef<Set<string>>(new Set());
+  const sessionHiddenIdsRef = useRef(sessionHiddenIds);
+  sessionHiddenIdsRef.current = sessionHiddenIds;
+  const lastFetchPrefsKeyRef = useRef<string | null>(null);
 
-  const excludeFromSession = useCallback((id: string) => {
+  const hideFromCurrentFilter = useCallback((id: string) => {
     if (!id) return;
-    setSessionExcludedIds((prev) => {
+    sessionViewedIdsRef.current.add(id);
+    setSessionHiddenIds((prev) => {
       if (prev.has(id)) return prev;
       const next = new Set(prev);
       next.add(id);
       return next;
     });
+  }, []);
+
+  const markViewedForLaterFilters = useCallback((id: string) => {
+    if (id) sessionViewedIdsRef.current.add(id);
   }, []);
 
   if (userId) syncDiscoverPrefs(userId, prefs);
@@ -112,77 +184,97 @@ export default function DiscoveryPage({
     };
   }, [userId]);
 
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    setSearching(true);
-    (async () => {
+  const viewerQuery = useQuery({
+    queryKey: queryKeys.discoverViewer(userId, profileEpoch),
+    enabled: Boolean(userId),
+    queryFn: async () => {
       const { data: profile, error: profileErr } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', userId)
+        .select(PROFILE_OWN_COLUMNS)
+        .eq('id', userId!)
         .maybeSingle();
-
-      if (cancelled) return;
-
       if (profileErr || !profile) {
-        setError('Impossible de charger ton profil');
-        setLoading(false);
-        return;
+        throw new Error('Impossible de charger ton profil');
       }
-
-      setMyProfile(profile as Profile);
-
+      const loaded = profile as Profile;
+      void ensureProfileCoordinates(loaded);
       const [{ data: likes }, { data: flashes }] = await Promise.all([
-        supabase.from('likes').select('to_user').eq('from_user', userId),
-        supabase.from('flashes').select('to_user').eq('from_user', userId),
+        supabase.from('likes').select('to_user').eq('from_user', userId!),
+        supabase.from('flashes').select('to_user').eq('from_user', userId!),
       ]);
+      return {
+        profile: loaded,
+        likedIds: new Set((likes || []).map((l) => l.to_user as string)),
+        flashedIds: new Set((flashes || []).map((f) => f.to_user as string)),
+      };
+    },
+  });
 
-      if (cancelled) return;
-      setLikedIds(new Set((likes || []).map((l) => l.to_user)));
-      setFlashedIds(new Set((flashes || []).map((f) => f.to_user)));
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, profileEpoch]);
+  const myProfile = viewerQuery.data?.profile ?? null;
 
   useEffect(() => {
-    if (!myProfile || !userId) return;
+    if (!viewerQuery.data) return;
+    setLikedIds(viewerQuery.data.likedIds);
+    setFlashedIds(viewerQuery.data.flashedIds);
+  }, [viewerQuery.data]);
 
-    const gen = ++fetchGenRef.current;
-    let cancelled = false;
-    const abort = new AbortController();
-    setSearching(true);
-    setError(null);
+  const { data: signupCount = 0 } = useQuery({
+    queryKey: queryKeys.signupCount(),
+    queryFn: fetchPlatformSignupCount,
+    staleTime: SIGNUP_COUNT_STALE_MS,
+    enabled: Boolean(userId),
+  });
 
-    (async () => {
-      try {
-        const filtered = await fetchDiscoveryCatalog({
-          userId,
-          myProfile,
-          prefs,
-          signal: abort.signal,
-        });
-        if (cancelled || gen !== fetchGenRef.current) return;
-        setCandidates(filtered);
-      } catch (err) {
-        if (cancelled || gen !== fetchGenRef.current) return;
-        setCandidates([]);
-        setError(
-          err instanceof Error ? err.message : 'Impossible de charger les profils'
-        );
+  const prefsKey = `${prefs.geoPerimeter}|${prefs.geoRadiusKm}|${prefs.minOverlap}`;
+  const newMonths = newProfilesWindowMonths(signupCount);
+  const cutoffIso = useMemo(
+    () => (sortChoice === 'nouveaux' ? newProfilesCutoffIso(newMonths) : null),
+    [sortChoice, newMonths]
+  );
+
+  const catalogQuery = useQuery({
+    queryKey: queryKeys.discoveryCatalog(
+      userId,
+      prefsKey,
+      sortChoice,
+      cutoffIso,
+      profileEpoch
+    ),
+    enabled: Boolean(userId && myProfile),
+    queryFn: ({ signal }) => {
+      const excludeIds = Array.from(sessionHiddenIdsRef.current);
+      const filtersChanged =
+        lastFetchPrefsKeyRef.current !== null &&
+        lastFetchPrefsKeyRef.current !== prefsKey;
+      if (filtersChanged) {
+        sessionViewedIdsRef.current.forEach((id) => excludeIds.push(id));
       }
-    })().finally(() => {
-      if (!cancelled && gen === fetchGenRef.current) setSearching(false);
-    });
+      lastFetchPrefsKeyRef.current = prefsKey;
+      return fetchDiscoveryCatalog({
+        userId: userId!,
+        myProfile: myProfile!,
+        prefs,
+        sort: sortChoice as DiscoverySortId,
+        createdAfter: cutoffIso,
+        excludeIds,
+        signal,
+      });
+    },
+  });
 
-    return () => {
-      cancelled = true;
-      abort.abort();
-    };
-  }, [myProfile, userId, prefs]);
+  const catalog = catalogQuery.data ?? [];
+  const candidates = useMemo(
+    () => catalog.filter((c) => !sessionHiddenIds.has(c.id)),
+    [catalog, sessionHiddenIds]
+  );
+  const loading = viewerQuery.isLoading;
+  const searching = catalogQuery.isLoading;
+  const catalogError = catalogQuery.error
+    ? userErrorMessage(catalogQuery.error, 'Impossible de charger les profils')
+    : viewerQuery.error
+      ? userErrorMessage(viewerQuery.error, 'Impossible de charger ton profil')
+      : null;
+  const displayError = error || catalogError;
 
   const founderActive = isFounderPeriodActive(status);
   const likesUnlimited = status.unlimited_likes || founderActive;
@@ -197,30 +289,19 @@ export default function DiscoveryPage({
         status.premium_interval
       );
 
-  const visible = candidates.filter((c) => !sessionExcludedIds.has(c.id));
-  const displayed = useMemo(() => {
-    const list = [...visible];
-    if (sortChoice === 'recents') {
-      list.sort((a, b) => {
-        const ta = a.created_at ? Date.parse(a.created_at) : 0;
-        const tb = b.created_at ? Date.parse(b.created_at) : 0;
-        return tb - ta || b.score - a.score;
-      });
-    } else {
-      list.sort(
-        (a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted)
-      );
-    }
-    return list;
-  }, [visible, sortChoice]);
+  const sortHints: Record<SortChoice, string> = {
+    nouveaux: newProfilesSortHint(newMonths),
+    distance: DISTANCE_SORT_HINT,
+    interests: INTERESTS_SORT_HINT,
+    actifs: ACTIFS_SORT_HINT,
+  };
 
-  const countLabel = `${visible.length} profil${visible.length > 1 ? 's' : ''}`;
-  const sortCaption =
-    sortChoice === 'pertinence'
-      ? 'classés par pertinence'
-      : sortChoice === 'recents'
-        ? 'classés par récents'
-        : null;
+  const displayed = useMemo(
+    () => sortDiscoveryCandidates(candidates, sortChoice, newMonths),
+    [candidates, sortChoice, newMonths]
+  );
+
+  const countLabel = `${displayed.length} profil${displayed.length > 1 ? 's' : ''}`;
 
   useEffect(() => {
     if (!openProfile) return;
@@ -245,7 +326,7 @@ export default function DiscoveryPage({
           to_user: candidate.id,
         });
         if (likeErr) throw likeErr;
-        excludeFromSession(candidate.id);
+        hideFromCurrentFilter(candidate.id);
         setLikedIds((prev) => new Set(prev).add(candidate.id));
         setOpenProfile((open) => (open?.id === candidate.id ? null : open));
 
@@ -268,23 +349,31 @@ export default function DiscoveryPage({
         setActingId(null);
       }
     },
-    [user, actingId, likesExhausted, likedIds, refresh, excludeFromSession]
+    [user, actingId, likesExhausted, likedIds, refresh, hideFromCurrentFilter]
   );
 
   const handleSkip = useCallback(
     (id: string) => {
-      excludeFromSession(id);
+      hideFromCurrentFilter(id);
       setOpenProfile((open) => (open?.id === id ? null : open));
     },
-    [excludeFromSession]
+    [hideFromCurrentFilter]
   );
 
   const openCandidate = useCallback(
     (candidate: Candidate) => {
-      excludeFromSession(candidate.id);
+      markViewedForLaterFilters(candidate.id);
       setOpenProfile(candidate);
     },
-    [excludeFromSession]
+    [markViewedForLaterFilters]
+  );
+
+  const openUnread = useCallback(
+    (candidate: Candidate) => {
+      if (onOpenUnreadChat) onOpenUnreadChat(candidate.id);
+      else openCandidate(candidate);
+    },
+    [onOpenUnreadChat, openCandidate]
   );
 
   const handleFlash = useCallback(
@@ -304,7 +393,7 @@ export default function DiscoveryPage({
         }
 
         setFlashedIds((prev) => new Set(prev).add(candidate.id));
-        excludeFromSession(candidate.id);
+        hideFromCurrentFilter(candidate.id);
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
@@ -332,7 +421,7 @@ export default function DiscoveryPage({
         setActingId(null);
       }
     },
-    [user, actingId, flashedIds, status, showFlashCta, excludeFromSession]
+    [user, actingId, flashedIds, status, showFlashCta, hideFromCurrentFilter]
   );
 
   if (loading || membershipLoading) {
@@ -346,12 +435,12 @@ export default function DiscoveryPage({
     );
   }
 
-  if (error && !myProfile) {
+  if (displayError && !myProfile) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <span>{displayError}</span>
         </div>
       </div>
     );
@@ -433,7 +522,7 @@ export default function DiscoveryPage({
                   }}
                   className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
                 >
-                  <option value="">Tous les profils</option>
+                  <option value="">Indifférent</option>
                   <option value={1}>Au moins 1 centre d'intérêt</option>
                   <option value={2}>Au moins 2 centres d'intérêt</option>
                   <option value={3}>Au moins 3 centres d'intérêt</option>
@@ -469,10 +558,10 @@ export default function DiscoveryPage({
         />
       )}
 
-      {error && (
+      {displayError && (
         <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <span>{displayError}</span>
         </div>
       )}
 
@@ -482,14 +571,14 @@ export default function DiscoveryPage({
         </div>
       )}
 
-      {membershipLoading || searching ? (
+      {searching ? (
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
             <div className="text-gray-400 text-sm">Recherche en cours...</div>
           </div>
         </div>
-      ) : candidates.length === 0 ? (
+      ) : displayError ? null : candidates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-4">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
             <Heart className="w-9 h-9 text-rose-300" />
@@ -530,196 +619,87 @@ export default function DiscoveryPage({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-gray-400">
-              {countLabel}
-              {sortCaption ? ` · ${sortCaption}` : ''}
-            </p>
-            <label className="sr-only" htmlFor="discovery-sort">
-              Trier les profils
-            </label>
-            <select
-              id="discovery-sort"
-              value={sortChoice ?? ''}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === 'pertinence' || v === 'recents') setSortChoice(v);
-                else setSortChoice(null);
-              }}
-              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            >
-              <option value="">Trier</option>
-              <option value="pertinence">Pertinence</option>
-              <option value="recents">Récents</option>
-            </select>
-          </div>
-
-          {visible.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              Profils masqués. Les filtres n’ont pas changé le résultat.
-            </p>
-          ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4">
-            {displayed.map((c) => {
-              const alreadyFlashed = flashedIds.has(c.id);
-              const alreadyLiked = likedIds.has(c.id);
-              const busy = actingId === c.id;
-              const geoBadge = c.geo_badge;
-              const unreadCount = unreadBySender[c.id] || 0;
-              return (
-                <li key={c.id}>
-                  <article
-                    className={`relative rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
-                      unreadCount > 0
-                        ? 'border-rose-300 ring-2 ring-rose-100'
-                        : 'border-gray-100 hover:border-rose-100'
-                    }`}
+          <div className="space-y-2">
+            <p className="text-xs text-gray-400">{countLabel}</p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <p
+                id="discovery-sort-label"
+                className="text-[11px] text-gray-400 shrink-0"
+              >
+                Trier par :
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby="discovery-sort-label"
+                className="discovery-sort-pills flex flex-wrap gap-1.5"
+              >
+              {SORT_OPTIONS.map((option) => {
+                const selected = sortChoice === option.id;
+                const hint = sortHints[option.id];
+                return (
+                  <div
+                    key={option.id}
+                    className={`discovery-sort-pill${selected ? ' discovery-sort-pill--active' : ''}`}
                   >
+                    <span className="discovery-sort-hint" aria-hidden="true">
+                      <span className="discovery-sort-hint-panel">
+                        <span className="discovery-sort-hint-inner">{hint}</span>
+                      </span>
+                    </span>
                     <button
                       type="button"
-                      className="absolute inset-0 z-[1] cursor-pointer"
-                      onClick={() => openCandidate(c)}
-                      aria-label={
-                        unreadCount > 0
-                          ? `Voir le profil de ${c.display_name}, ${unreadMessagesLabel(unreadCount)}`
-                          : `Voir le profil de ${c.display_name}`
-                      }
-                    />
-                    <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none">
-                      {c.photo_url ? (
-                        <img
-                          src={c.photo_url}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white/80">
-                          {c.display_name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
-                        {c.age} ans
-                      </span>
-                      {(c.is_boosted || c.is_founder) && (
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]">
-                          {c.is_boosted && <BoostedBadge size="sm" />}
-                          {c.is_founder && (
-                            <FounderBadge number={c.founder_number} size="sm" />
-                          )}
-                        </div>
-                      )}
-                      {unreadCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onOpenUnreadChat) onOpenUnreadChat(c.id);
-                            else openCandidate(c);
-                          }}
-                          className="pointer-events-auto absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600"
-                          aria-label={unreadMessagesLabel(unreadCount)}
-                        >
-                          <MessageCircle className="w-3 h-3" />
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSkip(c.id);
-                        }}
-                        className="pointer-events-auto absolute bottom-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
-                        title="Masquer"
-                        aria-label={`Masquer ${c.display_name}`}
-                      >
-                        <X className="w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                      </button>
-                    </div>
-                    <div className="p-3 space-y-1.5">
-                      <p className="text-sm font-bold text-gray-900 truncate">
-                        {c.display_name}
-                      </p>
-                      {c.location && (
-                        <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
-                          <MapPin className="w-3 h-3 shrink-0" />
-                          {c.location}
-                        </p>
-                      )}
-                      {(c.mutual_interests.length > 0 || geoBadge) && (
-                        <div className="flex flex-col gap-0.5">
-                          {c.mutual_interests.length > 0 && (
-                            <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                              <Sparkles className="w-3 h-3 shrink-0" />
-                              {c.mutual_interests.length === 1
-                                ? "1 centre d'intérêt en commun"
-                                : `${c.mutual_interests.length} centres d'intérêt en commun`}
-                            </p>
-                          )}
-                          {geoBadge && (
-                            <p className="text-[11px] text-emerald-700 font-medium">
-                              {geoBadge}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      <div
-                        className="relative z-10 flex items-center justify-center gap-2 pt-1.5"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                      >
-                        {showFlashCta && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleFlash(c);
-                            }}
-                            disabled={busy || alreadyFlashed}
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-                            title={
-                              alreadyFlashed
-                                ? 'Déjà flashé'
-                                : 'Envoyer un flash'
-                            }
-                            aria-label={
-                              alreadyFlashed
-                                ? `Déjà flashé ${c.display_name}`
-                                : `Flasher ${c.display_name}`
-                            }
-                          >
-                            <Zap className="w-4 h-4 text-white" fill="white" />
-                          </button>
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={`${option.label}. ${hint}`}
+                      onClick={() => setSortChoice(option.id)}
+                      className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all ${
+                        selected
+                          ? 'discovery-sort-pill-active'
+                          : 'bg-white text-gray-800 border-gray-200 hover:bg-neutral-50 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="sort-icon" aria-hidden>
+                        {option.icon === 'palette' ? (
+                          <PaletteSortIcon />
+                        ) : (
+                          option.icon
                         )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleLike(c);
-                          }}
-                          disabled={busy || likesExhausted || alreadyLiked}
-                          className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-                          title={
-                            alreadyLiked
-                              ? 'Déjà liké'
-                              : likesExhausted
-                                ? 'Limite de likes atteinte'
-                                : 'Liker ce profil'
-                          }
-                          aria-label={
-                            alreadyLiked
-                              ? `Déjà liké ${c.display_name}`
-                              : `Liker ${c.display_name}`
-                          }
-                        >
-                          <Heart className="w-4 h-4 text-white" fill="white" />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
+                      </span>
+                      {option.label}
+                    </button>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+          </div>
+
+          {displayed.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">
+              {sortChoice === 'nouveaux'
+                ? 'Aucun nouveau profil sur cette période.'
+                : 'Profils masqués. Les filtres n’ont pas changé le résultat.'}
+            </p>
+          ) : (
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 overflow-visible">
+            {displayed.map((c, index) => (
+                <DiscoveryCard
+                  key={c.id}
+                  candidate={c}
+                  eager={index < 4}
+                  unreadCount={unreadBySender[c.id] || 0}
+                  alreadyFlashed={flashedIds.has(c.id)}
+                  alreadyLiked={likedIds.has(c.id)}
+                  busy={actingId === c.id}
+                  likesExhausted={likesExhausted}
+                  showFlashCta={showFlashCta}
+                  onOpen={openCandidate}
+                  onOpenUnread={openUnread}
+                  onSkip={handleSkip}
+                  onFlash={handleFlash}
+                  onLike={handleLike}
+                />
+            ))}
           </ul>
           )}
 
@@ -771,3 +751,185 @@ export default function DiscoveryPage({
     </div>
   );
 }
+
+const DiscoveryCard = memo(function DiscoveryCard({
+  candidate: c,
+  eager,
+  unreadCount,
+  alreadyFlashed,
+  alreadyLiked,
+  busy,
+  likesExhausted,
+  showFlashCta,
+  onOpen,
+  onOpenUnread,
+  onSkip,
+  onFlash,
+  onLike,
+}: {
+  candidate: Candidate;
+  eager: boolean;
+  unreadCount: number;
+  alreadyFlashed: boolean;
+  alreadyLiked: boolean;
+  busy: boolean;
+  likesExhausted: boolean;
+  showFlashCta: boolean;
+  onOpen: (c: Candidate) => void;
+  onOpenUnread: (c: Candidate) => void;
+  onSkip: (id: string) => void;
+  onFlash: (c: Candidate) => void;
+  onLike: (c: Candidate) => void;
+}) {
+  const geoBadge = c.geo_badge;
+  return (
+    <li>
+      <article
+        className={`relative rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
+          unreadCount > 0
+            ? 'border-rose-300 ring-2 ring-rose-100'
+            : 'border-gray-100 hover:border-rose-100'
+        }`}
+      >
+        <button
+          type="button"
+          className="absolute inset-0 z-[1] cursor-pointer"
+          onClick={() => onOpen(c)}
+          aria-label={
+            unreadCount > 0
+              ? `Voir le profil de ${c.display_name}, ${unreadMessagesLabel(unreadCount)}`
+              : `Voir le profil de ${c.display_name}`
+          }
+        />
+        <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none overflow-hidden rounded-t-2xl">
+          {c.photo_url ? (
+            <ProfilePhoto
+              src={c.photo_url}
+              eager={eager}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white/80">
+              {c.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
+            {c.age} ans
+          </span>
+          {(c.is_boosted || c.is_founder) && (
+            <div className="absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]">
+              {c.is_boosted && <BoostedBadge size="sm" />}
+              {c.is_founder && (
+                <FounderBadge number={c.founder_number} size="sm" />
+              )}
+            </div>
+          )}
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenUnread(c);
+              }}
+              className="pointer-events-auto absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600"
+              aria-label={unreadMessagesLabel(unreadCount)}
+            >
+              <MessageCircle className="w-3 h-3" />
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSkip(c.id);
+            }}
+            className="pointer-events-auto absolute bottom-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+            title="Masquer"
+            aria-label={`Masquer ${c.display_name}`}
+          >
+            <X className="w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </button>
+        </div>
+        <div className="p-3 space-y-1.5">
+          <p className="text-sm font-bold text-gray-900 truncate">
+            {c.display_name}
+          </p>
+          {c.location && (
+            <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
+              <MapPin className="w-3 h-3 shrink-0" />
+              {c.location}
+            </p>
+          )}
+          {(c.mutual_interests.length > 0 || geoBadge) && (
+            <div className="flex flex-col gap-0.5">
+              {c.mutual_interests.length > 0 && (
+                <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                  <Sparkles className="w-3 h-3 shrink-0" />
+                  {c.mutual_interests.length === 1
+                    ? "1 centre d'intérêt en commun"
+                    : `${c.mutual_interests.length} centres d'intérêt en commun`}
+                </p>
+              )}
+              {geoBadge && (
+                <p className="text-[11px] text-emerald-700 font-medium">
+                  {geoBadge}
+                </p>
+              )}
+            </div>
+          )}
+          <div
+            className="relative z-10 flex items-center justify-center gap-2 pt-1.5 overflow-visible"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {showFlashCta && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFlash(c);
+                }}
+                disabled={busy || alreadyFlashed}
+                className="group relative z-10 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer overflow-visible hover:z-20"
+                aria-label={
+                  alreadyFlashed
+                    ? `Déjà flashé ${c.display_name}`
+                    : `Flasher ${c.display_name}`
+                }
+              >
+                <Zap className="w-4 h-4 text-white" fill="white" />
+                <span className="pointer-events-none absolute z-30 top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-amber-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-amber-800 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                  {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'}
+                </span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(c);
+              }}
+              disabled={busy || likesExhausted || alreadyLiked}
+              className="group relative z-10 w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer overflow-visible hover:z-20"
+              aria-label={
+                alreadyLiked
+                  ? `Déjà liké ${c.display_name}`
+                  : `Liker ${c.display_name}`
+              }
+            >
+              <Heart className="w-4 h-4 text-white" fill="white" />
+              <span className="pointer-events-none absolute z-30 top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                {alreadyLiked
+                  ? 'Déjà liké'
+                  : likesExhausted
+                    ? 'Limite de likes atteinte'
+                    : 'Liker ce profil'}
+              </span>
+            </button>
+          </div>
+        </div>
+      </article>
+    </li>
+  );
+});

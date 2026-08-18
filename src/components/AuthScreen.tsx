@@ -10,7 +10,15 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { isInvalidLoginCredentials, shouldCountLoginFailure, translateAuthError } from '@/lib/authErrors';
+import {
+  EMAIL_ALREADY_REGISTERED_MESSAGE,
+  isEmailAlreadyRegisteredError,
+  isInvalidLoginCredentials,
+  isObfuscatedDuplicateSignup,
+  shouldCountLoginFailure,
+  translateAuthError,
+} from '@/lib/authErrors';
+import { emailIsRegistered } from '@/lib/signupEmail';
 import { validateSignupPassword } from '@/lib/password';
 import {
   ACCOUNT_LOCKED_MESSAGE,
@@ -85,7 +93,6 @@ export default function AuthScreen({
       setOfferPasswordReset(false);
       setInfo(RESET_EMAIL_SENT_MESSAGE);
     } catch (err) {
-      console.error(err);
       setOfferPasswordReset(true);
       setError(translateAuthError(err));
     } finally {
@@ -104,8 +111,8 @@ export default function AuthScreen({
     if (!emailed) {
       try {
         await sendPasswordResetEmail(currentEmail);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        /* e-mail de déblocage : silence en prod */
       }
     }
   };
@@ -171,12 +178,21 @@ export default function AuthScreen({
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        if (await emailIsRegistered(email)) {
+          setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
+          return;
+        }
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { birth_date: birthDate } },
         });
         if (error) throw error;
+        if (isObfuscatedDuplicateSignup(data.user)) {
+          if (data.session) await supabase.auth.signOut();
+          setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
+          return;
+        }
         return;
       }
 
@@ -211,6 +227,10 @@ export default function AuthScreen({
         await applyLock(email, false);
       }
     } catch (err) {
+      if (mode === 'signup' && isEmailAlreadyRegisteredError(err)) {
+        setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
+        return;
+      }
       if (mode === 'signin' && shouldCountLoginFailure(err)) {
         await handlePasswordFailure(email);
         return;
@@ -385,6 +405,16 @@ export default function AuthScreen({
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="min-w-0 space-y-2">
                   <p>{error}</p>
+                  {mode === 'signup' &&
+                    error === EMAIL_ALREADY_REGISTERED_MESSAGE && (
+                      <button
+                        type="button"
+                        onClick={() => switchMode('signin')}
+                        className="font-semibold underline underline-offset-2 hover:text-red-800"
+                      >
+                        Se connecter
+                      </button>
+                    )}
                   {mode === 'signin' && offerPasswordReset && (
                     <button
                       type="button"
@@ -430,9 +460,7 @@ export default function AuthScreen({
         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
           En t&apos;inscrivant, tu confirmes avoir 18 ans révolus, être une
           personne sans enfant et accepter les{' '}
-          <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-            CGU / CGV
-          </LegalLink>
+          <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
           .
         </p>
       </div>

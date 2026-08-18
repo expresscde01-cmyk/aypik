@@ -33,6 +33,7 @@ import {
   communeFromStoredLabel,
   type GeoCommune,
 } from '@/lib/geoCommunes';
+import { resolveCommuneCoordinates } from '@/lib/profileCoordinates';
 import {
   INTEREST_CATEGORIES,
   ALL_SUGGESTED_INTERESTS,
@@ -65,9 +66,19 @@ export interface Profile {
   interests: string[];
   photo_url: string;
   gender?: ProfileGender | null;
+  lat?: number | null;
+  lng?: number | null;
+  last_active_at?: string | null;
   email_notifications_enabled?: boolean;
   deletion_requested_at?: string | null;
 }
+
+/** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
+export const PROFILE_CARD_COLUMNS =
+  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, last_active_at, deletion_requested_at';
+
+/** Profil du compte connecté (préférences e-mail en plus). */
+export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled`;
 
 export default function ProfileSetup({
   onDone,
@@ -122,12 +133,12 @@ export default function ProfileSetup({
       if (!user) return;
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(PROFILE_OWN_COLUMNS)
         .eq('id', user.id)
         .maybeSingle();
 
       if (error) {
-        setError(error.message);
+        setError(userErrorMessage(error, 'Impossible de charger ton profil'));
         setLoading(false);
         return;
       }
@@ -385,6 +396,8 @@ export default function ProfileSetup({
         photo_url: string;
         email_notifications_enabled: boolean;
         gender?: ProfileGender;
+        lat?: number | null;
+        lng?: number | null;
       } = {
         id: user.id,
         display_name: displayName,
@@ -399,6 +412,16 @@ export default function ProfileSetup({
 
       if (!genderLocked && (gender === 'homme' || gender === 'femme')) {
         payload.gender = gender;
+      }
+
+      const coords = await resolveCommuneCoordinates({
+        lat: selectedCity.lat,
+        lng: selectedCity.lng,
+        label: selectedCity.label,
+      });
+      if (coords) {
+        payload.lat = coords.lat;
+        payload.lng = coords.lng;
       }
 
       const { error: upsertError } = await supabase
@@ -939,10 +962,8 @@ export default function ProfileSetup({
           <p className="mt-6 text-center text-xs text-gray-400 leading-relaxed">
             Vous avez des questions ? <ContactLink />
             <br />
-            Conditions d&apos;utilisation et de vente :{' '}
-            <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium text-gray-500">
-              CGU / CGV
-            </LegalLink>
+            Conditions d&apos;utilisation :{' '}
+            <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium text-gray-500" />
           </p>
         )}
 

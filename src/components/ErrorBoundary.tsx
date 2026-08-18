@@ -14,11 +14,18 @@ export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, message: '' };
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, message: error.message };
+    return {
+      hasError: true,
+      message: import.meta.env.DEV
+        ? error.message
+        : 'Recharge la page. Si ça continue, réessaie dans un instant.',
+    };
   }
 
   componentDidCatch(error: Error) {
-    console.error('App error:', error);
+    if (import.meta.env.DEV) {
+      console.error('App error:', error);
+    }
   }
 
   render() {

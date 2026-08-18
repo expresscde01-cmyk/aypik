@@ -72,3 +72,9 @@ export async function purgeBrokenMatch(peerId: string): Promise<void> {
   await callMatchRpc('purge_broken_match', { p_peer: peerId });
   emitInboxUpdated({ actorId: peerId, decision: 'match-purge' });
 }
+
+/** Suppression définitive depuis un match encore actif (archive puis purge). */
+export async function purgeActiveMatch(peerId: string): Promise<void> {
+  await archiveActiveMatch(peerId);
+  await purgeBrokenMatch(peerId);
+}

@@ -4,11 +4,21 @@
 
 Options -Indexes
 ServerSignature Off
+DirectoryIndex index.html
+AddDefaultCharset UTF-8
 
 <IfModule mod_mime.c>
   AddType application/javascript .js .mjs
   AddType text/css .css
   AddType image/svg+xml .svg
+  AddType image/webp .webp
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css application/javascript application/json image/svg+xml
 </IfModule>
 
 # Bloquer fichiers / dossiers sensibles s'ils étaient uploadés par erreur
@@ -33,14 +43,19 @@ ServerSignature Off
   RewriteRule (?i)^(src|supabase|node_modules|\.git|scripts|migrations)(/|$) - [F,L]
   RewriteRule (?i)\.(env|sql|bak|old|config\.js)$ - [F,L]
 
-  # SPA fallback
+  # SPA : index.html. Les /assets/ manquants restent en 404
+  # (sinon Apache servirait du HTML à la place d’un .js — CSP / parse error).
   RewriteRule ^index\.html$ - [L]
+  RewriteRule ^assets/ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . index.html [L]
 </IfModule>
 
 <IfModule mod_headers.c>
+  Header unset X-Powered-By
+  Header always unset X-Powered-By
+
   # Les CSP multiples se cumulent (la plus stricte gagne). On retire
   # d'abord celle d'o2switch/cPanel avant d'en poser une compatible React.
   Header unset Content-Security-Policy
@@ -48,13 +63,14 @@ ServerSignature Off
   Header unset Content-Security-Policy-Report-Only
   Header always unset Content-Security-Policy-Report-Only
 
-  # script-src 'self' : JS compilé dans /assets/*.js
-  # 'unsafe-inline' / 'unsafe-eval' : filet Vite/React + Stripe
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'sha256-F9ONkTeFRjW5+xKyhVbobzanK6JR47UXTtwOTFz2xdI=' https://js.stripe.com https://*.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://geo.api.gouv.fr https://api.stripe.com https://*.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-ancestors 'none'"
+  # script-src 'self' : un seul bundle JS externe (pas de script inline).
+  # Pas de hash ni de 'unsafe-inline' : un hash CSP annule 'unsafe-inline'.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://js.stripe.com https://*.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://geo.api.gouv.fr https://api.stripe.com https://*.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-ancestors 'none'"
 
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-Frame-Options "DENY"
+  Header always set X-Permitted-Cross-Domain-Policies "none"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)"
   Header always set Cross-Origin-Opener-Policy "same-origin"
   Header always set Cross-Origin-Resource-Policy "same-site"

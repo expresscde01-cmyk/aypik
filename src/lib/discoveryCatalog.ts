@@ -1,27 +1,17 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
-import {
-  ageFromBirthDate,
-  latestBirthDateForAge,
-  matchingTargetGender,
-  minPartnerAge,
-  parseProfileGender,
-  MIN_USER_AGE,
-} from '@/lib/dating';
-import { geoProximityFlags } from '@/lib/geoProximity';
-import { rankProfileScore } from '@/lib/suggestions';
-import {
-  passesSearchCriteria,
-  resolveProfileDistances,
-  suggestionGeoBadge,
-} from '@/lib/suggestionMatch';
+import { parseProfileGender } from '@/lib/dating';
+import { suggestionGeoBadge } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
+import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
-const PROFILE_COLUMNS =
-  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, created_at';
+export const DISCOVER_CATALOG_LIMIT = 80;
 
-const PAGE_SIZE = 1000;
-const BADGE_CHUNK = 80;
+export type DiscoverySortId =
+  | 'nouveaux'
+  | 'distance'
+  | 'interests'
+  | 'actifs';
 
 export type DiscoveryCandidate = Profile & {
   age: number;
@@ -37,165 +27,172 @@ export type DiscoveryCandidate = Profile & {
   distance_km: number | null;
   geo_badge: string | null;
   created_at?: string;
+  updated_at?: string;
+  last_active_at?: string | null;
+  activity_score?: number;
 };
 
+export type SuggestRow = {
+  id: string;
+  display_name: string;
+  birth_date: string;
+  bio: string | null;
+  has_children: boolean;
+  location: string | null;
+  interests: string[] | null;
+  photo_url: string | null;
+  gender: string | null;
+  created_at: string;
+  updated_at: string | null;
+  score: number | string | null;
+  mutual_interest_count: number | null;
+  same_city: boolean;
+  same_department: boolean;
+  same_region: boolean;
+  neighboring_region: boolean;
+  age: number;
+  is_boosted: boolean;
+  distance_km: number | string | null;
+  last_active_at: string | null;
+  activity_score: number | null;
+  is_founder: boolean | null;
+  founder_number: number | null;
+};
+
+export function mapSuggestRow(
+  row: SuggestRow,
+  myInterests: string[],
+  prefs: SuggestionPrefs
+): DiscoveryCandidate {
+  const interests = row.interests || [];
+  const mutual_interests = interests.filter((i) => myInterests.includes(i));
+  const distanceRaw = row.distance_km;
+  const distance_km =
+    distanceRaw === null || distanceRaw === undefined
+      ? null
+      : Number(distanceRaw);
+  const flags = {
+    same_city: Boolean(row.same_city),
+    same_department: Boolean(row.same_department),
+    same_region: Boolean(row.same_region),
+    neighboring_region: Boolean(row.neighboring_region),
+  };
+  return {
+    id: row.id,
+    display_name: row.display_name,
+    birth_date: row.birth_date,
+    bio: row.bio || '',
+    has_children: Boolean(row.has_children),
+    location: row.location || '',
+    interests,
+    photo_url: row.photo_url || '',
+    gender: parseProfileGender(row.gender),
+    age: Number(row.age) || 0,
+    mutual_interests,
+    is_boosted: Boolean(row.is_boosted),
+    is_founder: Boolean(row.is_founder),
+    founder_number: row.founder_number ?? null,
+    score: Number(row.score) || 0,
+    ...flags,
+    distance_km: Number.isFinite(distance_km as number) ? distance_km : null,
+    geo_badge: suggestionGeoBadge(
+      flags,
+      Number.isFinite(distance_km as number) ? distance_km : null,
+      prefs
+    ),
+    created_at: row.created_at,
+    updated_at: row.updated_at || undefined,
+    last_active_at: row.last_active_at,
+    activity_score: Number(row.activity_score) || 0,
+  };
+}
+
 /**
- * Catalogue Découvrir : charge les profils éligibles, puis applique
- * géographie ET âge ET intérêts (voir passesSearchCriteria).
+ * Arguments PostgREST de suggest_profiles.
+ * Ne pas envoyer `p_exclude_ids: []` : PostgREST ne peut pas typer un tableau
+ * vide et répond PGRST202 (fonction introuvable / schema cache).
+ */
+export function suggestProfilesRpcArgs(options: {
+  limit: number;
+  minOverlap: number;
+  mode: 'home' | 'discover';
+  geoPerimeter: SuggestionPrefs['geoPerimeter'];
+  radiusKm: SuggestionPrefs['geoRadiusKm'];
+  sort: string;
+  createdAfter?: string | null;
+  excludeIds?: string[];
+}): Record<string, unknown> {
+  const args: Record<string, unknown> = {
+    p_limit: options.limit,
+    p_same_city_only: false,
+    p_min_interest_overlap: options.minOverlap,
+    p_mode: options.mode,
+    p_geo_perimeter: options.geoPerimeter,
+    p_radius_km: options.radiusKm,
+    p_sort: options.sort,
+  };
+  if (options.createdAfter) {
+    args.p_created_after = options.createdAfter;
+  }
+  const excludeIds = (options.excludeIds || []).filter(Boolean);
+  if (excludeIds.length > 0) {
+    args.p_exclude_ids = excludeIds;
+  }
+  return args;
+}
+
+/**
+ * Catalogue Découvrir : une RPC SQL paginée (plus de scan 1000).
  */
 export async function fetchDiscoveryCatalog(options: {
   userId: string;
   myProfile: Profile;
   prefs: SuggestionPrefs;
+  sort?: DiscoverySortId;
+  createdAfter?: string | null;
+  excludeIds?: string[];
   signal?: AbortSignal;
 }): Promise<DiscoveryCandidate[]> {
-  const { userId, myProfile, prefs, signal } = options;
-  const myAge = ageFromBirthDate(myProfile.birth_date);
-  const targetGender = matchingTargetGender(myProfile.gender);
-  const myMinAge = Math.max(MIN_USER_AGE, minPartnerAge(myAge));
+  const { myProfile, prefs, sort = 'nouveaux' } = options;
+  if (options.signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
 
-  const rows = await fetchAllEligibleProfiles({
-    userId,
-    minBirthDate: latestBirthDateForAge(myMinAge),
-    signal,
+  await ensureProfileCoordinates(myProfile);
+  if (options.signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+
+  const rpcArgs = suggestProfilesRpcArgs({
+    limit: DISCOVER_CATALOG_LIMIT,
+    minOverlap: prefs.minOverlap,
+    mode: 'discover',
+    geoPerimeter: prefs.geoPerimeter,
+    radiusKm: prefs.geoRadiusKm,
+    sort,
+    createdAfter: options.createdAfter,
+    excludeIds: options.excludeIds,
   });
+  const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 
-  const ids = rows.map((p) => p.id);
-  const { boostSet, founderMap } = await fetchBadgeMaps(ids);
+  if (options.signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+  if (error) throw error;
 
-  const mapped = rows.map((profile) => {
-    const age = ageFromBirthDate(profile.birth_date);
-    const mutual_interests = (profile.interests || []).filter((i) =>
-      (myProfile.interests || []).includes(i)
-    );
-    const is_boosted = boostSet.has(profile.id);
-    const flags = geoProximityFlags(
-      myProfile.location || '',
-      profile.location || ''
-    );
-    return {
-      ...profile,
-      gender: parseProfileGender(profile.gender),
-      age,
-      mutual_interests,
-      is_boosted,
-      is_founder: founderMap.has(profile.id),
-      founder_number: founderMap.get(profile.id) ?? null,
-      same_city: flags.same_city,
-      same_department: flags.same_department,
-      same_region: flags.same_region,
-      neighboring_region: flags.neighboring_region,
-      created_at:
-        typeof (profile as { created_at?: string }).created_at === 'string'
-          ? (profile as { created_at?: string }).created_at
-          : undefined,
-      score: rankProfileScore({
-        myAge,
-        theirAge: age,
-        myLocation: myProfile.location || '',
-        theirLocation: profile.location || '',
-        mutualInterestCount: mutual_interests.length,
-        isBoosted: is_boosted,
-      }),
-    };
-  });
-
-  const distanceById = await resolveProfileDistances(
-    myProfile.location || '',
-    mapped,
-    prefs,
-    signal
+  return ((data || []) as SuggestRow[]).map((row) =>
+    mapSuggestRow(row, myProfile.interests || [], prefs)
   );
-
-  if (signal?.aborted) return [];
-
-  return mapped
-    .map((c) => {
-      const distance_km = distanceById.get(c.id) ?? null;
-      return {
-        ...c,
-        distance_km,
-        geo_badge: suggestionGeoBadge(c, distance_km, prefs),
-      };
-    })
-    .filter((c) =>
-      passesSearchCriteria(
-        {
-          gender: c.gender,
-          age: c.age,
-          mutualCount: c.mutual_interests.length,
-          flags: c,
-          distanceKm: c.distance_km,
-        },
-        myAge,
-        targetGender,
-        prefs
-      )
-    )
-    .sort(
-      (a, b) => b.score - a.score || Number(b.is_boosted) - Number(a.is_boosted)
-    );
 }
 
-async function fetchAllEligibleProfiles(options: {
-  userId: string;
-  minBirthDate: string;
-  signal?: AbortSignal;
-}): Promise<Profile[]> {
-  const data: Profile[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    if (options.signal?.aborted) return [];
-    const { data: page, error } = await supabase
-      .from('profiles')
-      .select(PROFILE_COLUMNS)
-      .neq('id', options.userId)
-      .eq('has_children', false)
-      .is('deletion_requested_at', null)
-      .lte('birth_date', options.minBirthDate)
-      .order('id', { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-    const rows = (page || []) as Profile[];
-    data.push(...rows);
-    if (rows.length < PAGE_SIZE) break;
+export async function fetchPlatformSignupCount(): Promise<number> {
+  const { data, error } = await supabase.rpc('platform_signup_count');
+  if (!error && typeof data === 'number' && Number.isFinite(data)) {
+    return data;
   }
-  return data;
-}
-
-async function fetchBadgeMaps(ids: string[]): Promise<{
-  boostSet: Set<string>;
-  founderMap: Map<string, number | null>;
-}> {
-  const boostSet = new Set<string>();
-  const founderMap = new Map<string, number | null>();
-  if (ids.length === 0) return { boostSet, founderMap };
-
-  try {
-    for (let i = 0; i < ids.length; i += BADGE_CHUNK) {
-      const chunk = ids.slice(i, i + BADGE_CHUNK);
-      const [{ data: boosts }, { data: memberships }] = await Promise.all([
-        supabase
-          .from('profile_boosts')
-          .select('user_id')
-          .in('user_id', chunk)
-          .in('payment_status', ['paid', 'simulated'])
-          .gt('ends_at', new Date().toISOString()),
-        supabase
-          .from('memberships')
-          .select('user_id, is_founder, founder_number')
-          .in('user_id', chunk),
-      ]);
-      (boosts || []).forEach((b) => boostSet.add(b.user_id));
-      (memberships || []).forEach((m) => {
-        if (m.is_founder) {
-          founderMap.set(m.user_id, m.founder_number ?? null);
-        }
-      });
-    }
-  } catch {
-    /* badges optionnels : ne jamais bloquer le catalogue */
-  }
-
-  return { boostSet, founderMap };
+  const { count } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .is('deletion_requested_at', null);
+  return typeof count === 'number' ? count : 0;
 }

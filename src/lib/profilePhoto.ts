@@ -77,3 +77,27 @@ export async function uploadProfilePhoto(
 
   return { url: data.publicUrl, error: null };
 }
+
+/**
+ * Variante 400w via le transform Storage (render/image).
+ * Si le transform n’est pas dispo, ProfilePhoto retombe sur l’URL d’origine.
+ */
+export function profilePhotoSrc(url: string, width = 400): string {
+  const trimmed = String(url || '').trim();
+  if (!trimmed) return trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    const objectMarker = '/storage/v1/object/public/';
+    if (!parsed.pathname.includes(objectMarker)) return trimmed;
+    parsed.pathname = parsed.pathname.replace(
+      objectMarker,
+      '/storage/v1/render/image/public/'
+    );
+    parsed.searchParams.set('width', String(width));
+    parsed.searchParams.set('resize', 'cover');
+    parsed.searchParams.set('quality', '70');
+    return parsed.toString();
+  } catch {
+    return trimmed;
+  }
+}

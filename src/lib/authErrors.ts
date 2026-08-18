@@ -1,9 +1,13 @@
 import { isAuthWeakPasswordError } from '@supabase/supabase-js';
 
+export const EMAIL_ALREADY_REGISTERED_MESSAGE =
+  'Un compte existe déjà avec cette adresse e-mail. Connecte-toi plutôt.';
+
 const CODE_MESSAGES: Record<string, string> = {
   weak_password: 'Le mot de passe est trop faible.',
-  email_exists: 'Cette adresse e-mail est déjà utilisée.',
-  user_already_exists: 'Cette adresse e-mail est déjà utilisée.',
+  email_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
+  user_already_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
+  already_registered: EMAIL_ALREADY_REGISTERED_MESSAGE,
   invalid_credentials: 'Mot de passe incorrect.',
   email_not_confirmed:
     'Confirme ton adresse e-mail avant de te connecter.',
@@ -20,7 +24,10 @@ const CODE_MESSAGES: Record<string, string> = {
 
 const MESSAGE_PATTERNS: [RegExp, string][] = [
   [/password.*at least/i, 'Le mot de passe doit contenir au moins 12 caractères.'],
-  [/already registered/i, 'Cette adresse e-mail est déjà utilisée.'],
+  [/already registered/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
+  [/user_already_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
+  [/email_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
+  [/users_normalized_email/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
   [/invalid login credentials/i, 'Mot de passe incorrect.'],
   [/email.*confirm/i, 'Confirme ton adresse e-mail.'],
   [/unable to validate email/i, 'Adresse e-mail invalide.'],
@@ -43,6 +50,41 @@ const WEAK_PASSWORD_REASONS: Record<string, string> = {
   pwned: 'Ce mot de passe a été compromis dans une fuite de données. Choisis-en un autre.',
 };
 
+function authErrorBlob(err: unknown): { code: string; text: string } {
+  const o = err && typeof err === 'object' ? (err as Record<string, unknown>) : {};
+  const code = o.code != null ? String(o.code) : '';
+  const message = err instanceof Error ? err.message : String(err ?? '');
+  const hint = o.hint != null ? String(o.hint) : '';
+  const details = o.details != null ? String(o.details) : '';
+  return { code, text: `${code} ${message} ${hint} ${details}` };
+}
+
+export function isEmailAlreadyRegisteredError(err: unknown): boolean {
+  const { code, text } = authErrorBlob(err);
+  if (
+    code === 'email_exists' ||
+    code === 'user_already_exists' ||
+    code === 'already_registered'
+  ) {
+    return true;
+  }
+  if (code === '23505') {
+    return /email/i.test(text);
+  }
+  return (
+    /already registered/i.test(text) ||
+    /user_already_exists/i.test(text) ||
+    /email_exists/i.test(text) ||
+    /users_normalized_email/i.test(text)
+  );
+}
+
+export function isObfuscatedDuplicateSignup(user: {
+  identities?: unknown[] | null;
+} | null | undefined): boolean {
+  return Array.isArray(user?.identities) && user.identities.length === 0;
+}
+
 export function translateAuthError(err: unknown): string {
   if (isAuthWeakPasswordError(err)) {
     if (err.reasons.length > 0) {
@@ -51,6 +93,10 @@ export function translateAuthError(err: unknown): string {
         .join(' ');
     }
     return 'Le mot de passe est trop faible.';
+  }
+
+  if (isEmailAlreadyRegisteredError(err)) {
+    return EMAIL_ALREADY_REGISTERED_MESSAGE;
   }
 
   const message =

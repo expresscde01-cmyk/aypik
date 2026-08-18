@@ -70,11 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await applySession(data.session, true);
           return;
         }
-        console.warn('[aypik] recovery-token', error?.message);
+        consumeRecoveryParamsFromUrl();
       }
 
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
+      consumeRecoveryParamsFromUrl();
       const recovery = isPasswordRecoveryRedirect();
       recoveryRef.current = recovery;
       if (recovery) setPasswordRecovery(true);
@@ -113,7 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch {
+      await supabase.auth.signOut({ scope: 'local' });
+    }
     recoveryRef.current = false;
     setPasswordRecovery(false);
     setSession(null);

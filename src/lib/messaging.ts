@@ -1,4 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 export type ChatMessage = {
@@ -12,8 +23,9 @@ export type ChatMessage = {
 };
 
 function logSupabaseError(context: string, error: unknown) {
-  console.error('Erreur Supabase détaillée:', error);
-  console.error(`[messaging] ${context}`, error);
+  if (import.meta.env.DEV) {
+    console.error(`[messaging] ${context}`, error);
+  }
 }
 
 export async function ensureConversationId(
@@ -109,6 +121,7 @@ export type InboxUpdatedDetail = {
     | 'match'
     | 'declined-dismiss'
     | 'wait-dismiss'
+    | 'reset'
     | 'match-archive'
     | 'match-break'
     | 'match-restore'
@@ -124,15 +137,37 @@ export function emitInboxUpdated(detail?: InboxUpdatedDetail) {
   );
 }
 
-/** Badge non lus du user connecté (recipient_id = moi, read_at IS NULL). */
-export function useUnreadMessages(
-  userId: string | undefined,
-  options?: { ignoreSenderId?: string | null; channelKey?: string }
-) {
+export type UnreadMessagesState = {
+  bySender: Record<string, number>;
+  total: number;
+  ready: boolean;
+  refresh: () => Promise<void>;
+};
+
+const EMPTY_UNREAD: UnreadMessagesState = {
+  bySender: {},
+  total: 0,
+  ready: true,
+  refresh: async () => undefined,
+};
+
+const UnreadMessagesContext = createContext<UnreadMessagesState | null>(null);
+
+function totalFromMap(bySender: Record<string, number>): number {
+  return Object.values(bySender).reduce((sum, n) => sum + n, 0);
+}
+
+/**
+ * Un seul canal Realtime pour les messages non lus (toute l’app).
+ * Pas de polling : INSERT incrémente, UPDATE (lu) resynchronise.
+ */
+export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const userId = user?.id;
   const [bySender, setBySender] = useState<Record<string, number>>({});
   const [ready, setReady] = useState(false);
-  const ignoreRef = useRef(options?.ignoreSenderId ?? null);
-  ignoreRef.current = options?.ignoreSenderId ?? null;
+  const updateTimerRef = useRef<number | null>(null);
+  const seenSubscribedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!userId) {
@@ -148,26 +183,35 @@ export function useUnreadMessages(
   useEffect(() => {
     setBySender({});
     setReady(false);
+    seenSubscribedRef.current = false;
     void refresh();
   }, [refresh]);
 
   useEffect(() => {
     if (!userId) return;
-    const key = options?.channelKey || 'default';
 
     const applyIncoming = (row: ChatMessage | undefined) => {
       if (!row?.id || !row.sender_id) return;
       if (row.recipient_id !== userId) return;
       if (row.read_at) return;
-      if (row.sender_id === ignoreRef.current) return;
       setBySender((prev) => ({
         ...prev,
         [row.sender_id]: (prev[row.sender_id] || 0) + 1,
       }));
     };
 
+    const scheduleRefresh = () => {
+      if (updateTimerRef.current != null) {
+        window.clearTimeout(updateTimerRef.current);
+      }
+      updateTimerRef.current = window.setTimeout(() => {
+        updateTimerRef.current = null;
+        void refresh();
+      }, 80);
+    };
+
     const channel = supabase
-      .channel(`unread-messages:${key}:${userId}`)
+      .channel(`unread-messages:${userId}`)
       .on(
         'postgres_changes',
         {
@@ -188,43 +232,80 @@ export function useUnreadMessages(
           table: 'messages',
           filter: `recipient_id=eq.${userId}`,
         },
-        () => {
+        scheduleRefresh
+      )
+      .subscribe((status) => {
+        if (status !== 'SUBSCRIBED') return;
+        if (seenSubscribedRef.current) {
           void refresh();
         }
-      )
-      .subscribe();
+        seenSubscribedRef.current = true;
+      });
 
-    const poll = window.setInterval(() => void refresh(), 5000);
-    const onFocus = () => void refresh();
     const onInbox = () => void refresh();
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onFocus);
     window.addEventListener(INBOX_EVENT, onInbox);
 
     return () => {
-      window.clearInterval(poll);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener(INBOX_EVENT, onInbox);
+      if (updateTimerRef.current != null) {
+        window.clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
       void supabase.removeChannel(channel);
     };
-  }, [userId, options?.channelKey, refresh]);
+  }, [userId, refresh]);
 
-  const total = Object.values(bySender).reduce((sum, n) => sum + n, 0);
-  return { bySender, total, ready, refresh };
+  const value = useMemo<UnreadMessagesState>(
+    () => ({
+      bySender,
+      total: totalFromMap(bySender),
+      ready,
+      refresh,
+    }),
+    [bySender, ready, refresh]
+  );
+
+  return createElement(
+    UnreadMessagesContext.Provider,
+    { value },
+    children
+  );
+}
+
+/** Badge non lus partagé (un canal Realtime, pas de poll). */
+export function useUnreadMessages(options?: {
+  ignoreSenderId?: string | null;
+}): UnreadMessagesState {
+  const ctx = useContext(UnreadMessagesContext);
+  const ignoreSenderId = options?.ignoreSenderId ?? null;
+  return useMemo(() => {
+    const source = ctx ?? EMPTY_UNREAD;
+    if (!ignoreSenderId) return source;
+    const ignored = source.bySender[ignoreSenderId] || 0;
+    if (!ignored) return source;
+    const { [ignoreSenderId]: _dropped, ...bySender } = source.bySender;
+    return {
+      ...source,
+      bySender,
+      total: Math.max(0, source.total - ignored),
+    };
+  }, [ctx, ignoreSenderId]);
 }
 
 export function useInboxReload(
   onReload: (detail?: InboxUpdatedDetail) => void
 ) {
+  const onReloadRef = useRef(onReload);
+  onReloadRef.current = onReload;
+
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<InboxUpdatedDetail>).detail;
-      onReload(detail);
+      onReloadRef.current(detail);
     };
     window.addEventListener(INBOX_EVENT, handler);
     return () => window.removeEventListener(INBOX_EVENT, handler);
-  }, [onReload]);
+  }, []);
 }
 
 export async function fetchMessages(conversationId: string, limit = 100) {
@@ -257,7 +338,7 @@ export async function sendMessage(params: {
   });
 
   if (error) {
-    console.error('Erreur Supabase détaillée:', error);
+    logSupabaseError('insert_chat_message', error);
     throw error;
   }
   if (!data) {

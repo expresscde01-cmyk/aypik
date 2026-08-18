@@ -2,6 +2,8 @@
  * Copy sociale alignée sur le glossaire CGU :
  * Like, Flash, Match, Matché le, Match le — jamais « coup de cœur ».
  */
+import { pickDeclinedEncouragement } from '@/lib/declinedEncouragements';
+
 export type InteractionOrigin = 'like' | 'flash';
 
 function parseDate(iso: string): Date | null {
@@ -117,11 +119,12 @@ function senderNameFromBody(body: string): string {
   return name || 'Quelqu’un';
 }
 
-/** Descriptions du panneau cloche : toujours un point final unique. */
+/** Descriptions du panneau cloche : ponctuation finale si elle manque (conserve ! et ?). */
 export function withNotificationPeriod(text: string): string {
   const t = text.trim();
   if (!t) return t;
-  return `${t.replace(/[.!?…]+$/u, '').trimEnd()}.`;
+  if (/[.!?…]$/u.test(t)) return t;
+  return `${t}.`;
 }
 
 export function messageReceivedNotification(name: string): {
@@ -200,20 +203,24 @@ export function matchWaitReminderNotification(
 
 export function matchDeclinedNotification(
   name: string,
-  origin: InteractionOrigin = 'like'
+  origin: InteractionOrigin = 'like',
+  seed?: string | null
 ): {
   title: string;
   body: string;
 } {
   const actor = name.trim() || 'Quelqu’un';
   const label = origin === 'flash' ? 'Flash' : 'Like';
+  const encouragement = pickDeclinedEncouragement(
+    seed?.trim() || `${actor}\0${label}`
+  );
   return {
     title: 'Pas cette fois',
-    body: `${actor} a décliné ton ${label}. Continue tes recherches... Ne te décourage pas.`,
+    body: `${actor} a décliné ton ${label}. ${encouragement}`,
   };
 }
 
-/** Fiche mauve archivée en bas de Tes Matchs. */
+/** Fiche mauve archivée en bas de Mes Matchs. */
 export function declinedArchiveStatusLabel(
   origin: InteractionOrigin,
   declinedAt?: string | null,
@@ -267,6 +274,12 @@ export function waitingMatchReminder(
   return `Tu as mis ce ${kind} en attente : matche ou refuse quand tu seras ${ready}.`;
 }
 
+/** Après un refus (sens interdit) : suite Jeter / Archiver. */
+export function refusedInboxFollowup(origin: InteractionOrigin): string {
+  const kind = origin === 'flash' ? 'Flash' : 'Like';
+  return `Tu as refusé ce ${kind}. Tu peux maintenant le jeter ou l'archiver.`;
+}
+
 /** @deprecated Préférer waitingMatchReminder(origin, gender). */
 export const WAITING_MATCH_REMINDER = waitingMatchReminder('like', null);
 
@@ -285,6 +298,7 @@ export function matchAcceptedByUsNotification(
 }
 
 export type SocialCopyInput = {
+  id?: string | null;
   kind: string;
   title: string;
   body: string;
@@ -431,7 +445,9 @@ export function displaySocialNotification(n: SocialCopyInput): {
       /Flash/i.test(n.body) || resolveMatchOrigin(n) === 'flash'
         ? 'flash'
         : 'like';
-    return withPeriod(matchDeclinedNotification(name, origin));
+    return withPeriod(
+      matchDeclinedNotification(name, origin, n.id || n.created_at)
+    );
   }
 
   if (n.kind === 'like_received' || leftoverCoeur) {

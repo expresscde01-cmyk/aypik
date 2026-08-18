@@ -20,8 +20,11 @@ export function isLegalTermsOpen() {
   return new URLSearchParams(window.location.search).get('legal') === 'cgu';
 }
 
+/** Intitulé du document légal affiché (CGU seules tant que le lancement est gratuit). */
+export const LEGAL_DOC_LABEL = SITE_FREE_MODE ? 'CGU' : 'CGU / CGV';
+
 export function LegalLink({
-  children = 'CGU / CGV',
+  children = LEGAL_DOC_LABEL,
   className = '',
 }: {
   children?: React.ReactNode;
@@ -86,7 +89,7 @@ export function SiteFooter({
               <>
                 {' · '}
                 <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-                  CGU / CGV
+                  {LEGAL_DOC_LABEL}
                 </LegalLink>
               </>
             )}
@@ -100,7 +103,7 @@ export function SiteFooter({
               <p>
                 Aypik · 18 ans et plus ·{' '}
                 <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-                  CGU / CGV
+                  {LEGAL_DOC_LABEL}
                 </LegalLink>
               </p>
             )}
@@ -125,7 +128,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="font-bold text-gray-900 text-sm sm:text-base">
-            CGU / CGV
+            {LEGAL_DOC_LABEL}
           </h1>
         </div>
       </header>
@@ -148,209 +151,325 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </span>
             </p>
             <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-              Conditions Générales d&apos;Utilisation et de Vente (CGU / CGV)
+              Conditions Générales d&apos;Utilisation
             </h2>
+            <p className="text-xs text-gray-500">
+              Dernière mise à jour : 18 août 2026. Version applicable au
+              lancement bénévole et gratuit du Service.
+            </p>
           </header>
 
           <section className="space-y-2">
-            <h3 className="text-base font-bold text-gray-900">
-              Préambule &amp; Philosophie
-            </h3>
+            <h3 className="text-base font-bold text-gray-900">Préambule</h3>
             <p>
-              La présente plateforme est un service de rencontre en ligne dédié
-              exclusivement aux personnes n&apos;ayant pas d&apos;enfants. Notre
-              modèle repose sur des valeurs d&apos;éthique, de transparence et de
-              respect de nos membres. Nous refusons catégoriquement
-              l&apos;utilisation de « dark patterns », de piégeage marketing ou
-              d&apos;engagements cachés.
-            </p>
-          </section>
-
-          <section className="space-y-2">
-            <h3 className="text-base font-bold text-gray-900">
-              Article 1 : Objet et Acceptation
-            </h3>
-            <p>
-              Les présentes Conditions Générales d&apos;Utilisation et de Vente
-              régissent l&apos;accès, l&apos;utilisation et les modalités de
-              souscription aux services proposés sur la plateforme. Toute
-              inscription implique l&apos;acceptation sans réserve des présentes
-              conditions.
-            </p>
-          </section>
-
-          <section className="space-y-2">
-            <h3 className="text-base font-bold text-gray-900">
-              Article 2 : Majorité et interdiction aux mineurs
-            </h3>
-            <p>
-              La plateforme {BRAND_NAME} est un service de rencontre
-              exclusivement réservé aux personnes majeures. Toute inscription,
-              tout accès et toute utilisation du Service par une personne âgée
-              de moins de 18 ans sont strictement interdits.
+              {BRAND_NAME} est une plateforme de rencontre en ligne dédiée
+              exclusivement aux personnes majeures n&apos;ayant pas
+              d&apos;enfants. Elle est éditée à titre personnel, dans le cadre
+              d&apos;un projet bénévole, non lucratif au lancement, et conçu
+              pour rester accessible sans contrepartie financière pour
+              l&apos;usage de base.
             </p>
             <p>
-              En s&apos;inscrivant, l&apos;utilisateur déclare et garantit
-              avoir 18 ans révolus à la date de création du compte. Une date
-              de naissance est exigée ; l&apos;accès est refusé si l&apos;âge
-              déclaré est inférieur à 18 ans.
-            </p>
-            <p>
-              {BRAND_NAME} se réserve le droit de refuser, suspendre ou
-              supprimer, sans préavis, tout compte dont le titulaire s&apos;avérerait
-              mineur ou aurait fourni une date de naissance inexacte afin de
-              contourner cette interdiction.
+              Le Service repose sur la transparence, la bienveillance et le
+              refus des « dark patterns » : pas de piégeage, pas
+              d&apos;engagement caché, pas de carte bancaire exigée pour
+              s&apos;inscrire ou utiliser le cœur du Service, pas de
+              réduction artificielle des fonctionnalités de base destinée à
+              contraindre un paiement.
             </p>
           </section>
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 3 : Accès au Service et Offre Freemium
+              Article 1 — Mentions légales (LCEN)
+            </h3>
+            <p>
+              Conformément à la loi n° 2004-575 du 21 juin 2004 pour la
+              confiance dans l&apos;économie numérique (LCEN), les présentes
+              mentions identifient l&apos;éditeur du Service et
+              l&apos;hébergeur.
+            </p>
+            <div>
+              <p className="font-semibold text-gray-900">Éditeur du Service</p>
+              <p>
+                Le site {BRAND_NAME} (accessible notamment à l&apos;adresse{' '}
+                <a
+                  href="https://aypik.fr"
+                  className="underline underline-offset-2 hover:text-rose-600"
+                >
+                  https://aypik.fr
+                </a>
+                ) est édité par une personne physique agissant à titre non
+                professionnel, dans le cadre d&apos;un projet bénévole.
+              </p>
+              <p>
+                Directeur de la publication : le fondateur d&apos;{BRAND_NAME},
+                personne physique, joignable à l&apos;adresse{' '}
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="underline underline-offset-2 hover:text-rose-600"
+                >
+                  {SUPPORT_EMAIL}
+                </a>
+                .
+              </p>
+              <p>
+                En application de l&apos;article 6, III de la LCEN, dès lors
+                que l&apos;édition s&apos;effectue à titre non professionnel,
+                l&apos;éditeur peut limiter la publication de ses éléments
+                d&apos;identification personnelle, sous réserve de les avoir
+                communiqués à l&apos;hébergeur. Toute réclamation, demande
+                d&apos;exercice des droits ou signalement peut être adressé à
+                l&apos;adresse e-mail ci-dessus.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Hébergeur</p>
+              <p>
+                o2switch, SAS au capital de 100&nbsp;000&nbsp;euros
+                <br />
+                Chemin des Pardiaux, 63000 Clermont-Ferrand, France
+                <br />
+                RCS Clermont-Ferrand 510&nbsp;909&nbsp;807
+                <br />
+                SIRET 510&nbsp;909&nbsp;807&nbsp;00032
+                <br />
+                TVA intra-communautaire FR35&nbsp;510&nbsp;909&nbsp;807
+                <br />
+                Site :{' '}
+                <a
+                  href="https://www.o2switch.fr"
+                  className="underline underline-offset-2 hover:text-rose-600"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  https://www.o2switch.fr
+                </a>
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Article 2 — Objet, acceptation et évolution du modèle
             </h3>
             <div>
-              <p className="font-semibold text-gray-900">L&apos;essentiel gratuit</p>
+              <p className="font-semibold text-gray-900">2.1 Objet</p>
               <p>
-                L&apos;accès de base à la plateforme est gratuit et permet de
-                créer son profil, de matcher et d&apos;échanger des messages sans
-                contrepartie financière.
+                Les présentes Conditions Générales d&apos;Utilisation (ci-après
+                les « CGU ») ont pour objet de définir les conditions
+                d&apos;accès et d&apos;utilisation du Service {BRAND_NAME} :
+                création de profil, découverte de membres, expressions
+                d&apos;intérêt (Like, Flash), constitution de Matchs et
+                messagerie conditionnée à un Match.
+              </p>
+              <p>
+                Les présentes CGU ne constituent pas des conditions générales
+                de vente. Aucune offre payante n&apos;est commercialisée au
+                lancement.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">2.2 Acceptation</p>
+              <p>
+                L&apos;inscription, la création d&apos;un compte ou
+                l&apos;utilisation du Service emportent acceptation pleine et
+                entière des présentes CGU. Si l&apos;utilisateur n&apos;accepte
+                pas ces conditions, il doit s&apos;abstenir d&apos;utiliser le
+                Service et peut demander la suppression de son compte.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                Offre Membre Fondateur
+                2.3 Cœur du Service gratuit
               </p>
               <p>
-                Strictement réservée aux {FOUNDER_MAX_SLOTS} premiers membres
-                inscrits, cette offre accorde 6 mois de services Premium
-                offerts, likes illimités, un flash, et un boost de
-                visibilité du profil pendant le premier mois. Le titre de
-                Membre Fondateur et le numéro associé restent visibles tant
-                que le compte est actif. Dès que ce plafond est atteint,
-                l&apos;offre n&apos;est plus proposée.
+                Le cœur du Service — à savoir, a minima, la création et la
+                gestion d&apos;un profil, la consultation des profils
+                compatibles, l&apos;expression d&apos;un intérêt de base, la
+                constitution de Matchs et l&apos;usage de la messagerie entre
+                membres matchés — restera accessible gratuitement.
               </p>
               <p>
-                Le statut de Membre Fondateur et son numéro associé sont
-                strictement liés au compte actif. En cas de désinscription ou
-                de suppression du compte, le badge est définitivement perdu et
-                ne pourra pas être réattribué.
+                L&apos;utilisateur qui ne souhaite rien payer ne subira
+                aucune perte des services de base. Aucune fonctionnalité
+                constitutive du cœur du Service ne sera retirée, bridée ou
+                conditionnée à un paiement de manière à contraindre
+                l&apos;utilisateur à souscrire une option payante.
               </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                2.4 Évolution future — options payantes éventuelles
+              </p>
+              <p>
+                L&apos;éditeur se réserve le droit de proposer
+                ultérieurement, lorsque le projet le justifiera, des modules
+                ou options payantes strictement optionnelles (confort,
+                visibilité accrue ou fonctionnalités additionnelles n&apos;étant
+                pas indispensables à l&apos;usage de base).
+              </p>
+              <p>
+                Le cas échéant :
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
                 <li>
-                  À l&apos;issue des 6 mois, les avantages fonctionnels
-                  prennent fin et le compte revient à l&apos;offre gratuite,
-                  sans tacite reconduction ni prélèvement. Le badge Membre
-                  Fondateur reste honorifique tant que le compte existe.
+                  les utilisateurs en seront informés préalablement, de
+                  manière claire et distincte ;
                 </li>
                 <li>
-                  Aucune carte bancaire n&apos;est requise pour en bénéficier.
+                  ces modules feront l&apos;objet de Conditions Générales de
+                  Vente (CGV) distinctes des présentes CGU, à accepter
+                  expressément au moment de la souscription ;
+                </li>
+                <li>
+                  le refus de souscrire une option payante n&apos;entraînera
+                  ni fermeture de compte, ni perte des services de base
+                  décrits à l&apos;article 2.3.
                 </li>
               </ul>
-            </div>
-          </section>
-
-          {!SITE_FREE_MODE && (
-          <section className="space-y-3">
-            <h3 className="text-base font-bold text-gray-900">
-              Article 4 : Abonnement Premium et Achats Ponctuels
-            </h3>
-            <div>
-              <p className="font-semibold text-gray-900">
-                {SITE_FREE_MODE
-                  ? 'Abonnement Premium'
-                  : 'Abonnement Premium (19,99\u00a0€ / mois)'}
-              </p>
               <p>
-                Cet abonnement optionnel apporte du confort supplémentaire
-                (filtrage avancé, voir qui a liké, likes illimités). Il est
-                souscrit sans engagement et est résiliable à tout moment en un
-                clic depuis l&apos;espace personnel.
+                Tant que de telles CGV n&apos;ont pas été publiées et
+                acceptées, aucun paiement n&apos;est dû et aucune carte
+                bancaire n&apos;est demandée.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                Achats uniques (ex.&nbsp;: Boost 24&nbsp;h)
+                2.5 Modification des CGU
               </p>
               <p>
-                Proposés à prix unique sous forme d&apos;achat ponctuel, ces
-                services ne constituent en aucun cas un abonnement et ne génèrent
-                aucun prélèvement récurrent.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Paiements</p>
-              <p>
-                Les transactions sont sécurisées par l&apos;intermédiaire de
-                prestataires agréés (Stripe pour la carte bancaire, et PayPal).
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Témoignages</p>
-              <p>
-                Les membres disposant d&apos;un abonnement Premium actif
-                peuvent soumettre un témoignage. La publication du texte et
-                du prénom n&apos;a lieu qu&apos;après un consentement
-                explicite, via une case à cocher non pré-cochée. La preuve
-                de ce consentement (oui/non et horodatage) est conservée
-                rattachée au profil. Le témoignage est supprimé en cas de
-                retrait du consentement ou de suppression du compte (RGPD).
+                L&apos;éditeur peut modifier les présentes CGU pour des motifs
+                légitimes (évolution légale, technique ou du Service). La
+                version applicable est celle publiée sur le Site, datée. En cas
+                de modification substantielle, une information sera portée à
+                la connaissance des utilisateurs. La poursuite de
+                l&apos;utilisation du Service après entrée en vigueur vaut
+                acceptation, sans préjudice du droit de supprimer son compte.
               </p>
             </div>
           </section>
-          )}
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 5 : Propriété Intellectuelle et Protection du Concept
+              Article 3 — Conditions d&apos;accès
             </h3>
             <div>
-              <p className="font-semibold text-gray-900">Contenus et Code</p>
+              <p className="font-semibold text-gray-900">
+                3.1 Majorité — 18 ans révolus
+              </p>
               <p>
-                L&apos;ensemble de la structure de la plateforme, de son code
-                source, de ses interfaces graphiques, de ses textes et de sa
-                charte éditoriale est protégé par les lois en vigueur sur la
-                propriété intellectuelle. Toute reproduction, copie, aspiration
-                de données (scraping) ou exploitation non autorisée du concept et
-                des codes est strictement interdite.
+                Le Service est exclusivement réservé aux personnes majeures.
+                Toute inscription, tout accès et toute utilisation par une
+                personne âgée de moins de 18 ans sont strictement interdits.
+              </p>
+              <p>
+                En s&apos;inscrivant, l&apos;utilisateur déclare et garantit
+                avoir 18 ans révolus à la date de création du compte. Une
+                date de naissance est exigée ; l&apos;accès est refusé si
+                l&apos;âge déclaré est inférieur à 18 ans.
+              </p>
+              <p>
+                {BRAND_NAME} se réserve le droit de refuser, suspendre ou
+                supprimer, sans préavis, tout compte dont le titulaire
+                s&apos;avérerait mineur ou aurait fourni une date de
+                naissance inexacte afin de contourner cette interdiction.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-gray-900">Marque</p>
+              <p className="font-semibold text-gray-900">
+                3.2 Public du Service
+              </p>
               <p>
-                Le nom et l&apos;identité visuelle de la plateforme sont
-                protégés.
+                Le Service s&apos;adresse aux personnes majeures se déclarant
+                sans enfant. L&apos;utilisateur s&apos;engage à renseigner un
+                profil sincère à cet égard. Un profil manifestement
+                incompatible avec cette orientation éditoriale pourra être
+                suspendu ou supprimé.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.3 Unicité des comptes
+              </p>
+              <p>
+                Chaque utilisateur ne peut détenir qu&apos;un seul et unique
+                compte. La création, la détention ou l&apos;usage, simultané
+                ou successif en fraude de la présente règle, de plusieurs
+                comptes par une même personne physique est interdit.
+              </p>
+              <p>
+                L&apos;ouverture d&apos;un compte est liée à une seule
+                adresse e-mail, identifiant unique du compte. Il est interdit
+                de créer plusieurs comptes à partir d&apos;une même adresse
+                e-mail, ou plusieurs comptes pour une même personne, y
+                compris au moyen d&apos;adresses distinctes.
+              </p>
+              <p>
+                {BRAND_NAME} peut refuser l&apos;inscription, suspendre ou
+                supprimer, sans préavis ni indemnité, tout compte constituant
+                un doublon, une multi-détention ou une tentative de
+                contournement. L&apos;utilisateur ne saurait alors prétendre
+                à aucun dédommagement ni au transfert d&apos;avantages,
+                y compris le statut de Membre Fondateur et le numéro qui y
+                est attaché.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.4 Bienveillance et modération
+              </p>
+              <p>
+                Les utilisateurs s&apos;engagent à un usage loyal, respectueux
+                et bienveillant : pas de harcèlement, d&apos;injures, de
+                propos haineux, de contenus illicites, d&apos;usurpation
+                d&apos;identité, de sollicitations commerciales non
+                autorisées, ni de comportement tendant à compromettre la
+                sécurité d&apos;autrui.
+              </p>
+              <p>
+                La messagerie n&apos;est ouverte qu&apos;après Match, afin de
+                limiter les contacts non sollicités. Le Like demeure discret
+                jusqu&apos;à réciprocité.
+              </p>
+              <p>
+                L&apos;éditeur, dans le cadre d&apos;une obligation de
+                moyens, peut modérer, masquer ou supprimer un contenu, et
+                avertir, suspendre ou supprimer un compte, sans préavis
+                lorsque la gravité des faits le justifie. Un signalement peut
+                être adressé à {SUPPORT_EMAIL}.
               </p>
             </div>
           </section>
 
-          <section className="space-y-2">
+          <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 6 : Comportement des Utilisateurs et Sécurité
+              Article 4 — Offre « Membre Fondateur »
             </h3>
             <p>
-              Les utilisateurs s&apos;engagent à respecter la bienveillance de
-              la communauté. Les profils ne correspondant pas à la philosophie
-              du site ou adoptant un comportement malveillant, harcelant ou
-              contraire à l&apos;éthique de la communauté feront l&apos;objet
-              d&apos;une suspension ou d&apos;une suppression de compte
-              immédiate, sans préavis ni remboursement.
+              L&apos;offre Membre Fondateur est honorifique. Elle est
+              strictement réservée aux {FOUNDER_MAX_SLOTS} premiers membres
+              inscrits, dans la limite des places disponibles. Dès que ce
+              plafond est atteint, l&apos;offre n&apos;est plus proposée. Les
+              numéros de Membre Fondateur sont attribués de façon séquentielle
+              et ne sont jamais réattribués.
             </p>
-          </section>
-
-          <section className="space-y-2">
-            <h3 className="text-base font-bold text-gray-900">
-              Article 7 : Résiliation et Suppression de Compte
-            </h3>
             <p>
-              L&apos;utilisateur peut à tout moment demander la suppression de
-              son compte et de l&apos;intégralité de ses données personnelles
-              depuis les paramètres de son profil, conformément à la
-              réglementation sur la protection des données (RGPD). Pour
-              l&apos;utilisateur, cette suppression est définitive : le profil
-              n&apos;est plus visible et n&apos;est plus utilisé. Pour des
-              raisons techniques et de sécurité (correction d&apos;une erreur
-              de manipulation, obligations légales), les données peuvent être
-              conservées de manière interne pendant un délai de purge de
-              30 jours, après lequel elles sont irrémédiablement effacées.
+              Pendant une période de six (6) mois à compter de
+              l&apos;activation de l&apos;offre sur le compte, les avantages
+              fonctionnels sont consentis à titre gracieux, sans engagement
+              de durée, sans tacite reconduction et sans aucune demande de
+              carte bancaire. Ils comprennent notamment, selon les
+              fonctionnalités effectivement déployées : likes illimités, un
+              Flash, et un boost de visibilité du profil pendant le premier
+              mois.
+            </p>
+            <p>
+              À l&apos;issue de ces six mois, les avantages fonctionnels
+              cessent. Le compte demeure alors sur l&apos;offre de base
+              gratuite. Le titre de Membre Fondateur et le numéro associé
+              restent visibles à titre honorifique tant que le compte est
+              actif.
             </p>
             <p>
               Le statut de Membre Fondateur et son numéro associé sont
@@ -358,10 +477,225 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               de suppression du compte, le badge est définitivement perdu et
               ne pourra pas être réattribué.
             </p>
+            <p>
+              Cette offre ne constitue ni un contrat de vente, ni un
+              abonnement, ni une contrepartie financière. Elle n&apos;ouvre
+              droit à aucun remboursement, cession ou conversion en numéraire.
+            </p>
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-base font-bold text-gray-900">Glossaire</h3>
+            <h3 className="text-base font-bold text-gray-900">
+              Article 5 — Propriété intellectuelle et contenus utilisateurs
+            </h3>
+            <div>
+              <p className="font-semibold text-gray-900">
+                5.1 Éléments de la plateforme
+              </p>
+              <p>
+                L&apos;ensemble de la structure du Site, de son code source,
+                de ses interfaces, textes, graphismes, bases de données,
+                logos et charte éditoriale est protégé par le droit
+                d&apos;auteur, le droit des marques et, le cas échéant, le
+                droit des producteurs de bases de données. Toute
+                reproduction, extraction (y compris par scraping),
+                adaptation ou exploitation non autorisée est interdite.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">5.2 Marque</p>
+              <p>
+                Le nom {BRAND_NAME}, ses déclinaisons et son identité
+                visuelle sont protégés. Toute utilisation non autorisée est
+                interdite.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                5.3 Contenus publiés par l&apos;utilisateur
+              </p>
+              <p>
+                L&apos;utilisateur conserve les droits qu&apos;il détient sur
+                les contenus qu&apos;il publie (photo, biographie, centres
+                d&apos;intérêt, messages, le cas échéant témoignage).
+              </p>
+              <p>
+                Il concède à l&apos;éditeur, pour la durée de présence des
+                contenus sur le Service, une licence non exclusive, mondiale,
+                gratuite et non cessible, strictement limitée à ce qui est
+                nécessaire au fonctionnement du Site : hébergement,
+                affichage aux membres concernés, mise en cache, sauvegarde
+                technique et, le cas échéant, modération.
+              </p>
+              <p>
+                Cette licence prend fin, sous réserve des copies de sauvegarde
+                techniques transitoires, lors de la suppression du contenu ou
+                du compte. L&apos;utilisateur garantit disposer des droits
+                nécessaires et que ses contenus ne portent pas atteinte aux
+                droits des tiers.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Article 6 — Responsabilités
+            </h3>
+            <p>
+              {BRAND_NAME} est un outil de mise en relation. L&apos;éditeur
+              n&apos;est pas partie aux relations nouées entre utilisateurs
+              et n&apos;organise pas les rencontres hors ligne.
+            </p>
+            <p>
+              L&apos;utilisateur est seul responsable des informations qu&apos;il
+              communique, de l&apos;exactitude de son profil, de ses
+              échanges et de ses rencontres. Il lui appartient de faire
+              preuve de prudence (ne pas communiquer de données bancaires,
+              privilégier un lieu public pour une première rencontre, etc.).
+              L&apos;éditeur ne saurait être tenu des comportements hors
+              ligne des membres, ni de l&apos;absence de rencontre, ni de
+              l&apos;inexactitude d&apos;un profil d&apos;un tiers, dès lors
+              qu&apos;il n&apos;en a pas eu une connaissance effective.
+            </p>
+            <p>
+              L&apos;éditeur, agissant à titre bénévole, s&apos;oblige à une
+              obligation de moyens : continuité raisonnable du Service,
+              sécurité adaptée à un site de cette nature, modération diligente
+              des signalements. Le Service est fourni « en l&apos;état » ;
+              des interruptions (maintenance, force majeure, défaillance
+              d&apos;un prestataire) peuvent survenir.
+            </p>
+            <p>
+              La responsabilité de l&apos;éditeur ne peut être engagée qu&apos;en
+              cas de faute prouvée qui lui est directement imputable. Elle
+              est limitée, dans les limites permises par la loi, aux
+              dommages directs. Rien dans les présentes n&apos;exclut la
+              responsabilité en cas de faute lourde ou dolosive, ni
+              l&apos;indemnisation des dommages corporels.
+            </p>
+            <p>
+              Pour les contenus illicites signalés, l&apos;éditeur agit
+              conformément à la LCEN dès qu&apos;il en a effectivement
+              connaissance.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Article 7 — Données personnelles, résiliation et droit applicable
+            </h3>
+            <div>
+              <p className="font-semibold text-gray-900">
+                7.1 Protection des données (RGPD)
+              </p>
+              <p>
+                L&apos;éditeur est responsable du traitement des données
+                personnelles collectées pour fournir le Service (compte,
+                profil, interactions, messages, journaux techniques
+                nécessaires à la sécurité). Le traitement repose
+                principalement sur l&apos;exécution du contrat
+                d&apos;utilisation (les présentes CGU) et, le cas échéant,
+                sur le consentement (par exemple notifications e-mail ou
+                témoignage) ou l&apos;intérêt légitime (sécurité,
+                prévention des fraudes et des comptes multiples).
+              </p>
+              <p>
+                Les données ne sont pas vendues. Elles peuvent être
+                transmises aux seuls prestataires strictement nécessaires
+                (hébergeur, infrastructure technique, envoi d&apos;e-mails),
+                établis dans l&apos;Union européenne ou offrant des garanties
+                appropriées.
+              </p>
+              <p>
+                L&apos;utilisateur dispose des droits d&apos;accès,
+                rectification, effacement, limitation, opposition et
+                portabilité, ainsi que du droit d&apos;introduire une
+                réclamation auprès de la CNIL (www.cnil.fr). Ces droits
+                s&apos;exercent via les paramètres du profil et/ou à{' '}
+                {SUPPORT_EMAIL}.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                7.2 Résiliation et suppression du compte
+              </p>
+              <p>
+                L&apos;utilisateur peut à tout moment demander la suppression
+                de son compte et de l&apos;intégralité de ses données
+                personnelles depuis les paramètres de son profil.
+              </p>
+              <p>
+                Pour l&apos;utilisateur, cette suppression est définitive :
+                le profil n&apos;est plus visible et n&apos;est plus utilisé.
+                Pour des raisons techniques et de sécurité (correction
+                d&apos;une erreur de manipulation, obligations légales), les
+                données peuvent être conservées de manière interne pendant
+                un délai de purge de trente (30) jours, après lequel elles
+                sont irrémédiablement effacées. Certaines traces
+                strictement nécessaires (par exemple factures futures, ou
+                conservation imposée par la loi) pourraient, le cas échéant,
+                être conservées plus longtemps, de façon cloisonnée.
+              </p>
+              <p>
+                Le statut de Membre Fondateur et son numéro associé sont
+                strictement liés au compte actif. En cas de désinscription
+                ou de suppression du compte, le badge est définitivement
+                perdu et ne pourra pas être réattribué.
+              </p>
+              <p>
+                L&apos;éditeur peut résilier un compte en cas de manquement
+                grave ou répété aux présentes CGU.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                7.3 Droit applicable et tribunaux compétents
+              </p>
+              <p>
+                Les présentes CGU sont régies par le droit français.
+              </p>
+              <p>
+                En cas de litige, et après tentative de résolution amiable
+                (contact à {SUPPORT_EMAIL}), les tribunaux français
+                compétents seront saisis. Lorsque l&apos;utilisateur a la
+                qualité de consommateur, il peut saisir, outre les
+                juridictions territorialement compétentes en vertu du code
+                de procédure civile, la juridiction du lieu où il demeurait
+                au moment de la conclusion du contrat ou de la survenance du
+                fait dommageable. Il peut également recourir à un médiateur
+                de la consommation, dans les conditions prévues par le code
+                de la consommation, dès lors que cette voie lui est ouverte.
+              </p>
+            </div>
+          </section>
+
+          {!SITE_FREE_MODE && (
+            <section className="space-y-3">
+              <h3 className="text-base font-bold text-gray-900">
+                Annexe — Offres payantes (renvoi aux CGV)
+              </h3>
+              <p>
+                Lorsque des modules payants sont commercialisés, leurs prix,
+                modalités de paiement, rétractation et résiliation figurent
+                exclusivement dans des Conditions Générales de Vente
+                distinctes, acceptées au moment de la souscription. Stripe et
+                PayPal peuvent être utilisés comme prestataires de paiement.
+              </p>
+              <p>
+                Les membres disposant d&apos;un abonnement Premium actif
+                peuvent soumettre un témoignage. La publication du texte et
+                du prénom n&apos;a lieu qu&apos;après un consentement
+                explicite, via une case à cocher non pré-cochée. Le
+                témoignage est supprimé en cas de retrait du consentement ou
+                de suppression du compte (RGPD).
+              </p>
+            </section>
+          )}
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Annexe A — Glossaire
+            </h3>
             <div>
               <p className="font-semibold text-gray-900">Like</p>
               <p>
@@ -373,17 +707,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p className="font-semibold text-gray-900">Flash</p>
               <p>
                 Action prioritaire et plus appuyée qu&apos;un simple Like,
-                envoyant un signal fort et direct à la personne ciblée pour lui
-                signifier un intérêt immédiat.
+                envoyant un signal fort et direct à la personne ciblée pour
+                lui signifier un intérêt immédiat.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">Match</p>
               <p>
                 Relation bilatérale établie entre deux membres, actant
-                qu&apos;un intérêt mutuel a été confirmé (qu&apos;il provienne
-                de Likes croisés ou d&apos;un Flash accepté). C&apos;est cette
-                validation mutuelle qui ouvre l&apos;accès à la messagerie.
+                qu&apos;un intérêt mutuel a été confirmé (qu&apos;il
+                provienne de Likes croisés ou d&apos;un Flash accepté).
+                C&apos;est cette validation mutuelle qui ouvre l&apos;accès
+                à la messagerie.
               </p>
             </div>
             <div>
@@ -394,20 +729,38 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Par mesure de sécurité et de prévention des contacts non
                 sollicités, l&apos;envoi de messages est strictement
                 conditionné à un Match préalable. Il est donc impossible de
-                dialoguer avec un membre sans avoir reçu ou vu son Like/Flash
-                accepté en retour.
+                dialoguer avec un membre sans avoir reçu ou vu son
+                Like/Flash accepté en retour.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">À étudier</p>
+              <p>
+                Statut d&apos;un profil dont le Like ou le Flash a été reçu
+                et n&apos;a pas encore fait l&apos;objet d&apos;une décision.
+                L&apos;utilisateur peut alors refuser le profil, le mettre
+                en attente, ou confirmer un Match.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Mettre en attente</p>
+              <p>
+                Action permettant de conserver un profil reçu (Like ou Flash)
+                afin de l&apos;étudier plus tard, sans le refuser ni le
+                matcher immédiatement. Le profil reste accessible depuis Mes
+                Matchs jusqu&apos;à une décision définitive.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">Matché le</p>
               <p>
-                Libellé affiché lorsque c&apos;est l&apos;utilisateur connecté
-                qui valide ou accepte la sollicitation entrante d&apos;un tiers
-                (Like reçu, Flash reçu, ou intérêt en attente tranché par
-                Matcher). La date indiquée est celle de cette acceptation
-                (« Matché le [date] »). Sur Mes Matchs, ce libellé peut être
-                complété par « — pas encore de dialogue » ou « — Dialogue en
-                cours » selon l&apos;état de la messagerie.
+                Libellé affiché lorsque c&apos;est l&apos;utilisateur
+                connecté qui valide ou accepte la sollicitation entrante
+                d&apos;un tiers (Like reçu, Flash reçu, ou intérêt en
+                attente tranché par Matcher). La date indiquée est celle de
+                cette acceptation (« Matché le [date] »). Sur Mes Matchs, ce
+                libellé peut être complété par « — 1er mot » ou « —
+                Discussion en cours » selon l&apos;état de la messagerie.
               </p>
             </div>
             <div>
@@ -415,18 +768,55 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Libellé affiché lorsque le Match découle de l&apos;acceptation
                 par l&apos;autre membre de la sollicitation initiale de
-                l&apos;utilisateur connecté (Like ou Flash envoyé, puis accepté
-                en retour). La date indiquée est celle de cette acceptation
-                (« Match le [date] »). Sur Mes Matchs, ce libellé peut
-                également être complété par « — pas encore de dialogue » ou
+                l&apos;utilisateur connecté (Like ou Flash envoyé, puis
+                accepté en retour). La date indiquée est celle de cette
+                acceptation (« Match le [date] »). Sur Mes Matchs, ce
+                libellé peut également être complété par « — 1er mot » ou
                 « — Discussion en cours » selon l&apos;état de la messagerie.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">1er mot</p>
+              <p>
+                Statut d&apos;un Match lorsqu&apos;aucun message n&apos;a
+                encore été échangé. La messagerie est ouverte ; le premier
+                échange reste à écrire.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Discussion en cours
+              </p>
+              <p>
+                Statut d&apos;un Match dès qu&apos;au moins un message a été
+                échangé entre les deux membres.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Archiver / Supprimer
+              </p>
+              <p>
+                Options de gestion proposées pour les profils ayant décliné
+                un Like ou un Flash. Archiver conserve le profil dans un
+                espace dédié de la page Mes Matchs ; Supprimer le retire de
+                cette liste.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Matchs rompus</p>
+              <p>
+                Espace de conservation des Matchs archivés ou rompus depuis
+                une conversation déjà validée. L&apos;utilisateur peut
+                rétablir le Match (et l&apos;accès à la messagerie) ou le
+                supprimer définitivement.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">Boost</p>
               <p>
-                Fonctionnalité permettant de mettre en avant son profil en tête
-                de liste pendant une durée déterminée pour maximiser sa
+                Fonctionnalité permettant de mettre en avant son profil en
+                tête de liste pendant une durée déterminée pour maximiser sa
                 visibilité.
               </p>
             </div>
@@ -434,7 +824,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Questions fréquentes
+              Annexe B — Questions fréquentes
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
@@ -442,8 +832,28 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Non. Le Service est exclusivement réservé aux personnes
-                majeures. L&apos;inscription et l&apos;accès sont refusés à
-                toute personne de moins de 18 ans.
+                majeures.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Puis-je créer plusieurs comptes&nbsp;?
+              </p>
+              <p>
+                Non. Un seul compte par personne et par adresse e-mail, selon
+                l&apos;article 3.3.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Le Service va-t-il devenir payant&nbsp;?
+              </p>
+              <p>
+                Le cœur du Service restera gratuit. Des options payantes
+                pourront éventuellement être proposées plus tard ; elles
+                seront facultatives, annoncées à l&apos;avance et régies par
+                des CGV distinctes. Qui ne paie rien conserve les services
+                de base.
               </p>
             </div>
             <div>
@@ -451,35 +861,21 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Comment se passe la suppression de mon compte&nbsp;?
               </p>
               <p>
-                La suppression demandée depuis votre profil est définitive :
-                votre profil n&apos;est plus visible et vos données ne sont plus
-                utilisées. Les modalités de conservation technique figurent à
-                l&apos;article 7 des présentes CGU.
+                Elle est demandée depuis le profil. Le profil n&apos;est plus
+                visible. Les données sont irrémédiablement effacées après un
+                délai de purge de 30 jours (article 7.2).
               </p>
             </div>
-            {!SITE_FREE_MODE && (
             <div>
               <p className="font-semibold text-gray-900">
-                Comment sont traités les témoignages&nbsp;?
-              </p>
-              <p>
-                Uniquement les membres Premium en cours d&apos;abonnement
-                peuvent en déposer un. Aucune diffusion sans case de
-                consentement cochée. Vous pouvez retirer le témoignage depuis
-                votre profil ; en cas de suppression de compte, il est
-                définitivement effacé.
-              </p>
-            </div>
-            )}
-            <div>
-              <p className="font-semibold text-gray-900">
-                Que devient le badge Membre Fondateur si je me désinscris&nbsp;?
+                Que devient le badge Membre Fondateur si je me
+                désinscris&nbsp;?
               </p>
               <p>
                 Le statut de Membre Fondateur et son numéro associé sont
-                strictement liés au compte actif. En cas de désinscription ou
-                de suppression du compte, le badge est définitivement perdu et
-                ne pourra pas être réattribué.
+                strictement liés au compte actif. En cas de désinscription
+                ou de suppression du compte, le badge est définitivement
+                perdu et ne pourra pas être réattribué.
               </p>
             </div>
           </section>
@@ -491,7 +887,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </p>
             <p>
               En utilisant {BRAND_NAME} — {BRAND_BASELINE} — vous confirmez
-              avoir lu et accepté les présentes CGU / CGV.
+              avoir lu et accepté les présentes Conditions Générales
+              d&apos;Utilisation.
             </p>
           </footer>
         </article>

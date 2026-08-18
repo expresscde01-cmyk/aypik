@@ -28,6 +28,8 @@ type WaitStore = {
   dismissedActorIds: string[];
   archivedMine: WaitArchiveRow[];
   archivedTheirs: WaitArchiveRow[];
+  /** Attendre annulé : la fiche redevient « à étudier » même si la ligne SQL traîne. */
+  clearedWaitActorIds: string[];
 };
 
 const emptyStore = (): WaitStore => ({
@@ -35,6 +37,7 @@ const emptyStore = (): WaitStore => ({
   dismissedActorIds: [],
   archivedMine: [],
   archivedTheirs: [],
+  clearedWaitActorIds: [],
 });
 
 function storageKey(userId: string) {
@@ -65,6 +68,9 @@ function readStore(userId: string): WaitStore {
         : [],
       archivedTheirs: Array.isArray(parsed.archivedTheirs)
         ? parsed.archivedTheirs.filter((row) => row?.actorId)
+        : [],
+      clearedWaitActorIds: Array.isArray(parsed.clearedWaitActorIds)
+        ? parsed.clearedWaitActorIds.map(String)
         : [],
     };
   } catch {
@@ -132,6 +138,9 @@ export function rememberMineWaitArchive(
     row,
     ...store.archivedMine.filter((r) => r.actorId !== payload.actorId),
   ];
+  store.clearedWaitActorIds = store.clearedWaitActorIds.filter(
+    (id) => id !== payload.actorId
+  );
   writeStore(userId, store);
 }
 
@@ -171,6 +180,42 @@ export function forgetWaitArchive(userId: string, actorId: string) {
   store.archivedMine = store.archivedMine.filter((r) => r.actorId !== actorId);
   store.archivedTheirs = store.archivedTheirs.filter((r) => r.actorId !== actorId);
   writeStore(userId, store);
+}
+
+/** Remise à zéro locale pour un cycle attente ↔ archive (illimité). */
+export function releaseWaitCycle(userId: string, actorId: string) {
+  const store = readStore(userId);
+  store.archivedMine = store.archivedMine.filter((r) => r.actorId !== actorId);
+  store.archivedTheirs = store.archivedTheirs.filter((r) => r.actorId !== actorId);
+  store.clearedWaitActorIds = store.clearedWaitActorIds.filter(
+    (id) => id !== actorId
+  );
+  store.dismissedActorIds = store.dismissedActorIds.filter((id) => id !== actorId);
+  writeStore(userId, store);
+}
+
+export function rememberClearedWait(userId: string, actorId: string) {
+  const store = readStore(userId);
+  if (!store.clearedWaitActorIds.includes(actorId)) {
+    store.clearedWaitActorIds.push(actorId);
+  }
+  writeStore(userId, store);
+}
+
+export function forgetClearedWait(userId: string, actorId: string) {
+  const store = readStore(userId);
+  store.clearedWaitActorIds = store.clearedWaitActorIds.filter(
+    (id) => id !== actorId
+  );
+  writeStore(userId, store);
+}
+
+export function isWaitCleared(
+  userId: string | null | undefined,
+  actorId: string
+) {
+  if (!userId) return false;
+  return readStore(userId).clearedWaitActorIds.includes(actorId);
 }
 
 export function rememberWaitingDismissed(

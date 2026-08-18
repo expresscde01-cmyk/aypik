@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Compass,
   Heart,
@@ -11,6 +12,7 @@ import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLo
 import { FounderBadge } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   fetchSuggestedProfiles,
@@ -22,6 +24,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
 import { ageFromBirthDate } from '@/lib/dating';
+import { queryKeys } from '@/lib/queryClient';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
@@ -43,6 +46,7 @@ export default function HomeDashboard({
   unreadBySender = {},
   profileEpoch = 0,
   suggestionPrefsEpoch = 0,
+  notificationsActive = true,
 }: {
   displayName: string;
   onSignOut?: () => void;
@@ -54,17 +58,17 @@ export default function HomeDashboard({
   profileEpoch?: number;
   /** Incrémenté à chaque sortie de Découvrir : force la relecture des filtres. */
   suggestionPrefsEpoch?: number;
+  notificationsActive?: boolean;
 }) {
   const { user } = useAuth();
   const { status, refresh } = useMembership();
-  const [suggestions, setSuggestions] = useState<HomeSuggestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState(() => new Set<string>());
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
+  const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [openProfile, setOpenProfile] = useState<HomeSuggestion | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
 
   const founderActive = isFounderPeriodActive(status);
   const likesUnlimited = status.unlimited_likes || founderActive;
@@ -72,82 +76,70 @@ export default function HomeDashboard({
     !likesUnlimited && (status.likes_remaining_today ?? 0) <= 0;
   const showFlashCta = isFlashCtaVisible(status);
 
+  const homeQuery = useQuery({
+    queryKey: queryKeys.homeSuggestions(
+      user?.id,
+      suggestionPrefsEpoch,
+      profileEpoch
+    ),
+    enabled: Boolean(user?.id),
+    queryFn: async () => {
+      const { data: me } = await supabase
+        .from('profiles')
+        .select('interests, birth_date, gender, location, lat, lng')
+        .eq('id', user!.id)
+        .maybeSingle();
+
+      const meProfile = me as Profile | null;
+      const prefs = loadSuggestionPrefs(user!.id);
+      const list = await fetchSuggestedProfiles({
+        limit: HOME_SUGGESTIONS_MAX,
+        myInterests: (meProfile?.interests || []) as string[],
+        myAge: meProfile?.birth_date
+          ? ageFromBirthDate(meProfile.birth_date)
+          : undefined,
+        myLocation: meProfile?.location || '',
+        myLat: meProfile?.lat,
+        myLng: meProfile?.lng,
+        viewerGender:
+          meProfile?.gender === 'homme' || meProfile?.gender === 'femme'
+            ? meProfile.gender
+            : null,
+        prefs,
+      });
+
+      const [{ data: likes }, { data: flashes }] = await Promise.all([
+        supabase.from('likes').select('to_user').eq('from_user', user!.id),
+        supabase.from('flashes').select('to_user').eq('from_user', user!.id),
+      ]);
+
+      return {
+        list: list as HomeSuggestion[],
+        likedIds: new Set((likes || []).map((l) => l.to_user as string)),
+        flashedIds: new Set((flashes || []).map((f) => f.to_user as string)),
+      };
+    },
+  });
+
   useEffect(() => {
-    if (!user) return;
-    let active = true;
-    setLoading(true);
-    (async () => {
-      try {
-        const { data: me } = await supabase
-          .from('profiles')
-          .select('interests, birth_date, gender, location')
-          .eq('id', user.id)
-          .maybeSingle();
+    if (!homeQuery.data) return;
+    setLikedIds(homeQuery.data.likedIds);
+    setFlashedIds(homeQuery.data.flashedIds);
+  }, [homeQuery.data]);
 
-        const meProfile = me as Profile | null;
-        const prefs = loadSuggestionPrefs(user.id);
-        const list = await fetchSuggestedProfiles({
-          limit: HOME_SUGGESTIONS_MAX,
-          myInterests: (meProfile?.interests || []) as string[],
-          myAge: meProfile?.birth_date
-            ? ageFromBirthDate(meProfile.birth_date)
-            : undefined,
-          myLocation: meProfile?.location || '',
-          viewerGender:
-            meProfile?.gender === 'homme' || meProfile?.gender === 'femme'
-              ? meProfile.gender
-              : null,
-          prefs,
-        });
-
-        const ids = list.map((p) => p.id);
-        const founderMap = new Map<string, number | null>();
-        if (ids.length > 0) {
-          const { data: memberships } = await supabase
-            .from('memberships')
-            .select('user_id, is_founder, founder_number')
-            .in('user_id', ids);
-
-          (memberships || []).forEach((m) => {
-            if (m.is_founder) {
-              founderMap.set(m.user_id, m.founder_number ?? null);
-            }
-          });
-        }
-
-        const [{ data: likes }, { data: flashes }] = await Promise.all([
-          supabase.from('likes').select('to_user').eq('from_user', user.id),
-          supabase.from('flashes').select('to_user').eq('from_user', user.id),
-        ]);
-
-        if (active) {
-          setSuggestions(
-            list.map((p) => ({
-              ...p,
-              is_founder: founderMap.has(p.id),
-              founder_number: founderMap.get(p.id) ?? null,
-            }))
-          );
-          setLikedIds(new Set((likes || []).map((l) => l.to_user)));
-          setFlashedIds(new Set((flashes || []).map((f) => f.to_user)));
-          setError(null);
-        }
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Impossible de charger les suggestions'
-          );
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [user?.id, profileEpoch, suggestionPrefsEpoch]);
+  const suggestions = useMemo(
+    () =>
+      (homeQuery.data?.list || []).filter((p) => !hiddenIds.has(p.id)),
+    [homeQuery.data, hiddenIds]
+  );
+  const loading = homeQuery.isLoading;
+  const error =
+    actionError ||
+    (homeQuery.error
+      ? homeQuery.error instanceof Error
+        ? homeQuery.error.message
+        : 'Impossible de charger les suggestions'
+      : null);
 
   useEffect(() => {
     if (!openProfile) return;
@@ -164,7 +156,7 @@ export default function HomeDashboard({
         return;
 
       setActingId(candidate.id);
-      setError(null);
+        setActionError(null);
 
       try {
         const { error: likeErr } = await supabase.from('likes').insert({
@@ -174,7 +166,7 @@ export default function HomeDashboard({
         if (likeErr) throw likeErr;
         setLikedIds((prev) => new Set(prev).add(candidate.id));
         setOpenProfile((open) => (open?.id === candidate.id ? null : open));
-        setSuggestions((prev) => prev.filter((p) => p.id !== candidate.id));
+        setHiddenIds((prev) => new Set(prev).add(candidate.id));
 
         const { data: reverse } = await supabase
           .from('likes')
@@ -190,7 +182,7 @@ export default function HomeDashboard({
 
         await refresh();
       } catch {
-        setError('Une erreur est survenue');
+        setActionError('Une erreur est survenue');
       } finally {
         setActingId(null);
       }
@@ -199,7 +191,7 @@ export default function HomeDashboard({
   );
 
   const handleSkip = useCallback((id: string) => {
-    setSuggestions((prev) => prev.filter((p) => p.id !== id));
+    setHiddenIds((prev) => new Set(prev).add(id));
     setOpenProfile((open) => (open?.id === id ? null : open));
   }, []);
 
@@ -209,13 +201,13 @@ export default function HomeDashboard({
         return;
 
       setActingId(candidate.id);
-      setError(null);
+        setActionError(null);
 
       try {
         const result = await sendFlash(candidate.id);
 
         if (!result.ok) {
-          setError(flashErrorMessage(result.error, status));
+          setActionError(flashErrorMessage(result.error, status));
           return;
         }
 
@@ -242,7 +234,7 @@ export default function HomeDashboard({
 
         window.setTimeout(() => setToast(null), 2800);
       } catch {
-        setError('Impossible d’envoyer le flash');
+        setActionError('Impossible d’envoyer le flash');
       } finally {
         setActingId(null);
       }
@@ -259,7 +251,10 @@ export default function HomeDashboard({
             <BrandLockup />
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <NotificationsBell onOpenInbox={onOpenMatches} />
+            <NotificationsBell
+              onOpenInbox={onOpenMatches}
+              active={notificationsActive}
+            />
             <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
               <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
               {displayName}
@@ -402,9 +397,9 @@ export default function HomeDashboard({
                   >
                     <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative">
                       {p.photo_url ? (
-                        <img
+                        <ProfilePhoto
                           src={p.photo_url}
-                          alt=""
+                          eager
                           className="w-full h-full object-cover pointer-events-none"
                         />
                       ) : (

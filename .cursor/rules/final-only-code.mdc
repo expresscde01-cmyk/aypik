@@ -1,0 +1,21 @@
+---
+description: N’enregistrer et ne committer que la solution finale validée, sans essais ni rustines.
+alwaysApply: true
+---
+
+# Isolement de la solution finale (commits et fichiers)
+
+N’enregistrer et ne valider dans le code **que** la version finale, stable et fonctionnelle, conforme à la charte graphique et au parcours utilisateur.
+
+## À garder
+
+- Code propre, corrigé, validé
+- Comportements alignés sur les règles déjà figées (tri Découvrir, couleurs de cartes, bulles de chat, parcours attente ↔ archive, etc.)
+
+## À ne jamais laisser dans le dépôt
+
+- Essais intermédiaires, branches de logique mortes, flags de debug
+- Comportements aberrants ou rustines « le temps que ça marche »
+- Codes de test bugués, commentaires de chantier, fichiers jetables
+
+Avant d’écrire un fichier ou de proposer un commit : nettoyer. Un commit, s’il est demandé, ne contient que cette solution finale.

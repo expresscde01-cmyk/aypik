@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import { geoProximityBadge } from '@/lib/geoProximity';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   matchWaitingNotification,
+  refusedInboxFollowup,
   waitingMatchReminder,
 } from '@/lib/interactionCopy';
 import MatcherWord from '@/components/MatcherWord';
@@ -96,7 +98,11 @@ export default function ProfileDetailModal({
   const showInboxActions = pendingInbox && Boolean(onInboxDecision);
   const waitingLocked = Boolean(inboxHistory?.waiting) && showInboxActions;
   const waitingIncomingSheet = Boolean(inboxHistory?.waitingIncoming);
-  const showWaitingSheetActions = waitingLocked || waitingIncomingSheet;
+  const showRefusedSheetActions =
+    Boolean(inboxHistory?.refused) &&
+    (Boolean(onWaitingArchive) || Boolean(onWaitingDiscard));
+  const showWaitingSheetActions =
+    !showRefusedSheetActions && (waitingLocked || waitingIncomingSheet);
 
   const [confirmDelete, setConfirmDelete] = useState<(() => void) | null>(
     null
@@ -137,9 +143,11 @@ export default function ProfileDetailModal({
       <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
         <div className="aspect-[4/5] sm:aspect-[5/4] bg-gradient-to-br from-rose-100 to-amber-100 relative">
           {candidate.photo_url ? (
-            <img
+            <ProfilePhoto
               src={candidate.photo_url}
               alt={candidate.display_name}
+              eager
+              width={640}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -167,17 +175,23 @@ export default function ProfileDetailModal({
 
         <div className="p-5 space-y-4">
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div>
               <h2
                 id="profile-detail-title"
                 className="text-xl font-bold text-gray-900"
               >
                 {candidate.display_name}
               </h2>
-              {candidate.is_boosted && <BoostedBadge size="sm" />}
-              {candidate.is_founder && (
-                <FounderBadge number={candidate.founder_number} size="sm" />
-              )}
+              {candidate.is_boosted ? (
+                <div className="mt-1">
+                  <BoostedBadge size="sm" />
+                </div>
+              ) : null}
+              {candidate.is_founder ? (
+                <div className="mt-1">
+                  <FounderBadge number={candidate.founder_number} size="sm" />
+                </div>
+              ) : null}
             </div>
             {candidate.location && (
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
@@ -263,7 +277,9 @@ export default function ProfileDetailModal({
               ) : null}
               {inboxHistory.refused ? (
                 <p className="text-sm text-gray-600">
-                  Tu as décliné ce profil.
+                  {showRefusedSheetActions
+                    ? refusedInboxFollowup(inboxHistory.origin)
+                    : 'Tu as décliné ce profil.'}
                 </p>
               ) : null}
               {inboxHistory.declinedByThem ? (
@@ -274,39 +290,41 @@ export default function ProfileDetailModal({
               ) : null}
               {inboxHistory.declinedByThem &&
               (onDeclinedArchive || onDeclinedDelete) ? (
-                <div className="grid grid-cols-2 gap-2 pt-1 relative z-20 pointer-events-auto">
-                  {onDeclinedDelete ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => requestDelete(e, onDeclinedDelete)}
-                      className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
-                    >
-                      {busy ? '…' : 'Supprimer'}
-                    </button>
-                  ) : null}
+                <div className="flex flex-col gap-2 pt-1 relative z-20 pointer-events-auto">
                   {onDeclinedArchive ? (
                     <button
                       type="button"
                       disabled={busy}
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => fireDeclined(e, onDeclinedArchive)}
-                      className="py-2.5 rounded-xl bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 disabled:opacity-40 cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 disabled:opacity-40 cursor-pointer"
                     >
                       {busy ? '…' : 'Archiver'}
                     </button>
                   ) : null}
+                  {onDeclinedDelete ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => requestDelete(e, onDeclinedDelete)}
+                      className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+                    >
+                      {busy ? '…' : 'Supprimer'}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
-              {inboxHistory.waitingIncoming ? (
+              {inboxHistory.waitingIncoming && !inboxHistory.refused ? (
                 <p className="text-sm text-amber-900/90 leading-relaxed">
                   {matchWaitingNotification(
                     candidate.display_name,
                     inboxHistory.origin
                   ).body}
                 </p>
-              ) : inboxHistory.waiting && !inboxHistory.matchedLabel ? (
+              ) : inboxHistory.waiting &&
+                !inboxHistory.matchedLabel &&
+                !inboxHistory.refused ? (
                 <p className="text-sm text-amber-900/90 leading-relaxed">
                   {waitingMatchReminder(
                     inboxHistory.origin,
@@ -325,8 +343,17 @@ export default function ProfileDetailModal({
                 </button>
               ) : null}
 
-              {showWaitingSheetActions ? (
-                <div className="grid grid-cols-2 gap-2 pt-1 relative z-20 pointer-events-auto">
+              {showRefusedSheetActions || showWaitingSheetActions ? (
+                <div className="flex flex-col gap-2 pt-1 relative z-20 pointer-events-auto">
+                  <button
+                    type="button"
+                    disabled={busy || !onWaitingArchive}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => fireDeclined(e, onWaitingArchive)}
+                    className="w-full py-2.5 px-2 rounded-xl bg-amber-400 text-amber-950 text-sm font-semibold hover:bg-amber-300 disabled:opacity-40 cursor-pointer"
+                  >
+                    {busy ? '…' : 'Archiver'}
+                  </button>
                   <button
                     type="button"
                     disabled={busy}
@@ -337,45 +364,36 @@ export default function ProfileDetailModal({
                         else onInboxDecision?.('refuse');
                       })
                     }
-                    className="py-2.5 px-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 leading-tight cursor-pointer"
+                    className="w-full py-2.5 px-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 leading-tight cursor-pointer"
                   >
                     {busy ? '…' : 'Jeter'}
                   </button>
-                  <button
-                    type="button"
-                    disabled={busy || !onWaitingArchive}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => fireDeclined(e, onWaitingArchive)}
-                    className="py-2.5 px-2 rounded-xl bg-amber-400 text-amber-950 text-sm font-semibold hover:bg-amber-300 disabled:opacity-40 cursor-pointer"
-                  >
-                    {busy ? '…' : 'Archiver'}
-                  </button>
                 </div>
               ) : showInboxActions ? (
-                <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="flex flex-col gap-2 pt-1">
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => onInboxDecision?.('refuse')}
-                    className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    disabled={busy || likesExhausted}
+                    onClick={() => onInboxDecision?.('match')}
+                    className="w-full py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
                   >
-                    Refuser
+                    <MatcherWord />
                   </button>
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onInboxDecision?.('wait')}
-                    className="py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+                    className="w-full py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
                   >
                     Attendre
                   </button>
                   <button
                     type="button"
-                    disabled={busy || likesExhausted}
-                    onClick={() => onInboxDecision?.('match')}
-                    className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+                    disabled={busy}
+                    onClick={() => onInboxDecision?.('refuse')}
+                    className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
                   >
-                    <MatcherWord />
+                    Refuser
                   </button>
                 </div>
               ) : null}
@@ -385,21 +403,20 @@ export default function ProfileDetailModal({
               <button
                 type="button"
                 onClick={onSkip}
-                className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer"
-                title="Masquer"
+                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer overflow-visible"
                 aria-label={`Masquer ${candidate.display_name}`}
               >
                 <X className="size-5 shrink-0 text-gray-400 pointer-events-none" />
+                <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-gray-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-gray-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+                  Masquer
+                </span>
               </button>
               {showFlashCta && (
                 <button
                   type="button"
                   onClick={onFlash}
                   disabled={busy || alreadyFlashed}
-                  className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm overflow-hidden hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
-                  title={
-                    alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'
-                  }
+                  className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                   aria-label={
                     alreadyFlashed
                       ? `Déjà flashé ${candidate.display_name}`
@@ -411,20 +428,16 @@ export default function ProfileDetailModal({
                     fill="white"
                     strokeWidth={2}
                   />
+                  <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-amber-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-amber-800 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+                    {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'}
+                  </span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={onLike}
                 disabled={busy || likesExhausted || alreadyLiked}
-                className="box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm overflow-hidden hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
-                title={
-                  alreadyLiked
-                    ? 'Déjà liké'
-                    : likesExhausted
-                      ? 'Limite de likes atteinte'
-                      : 'Liker ce profil'
-                }
+                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                 aria-label={
                   alreadyLiked
                     ? `Déjà liké ${candidate.display_name}`
@@ -436,6 +449,13 @@ export default function ProfileDetailModal({
                   fill="white"
                   strokeWidth={2}
                 />
+                <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+                  {alreadyLiked
+                    ? 'Déjà liké'
+                    : likesExhausted
+                      ? 'Limite de likes atteinte'
+                      : 'Liker ce profil'}
+                </span>
               </button>
             </div>
           )}

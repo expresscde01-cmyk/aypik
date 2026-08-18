@@ -4,6 +4,8 @@ export type GeoCommune = {
   codesPostaux: string[];
   /** Libellé affiché / stocké : « Lyon (69001) » */
   label: string;
+  lat?: number;
+  lng?: number;
 };
 
 export const CITY_SELECTION_REQUIRED_ERROR =
@@ -30,11 +32,14 @@ function parseCommune(raw: Record<string, unknown>): GeoCommune | null {
     ? raw.codesPostaux.filter((c): c is string => typeof c === 'string')
     : [];
   if (!nom) return null;
+  const centre = parseCentre(raw.centre);
   return {
     nom,
     code,
     codesPostaux,
     label: formatCommuneLabel(nom, codesPostaux),
+    lat: centre?.lat,
+    lng: centre?.lng,
   };
 }
 
@@ -94,7 +99,7 @@ export async function searchFrenchCommunes(
   if (signal?.aborted) return [];
 
   const params = new URLSearchParams({
-    fields: 'nom,code,codesPostaux',
+    fields: 'nom,code,codesPostaux,centre',
     boost: 'population',
     limit: '8',
   });
