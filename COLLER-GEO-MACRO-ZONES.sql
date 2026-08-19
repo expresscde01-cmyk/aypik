@@ -1,113 +1,5 @@
 -- Coller TOUT ce fichier dans Supabase → SQL Editor, puis Run.
--- Phase 1 scalabilité : lat/lng, index Découvrir, suggest_profiles paginée.
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS lat double precision,
-  ADD COLUMN IF NOT EXISTS lng double precision,
-  ADD COLUMN IF NOT EXISTS last_active_at timestamptz;
-
-UPDATE public.profiles
-SET last_active_at = COALESCE(last_active_at, updated_at, created_at)
-WHERE last_active_at IS NULL;
-
-CREATE INDEX IF NOT EXISTS profiles_created_at_idx
-  ON public.profiles (created_at DESC)
-  WHERE deletion_requested_at IS NULL;
-
-CREATE INDEX IF NOT EXISTS profiles_gender_idx
-  ON public.profiles (gender)
-  WHERE deletion_requested_at IS NULL AND has_children = false;
-
-CREATE INDEX IF NOT EXISTS profiles_interests_gin
-  ON public.profiles USING GIN (interests);
-
-CREATE INDEX IF NOT EXISTS profiles_discovery_active_birth_idx
-  ON public.profiles (birth_date)
-  WHERE has_children = false AND deletion_requested_at IS NULL;
-
-CREATE INDEX IF NOT EXISTS profiles_last_active_idx
-  ON public.profiles (last_active_at DESC NULLS LAST)
-  WHERE deletion_requested_at IS NULL AND has_children = false;
-
-CREATE INDEX IF NOT EXISTS profiles_lat_lng_idx
-  ON public.profiles (lat, lng)
-  WHERE lat IS NOT NULL AND lng IS NOT NULL AND deletion_requested_at IS NULL;
-
-CREATE INDEX IF NOT EXISTS likes_from_created_idx
-  ON public.likes (from_user, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS flashes_from_created_idx
-  ON public.flashes (from_user, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS messages_sender_created_idx
-  ON public.messages (sender_id, created_at DESC);
-
-CREATE OR REPLACE FUNCTION public.geo_distance_km(
-  lat1 double precision,
-  lng1 double precision,
-  lat2 double precision,
-  lng2 double precision
-)
-RETURNS double precision
-LANGUAGE sql
-IMMUTABLE
-PARALLEL SAFE
-AS $$
-  SELECT CASE
-    WHEN lat1 IS NULL OR lng1 IS NULL OR lat2 IS NULL OR lng2 IS NULL THEN NULL
-    ELSE 6371 * acos(LEAST(1::double precision, GREATEST(-1::double precision,
-      cos(radians(lat1)) * cos(radians(lat2)) * cos(radians(lng2) - radians(lng1))
-      + sin(radians(lat1)) * sin(radians(lat2))
-    )))
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.touch_last_active_from_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  UPDATE public.profiles
-  SET last_active_at = now()
-  WHERE id = NEW.from_user;
-  RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.touch_last_active_from_sender()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  UPDATE public.profiles
-  SET last_active_at = now()
-  WHERE id = NEW.sender_id;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS likes_touch_last_active ON public.likes;
-CREATE TRIGGER likes_touch_last_active
-  AFTER INSERT ON public.likes
-  FOR EACH ROW
-  EXECUTE FUNCTION public.touch_last_active_from_user();
-
-DROP TRIGGER IF EXISTS flashes_touch_last_active ON public.flashes;
-CREATE TRIGGER flashes_touch_last_active
-  AFTER INSERT ON public.flashes
-  FOR EACH ROW
-  EXECUTE FUNCTION public.touch_last_active_from_user();
-
-DROP TRIGGER IF EXISTS messages_touch_last_active ON public.messages;
-CREATE TRIGGER messages_touch_last_active
-  AFTER INSERT ON public.messages
-  FOR EACH ROW
-  EXECUTE FUNCTION public.touch_last_active_from_sender();
-
+-- Périmètre Découvrir : quartiers macro (Nord/Sud-Est/Ouest) à la place du rayon km.
 -- Macro-régions (miroir TS : MACRO_ZONE_REGIONS dans src/lib/geoProximity.ts).
 CREATE TABLE IF NOT EXISTS public.region_macro_zones (
   region text PRIMARY KEY,
@@ -166,19 +58,93 @@ REVOKE ALL ON FUNCTION public.region_macro_zone(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.region_macro_zone(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.region_macro_zone(text) TO service_role;
 
-DO $$
-DECLARE r record;
-BEGIN
-  FOR r IN
-    SELECT p.oid::regprocedure AS sig
-    FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public'
-      AND p.proname = 'suggest_profiles'
-  LOOP
-    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig;
-  END LOOP;
-END $$;
+-- CP dans « Ville (75001) » ou n’importe quel groupe de 5 chiffres.
+CREATE OR REPLACE FUNCTION public.location_dept_code(p_location text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+  SELECT CASE
+    WHEN cp IS NULL OR length(cp) < 2 THEN NULL
+    WHEN left(cp, 2) IN ('97', '98') THEN left(cp, 3)
+    ELSE left(cp, 2)
+  END
+  FROM (
+    SELECT COALESCE(
+      substring(COALESCE(p_location, '') FROM '\((\d{5})'),
+      substring(COALESCE(p_location, '') FROM '(?:^|\D)(\d{5})(?:\D|$)')
+    ) AS cp
+  ) s;
+$$;
+
+-- Adjacence métropole (miroir TS REGION_NEIGHBORS) — ne dépend pas de la table.
+CREATE OR REPLACE FUNCTION public.regions_are_neighbors(p_a text, p_b text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+  SELECT p_a IS NOT NULL AND p_b IS NOT NULL AND p_a <> p_b AND EXISTS (
+    SELECT 1
+    FROM (VALUES
+      ('Île-de-France', 'Hauts-de-France'),
+      ('Île-de-France', 'Grand Est'),
+      ('Île-de-France', 'Bourgogne-Franche-Comté'),
+      ('Île-de-France', 'Centre-Val de Loire'),
+      ('Île-de-France', 'Normandie'),
+      ('Hauts-de-France', 'Île-de-France'),
+      ('Hauts-de-France', 'Grand Est'),
+      ('Hauts-de-France', 'Normandie'),
+      ('Grand Est', 'Hauts-de-France'),
+      ('Grand Est', 'Île-de-France'),
+      ('Grand Est', 'Bourgogne-Franche-Comté'),
+      ('Bourgogne-Franche-Comté', 'Grand Est'),
+      ('Bourgogne-Franche-Comté', 'Île-de-France'),
+      ('Bourgogne-Franche-Comté', 'Centre-Val de Loire'),
+      ('Bourgogne-Franche-Comté', 'Auvergne-Rhône-Alpes'),
+      ('Centre-Val de Loire', 'Île-de-France'),
+      ('Centre-Val de Loire', 'Normandie'),
+      ('Centre-Val de Loire', 'Pays de la Loire'),
+      ('Centre-Val de Loire', 'Nouvelle-Aquitaine'),
+      ('Centre-Val de Loire', 'Auvergne-Rhône-Alpes'),
+      ('Centre-Val de Loire', 'Bourgogne-Franche-Comté'),
+      ('Normandie', 'Hauts-de-France'),
+      ('Normandie', 'Île-de-France'),
+      ('Normandie', 'Centre-Val de Loire'),
+      ('Normandie', 'Pays de la Loire'),
+      ('Normandie', 'Bretagne'),
+      ('Bretagne', 'Normandie'),
+      ('Bretagne', 'Pays de la Loire'),
+      ('Pays de la Loire', 'Bretagne'),
+      ('Pays de la Loire', 'Normandie'),
+      ('Pays de la Loire', 'Centre-Val de Loire'),
+      ('Pays de la Loire', 'Nouvelle-Aquitaine'),
+      ('Nouvelle-Aquitaine', 'Pays de la Loire'),
+      ('Nouvelle-Aquitaine', 'Centre-Val de Loire'),
+      ('Nouvelle-Aquitaine', 'Auvergne-Rhône-Alpes'),
+      ('Nouvelle-Aquitaine', 'Occitanie'),
+      ('Occitanie', 'Nouvelle-Aquitaine'),
+      ('Occitanie', 'Auvergne-Rhône-Alpes'),
+      ('Occitanie', 'Provence-Alpes-Côte d''Azur'),
+      ('Auvergne-Rhône-Alpes', 'Centre-Val de Loire'),
+      ('Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté'),
+      ('Auvergne-Rhône-Alpes', 'Nouvelle-Aquitaine'),
+      ('Auvergne-Rhône-Alpes', 'Occitanie'),
+      ('Auvergne-Rhône-Alpes', 'Provence-Alpes-Côte d''Azur'),
+      ('Provence-Alpes-Côte d''Azur', 'Auvergne-Rhône-Alpes'),
+      ('Provence-Alpes-Côte d''Azur', 'Occitanie')
+    ) AS n(region, neighbor)
+    WHERE n.region = p_a AND n.neighbor = p_b
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.location_dept_code(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.location_dept_code(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.location_dept_code(text) TO service_role;
+REVOKE ALL ON FUNCTION public.regions_are_neighbors(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.regions_are_neighbors(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.regions_are_neighbors(text, text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.suggest_profiles(
   p_limit integer DEFAULT 20,
@@ -238,6 +204,7 @@ DECLARE
   v_mode text;
   v_perimeter text;
   v_exclusive boolean := false;
+  v_no_geo boolean := false;
   v_sort text;
   v_limit integer;
   v_radius numeric;
@@ -266,28 +233,38 @@ BEGIN
   my_dept := public.location_dept_code(my_location);
   my_region := public.dept_to_region(my_dept);
 
-  IF COALESCE(p_min_interest_overlap, 0) = -1 THEN
-    min_overlap := COALESCE(cardinality(my_interests), 0);
-  ELSE
-    min_overlap := GREATEST(COALESCE(p_min_interest_overlap, 0), 0);
+  v_mode := lower(COALESCE(NULLIF(trim(p_mode), ''), 'home'));
+
+  -- INDIFFÉRENT / 0 / négatif = aucun seuil. Plus de -1 « tous les intérêts ».
+  min_overlap := GREATEST(COALESCE(p_min_interest_overlap, 0), 0);
+
+  v_perimeter := lower(trim(COALESCE(p_geo_perimeter, '')));
+  v_exclusive := v_perimeter ~ '__x$';
+  IF v_exclusive THEN
+    v_perimeter := regexp_replace(v_perimeter, '__x$', '');
   END IF;
 
-  v_mode := lower(COALESCE(NULLIF(trim(p_mode), ''), 'home'));
+  -- PARTOUT / all / null / vide : aucune clause géographique.
+  v_no_geo := v_perimeter IN ('', 'anywhere', 'all', 'null');
+  IF v_no_geo THEN
+    v_perimeter := 'anywhere';
+    v_exclusive := false;
+  ELSIF v_perimeter IN (
+    'northeast', 'northwest', 'center', 'southeast', 'southwest',
+    'ile_de_france'
+  ) THEN
+    v_exclusive := false;
+  END IF;
+
   IF v_mode = 'discover' THEN
-    v_limit := GREATEST(LEAST(COALESCE(p_limit, 80), 120), 1);
-    v_perimeter := COALESCE(NULLIF(trim(p_geo_perimeter), ''), 'anywhere');
+    v_limit := GREATEST(LEAST(COALESCE(p_limit, 80), 500), 1);
     v_sort := COALESCE(NULLIF(trim(p_sort), ''), 'nouveaux');
   ELSE
     v_limit := GREATEST(LEAST(COALESCE(p_limit, 20), 50), 1);
-    v_perimeter := COALESCE(NULLIF(trim(p_geo_perimeter), ''), 'region');
     v_sort := COALESCE(NULLIF(trim(p_sort), ''), 'score');
   END IF;
 
   v_radius := COALESCE(p_radius_km, 100);
-  v_exclusive := right(v_perimeter, 3) = '__x';
-  IF v_exclusive THEN
-    v_perimeter := left(v_perimeter, length(v_perimeter) - 3);
-  END IF;
 
   RETURN QUERY
   WITH liked AS (
@@ -360,10 +337,7 @@ BEGIN
             WHEN my_region IS NOT NULL AND c.cand_region = my_region THEN 8
             WHEN my_region IS NOT NULL
               AND c.cand_region IS NOT NULL
-              AND EXISTS (
-                SELECT 1 FROM public.region_neighbors n
-                WHERE n.region = my_region AND n.neighbor = c.cand_region
-              ) THEN 4
+              AND public.regions_are_neighbors(my_region, c.cand_region) THEN 4
             ELSE 0
           END
         + GREATEST(0, 20 - ABS(c.cand_age - my_age))::numeric
@@ -376,18 +350,15 @@ BEGIN
       (
         my_region IS NOT NULL
         AND c.cand_region IS NOT NULL
-        AND my_region <> c.cand_region
-        AND EXISTS (
-          SELECT 1 FROM public.region_neighbors n
-          WHERE n.region = my_region AND n.neighbor = c.cand_region
-        )
+        AND public.regions_are_neighbors(my_region, c.cand_region)
       ) AS neighbor_match
     FROM candidates c
     WHERE public.dating_partner_old_enough(my_birth, c.birth_date)
       AND public.dating_partner_old_enough(c.birth_date, my_birth)
       AND c.overlap >= min_overlap
       AND (
-        NOT COALESCE(p_same_city_only, false)
+        v_no_geo
+        OR NOT COALESCE(p_same_city_only, false)
         OR (
           (COALESCE(my_location, '') <> '' AND c.location = my_location)
           OR (my_city <> '' AND c.cand_city = my_city)
@@ -399,7 +370,7 @@ BEGIN
     FROM scored s
     WHERE
       CASE
-        WHEN v_perimeter = 'anywhere' THEN true
+        WHEN v_no_geo OR v_perimeter IN ('anywhere', 'all') THEN true
         WHEN v_perimeter = 'city' THEN s.city_match
         WHEN v_perimeter = 'department' THEN
           CASE
@@ -416,13 +387,18 @@ BEGIN
           CASE
             WHEN v_exclusive THEN
               s.neighbor_match
-              AND NOT s.region_match
-              AND NOT s.dept_match
-              AND NOT s.city_match
+              AND NOT COALESCE(s.region_match, false)
+              AND NOT COALESCE(s.dept_match, false)
+              AND NOT COALESCE(s.city_match, false)
             ELSE
               s.city_match OR s.dept_match OR s.region_match OR s.neighbor_match
           END
-        WHEN v_perimeter IN ('northeast', 'northwest', 'center', 'southeast', 'southwest') THEN
+        WHEN v_perimeter = 'ile_de_france' THEN
+          s.cand_region = 'Île-de-France'
+        WHEN v_perimeter = 'center' THEN
+          public.region_macro_zone(s.cand_region) = 'center'
+          AND s.cand_region IS DISTINCT FROM 'Île-de-France'
+        WHEN v_perimeter IN ('northeast', 'northwest', 'southeast', 'southwest') THEN
           public.region_macro_zone(s.cand_region) = v_perimeter
         WHEN v_perimeter = 'radius' THEN
           (
@@ -475,7 +451,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[]) IS
-  'Accueil (home) et Découvrir (discover) : shortlist filtrée en SQL, plus de scan client.';
+  'Accueil (home) et Découvrir (discover). PARTOUT/all/null = aucun filtre geo. min_overlap 0 = INDIFFÉRENT.';
 
 REVOKE ALL ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[]) TO authenticated;

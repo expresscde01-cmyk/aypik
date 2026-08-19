@@ -294,7 +294,7 @@ function HintActionIcon({
 }) {
   return (
     <span
-      className="mx-0.5 inline-flex h-[1.35rem] w-[1.35rem] shrink-0 translate-y-px items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm align-text-bottom"
+      className="mx-0.5 inline-flex h-[1.35rem] w-[1.35rem] shrink-0 translate-y-px items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm align-middle"
       aria-hidden
     >
       {kind === 'archive' ? (
@@ -331,9 +331,9 @@ function DeclinedActionHint({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="false"
       aria-label="Que faire de ce profil"
-      className="absolute bottom-full left-1/2 z-30 mb-2 w-[min(calc(100vw-2rem),19rem)] -translate-x-1/2"
+      className="absolute bottom-full left-1/2 z-30 mb-1 w-[min(calc(100vw-2rem),19rem)] -translate-x-1/2"
     >
-      <div className="relative rounded-2xl bg-[#FFF8E1] px-3.5 py-3 pr-9 text-xs leading-relaxed text-gray-700 shadow-lg shadow-amber-100/70 ring-1 ring-amber-100">
+      <div className="declined-action-hint relative px-3.5 py-3 pr-9 text-xs leading-relaxed text-gray-700">
         <button
           type="button"
           onClick={(e) => {
@@ -345,17 +345,15 @@ function DeclinedActionHint({ onClose }: { onClose: () => void }) {
         >
           <X className="w-3.5 h-3.5" strokeWidth={2.4} />
         </button>
-        <p>
+        <p className="text-center">
           Tu peux soit archiver ce profil{' '}
           <HintActionIcon kind="archive" /> pour le conserver dans ta page
           &quot;Mes Matchs&quot;, soit le supprimer{' '}
           <HintActionIcon kind="delete" /> pour le faire disparaître
           définitivement de ta page.
         </p>
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[calc(100%-1px)] -translate-x-1/2 border-[7px] border-transparent border-t-[#FFF8E1]"
-        />
+        <span aria-hidden className="declined-action-hint-caret" />
+        <span aria-hidden className="declined-action-hint-caret-fill" />
       </div>
     </div>
   );

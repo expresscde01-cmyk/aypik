@@ -60,8 +60,249 @@ body {
   box-shadow: none;
 }
 
+.discovery-sort-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 9999px;
+}
+
+.discovery-sort-toggle:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 3px;
+}
+
+.discovery-sort-toggle-text {
+  font-size: 11px;
+  line-height: 1;
+  color: rgb(156 163 175);
+  white-space: nowrap;
+}
+
+.discovery-sort-toggle--on .discovery-sort-toggle-text {
+  color: #7c3aed;
+}
+
+.discovery-sort-toggle-track {
+  position: relative;
+  display: block;
+  width: 1.75rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: #d1d5db;
+  transition: background-color 0.2s ease;
+}
+
+.discovery-sort-toggle--on .discovery-sort-toggle-track {
+  background: #8b5cf6;
+}
+
+.discovery-sort-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease;
+}
+
+.discovery-sort-toggle--on .discovery-sort-toggle-thumb {
+  transform: translateX(12px);
+}
+
+.geo-exclusive-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1.5px solid #fecdd3;
+  background: #fff1f2;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 0.65rem;
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.08);
+}
+
+.geo-exclusive-toggle:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+}
+
+.geo-exclusive-toggle--on {
+  border-color: #f43f5e;
+  background: #ffe4e6;
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.22);
+}
+
+.geo-exclusive-toggle--idle {
+  opacity: 0.45;
+  cursor: default;
+  border-color: #e5e7eb;
+  background: #f9fafb;
+  box-shadow: none;
+}
+
+.geo-exclusive-toggle-text {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #e11d48;
+  white-space: nowrap;
+}
+
+.geo-exclusive-toggle--on .geo-exclusive-toggle-text {
+  color: #be123c;
+}
+
+.geo-exclusive-toggle--idle .geo-exclusive-toggle-text {
+  color: #6b7280;
+}
+
+.geo-exclusive-toggle-track {
+  position: relative;
+  display: block;
+  width: 1.5rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: #d1d5db;
+  transition: background-color 0.2s ease;
+}
+
+.geo-exclusive-toggle--on .geo-exclusive-toggle-track {
+  background: #f43f5e;
+}
+
+.geo-exclusive-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease;
+}
+
+.geo-exclusive-toggle--on .geo-exclusive-toggle-thumb {
+  transform: translateX(10px);
+}
+
+/* Bouton fermé : strate + « Exclusivement » sur une seule ligne. */
+.geo-perimeter-closed {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.geo-perimeter-closed::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+.geo-perimeter-closed-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.geo-perimeter-closed-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.geo-perimeter-closed-exclusive {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.geo-perimeter-closed-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* Fiches profil — géo (règle figée). Ne pas fusionner, ne pas omettre une ligne. */
+.profile-card-geo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.profile-card-geo-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: #047857;
+}
+
+.profile-card-geo-km {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: #10b981;
+}
+
 .discovery-sort-pills {
   overflow: visible;
+}
+
+.discovery-sort-pills--off {
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.discovery-sort-pills--off .discovery-sort-pill > button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.discovery-filters--off {
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.discovery-filters--off button:disabled {
+  opacity: 1;
+  cursor: not-allowed;
 }
 
 .discovery-sort-pill {
@@ -154,7 +395,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .discovery-sort-hint,
-  .discovery-sort-hint-panel {
+  .discovery-sort-hint-panel,
+  .discovery-sort-toggle-track,
+  .discovery-sort-toggle-thumb,
+  .geo-exclusive-toggle-track,
+  .geo-exclusive-toggle-thumb,
+  .discovery-filters--off {
     transition: none;
   }
 }
@@ -992,6 +1238,39 @@ button.group[data-matched='true'] {
   background-color: rgba(243, 229, 245, 0.7);
   border: 1px solid #ce93d8;
   box-shadow: 0 1px 2px rgba(123, 31, 162, 0.08);
+}
+
+/* Pop-up « que faire » : ouvert en haut/côtés, ancré à la carte mauve par le bas. */
+.declined-action-hint {
+  background-color: #fff8e1;
+  border: none;
+  border-bottom: 1.5px solid #ce93d8;
+  border-radius: 1rem 1rem 0.65rem 0.65rem;
+  box-shadow: none;
+}
+
+.declined-action-hint-caret,
+.declined-action-hint-caret-fill {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.declined-action-hint-caret {
+  top: 100%;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #ce93d8;
+}
+
+.declined-action-hint-caret-fill {
+  top: calc(100% - 1.5px);
+  border-left: 6.5px solid transparent;
+  border-right: 6.5px solid transparent;
+  border-top: 6.5px solid #fff8e1;
 }
 
 .match-chip-declined {

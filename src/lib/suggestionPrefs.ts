@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   GEO_RADIUS_KM_DEFAULT,
   isGeoPerimeterFilter,
+  geoExclusiveApplies,
   isGeoRadiusKm,
   type GeoPerimeterFilter,
   type GeoRadiusKm,
@@ -10,14 +11,17 @@ import {
 export type SuggestionPrefs = {
   geoPerimeter: GeoPerimeterFilter;
   geoRadiusKm: GeoRadiusKm;
+  /** Strate étanche dès Même département. Inactif sur Même ville, quarts, Île-de-France et PARTOUT. */
+  geoExclusive: boolean;
   /** 0 = pas de minimum d’intérêts. Défaut produit : 1. */
   minOverlap: number;
 };
 
-/** Première visite / rien de configuré : rayon 100 km + au moins 1 intérêt. */
+/** Première visite / rien de configuré : jusqu’aux régions voisines + au moins 1 intérêt. */
 export const DEFAULT_SUGGESTION_PREFS: SuggestionPrefs = {
-  geoPerimeter: 'radius',
+  geoPerimeter: 'neighboring_region',
   geoRadiusKm: GEO_RADIUS_KM_DEFAULT,
+  geoExclusive: false,
   minOverlap: 1,
 };
 
@@ -74,9 +78,13 @@ function parseMinOverlap(value: unknown): number {
 export function parseSuggestionPrefs(raw: unknown): SuggestionPrefs {
   if (!raw || typeof raw !== 'object') return { ...DEFAULT_SUGGESTION_PREFS };
   const d = raw as Record<string, unknown>;
-  const geoPerimeter = isGeoPerimeterFilter(String(d.geoPerimeter || ''))
-    ? (d.geoPerimeter as GeoPerimeterFilter)
-    : DEFAULT_SUGGESTION_PREFS.geoPerimeter;
+  const rawPerimeter = String(d.geoPerimeter || '');
+  const geoPerimeter =
+    rawPerimeter === 'radius'
+      ? 'neighboring_region'
+      : isGeoPerimeterFilter(rawPerimeter)
+        ? rawPerimeter
+        : DEFAULT_SUGGESTION_PREFS.geoPerimeter;
   const radiusNum = Number(d.geoRadiusKm);
   const geoRadiusKm = isGeoRadiusKm(radiusNum)
     ? radiusNum
@@ -84,6 +92,8 @@ export function parseSuggestionPrefs(raw: unknown): SuggestionPrefs {
   return {
     geoPerimeter,
     geoRadiusKm,
+    geoExclusive:
+      d.geoExclusive === true && geoExclusiveApplies(geoPerimeter),
     minOverlap: parseMinOverlap(d.minOverlap),
   };
 }

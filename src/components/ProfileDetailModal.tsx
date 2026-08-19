@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
-import { geoProximityBadge } from '@/lib/geoProximity';
+import { CardGeoFacts } from '@/components/GeoBadgeLine';
+import type { GeoPerimeterFilter } from '@/lib/geoProximity';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   matchWaitingNotification,
@@ -49,6 +50,7 @@ export type InboxHistory = {
 
 export default function ProfileDetailModal({
   candidate,
+  geoPerimeter,
   alreadyFlashed,
   alreadyLiked,
   busy,
@@ -68,6 +70,7 @@ export default function ProfileDetailModal({
   onWaitingDiscard,
 }: {
   candidate: ProfileDetailCandidate;
+  geoPerimeter?: GeoPerimeterFilter | null;
   alreadyFlashed: boolean;
   alreadyLiked: boolean;
   busy: boolean;
@@ -88,7 +91,6 @@ export default function ProfileDetailModal({
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
-  const geoBadge = candidate.geo_badge ?? geoProximityBadge(candidate);
   const pendingInbox =
     Boolean(inboxHistory) &&
     !alreadyLiked &&
@@ -197,11 +199,16 @@ export default function ProfileDetailModal({
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                 <MapPin className="w-3.5 h-3.5" />
                 {candidate.location}
-                {geoBadge ? (
-                  <span className="text-gray-400">· {geoBadge}</span>
-                ) : null}
               </p>
             )}
+            <div className="mt-1">
+              <CardGeoFacts
+                flags={candidate}
+                location={candidate.location}
+                perimeter={geoPerimeter}
+                distanceKm={candidate.distance_km}
+              />
+            </div>
           </div>
 
           {candidate.bio ? (

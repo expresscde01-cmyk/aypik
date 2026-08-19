@@ -34,6 +34,18 @@ export const REGION_ARA = 'Auvergne-Rhône-Alpes';
 export const REGION_PAC = "Provence-Alpes-Côte d'Azur";
 export const REGION_COR = 'Corse';
 
+/** Départements d’Île-de-France (jamais « Centre de la France »). */
+export const IDF_DEPT_CODES = [
+  '75',
+  '77',
+  '78',
+  '91',
+  '92',
+  '93',
+  '94',
+  '95',
+] as const;
+
 /** Département (2 chiffres, 20/2A/2B, ou 3 chiffres DOM-TOM) → région. */
 export const DEPT_TO_REGION: Record<string, string> = {
   '75': REGION_IDF,
@@ -222,6 +234,21 @@ export function regionFromDept(dept: string): string | null {
   return DEPT_TO_REGION[dept] ?? null;
 }
 
+export function isIleDeFranceDept(
+  dept: string | null | undefined
+): boolean {
+  return Boolean(
+    dept && (IDF_DEPT_CODES as readonly string[]).includes(dept)
+  );
+}
+
+export function locationIsIleDeFrance(
+  location: string | null | undefined
+): boolean {
+  if (!location?.trim()) return false;
+  return isIleDeFranceDept(parseLocation(location).dept);
+}
+
 export function regionsAreNeighbors(a: string, b: string): boolean {
   if (!a || !b || a === b) return false;
   return Boolean(REGION_NEIGHBORS[a]?.includes(b));
@@ -302,10 +329,37 @@ export function geoProximityBadgeFromLocations(
   return geoProximityBadge(geoProximityFlags(a, b));
 }
 
-/** Filtre Découvrir : une seule option à la fois (la nouvelle remplace la précédente). */
-export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel | 'radius';
+/** Quartiers macro de France métropolitaine (miroir SQL region_macro_zones). */
+export type GeoMacroZone =
+  | 'northeast'
+  | 'northwest'
+  | 'center'
+  | 'southeast'
+  | 'southwest'
+  | 'ile_de_france';
 
-/** Paliers de recherche ciblée. Sans limite geo → « Partout ». */
+export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel | GeoMacroZone;
+
+export const GEO_MACRO_ZONES: readonly GeoMacroZone[] = [
+  'northwest',
+  'northeast',
+  'southwest',
+  'southeast',
+  'ile_de_france',
+  'center',
+] as const;
+
+export const MACRO_ZONE_REGIONS: Record<GeoMacroZone, readonly string[]> = {
+  northwest: [REGION_BRE, REGION_NOR, REGION_PDL],
+  northeast: [REGION_HDF, REGION_GE],
+  southwest: [REGION_NAQ, REGION_OCC],
+  southeast: [REGION_ARA, REGION_PAC, REGION_COR],
+  ile_de_france: [REGION_IDF],
+  // Centre = Centre-Val de Loire + Bourgogne-Franche-Comté. Jamais l’Île-de-France.
+  center: [REGION_CVL, REGION_BFC],
+};
+
+/** Paliers km conservés pour l’ancien stockage / RPC (plus proposés dans le menu). */
 export const GEO_RADIUS_KM_OPTIONS = [30, 50, 100, 200, 300, 400, 500] as const;
 export type GeoRadiusKm = (typeof GEO_RADIUS_KM_OPTIONS)[number];
 export const GEO_RADIUS_KM_DEFAULT: GeoRadiusKm = 100;
@@ -317,31 +371,62 @@ const GEO_PERIMETER_RANK: Record<GeoProximityLevel, number> = {
   neighboring_region: 4,
 };
 
-/** Libellés du menu Découvrir. « Jusqu’à » = le palier choisi + tous les cercles plus proches. */
+/** Libellés du menu Découvrir. */
 export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
-  anywhere: 'Partout',
   city: 'Même ville',
-  department: 'Jusqu’au département',
-  region: 'Jusqu’à la région',
-  neighboring_region: 'Jusqu’aux régions voisines',
-  radius: 'Jusqu’à un rayon de...',
+  department: 'Même département',
+  region: 'Même région',
+  neighboring_region: 'Régions voisines',
+  northwest: 'Nord-Ouest de la France',
+  northeast: 'Nord-Est de la France',
+  southwest: 'Sud-Ouest de la France',
+  southeast: 'Sud-Est de la France',
+  ile_de_france: 'Île-de-France',
+  center: 'Centre de la France',
+  anywhere: 'P A R T O U T',
 };
 
 export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
-  'anywhere',
   'city',
   'department',
   'region',
   'neighboring_region',
-  'radius',
+  'northwest',
+  'northeast',
+  'southwest',
+  'southeast',
+  'ile_de_france',
+  'center',
+  'anywhere',
+];
+
+export type GeoPerimeterMenuItem =
+  | { type: 'option'; id: GeoPerimeterFilter }
+  | { type: 'divider'; style: 'solid' | 'double' };
+
+/** Ordre du menu Découvrir, avec liserés entre les cercles locaux, les quadrants et Partout. */
+export const GEO_PERIMETER_MENU: readonly GeoPerimeterMenuItem[] = [
+  { type: 'option', id: 'city' },
+  { type: 'option', id: 'department' },
+  { type: 'option', id: 'region' },
+  { type: 'option', id: 'neighboring_region' },
+  { type: 'divider', style: 'solid' },
+  { type: 'option', id: 'northwest' },
+  { type: 'option', id: 'northeast' },
+  { type: 'option', id: 'southwest' },
+  { type: 'option', id: 'southeast' },
+  { type: 'option', id: 'ile_de_france' },
+  { type: 'option', id: 'center' },
+  { type: 'divider', style: 'double' },
+  { type: 'option', id: 'anywhere' },
 ];
 
 export function geoScopeWidth(
   perimeter: GeoPerimeterFilter,
-  radiusKm: number
+  _radiusKm?: number
 ): number {
   if (perimeter === 'anywhere') return Number.POSITIVE_INFINITY;
-  if (perimeter === 'radius') return 100 + radiusKm;
+  if (isGeoMacroZone(perimeter)) return 5;
   return GEO_PERIMETER_RANK[perimeter];
 }
 
@@ -362,44 +447,188 @@ export function isGeoPerimeterFilter(
   return (GEO_PERIMETER_OPTIONS as readonly string[]).includes(value);
 }
 
+export function isGeoMacroZone(value: string): value is GeoMacroZone {
+  return (GEO_MACRO_ZONES as readonly string[]).includes(value);
+}
+
+export function isGeoMacroBadgeLabel(
+  label: string | null | undefined
+): boolean {
+  if (!label) return false;
+  return GEO_MACRO_ZONES.some(
+    (zone) => GEO_PERIMETER_FILTER_LABEL[zone] === label
+  );
+}
+
+export function isGeoProximityStratum(
+  value: GeoPerimeterFilter
+): value is GeoProximityLevel {
+  return (
+    value === 'city' ||
+    value === 'department' ||
+    value === 'region' ||
+    value === 'neighboring_region'
+  );
+}
+
+/** Exclusivement : à partir de Même département (pas Même ville, pas les quarts / Île-de-France / PARTOUT). */
+export function geoExclusiveApplies(value: GeoPerimeterFilter): boolean {
+  return (
+    value === 'department' ||
+    value === 'region' ||
+    value === 'neighboring_region'
+  );
+}
+
+/**
+ * Mode cumulatif (Exclusivement OFF) : un profil cliqué dans une strate
+ * Même… / Régions voisines ne ressort pas dans une autre strate de cette
+ * catégorie, le temps de la visite Découvrir. Quarts de France : aucun report.
+ */
+export function shouldHideViewedOnProximityShift(
+  viewedOn: GeoPerimeterFilter,
+  current: GeoPerimeterFilter,
+  currentExclusive: boolean
+): boolean {
+  if (currentExclusive) return false;
+  if (!isGeoProximityStratum(viewedOn) || !isGeoProximityStratum(current)) {
+    return false;
+  }
+  return viewedOn !== current;
+}
+
+/** Suffixe RPC pour le mode exclusif (département / région). */
+export function geoPerimeterRpcValue(
+  perimeter: GeoPerimeterFilter,
+  exclusive: boolean
+): string {
+  if (perimeter === 'anywhere') return 'anywhere';
+  // Exclusif « Régions voisines » : neighbor_match SQL est souvent faux
+  // (CP hors parenthèses, table vide). PARTOUT + filet client (REGION_NEIGHBORS).
+  if (perimeter === 'neighboring_region' && exclusive) return 'anywhere';
+  if (exclusive && geoExclusiveApplies(perimeter)) {
+    return `${perimeter}__x`;
+  }
+  return perimeter;
+}
+
 export function isGeoRadiusKm(value: number): value is GeoRadiusKm {
   return (GEO_RADIUS_KM_OPTIONS as readonly number[]).includes(value);
 }
 
+export function regionInMacroZone(
+  region: string | null | undefined,
+  zone: GeoMacroZone
+): boolean {
+  if (!region) return false;
+  return MACRO_ZONE_REGIONS[zone].includes(region);
+}
+
+export function locationInMacroZone(
+  location: string | null | undefined,
+  zone: GeoMacroZone
+): boolean {
+  if (!location?.trim()) return false;
+  if (zone === 'ile_de_france') return locationIsIleDeFrance(location);
+  if (zone === 'center' && locationIsIleDeFrance(location)) return false;
+  return regionInMacroZone(regionFromDept(parseLocation(location).dept), zone);
+}
+
+export function macroZoneFromLocation(
+  location: string | null | undefined
+): GeoMacroZone | null {
+  if (!location?.trim()) return null;
+  const dept = parseLocation(location).dept;
+  if (isIleDeFranceDept(dept)) return 'ile_de_france';
+  const region = regionFromDept(dept);
+  if (!region || region === REGION_IDF) return null;
+  for (const zone of GEO_MACRO_ZONES) {
+    if (zone === 'ile_de_france') continue;
+    if (MACRO_ZONE_REGIONS[zone].includes(region)) return zone;
+  }
+  return null;
+}
+
+/** Badge de proximité réel : strate admin, sinon quart de France du profil. */
+export function cardGeoProximityLabel(
+  flags: Partial<GeoProximityFlags> | null | undefined,
+  location?: string | null
+): string | null {
+  const level = geoProximityLevelFromFlags(flags);
+  if (level === 'city') return GEO_PERIMETER_FILTER_LABEL.city;
+  if (level === 'department') return GEO_PERIMETER_FILTER_LABEL.department;
+  if (level === 'region') return GEO_PERIMETER_FILTER_LABEL.region;
+  if (level === 'neighboring_region') {
+    return GEO_PERIMETER_FILTER_LABEL.neighboring_region;
+  }
+  const zone = macroZoneFromLocation(location);
+  return zone ? GEO_PERIMETER_FILTER_LABEL[zone] : null;
+}
+
 /**
- * Périmètre cumulatif progressif (ET avec âge / intérêts, pas entre options) :
- *   Même ville              → ville
- *   Jusqu’au département    → ville OU département
- *   Jusqu’à la région       → ville OU département OU région
- *   Jusqu’aux régions voisines → ville OU département OU région OU voisine
- *   Jusqu’à un rayon de...  → distance ≤ rayon (km)
- *   Partout                 → aucune barrière géographique
+ * Badge géographique des fiches — RÈGLE ABSOLUE, ne pas contourner :
+ * - Filtre Même… / Régions voisines / Partout → identité réelle du profil
+ *   (Même ville, Même département, etc.), y compris en recherche cumulative.
+ * - Filtre Quart de France / Île-de-France → uniquement ce libellé (jamais « Même… »)
+ */
+export function profileCardGeoBadge(
+  flags: Partial<GeoProximityFlags> | null | undefined,
+  location: string | null | undefined,
+  perimeter?: GeoPerimeterFilter | null
+): string | null {
+  if (perimeter && isGeoMacroZone(perimeter)) {
+    if (locationIsIleDeFrance(location)) {
+      return GEO_PERIMETER_FILTER_LABEL.ile_de_france;
+    }
+    return GEO_PERIMETER_FILTER_LABEL[perimeter];
+  }
+  return cardGeoProximityLabel(flags, location);
+}
+
+/**
+ * Proximité dans la classe « Même… ».
+ * Exclusivement OFF : cumulatif, de la ville jusqu’à la strate choisie.
+ * Exclusivement ON (département / région / régions voisines) : cette strate seule.
  */
 export function matchesGeoPerimeter(
   flags: Partial<GeoProximityFlags> | null | undefined,
   perimeter: GeoPerimeterFilter,
-  opts?: { distanceKm?: number | null; radiusKm?: number }
+  opts?: {
+    distanceKm?: number | null;
+    radiusKm?: number;
+    location?: string | null;
+    viewerLocation?: string | null;
+    exclusive?: boolean;
+  }
 ): boolean {
   if (perimeter === 'anywhere') return true;
 
-  if (perimeter === 'radius') {
-    const distanceKm = opts?.distanceKm;
-    const radiusKm = opts?.radiusKm;
-    if (
-      typeof distanceKm === 'number' &&
-      Number.isFinite(distanceKm) &&
-      typeof radiusKm === 'number' &&
-      Number.isFinite(radiusKm)
-    ) {
-      return distanceKm <= radiusKm;
-    }
-    return Boolean(flags?.same_city);
+  if (isGeoMacroZone(perimeter)) {
+    return locationInMacroZone(opts?.location, perimeter);
   }
 
+  const exclusive =
+    Boolean(opts?.exclusive) && geoExclusiveApplies(perimeter);
   const city = Boolean(flags?.same_city);
   const department = Boolean(flags?.same_department);
   const region = Boolean(flags?.same_region);
   const neighboring = Boolean(flags?.neighboring_region);
+
+  if (exclusive) {
+    if (perimeter === 'neighboring_region') {
+      if (opts?.viewerLocation && opts?.location) {
+        const computed = geoProximityFlags(opts.viewerLocation, opts.location);
+        return (
+          computed.neighboring_region &&
+          !computed.same_city &&
+          !computed.same_department &&
+          !computed.same_region
+        );
+      }
+      return neighboring && !city && !department && !region;
+    }
+    return geoProximityLevelFromFlags(flags) === perimeter;
+  }
 
   switch (perimeter) {
     case 'city':
@@ -421,19 +650,17 @@ export function formatDistanceKmBadge(
   if (typeof distanceKm !== 'number' || !Number.isFinite(distanceKm) || distanceKm < 0) {
     return null;
   }
-  return `À ${Math.max(1, Math.round(distanceKm))} km`;
+  return `à ${Math.max(1, Math.round(distanceKm))} km`;
 }
 
 /**
- * Badge unique sous le nom (Découvrir / Accueil) :
- * - proximité admin (ville, département, région, région voisine) → texte sémantique
- * - au-delà (rayon / Partout hors de ces cercles) → « À X km »
+ * Badge géographique des fiches : strate locale, ou quart si le filtre est un quart.
  */
 export function discoveryLocationBadge(
   flags: Partial<GeoProximityFlags> | null | undefined,
-  distanceKm: number | null | undefined
+  _distanceKm?: number | null | undefined,
+  location?: string | null,
+  perimeter?: GeoPerimeterFilter | null
 ): string | null {
-  const adminBadge = geoProximityBadge(flags);
-  if (adminBadge) return adminBadge;
-  return formatDistanceKmBadge(distanceKm);
+  return profileCardGeoBadge(flags, location, perimeter);
 }

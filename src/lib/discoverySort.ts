@@ -1,3 +1,9 @@
+import {
+  geoProximityLevelFromFlags,
+  macroZoneFromLocation,
+  type GeoProximityFlags,
+} from '@/lib/geoProximity';
+
 /** Fenêtre « Nouveaux profils » selon le nombre total d’inscriptions. */
 export function newProfilesWindowMonths(signupCount: number): 1 | 2 | 3 | 4 | 5 | 6 {
   if (!Number.isFinite(signupCount) || signupCount < 500) return 6;
@@ -8,9 +14,8 @@ export function newProfilesWindowMonths(signupCount: number): 1 | 2 | 3 | 4 | 5 
   return 1;
 }
 
-export function newProfilesSortHint(months: number): string {
-  if (months <= 1) return 'Nouveaux profils sur le dernier mois';
-  return `Nouveaux profils sur les ${months} derniers mois`;
+export function newProfilesSortHint(_months: number): string {
+  return 'Du plus récent au plus ancien sur les 6 derniers mois';
 }
 
 export function newProfilesCutoffMs(
@@ -116,4 +121,34 @@ export function sortDiscoveryCandidates<T extends SortableCandidate>(
     );
   }
   return list;
+}
+
+type GeoSortableCandidate = GeoProximityFlags & {
+  location?: string | null;
+  distance_km: number | null;
+};
+
+/**
+ * Résultat des filtres Découvrir (toggle « Trier par » OFF) :
+ * Même ville → département → région → régions voisines → quarts de France,
+ * et dans chaque groupe du plus proche au plus loin.
+ */
+function filterGeoGroupRank(c: GeoSortableCandidate): number {
+  const level = geoProximityLevelFromFlags(c);
+  if (level === 'city') return 1;
+  if (level === 'department') return 2;
+  if (level === 'region') return 3;
+  if (level === 'neighboring_region') return 4;
+  if (macroZoneFromLocation(c.location)) return 5;
+  return 6;
+}
+
+export function sortDiscoveryFilterResults<T extends GeoSortableCandidate>(
+  candidates: T[]
+): T[] {
+  return candidates.slice().sort(
+    (a, b) =>
+      filterGeoGroupRank(a) - filterGeoGroupRank(b) ||
+      distanceKm(a) - distanceKm(b)
+  );
 }

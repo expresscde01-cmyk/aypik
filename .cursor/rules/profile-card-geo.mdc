@@ -1,0 +1,47 @@
+---
+description: Fiches profil — deux lignes géo empilées (règle figée)
+alwaysApply: true
+---
+
+# Fiches de profil — géographie (règle absolue)
+
+Ne **jamais** retirer, contourner ni fusionner ces deux lignes. Source unique de rendu : `CardGeoFacts` (`src/components/GeoBadgeLine.tsx`). Source unique du libellé : `profileCardGeoBadge`. Distance : `formatDistanceKmBadge`.
+
+`CardGeoFacts` **ne retourne jamais `null`**. Les deux nœuds DOM sont toujours présents.
+
+## Markup obligatoire (deux lignes empilées)
+
+```html
+<div class="profile-card-geo">
+  <p class="profile-card-geo-badge">…</p>
+  <p class="profile-card-geo-km">à X km</p>
+</div>
+```
+
+## 1. Première ligne — badge vert foncé
+
+- Filtre **Même ville / département / région / Régions voisines** (ou Partout) : **identité réelle** du profil (`Même ville`, `Même département`, etc.). En mode cumulatif, une fiche « Même ville » reste « Même ville » même si la recherche est « Même région ».
+- Filtre **Quart de France** ou **Île-de-France** : uniquement ce libellé (`Centre de la France`, `Île-de-France`, …), icône carte. Jamais « Même… ».
+- Paris / Versailles / Île-de-France (75, 77, 78, 91–95) ne sont **jamais** « Centre de la France » (strate **Île-de-France**).
+
+Exemple d’erreur interdite : filtre `Centre de la France` + badge `Même région`. Idem : Paris (75) ou Versailles (78) + badge `Centre de la France`.
+
+Couleur figée : `#047857`.
+
+## 2. Deuxième ligne — distance vert clair
+
+Juste sous le badge, **toujours** : `à 42 km` (forme `formatDistanceKmBadge`). Jamais fusionnée avec la ligne 1.
+
+Couleur figée : `#10b981` (plus clair que `#047857`).
+
+```css
+.profile-card-geo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.profile-card-geo-badge { color: #047857; }
+.profile-card-geo-km { color: #10b981; }
+```
+
+Ne pas modifier ces couleurs. Calculer le badge au rendu via `perimeter` + flags + location (pas un `geo_badge` figé qui pourrait rester « Même… » après un filtre Quart).

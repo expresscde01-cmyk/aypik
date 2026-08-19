@@ -8,12 +8,14 @@ import {
   AlertCircle,
   Zap,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
 import { PROFILE_OWN_COLUMNS, type Profile } from '@/components/ProfileSetup';
 import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
+import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   AdvancedFiltersTeaser,
   LikesQuotaHint,
@@ -25,16 +27,18 @@ import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import {
   GEO_PERIMETER_FILTER_LABEL,
-  GEO_PERIMETER_OPTIONS,
-  GEO_RADIUS_KM_OPTIONS,
+  GEO_PERIMETER_MENU,
   isGeoPerimeterFilter,
-  isGeoRadiusKm,
+  isGeoProximityStratum,
+  geoExclusiveApplies,
+  shouldHideViewedOnProximityShift,
+  type GeoPerimeterFilter,
 } from '@/lib/geoProximity';
 import {
   fetchDiscoveryCatalog,
   fetchPlatformSignupCount,
   type DiscoveryCandidate,
-  type DiscoverySortId,
+  type DiscoveryCatalogSortId,
 } from '@/lib/discoveryCatalog';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 import {
@@ -45,6 +49,7 @@ import {
   newProfilesSortHint,
   newProfilesWindowMonths,
   sortDiscoveryCandidates,
+  sortDiscoveryFilterResults,
 } from '@/lib/discoverySort';
 import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
@@ -52,6 +57,7 @@ import ProfilePhoto from '@/components/ProfilePhoto';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
+import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
 
 const SORT_OPTIONS = [
   {
@@ -103,17 +109,317 @@ function PaletteSortIcon() {
   );
 }
 
+function GeoPerimeterSelect({
+  value,
+  exclusive,
+  disabled,
+  onChange,
+  onExclusiveChange,
+}: {
+  value: GeoPerimeterFilter;
+  exclusive: boolean;
+  disabled: boolean;
+  onChange: (next: GeoPerimeterFilter) => void;
+  onExclusiveChange: (next: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const exclusiveApplies = geoExclusiveApplies(value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span className="geo-perimeter-closed-text">
+          <span
+            className={`geo-perimeter-closed-label${value === 'anywhere' ? ' font-medium' : ''}`}
+          >
+            {GEO_PERIMETER_FILTER_LABEL[value]}
+          </span>
+          {exclusiveApplies && exclusive ? (
+            <span className="geo-perimeter-closed-exclusive">
+              (exclusivement)
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={`geo-perimeter-closed-chevron w-4 h-4 text-emerald-600 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Périmètre géographique"
+          className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+        >
+          <li className="px-2 pt-0.5 pb-1">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={exclusiveApplies && exclusive}
+              aria-disabled={!exclusiveApplies}
+              aria-label="Exclusivement"
+              title={
+                exclusiveApplies
+                  ? 'Uniquement cette strate, hors zones plus proches'
+                  : 'Disponible à partir de Même département, puis Même région et Régions voisines'
+              }
+              className={`geo-exclusive-toggle${
+                exclusiveApplies && exclusive
+                  ? ' geo-exclusive-toggle--on'
+                  : ''
+              }${exclusiveApplies ? '' : ' geo-exclusive-toggle--idle'}`}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!exclusiveApplies) {
+                  setOpen(false);
+                  return;
+                }
+                onExclusiveChange(!exclusive);
+                setOpen(false);
+              }}
+            >
+              <span className="geo-exclusive-toggle-text">Exclusivement</span>
+              <span className="geo-exclusive-toggle-track" aria-hidden>
+                <span className="geo-exclusive-toggle-thumb" />
+              </span>
+            </button>
+          </li>
+          {GEO_PERIMETER_MENU.map((item, index) => {
+            if (item.type === 'divider') {
+              return (
+                <li
+                  key={`divider-${item.style}-${index}`}
+                  role="separator"
+                  aria-hidden
+                  className="px-2.5 py-1.5 pointer-events-none"
+                >
+                  <span
+                    className={
+                      item.style === 'solid'
+                        ? 'block border-t border-gray-200'
+                        : 'block border-t-[3px] border-double border-gray-200'
+                    }
+                  />
+                </li>
+              );
+            }
+            const selected = item.id === value;
+            const isAnywhere = item.id === 'anywhere';
+            return (
+              <li key={item.id} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                      : isAnywhere
+                        ? 'text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-950'
+                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                  }`}
+                  onClick={() => {
+                    onChange(item.id);
+                    setOpen(false);
+                  }}
+                >
+                  {GEO_PERIMETER_FILTER_LABEL[item.id]}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+type InterestOverlapValue = 0 | 1 | 2 | 3;
+
+const INTEREST_OVERLAP_LABEL: Record<InterestOverlapValue, string> = {
+  0: 'I N D I F F É R E N T',
+  1: "Au moins 1 centre d'intérêt",
+  2: "Au moins 2 centres d'intérêt",
+  3: "Au moins 3 centres d'intérêt",
+};
+
+const INTEREST_OVERLAP_MENU: readonly (
+  | { type: 'option'; value: InterestOverlapValue }
+  | { type: 'divider' }
+)[] = [
+  { type: 'option', value: 1 },
+  { type: 'option', value: 2 },
+  { type: 'option', value: 3 },
+  { type: 'divider' },
+  { type: 'option', value: 0 },
+];
+
+function isInterestOverlapValue(value: number): value is InterestOverlapValue {
+  return value === 0 || value === 1 || value === 2 || value === 3;
+}
+
+function InterestOverlapSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  disabled: boolean;
+  onChange: (next: InterestOverlapValue) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const current: InterestOverlapValue = isInterestOverlapValue(value)
+    ? value
+    : 1;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span
+          className={`truncate text-emerald-950${current === 0 ? ' font-medium' : ''}`}
+        >
+          {INTEREST_OVERLAP_LABEL[current]}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-emerald-600 shrink-0 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Centres d’intérêt en commun"
+          className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 shadow-sm overflow-hidden"
+        >
+          {INTEREST_OVERLAP_MENU.map((item, index) => {
+            if (item.type === 'divider') {
+              return (
+                <li
+                  key={`divider-${index}`}
+                  role="separator"
+                  aria-hidden
+                  className="px-2.5 py-1.5 pointer-events-none"
+                >
+                  <span className="block border-t-[3px] border-double border-gray-200" />
+                </li>
+              );
+            }
+            const selected = item.value === current;
+            const isGlobal = item.value === 0;
+            return (
+              <li
+                key={item.value}
+                role="option"
+                aria-selected={selected}
+              >
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                      : isGlobal
+                        ? 'text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-950'
+                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                  }`}
+                  onClick={() => {
+                    onChange(item.value);
+                    setOpen(false);
+                  }}
+                >
+                  {INTEREST_OVERLAP_LABEL[item.value]}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 type Candidate = DiscoveryCandidate;
 
 export default function DiscoveryPage({
   unreadBySender = {},
   onOpenUnreadChat,
   profileEpoch = 0,
+  pageActive = true,
 }: {
   unreadBySender?: Record<string, number>;
   onOpenUnreadChat?: (actorId: string) => void;
   /** Incrémenté après une MAJ profil / à chaque visite Découvrir : force un reload DB. */
   profileEpoch?: number;
+  /** False dès qu’on quitte Découvrir : la mémoire de session se réinitialise. */
+  pageActive?: boolean;
 } = {}) {
   const { user } = useAuth();
   const userId = user?.id;
@@ -129,31 +435,41 @@ export default function DiscoveryPage({
     listen: false,
     persistOnChange: false,
   });
-  const { geoPerimeter, geoRadiusKm, minOverlap } = prefs;
+  const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap } = prefs;
+  const [sortEnabled, setSortEnabled] = useState(false);
   const [sortChoice, setSortChoice] = useState<SortChoice>('nouveaux');
+  const filtersActive = !sortEnabled;
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
   const geoFilterActive = geoPerimeter !== 'anywhere';
   const hasActiveFilter = geoFilterActive || minOverlap > 0;
   /**
-   * Masqués tout de suite dans la grille du filtre actif (like / flash / masquer).
+   * Masqués tout de suite dans la grille (like / flash / masquer).
    * Conservés pour les fetches suivants de la visite.
    */
   const [sessionHiddenIds, setSessionHiddenIds] = useState(
     () => new Set<string>()
   );
   /**
-   * Consultés sans like ni flash : restent visibles sur le filtre en cours,
-   * exclus seulement au changement de filtres / périmètre élargi.
+   * Consultés (fiche ouverte) : restent visibles sur la strate en cours,
+   * exclus des autres strates Même… en mode cumulatif, le temps de la visite.
    */
   const sessionViewedIdsRef = useRef<Set<string>>(new Set());
+  const sessionViewedOnPerimeterRef = useRef<Map<string, GeoPerimeterFilter>>(
+    new Map()
+  );
   const sessionHiddenIdsRef = useRef(sessionHiddenIds);
   sessionHiddenIdsRef.current = sessionHiddenIds;
-  const lastFetchPrefsKeyRef = useRef<string | null>(null);
+  const lastProximityPerimeterRef = useRef<GeoPerimeterFilter | null>(null);
+  const geoPerimeterRef = useRef(geoPerimeter);
+  geoPerimeterRef.current = geoPerimeter;
+  const leftDiscoverRef = useRef(false);
+  const [visitEpoch, setVisitEpoch] = useState(0);
 
   const hideFromCurrentFilter = useCallback((id: string) => {
     if (!id) return;
     sessionViewedIdsRef.current.add(id);
+    sessionViewedOnPerimeterRef.current.set(id, geoPerimeterRef.current);
     setSessionHiddenIds((prev) => {
       if (prev.has(id)) return prev;
       const next = new Set(prev);
@@ -163,8 +479,33 @@ export default function DiscoveryPage({
   }, []);
 
   const markViewedForLaterFilters = useCallback((id: string) => {
-    if (id) sessionViewedIdsRef.current.add(id);
+    if (!id) return;
+    sessionViewedIdsRef.current.add(id);
+    if (!sessionViewedOnPerimeterRef.current.has(id)) {
+      sessionViewedOnPerimeterRef.current.set(id, geoPerimeterRef.current);
+    }
   }, []);
+
+  const clearDiscoverSession = useCallback(() => {
+    sessionViewedIdsRef.current = new Set();
+    sessionViewedOnPerimeterRef.current = new Map();
+    lastProximityPerimeterRef.current = null;
+    setSessionHiddenIds(new Set());
+    setOpenProfile(null);
+  }, []);
+
+  useEffect(() => {
+    if (!pageActive) {
+      leftDiscoverRef.current = true;
+      clearDiscoverSession();
+      return;
+    }
+    if (leftDiscoverRef.current) {
+      leftDiscoverRef.current = false;
+      clearDiscoverSession();
+      setVisitEpoch((n) => n + 1);
+    }
+  }, [pageActive, clearDiscoverSession]);
 
   if (userId) syncDiscoverPrefs(userId, prefs);
 
@@ -225,36 +566,61 @@ export default function DiscoveryPage({
     enabled: Boolean(userId),
   });
 
-  const prefsKey = `${prefs.geoPerimeter}|${prefs.geoRadiusKm}|${prefs.minOverlap}`;
+  const catalogPrefs = useMemo(() => {
+    const base = sortEnabled
+      ? { ...prefs, geoPerimeter: 'anywhere' as const, minOverlap: 0 }
+      : prefs;
+    if (!geoExclusiveApplies(base.geoPerimeter)) {
+      return { ...base, geoExclusive: false };
+    }
+    return base;
+  }, [sortEnabled, prefs]);
+  const prefsKey = `${catalogPrefs.geoPerimeter}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}`;
   const newMonths = newProfilesWindowMonths(signupCount);
+  const catalogSort: DiscoveryCatalogSortId = sortEnabled
+    ? sortChoice
+    : 'score';
   const cutoffIso = useMemo(
-    () => (sortChoice === 'nouveaux' ? newProfilesCutoffIso(newMonths) : null),
-    [sortChoice, newMonths]
+    () =>
+      sortEnabled && sortChoice === 'nouveaux'
+        ? newProfilesCutoffIso(newMonths)
+        : null,
+    [sortEnabled, sortChoice, newMonths]
   );
 
   const catalogQuery = useQuery({
     queryKey: queryKeys.discoveryCatalog(
       userId,
       prefsKey,
-      sortChoice,
+      catalogSort,
       cutoffIso,
-      profileEpoch
+      profileEpoch,
+      visitEpoch
     ),
     enabled: Boolean(userId && myProfile),
     queryFn: ({ signal }) => {
       const excludeIds = Array.from(sessionHiddenIdsRef.current);
-      const filtersChanged =
-        lastFetchPrefsKeyRef.current !== null &&
-        lastFetchPrefsKeyRef.current !== prefsKey;
-      if (filtersChanged) {
+      const nextPerimeter = catalogPrefs.geoPerimeter;
+      const nextExclusive = Boolean(catalogPrefs.geoExclusive);
+      const prevPerimeter = lastProximityPerimeterRef.current;
+      if (
+        prevPerimeter &&
+        shouldHideViewedOnProximityShift(
+          prevPerimeter,
+          nextPerimeter,
+          nextExclusive
+        )
+      ) {
         sessionViewedIdsRef.current.forEach((id) => excludeIds.push(id));
       }
-      lastFetchPrefsKeyRef.current = prefsKey;
+      if (isGeoProximityStratum(nextPerimeter)) {
+        lastProximityPerimeterRef.current = nextPerimeter;
+      }
       return fetchDiscoveryCatalog({
         userId: userId!,
         myProfile: myProfile!,
-        prefs,
-        sort: sortChoice as DiscoverySortId,
+        prefs: catalogPrefs,
+        sort: catalogSort,
         createdAfter: cutoffIso,
         excludeIds,
         signal,
@@ -264,8 +630,32 @@ export default function DiscoveryPage({
 
   const catalog = catalogQuery.data ?? [];
   const candidates = useMemo(
-    () => catalog.filter((c) => !sessionHiddenIds.has(c.id)),
-    [catalog, sessionHiddenIds]
+    () =>
+      catalog.filter((c) => {
+        if (sessionHiddenIds.has(c.id)) return false;
+        if (!candidatePassesGeoFilter(c, catalogPrefs, myProfile?.location))
+          return false;
+        const viewedOn = sessionViewedOnPerimeterRef.current.get(c.id);
+        if (
+          viewedOn &&
+          shouldHideViewedOnProximityShift(
+            viewedOn,
+            geoPerimeter,
+            geoExclusive
+          )
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [
+      catalog,
+      sessionHiddenIds,
+      catalogPrefs,
+      geoPerimeter,
+      geoExclusive,
+      myProfile?.location,
+    ]
   );
   const loading = viewerQuery.isLoading;
   const searching = catalogQuery.isLoading;
@@ -297,8 +687,11 @@ export default function DiscoveryPage({
   };
 
   const displayed = useMemo(
-    () => sortDiscoveryCandidates(candidates, sortChoice, newMonths),
-    [candidates, sortChoice, newMonths]
+    () =>
+      sortEnabled
+        ? sortDiscoveryCandidates(candidates, sortChoice, newMonths)
+        : sortDiscoveryFilterResults(candidates),
+    [candidates, sortChoice, newMonths, sortEnabled]
   );
 
   const countLabel = `${displayed.length} profil${displayed.length > 1 ? 's' : ''}`;
@@ -424,6 +817,21 @@ export default function DiscoveryPage({
     [user, actingId, flashedIds, status, showFlashCta, hideFromCurrentFilter]
   );
 
+  const handleSortToggle = useCallback(() => {
+    if (sortEnabled) {
+      setSortEnabled(false);
+      return;
+    }
+    setSortEnabled(true);
+    setShowFilters(false);
+  }, [sortEnabled]);
+
+  const handleFiltersToggle = useCallback(() => {
+    if (sortEnabled) return;
+    setSortEnabled(false);
+    setShowFilters((open) => !open);
+  }, [sortEnabled]);
+
   if (loading || membershipLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -449,18 +857,33 @@ export default function DiscoveryPage({
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       {status.can_use_advanced_filters ? (
-        <div className="space-y-2">
+        <div
+          className={`space-y-2${sortEnabled ? ' discovery-filters--off' : ''}`}
+          onClickCapture={(event) => {
+            if (!sortEnabled) return;
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onPointerDownCapture={(event) => {
+            if (!sortEnabled) return;
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        >
           <AdvancedFiltersTeaser
             locked={false}
-            expanded={showFilters}
-            onToggle={() => setShowFilters((open) => !open)}
+            expanded={filtersActive && showFilters}
+            inactive={sortEnabled}
+            onToggle={handleFiltersToggle}
             activeCount={
-              [geoFilterActive, minOverlap > 0].filter(Boolean).length
+              filtersActive
+                ? [geoFilterActive, minOverlap > 0].filter(Boolean).length
+                : 0
             }
             priceLabel={priceLabel}
             status={status}
           />
-          {showFilters && (
+          {filtersActive && showFilters && (
             <div
               id="discovery-filters-panel"
               className="rounded-2xl border border-rose-100 bg-white px-3 py-3 space-y-2.5"
@@ -469,64 +892,43 @@ export default function DiscoveryPage({
                 <Sparkles className="w-3.5 h-3.5" />
                 Suggestions ciblées
               </p>
-              <label className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm text-gray-700">
                 Périmètre géographique
-                <select
+                <span className="text-[11px] leading-snug text-gray-500 font-normal">
+                  Option &quot;Exclusivement&quot; en haut du menu déroulant
+                </span>
+                <GeoPerimeterSelect
                   value={geoPerimeter}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (isGeoPerimeterFilter(v)) {
-                      setPrefs((prev) => ({ ...prev, geoPerimeter: v }));
+                  exclusive={geoExclusive}
+                  disabled={!filtersActive}
+                  onChange={(next) => {
+                    if (!filtersActive) return;
+                    if (isGeoPerimeterFilter(next)) {
+                      setPrefs((prev) => ({
+                        ...prev,
+                        geoPerimeter: next,
+                        geoExclusive: geoExclusiveApplies(next)
+                          ? prev.geoExclusive
+                          : false,
+                      }));
                     }
                   }}
-                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                >
-                  {GEO_PERIMETER_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {GEO_PERIMETER_FILTER_LABEL[option]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {geoPerimeter === 'radius' && (
-                <label className="flex flex-col gap-1 text-sm text-gray-700">
-                  Distance
-                  <select
-                    value={geoRadiusKm}
-                    onChange={(e) => {
-                      const km = Number(e.target.value);
-                      if (isGeoRadiusKm(km)) {
-                        setPrefs((prev) => ({ ...prev, geoRadiusKm: km }));
-                      }
-                    }}
-                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                  >
-                    {GEO_RADIUS_KM_OPTIONS.map((km) => (
-                      <option key={km} value={km}>
-                        {km} km
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
+                  onExclusiveChange={(next) => {
+                    if (!filtersActive) return;
+                    setPrefs((prev) => ({ ...prev, geoExclusive: next }));
+                  }}
+                />
+              </div>
               <label className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
-                <select
-                  value={minOverlap === 0 ? '' : minOverlap}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setPrefs((prev) => ({
-                      ...prev,
-                      minOverlap: v === '' ? 0 : Number(v),
-                    }));
+                <InterestOverlapSelect
+                  value={minOverlap}
+                  disabled={!filtersActive}
+                  onChange={(next) => {
+                    if (!filtersActive) return;
+                    setPrefs((prev) => ({ ...prev, minOverlap: next }));
                   }}
-                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                >
-                  <option value="">Indifférent</option>
-                  <option value={1}>Au moins 1 centre d'intérêt</option>
-                  <option value={2}>Au moins 2 centres d'intérêt</option>
-                  <option value={3}>Au moins 3 centres d'intérêt</option>
-                </select>
+                />
               </label>
             </div>
           )}
@@ -583,7 +985,7 @@ export default function DiscoveryPage({
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
             <Heart className="w-9 h-9 text-rose-300" />
           </div>
-          {hasActiveFilter ? (
+          {filtersActive && hasActiveFilter ? (
             <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
               Aucun profil ne correspond à ces filtres.
             </p>
@@ -622,19 +1024,41 @@ export default function DiscoveryPage({
           <div className="space-y-2">
             <p className="text-xs text-gray-400">{countLabel}</p>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-              <p
+              <button
+                type="button"
                 id="discovery-sort-label"
-                className="text-[11px] text-gray-400 shrink-0"
+                role="switch"
+                aria-checked={sortEnabled}
+                aria-controls="discovery-sort-pills"
+                className={`discovery-sort-toggle${sortEnabled ? ' discovery-sort-toggle--on' : ''}`}
+                onClick={handleSortToggle}
               >
-                Trier par :
-              </p>
+                <span className="discovery-sort-toggle-track" aria-hidden>
+                  <span className="discovery-sort-toggle-thumb" />
+                </span>
+                <span className="discovery-sort-toggle-text">Trier par</span>
+              </button>
               <div
+                id="discovery-sort-pills"
                 role="radiogroup"
                 aria-labelledby="discovery-sort-label"
-                className="discovery-sort-pills flex flex-wrap gap-1.5"
+                aria-disabled={!sortEnabled}
+                className={`discovery-sort-pills flex flex-wrap gap-1.5${
+                  sortEnabled ? '' : ' discovery-sort-pills--off'
+                }`}
+                onClickCapture={(event) => {
+                  if (sortEnabled) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onPointerDownCapture={(event) => {
+                  if (sortEnabled) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
               >
               {SORT_OPTIONS.map((option) => {
-                const selected = sortChoice === option.id;
+                const selected = sortEnabled && sortChoice === option.id;
                 const hint = sortHints[option.id];
                 return (
                   <div
@@ -650,8 +1074,14 @@ export default function DiscoveryPage({
                       type="button"
                       role="radio"
                       aria-checked={selected}
+                      aria-disabled={!sortEnabled}
+                      disabled={!sortEnabled}
+                      tabIndex={sortEnabled ? 0 : -1}
                       aria-label={`${option.label}. ${hint}`}
-                      onClick={() => setSortChoice(option.id)}
+                      onClick={() => {
+                        if (!sortEnabled) return;
+                        setSortChoice(option.id);
+                      }}
                       className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all ${
                         selected
                           ? 'discovery-sort-pill-active'
@@ -676,7 +1106,7 @@ export default function DiscoveryPage({
 
           {displayed.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
-              {sortChoice === 'nouveaux'
+              {sortEnabled && sortChoice === 'nouveaux'
                 ? 'Aucun nouveau profil sur cette période.'
                 : 'Profils masqués. Les filtres n’ont pas changé le résultat.'}
             </p>
@@ -686,6 +1116,7 @@ export default function DiscoveryPage({
                 <DiscoveryCard
                   key={c.id}
                   candidate={c}
+                  geoPerimeter={geoPerimeter}
                   eager={index < 4}
                   unreadCount={unreadBySender[c.id] || 0}
                   alreadyFlashed={flashedIds.has(c.id)}
@@ -731,6 +1162,7 @@ export default function DiscoveryPage({
       {openProfile && (
         <ProfileDetailModal
           candidate={openProfile}
+          geoPerimeter={geoPerimeter}
           alreadyFlashed={flashedIds.has(openProfile.id)}
           alreadyLiked={likedIds.has(openProfile.id)}
           busy={actingId === openProfile.id}
@@ -754,6 +1186,7 @@ export default function DiscoveryPage({
 
 const DiscoveryCard = memo(function DiscoveryCard({
   candidate: c,
+  geoPerimeter,
   eager,
   unreadCount,
   alreadyFlashed,
@@ -768,6 +1201,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onLike,
 }: {
   candidate: Candidate;
+  geoPerimeter: GeoPerimeterFilter;
   eager: boolean;
   unreadCount: number;
   alreadyFlashed: boolean;
@@ -781,7 +1215,6 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onFlash: (c: Candidate) => void;
   onLike: (c: Candidate) => void;
 }) {
-  const geoBadge = c.geo_badge;
   return (
     <li>
       <article
@@ -861,23 +1294,20 @@ const DiscoveryCard = memo(function DiscoveryCard({
               {c.location}
             </p>
           )}
-          {(c.mutual_interests.length > 0 || geoBadge) && (
-            <div className="flex flex-col gap-0.5">
-              {c.mutual_interests.length > 0 && (
-                <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                  <Sparkles className="w-3 h-3 shrink-0" />
-                  {c.mutual_interests.length === 1
-                    ? "1 centre d'intérêt en commun"
-                    : `${c.mutual_interests.length} centres d'intérêt en commun`}
-                </p>
-              )}
-              {geoBadge && (
-                <p className="text-[11px] text-emerald-700 font-medium">
-                  {geoBadge}
-                </p>
-              )}
-            </div>
+          {c.mutual_interests.length > 0 && (
+            <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+              <Sparkles className="w-3 h-3 shrink-0" />
+              {c.mutual_interests.length === 1
+                ? "1 centre d'intérêt en commun"
+                : `${c.mutual_interests.length} centres d'intérêt en commun`}
+            </p>
           )}
+          <CardGeoFacts
+            flags={c}
+            location={c.location}
+            perimeter={geoPerimeter}
+            distanceKm={c.distance_km}
+          />
           <div
             className="relative z-10 flex items-center justify-center gap-2 pt-1.5 overflow-visible"
             onClick={(e) => e.stopPropagation()}

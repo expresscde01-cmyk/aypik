@@ -27,7 +27,8 @@ export const queryKeys = {
     prefsKey: string,
     sort: string,
     createdAfter: string | null,
-    epoch: number
+    epoch: number,
+    visitEpoch = 0
   ) =>
     [
       'suggest-profiles',
@@ -37,6 +38,7 @@ export const queryKeys = {
       sort,
       createdAfter,
       epoch,
+      visitEpoch,
     ] as const,
   homeSuggestions: (
     userId: string | undefined,

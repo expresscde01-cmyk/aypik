@@ -5,8 +5,9 @@ import {
   type ProfileGender,
 } from '@/lib/dating';
 import {
-  discoveryLocationBadge,
+  profileCardGeoBadge,
   matchesGeoPerimeter,
+  geoExclusiveApplies,
   type GeoProximityFlags,
 } from '@/lib/geoProximity';
 import {
@@ -16,7 +17,7 @@ import {
 } from '@/lib/geoCommunes';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 
-export type DistanceProfile = GeoProximityFlags & {
+export type DistanceProfile = {
   id: string;
   location?: string | null;
 };
@@ -52,12 +53,43 @@ export async function resolveProfileDistances(
   return map;
 }
 
+export async function fillMissingProfileDistances<
+  T extends { id: string; location?: string | null; distance_km: number | null },
+>(
+  myLocation: string | null | undefined,
+  candidates: T[],
+  signal?: AbortSignal
+): Promise<T[]> {
+  if (!myLocation?.trim() || candidates.length === 0) return candidates;
+  const missing = candidates.filter((candidate) => {
+    const km = candidate.distance_km;
+    if (typeof km === 'number' && Number.isFinite(km) && km >= 0) return false;
+    return Boolean(String(candidate.location || '').trim());
+  });
+  if (missing.length === 0) return candidates;
+  const map = await resolveProfileDistances(
+    myLocation,
+    missing,
+    undefined,
+    signal
+  );
+  if (map.size === 0) return candidates;
+  return candidates.map((candidate) => {
+    const next = map.get(candidate.id);
+    if (typeof next !== 'number' || !Number.isFinite(next) || next < 0) {
+      return candidate;
+    }
+    return { ...candidate, distance_km: next };
+  });
+}
+
 export function suggestionGeoBadge(
   flags: Partial<GeoProximityFlags> | null | undefined,
-  distanceKm: number | null | undefined,
-  _prefs?: SuggestionPrefs
+  _distanceKm?: number | null | undefined,
+  prefs?: SuggestionPrefs,
+  location?: string | null
 ): string | null {
-  return discoveryLocationBadge(flags, distanceKm);
+  return profileCardGeoBadge(flags, location, prefs?.geoPerimeter);
 }
 
 export type SearchCandidate = {
@@ -66,6 +98,7 @@ export type SearchCandidate = {
   mutualCount: number;
   flags: Partial<GeoProximityFlags>;
   distanceKm: number | null;
+  location?: string | null;
 };
 
 /**
@@ -91,6 +124,10 @@ export function passesSearchCriteria(
     !matchesGeoPerimeter(candidate.flags, prefs.geoPerimeter, {
       distanceKm: candidate.distanceKm,
       radiusKm: prefs.geoRadiusKm,
+      location: candidate.location,
+      exclusive:
+        Boolean(prefs.geoExclusive) &&
+        geoExclusiveApplies(prefs.geoPerimeter),
     })
   ) {
     return false;
@@ -103,6 +140,29 @@ export function passesSearchCriteria(
   }
 
   return true;
+}
+
+/** Filet client : strate + exclusif, même si le SQL déployé est en retard. */
+export function candidatePassesGeoFilter(
+  candidate: {
+    same_city?: boolean;
+    same_department?: boolean;
+    same_region?: boolean;
+    neighboring_region?: boolean;
+    location?: string | null;
+    distance_km?: number | null;
+  },
+  prefs: SuggestionPrefs,
+  viewerLocation?: string | null
+): boolean {
+  return matchesGeoPerimeter(candidate, prefs.geoPerimeter, {
+    distanceKm: candidate.distance_km,
+    radiusKm: prefs.geoRadiusKm,
+    location: candidate.location,
+    viewerLocation,
+    exclusive:
+      Boolean(prefs.geoExclusive) && geoExclusiveApplies(prefs.geoPerimeter),
+  });
 }
 
 export function passesSuggestionPillars(

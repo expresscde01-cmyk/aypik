@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import type { Profile } from '@/components/ProfileSetup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
@@ -123,9 +123,20 @@ export default function MatchManageModal({
               type="button"
               disabled={busy}
               onClick={() => setConfirmPurge(true)}
-              className="w-full py-2.5 px-2 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 leading-tight"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 leading-tight"
             >
-              {busy ? '…' : 'Supprimer définitivement'}
+              {busy ? (
+                '…'
+              ) : (
+                <>
+                  <Trash2
+                    className="w-5 h-5 shrink-0"
+                    strokeWidth={2.75}
+                    aria-hidden
+                  />
+                  <span>Supprimer définitivement</span>
+                </>
+              )}
             </button>
           </div>
         ) : (

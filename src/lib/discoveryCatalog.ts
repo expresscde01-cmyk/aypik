@@ -1,17 +1,25 @@
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
 import { parseProfileGender } from '@/lib/dating';
-import { suggestionGeoBadge } from '@/lib/suggestionMatch';
+import {
+  geoPerimeterRpcValue,
+  geoProximityFlags,
+  geoProximityLevelFromFlags,
+} from '@/lib/geoProximity';
+import { suggestionGeoBadge, candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
-export const DISCOVER_CATALOG_LIMIT = 80;
+export const DISCOVER_CATALOG_LIMIT = 500;
 
 export type DiscoverySortId =
   | 'nouveaux'
   | 'distance'
   | 'interests'
   | 'actifs';
+
+/** Tri catalogue : les 4 boutons Découvrir, ou le ranking filtres (toggle OFF). */
+export type DiscoveryCatalogSortId = DiscoverySortId | 'score';
 
 export type DiscoveryCandidate = Profile & {
   age: number;
@@ -62,7 +70,8 @@ export type SuggestRow = {
 export function mapSuggestRow(
   row: SuggestRow,
   myInterests: string[],
-  prefs: SuggestionPrefs
+  prefs: SuggestionPrefs,
+  myLocation?: string | null
 ): DiscoveryCandidate {
   const interests = row.interests || [];
   const mutual_interests = interests.filter((i) => myInterests.includes(i));
@@ -71,12 +80,18 @@ export function mapSuggestRow(
     distanceRaw === null || distanceRaw === undefined
       ? null
       : Number(distanceRaw);
-  const flags = {
+  const sqlFlags = {
     same_city: Boolean(row.same_city),
     same_department: Boolean(row.same_department),
     same_region: Boolean(row.same_region),
     neighboring_region: Boolean(row.neighboring_region),
   };
+  const computed =
+    myLocation && row.location
+      ? geoProximityFlags(myLocation, row.location)
+      : null;
+  const flags =
+    computed && geoProximityLevelFromFlags(computed) ? computed : sqlFlags;
   return {
     id: row.id,
     display_name: row.display_name,
@@ -98,7 +113,8 @@ export function mapSuggestRow(
     geo_badge: suggestionGeoBadge(
       flags,
       Number.isFinite(distance_km as number) ? distance_km : null,
-      prefs
+      prefs,
+      row.location
     ),
     created_at: row.created_at,
     updated_at: row.updated_at || undefined,
@@ -117,17 +133,22 @@ export function suggestProfilesRpcArgs(options: {
   minOverlap: number;
   mode: 'home' | 'discover';
   geoPerimeter: SuggestionPrefs['geoPerimeter'];
+  geoExclusive?: boolean;
   radiusKm: SuggestionPrefs['geoRadiusKm'];
   sort: string;
   createdAfter?: string | null;
   excludeIds?: string[];
 }): Record<string, unknown> {
+  const geoReset = options.geoPerimeter === 'anywhere';
   const args: Record<string, unknown> = {
     p_limit: options.limit,
     p_same_city_only: false,
-    p_min_interest_overlap: options.minOverlap,
+    p_min_interest_overlap: Math.max(0, options.minOverlap),
     p_mode: options.mode,
-    p_geo_perimeter: options.geoPerimeter,
+    p_geo_perimeter: geoPerimeterRpcValue(
+      options.geoPerimeter,
+      geoReset ? false : Boolean(options.geoExclusive)
+    ),
     p_radius_km: options.radiusKm,
     p_sort: options.sort,
   };
@@ -148,12 +169,12 @@ export async function fetchDiscoveryCatalog(options: {
   userId: string;
   myProfile: Profile;
   prefs: SuggestionPrefs;
-  sort?: DiscoverySortId;
+  sort?: DiscoveryCatalogSortId;
   createdAfter?: string | null;
   excludeIds?: string[];
   signal?: AbortSignal;
 }): Promise<DiscoveryCandidate[]> {
-  const { myProfile, prefs, sort = 'nouveaux' } = options;
+  const { myProfile, prefs, sort = 'score' } = options;
   if (options.signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError');
   }
@@ -168,6 +189,7 @@ export async function fetchDiscoveryCatalog(options: {
     minOverlap: prefs.minOverlap,
     mode: 'discover',
     geoPerimeter: prefs.geoPerimeter,
+    geoExclusive: prefs.geoExclusive,
     radiusKm: prefs.geoRadiusKm,
     sort,
     createdAfter: options.createdAfter,
@@ -180,8 +202,18 @@ export async function fetchDiscoveryCatalog(options: {
   }
   if (error) throw error;
 
-  return ((data || []) as SuggestRow[]).map((row) =>
-    mapSuggestRow(row, myProfile.interests || [], prefs)
+  const mapped = ((data || []) as SuggestRow[])
+    .map((row) =>
+      mapSuggestRow(row, myProfile.interests || [], prefs, myProfile.location)
+    )
+    .filter((candidate) =>
+      candidatePassesGeoFilter(candidate, prefs, myProfile.location)
+    );
+
+  return fillMissingProfileDistances(
+    myProfile.location,
+    mapped,
+    options.signal
   );
 }
 

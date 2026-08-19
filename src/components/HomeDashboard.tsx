@@ -14,6 +14,7 @@ import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
+import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   fetchSuggestedProfiles,
   HOME_SUGGESTIONS_MAX,
@@ -75,6 +76,10 @@ export default function HomeDashboard({
   const likesExhausted =
     !likesUnlimited && (status.likes_remaining_today ?? 0) <= 0;
   const showFlashCta = isFlashCtaVisible(status);
+  const geoPerimeter = useMemo(
+    () => (user?.id ? loadSuggestionPrefs(user.id).geoPerimeter : undefined),
+    [user?.id, suggestionPrefsEpoch]
+  );
 
   const homeQuery = useQuery({
     queryKey: queryKeys.homeSuggestions(
@@ -377,7 +382,6 @@ export default function HomeDashboard({
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:gap-4">
               {suggestions.slice(0, HOME_SUGGESTIONS_MAX).map((p) => {
-                const geoBadge = p.geo_badge;
                 const unreadCount = unreadBySender[p.id] || 0;
                 return (
                 <li key={p.id}>
@@ -440,11 +444,12 @@ export default function HomeDashboard({
                             : `${p.mutual_interest_count} centres d'intérêt en commun`}
                         </p>
                       )}
-                      {geoBadge && (
-                        <p className="text-[11px] text-emerald-700 font-medium">
-                          {geoBadge}
-                        </p>
-                      )}
+                      <CardGeoFacts
+                        flags={p}
+                        location={p.location}
+                        perimeter={geoPerimeter}
+                        distanceKm={p.distance_km}
+                      />
                     </div>
                   </button>
                 </li>
@@ -458,6 +463,7 @@ export default function HomeDashboard({
       {openProfile && (
         <ProfileDetailModal
           candidate={openProfile}
+          geoPerimeter={geoPerimeter}
           alreadyFlashed={flashedIds.has(openProfile.id)}
           alreadyLiked={likedIds.has(openProfile.id)}
           busy={actingId === openProfile.id}

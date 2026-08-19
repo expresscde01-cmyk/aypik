@@ -7,6 +7,7 @@ import {
   type SuggestRow,
 } from '@/lib/discoveryCatalog';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
+import { candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import {
   DEFAULT_SUGGESTION_PREFS,
   type SuggestionPrefs,
@@ -160,6 +161,7 @@ export async function fetchSuggestedProfiles(options?: {
     minOverlap: prefs.minOverlap,
     mode: 'home',
     geoPerimeter: prefs.geoPerimeter,
+    geoExclusive: prefs.geoExclusive,
     radiusKm: prefs.geoRadiusKm,
     sort: 'score',
   });
@@ -168,13 +170,28 @@ export async function fetchSuggestedProfiles(options?: {
   if (options?.signal?.aborted) return [];
   if (error) throw error;
 
-  return ((data || []) as SuggestRow[]).map((row) => {
-    const mapped = mapSuggestRow(row, myInterests, prefs);
-    return {
-      ...mapped,
-      mutual_interest_count: mapped.mutual_interests.length,
-    };
-  });
+  const mapped = ((data || []) as SuggestRow[])
+    .map((row) => {
+      const mappedRow = mapSuggestRow(
+        row,
+        myInterests,
+        prefs,
+        options?.myLocation
+      );
+      return {
+        ...mappedRow,
+        mutual_interest_count: mappedRow.mutual_interests.length,
+      };
+    })
+    .filter((candidate) =>
+      candidatePassesGeoFilter(candidate, prefs, options?.myLocation)
+    );
+
+  return fillMissingProfileDistances(
+    options?.myLocation,
+    mapped,
+    options?.signal
+  );
 }
 
 /** Affinité géographique à partir des libellés « Ville (CP) » (sans lat/lng). */

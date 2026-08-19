@@ -92,6 +92,7 @@ export function AdvancedFiltersTeaser({
   expanded = false,
   onToggle,
   activeCount = 0,
+  inactive = false,
 }: {
   locked: boolean;
   onAskPremium?: () => void;
@@ -100,6 +101,7 @@ export function AdvancedFiltersTeaser({
   expanded?: boolean;
   onToggle?: () => void;
   activeCount?: number;
+  inactive?: boolean;
 }) {
   const short = offerShortName(status);
   const included = offerIncludesPremiumPerks(status);
@@ -111,13 +113,21 @@ export function AdvancedFiltersTeaser({
     return (
       <button
         type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
+        disabled={inactive}
+        aria-disabled={inactive}
+        aria-expanded={inactive ? false : expanded}
         aria-controls="discovery-filters-panel"
+        tabIndex={inactive ? -1 : 0}
+        onClick={() => {
+          if (inactive) return;
+          onToggle?.();
+        }}
         className={`w-full rounded-2xl border p-3 flex items-center justify-between text-left transition-colors ${
-          expanded
-            ? 'border-emerald-400 bg-emerald-100 text-emerald-900 shadow-inner'
-            : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/70'
+          inactive
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 cursor-not-allowed'
+            : expanded
+              ? 'border-emerald-400 bg-emerald-100 text-emerald-900 shadow-inner'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/70'
         }`}
       >
         <span className="flex items-center gap-2 text-xs font-semibold">
