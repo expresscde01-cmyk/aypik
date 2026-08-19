@@ -13,13 +13,6 @@ export type GeoProximityLevel =
   | 'region'
   | 'neighboring_region';
 
-export const GEO_PROXIMITY_LABEL: Record<GeoProximityLevel, string> = {
-  city: 'Même ville',
-  department: 'Même département',
-  region: 'Même région',
-  neighboring_region: 'Région voisine',
-};
-
 export const REGION_IDF = 'Île-de-France';
 export const REGION_HDF = 'Hauts-de-France';
 export const REGION_GE = 'Grand Est';
@@ -307,28 +300,6 @@ export function geoProximityLevelFromFlags(
   return null;
 }
 
-export function geoProximityBetween(
-  a: string,
-  b: string
-): GeoProximityLevel | null {
-  return geoProximityLevelFromFlags(geoProximityFlags(a, b));
-}
-
-/** Libellé unique du badge, ou null si trop loin / indéterminé. */
-export function geoProximityBadge(
-  flags: Partial<GeoProximityFlags> | null | undefined
-): string | null {
-  const level = geoProximityLevelFromFlags(flags);
-  return level ? GEO_PROXIMITY_LABEL[level] : null;
-}
-
-export function geoProximityBadgeFromLocations(
-  a: string,
-  b: string
-): string | null {
-  return geoProximityBadge(geoProximityFlags(a, b));
-}
-
 /** Quartiers macro de France métropolitaine (miroir SQL region_macro_zones). */
 export type GeoMacroZone =
   | 'northeast'
@@ -363,13 +334,6 @@ export const MACRO_ZONE_REGIONS: Record<GeoMacroZone, readonly string[]> = {
 export const GEO_RADIUS_KM_OPTIONS = [30, 50, 100, 200, 300, 400, 500] as const;
 export type GeoRadiusKm = (typeof GEO_RADIUS_KM_OPTIONS)[number];
 export const GEO_RADIUS_KM_DEFAULT: GeoRadiusKm = 100;
-
-const GEO_PERIMETER_RANK: Record<GeoProximityLevel, number> = {
-  city: 1,
-  department: 2,
-  region: 3,
-  neighboring_region: 4,
-};
 
 /** Libellés du menu Découvrir. */
 export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
@@ -420,26 +384,6 @@ export const GEO_PERIMETER_MENU: readonly GeoPerimeterMenuItem[] = [
   { type: 'divider', style: 'double' },
   { type: 'option', id: 'anywhere' },
 ];
-
-export function geoScopeWidth(
-  perimeter: GeoPerimeterFilter,
-  _radiusKm?: number
-): number {
-  if (perimeter === 'anywhere') return Number.POSITIVE_INFINITY;
-  if (isGeoMacroZone(perimeter)) return 5;
-  return GEO_PERIMETER_RANK[perimeter];
-}
-
-/** True si le nouveau périmètre englobe un cercle plus large que le précédent. */
-export function isGeoScopeWider(
-  prev: { geoPerimeter: GeoPerimeterFilter; geoRadiusKm: number },
-  next: { geoPerimeter: GeoPerimeterFilter; geoRadiusKm: number }
-): boolean {
-  return (
-    geoScopeWidth(next.geoPerimeter, next.geoRadiusKm) >
-    geoScopeWidth(prev.geoPerimeter, prev.geoRadiusKm)
-  );
-}
 
 export function isGeoPerimeterFilter(
   value: string
@@ -651,16 +595,4 @@ export function formatDistanceKmBadge(
     return null;
   }
   return `à ${Math.max(1, Math.round(distanceKm))} km`;
-}
-
-/**
- * Badge géographique des fiches : strate locale, ou quart si le filtre est un quart.
- */
-export function discoveryLocationBadge(
-  flags: Partial<GeoProximityFlags> | null | undefined,
-  _distanceKm?: number | null | undefined,
-  location?: string | null,
-  perimeter?: GeoPerimeterFilter | null
-): string | null {
-  return profileCardGeoBadge(flags, location, perimeter);
 }

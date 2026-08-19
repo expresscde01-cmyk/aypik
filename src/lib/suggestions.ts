@@ -114,7 +114,6 @@ export type SuggestedProfile = Profile & {
   is_boosted: boolean;
   mutual_interests: string[];
   distance_km: number | null;
-  geo_badge: string | null;
   is_founder?: boolean;
   founder_number?: number | null;
 };
@@ -175,7 +174,6 @@ export async function fetchSuggestedProfiles(options?: {
       const mappedRow = mapSuggestRow(
         row,
         myInterests,
-        prefs,
         options?.myLocation
       );
       return {

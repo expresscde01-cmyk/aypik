@@ -30,7 +30,6 @@ export type ProfileDetailCandidate = {
   same_region?: boolean;
   neighboring_region?: boolean;
   distance_km?: number | null;
-  geo_badge?: string | null;
   is_boosted?: boolean;
   is_founder?: boolean;
   founder_number?: number | null;

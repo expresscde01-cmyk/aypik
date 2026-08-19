@@ -6,7 +6,7 @@ import {
   geoProximityFlags,
   geoProximityLevelFromFlags,
 } from '@/lib/geoProximity';
-import { suggestionGeoBadge, candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
+import { candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
@@ -33,7 +33,6 @@ export type DiscoveryCandidate = Profile & {
   same_region: boolean;
   neighboring_region: boolean;
   distance_km: number | null;
-  geo_badge: string | null;
   created_at?: string;
   updated_at?: string;
   last_active_at?: string | null;
@@ -70,7 +69,6 @@ export type SuggestRow = {
 export function mapSuggestRow(
   row: SuggestRow,
   myInterests: string[],
-  prefs: SuggestionPrefs,
   myLocation?: string | null
 ): DiscoveryCandidate {
   const interests = row.interests || [];
@@ -110,12 +108,6 @@ export function mapSuggestRow(
     score: Number(row.score) || 0,
     ...flags,
     distance_km: Number.isFinite(distance_km as number) ? distance_km : null,
-    geo_badge: suggestionGeoBadge(
-      flags,
-      Number.isFinite(distance_km as number) ? distance_km : null,
-      prefs,
-      row.location
-    ),
     created_at: row.created_at,
     updated_at: row.updated_at || undefined,
     last_active_at: row.last_active_at,
@@ -204,7 +196,7 @@ export async function fetchDiscoveryCatalog(options: {
 
   const mapped = ((data || []) as SuggestRow[])
     .map((row) =>
-      mapSuggestRow(row, myProfile.interests || [], prefs, myProfile.location)
+      mapSuggestRow(row, myProfile.interests || [], myProfile.location)
     )
     .filter((candidate) =>
       candidatePassesGeoFilter(candidate, prefs, myProfile.location)

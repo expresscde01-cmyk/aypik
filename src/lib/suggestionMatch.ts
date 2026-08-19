@@ -5,7 +5,6 @@ import {
   type ProfileGender,
 } from '@/lib/dating';
 import {
-  profileCardGeoBadge,
   matchesGeoPerimeter,
   geoExclusiveApplies,
   type GeoProximityFlags,
@@ -83,15 +82,6 @@ export async function fillMissingProfileDistances<
   });
 }
 
-export function suggestionGeoBadge(
-  flags: Partial<GeoProximityFlags> | null | undefined,
-  _distanceKm?: number | null | undefined,
-  prefs?: SuggestionPrefs,
-  location?: string | null
-): string | null {
-  return profileCardGeoBadge(flags, location, prefs?.geoPerimeter);
-}
-
 export type SearchCandidate = {
   gender?: string | null;
   age: number;
@@ -163,13 +153,4 @@ export function candidatePassesGeoFilter(
     exclusive:
       Boolean(prefs.geoExclusive) && geoExclusiveApplies(prefs.geoPerimeter),
   });
-}
-
-export function passesSuggestionPillars(
-  candidate: SearchCandidate,
-  myAge: number,
-  targetGender: ProfileGender | null,
-  prefs: SuggestionPrefs
-): boolean {
-  return passesSearchCriteria(candidate, myAge, targetGender, prefs);
 }
