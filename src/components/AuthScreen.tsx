@@ -107,14 +107,7 @@ export default function AuthScreen({
     const key = emailKey(currentEmail);
     if (!sendAlert || notifiedLockEmails.current.has(key)) return;
     notifiedLockEmails.current.add(key);
-    const emailed = await notifyAccountLocked(currentEmail);
-    if (!emailed) {
-      try {
-        await sendPasswordResetEmail(currentEmail);
-      } catch {
-        /* e-mail de déblocage : silence en prod */
-      }
-    }
+    await notifyAccountLocked(currentEmail);
   };
 
   const handlePasswordFailure = async (currentEmail: string) => {

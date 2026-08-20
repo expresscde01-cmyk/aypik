@@ -302,6 +302,14 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
+# Empêche Auth d’envoyer le template recovery. generateLink crée le token ;
+# login-security envoie le modèle A (volontaire) ou B (4e échec) via Resend.
+# Production : Dashboard Authentication → Hooks → Send Email.
+# [auth.hook.send_email]
+# enabled = true
+# uri = "http://127.0.0.1:54321/functions/v1/auth-send-email"
+# secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
 enabled = false
@@ -438,4 +446,8 @@ verify_jwt = false
 
 # Alerte blocage compte (4 échecs mot de passe). Appelée sans session.
 [functions.login-security]
+verify_jwt = false
+
+# Hook Auth Send Email : avale les recovery (Resend envoie A ou B).
+[functions.auth-send-email]
 verify_jwt = false

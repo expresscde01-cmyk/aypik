@@ -8,8 +8,6 @@ export const ACCOUNT_LOCKED_MESSAGE =
 export const RESET_EMAIL_SENT_MESSAGE =
   "Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.";
 
-const PRODUCTION_RECOVERY_URL = 'https://aypik.fr/?reset=1';
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeResetEmail(email: string | null | undefined): string {
@@ -18,25 +16,6 @@ export function normalizeResetEmail(email: string | null | undefined): string {
 
 export function isValidResetEmail(email: string | null | undefined): boolean {
   return EMAIL_RE.test(normalizeResetEmail(email));
-}
-
-export function recoveryRedirectUrl(): string {
-  if (typeof window === 'undefined') return PRODUCTION_RECOVERY_URL;
-  try {
-    const origin = window.location.origin.replace(/\/$/, '');
-    const host = window.location.hostname;
-    const allowedHost =
-      host === 'aypik.fr' ||
-      host === 'www.aypik.fr' ||
-      host === 'localhost' ||
-      host === '127.0.0.1';
-    if (!allowedHost) return PRODUCTION_RECOVERY_URL;
-    const url = new URL(origin);
-    url.searchParams.set('reset', '1');
-    return url.toString();
-  } catch {
-    return PRODUCTION_RECOVERY_URL;
-  }
 }
 
 type RecoveryToken = {
@@ -242,24 +221,17 @@ async function sendResetViaResend(email: string): Promise<boolean> {
 
 export async function sendPasswordResetEmail(email: string): Promise<void> {
   const trimmed = normalizeResetEmail(email);
-  const redirectTo = recoveryRedirectUrl();
 
   if (!isValidResetEmail(trimmed)) {
     throw new Error('Adresse e-mail invalide');
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-    redirectTo,
-  });
-
-  if (!error) return;
-
-  if (import.meta.env.DEV) {
-    console.error(error, {
-      via: 'resetPasswordForEmail',
-      code: error.code,
-      status: error.status,
-    });
+  if (await fetchLoginLockStatus(trimmed)) {
+    const emailed = await notifyAccountLocked(trimmed);
+    if (emailed) return;
+    throw new Error(
+      "Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Réessaie dans un instant."
+    );
   }
 
   const resent = await sendResetViaResend(trimmed);

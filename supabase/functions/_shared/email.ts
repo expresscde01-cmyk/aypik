@@ -89,6 +89,39 @@ export function buildPasswordResetEmailHtml(
   });
 }
 
+export const ACCOUNT_UNLOCK_SUBJECT =
+  "Compte verrouillé : Réinitialisation et déblocage requis";
+
+export function buildAccountUnlockBodyHtml(unlockUrl: string): string {
+  const url = escapeHtml(unlockUrl);
+  return `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Bonjour,</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+      Votre compte a été temporairement verrouillé suite à 4 tentatives de connexion infructueuses.
+    </p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+      Pour débloquer votre compte et définir un nouveau mot de passe, veuillez cliquer sur le lien sécurisé ci-dessous :
+    </p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;word-break:break-all;">
+      <a href="${url}">${url}</a>
+    </p>
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
+      Si vous n'êtes pas à l'origine de ces tentatives, veuillez ignorer cet e-mail.
+    </p>
+  `;
+}
+
+export function buildAccountUnlockEmailHtml(
+  unlockUrl: string,
+  siteUrl = getPublicSiteUrl(),
+): string {
+  return wrapTransactionalEmailHtml({
+    title: ACCOUNT_UNLOCK_SUBJECT,
+    siteUrl,
+    bodyHtml: buildAccountUnlockBodyHtml(unlockUrl),
+  });
+}
+
 export async function sendResendEmail(params: {
   resendKey: string;
   to: string;
