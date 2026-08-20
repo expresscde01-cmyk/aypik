@@ -25,6 +25,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Clés VITE publiques (anon / URL) requises pour le build o2switch.
+!.env.production
 *.pem
 *.p12
 *.key
