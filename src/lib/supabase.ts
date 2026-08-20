@@ -30,6 +30,19 @@ const supabaseAnonKey = readPublicSupabaseEnv(
 );
 
 /**
+ * Désactive Navigator LockManager (« lock immediately failed » → crash auth).
+ * Dans @supabase/auth-js 2.57, `lock: false` est falsy : le client retombe
+ * sur navigator.locks. Un no-op truthy est le seul moyen de vraiment le couper.
+ */
+async function disableAuthNavigatorLock<R>(
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<R>,
+): Promise<R> {
+  return await fn();
+}
+
+/**
  * Client navigateur : clé anon uniquement (RLS).
  * - PKCE plutôt que le flux implicit (tokens dans le hash URL).
  * - Session en localStorage, refresh auto, cache HTTP désactivé (pas de token en cache).
@@ -41,6 +54,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    lock: disableAuthNavigatorLock as any,
   },
   global: {
     fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
