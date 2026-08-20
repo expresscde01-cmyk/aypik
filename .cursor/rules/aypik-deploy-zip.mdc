@@ -5,23 +5,31 @@ alwaysApply: true
 
 # Archive de déploiement aypik.fr
 
-Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine du projet. Sans ça, le site .fr ne peut pas être vérifié.
+Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip`. Sans ça, le site .fr ne peut pas être vérifié.
 
 Ne pas attendre que l’utilisateur le demande.
+
+## Dossiers
+
+- Racine Git (source) : `C:\Users\expre\Videos\Site\project\aypik-deploy.zip`
+- Déploiement local (comme d’habitude) : `C:\Users\expre\Videos\Site\`
+  - y copier `aypik-deploy.zip`
+  - y extraire `index.html`, `assets/`, `.htaccess`, `favicon.svg` (sans toucher au dossier `project`)
 
 ## Procédure
 
 1. `npm run build`
-2. Remplacer `aypik-deploy.zip` par le **contenu** de `dist/` (pas le dossier `dist` lui-même) :
-   - `index.html`, `assets/`, `.htaccess`, `favicon.svg`
+2. `npm run zip:deploy` — remplace le zip à la racine du projet **et** le copie vers `C:\Users\expre\Videos\Site` si ce dossier est accessible.
 3. Ne jamais y mettre `.env`, `src/`, `supabase/`, ni secrets.
 
-Exemple PowerShell :
+Exemple PowerShell (équivalent manuel) :
 
 ```powershell
 npm run build
 Remove-Item .\aypik-deploy.zip -Force -ErrorAction SilentlyContinue
 tar -a -cf aypik-deploy.zip -C dist .
+Copy-Item .\aypik-deploy.zip -Destination "C:\Users\expre\Videos\Site\aypik-deploy.zip" -Force
+Copy-Item .\dist\* -Destination "C:\Users\expre\Videos\Site\" -Recurse -Force
 ```
 
 Confirmer brièvement la date de modification du zip une fois généré.

@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "zip:deploy": "node scripts/write-aypik-deploy-zip.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.3.0",
