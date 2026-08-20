@@ -40,15 +40,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const applySession = async (sess: Session | null, recovery: boolean) => {
       if (!mounted) return;
       if (sess && !recovery) {
-        const locked = await fetchOwnLoginLocked();
-        if (!mounted) return;
-        if (locked) {
-          await supabase.auth.signOut();
-          setSession(null);
-          setPasswordRecovery(false);
-          recoveryRef.current = false;
-          setLoading(false);
-          return;
+        try {
+          const locked = await fetchOwnLoginLocked();
+          if (!mounted) return;
+          if (locked) {
+            try {
+              await supabase.auth.signOut();
+            } catch (err) {
+              console.error('applySession signOut locked', err);
+            }
+            setSession(null);
+            setPasswordRecovery(false);
+            recoveryRef.current = false;
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('applySession lock check', err);
         }
       }
       setSession(sess);
@@ -56,33 +64,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const boot = async () => {
-      const recoveryToken = getRecoveryTokenFromUrl();
-      if (recoveryToken) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          type: recoveryToken.type,
-          token_hash: recoveryToken.tokenHash,
-        });
-        if (!mounted) return;
-        if (!error && data.session) {
-          recoveryRef.current = true;
-          setPasswordRecovery(true);
+      try {
+        const recoveryToken = getRecoveryTokenFromUrl();
+        if (recoveryToken) {
+          try {
+            const { data, error } = await supabase.auth.verifyOtp({
+              type: recoveryToken.type,
+              token_hash: recoveryToken.tokenHash,
+            });
+            if (!mounted) return;
+            if (!error && data.session) {
+              recoveryRef.current = true;
+              setPasswordRecovery(true);
+              consumeRecoveryParamsFromUrl();
+              await applySession(data.session, true);
+              return;
+            }
+          } catch (err) {
+            console.error('boot verifyOtp', err);
+          }
           consumeRecoveryParamsFromUrl();
-          await applySession(data.session, true);
-          return;
         }
-        consumeRecoveryParamsFromUrl();
-      }
 
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      consumeRecoveryParamsFromUrl();
-      const recovery = isPasswordRecoveryRedirect();
-      recoveryRef.current = recovery;
-      if (recovery) setPasswordRecovery(true);
-      await applySession(data.session, recovery);
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        consumeRecoveryParamsFromUrl();
+        const recovery = isPasswordRecoveryRedirect();
+        recoveryRef.current = recovery;
+        if (recovery) setPasswordRecovery(true);
+        await applySession(data.session, recovery);
+      } catch (err) {
+        console.error('boot session', err);
+        if (!mounted) return;
+        setSession(null);
+        setLoading(false);
+      }
     };
 
-    boot().catch(() => {
+    boot().catch((err) => {
+      console.error('boot', err);
       if (!mounted) return;
       setSession(null);
       setLoading(false);
@@ -104,7 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
-      void applySession(sess, recoveryRef.current);
+      void applySession(sess, recoveryRef.current).catch((err) => {
+        console.error('onAuthStateChange applySession', err);
+        if (!mounted) return;
+        setSession(sess);
+        setLoading(false);
+      });
     });
 
     return () => {

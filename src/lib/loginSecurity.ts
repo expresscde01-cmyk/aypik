@@ -123,7 +123,8 @@ export async function fetchLoginLockStatus(email: string): Promise<boolean> {
   try {
     const row = await rpcFlags('login_security_status', { p_email: email.trim() });
     return row.locked === true;
-  } catch {
+  } catch (err) {
+    console.error('fetchLoginLockStatus', err);
     return false;
   }
 }
@@ -140,7 +141,8 @@ export async function recordLoginFailure(email: string): Promise<{
       justLocked: row.just_locked === true,
       attempts: typeof row.attempts === 'number' ? row.attempts : 0,
     };
-  } catch {
+  } catch (err) {
+    console.error('recordLoginFailure', err);
     return { locked: false, justLocked: false, attempts: 0 };
   }
 }
@@ -149,15 +151,21 @@ export async function clearLoginFailuresIfAllowed(): Promise<boolean> {
   try {
     const row = await rpcFlags('clear_login_failures');
     return row.locked === true;
-  } catch {
+  } catch (err) {
+    console.error('clearLoginFailuresIfAllowed', err);
     return false;
   }
 }
 
 export async function unlockLoginSecurity(): Promise<void> {
-  const row = await rpcFlags('unlock_login_security');
-  if (row.ok === false) {
-    throw new Error(row.error || 'unlock_failed');
+  try {
+    const row = await rpcFlags('unlock_login_security');
+    if (row.ok === false) {
+      throw new Error(row.error || 'unlock_failed');
+    }
+  } catch (err) {
+    console.error('unlockLoginSecurity', err);
+    throw err instanceof Error ? err : new Error('unlock_failed');
   }
 }
 
@@ -165,7 +173,8 @@ export async function fetchOwnLoginLocked(): Promise<boolean> {
   try {
     const row = await rpcFlags('login_security_is_locked');
     return row.locked === true;
-  } catch {
+  } catch (err) {
+    console.error('fetchOwnLoginLocked', err);
     return false;
   }
 }
@@ -195,28 +204,31 @@ async function functionErrorDetail(
 }
 
 async function sendResetViaResend(email: string): Promise<boolean> {
-  const { data, error } = await supabase.functions.invoke('login-security', {
-    body: {
-      action: 'reset_password',
-      email,
-    },
-  });
-
-  const payload =
-    data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
-
-  if (payload.ok === true || payload.emailed === true || payload.skipped === true) {
-    return true;
-  }
-
-  const detail = await functionErrorDetail(error, payload);
-  if (import.meta.env.DEV) {
-    console.error(error ?? new Error(detail || 'login-security reset failed'), {
-      via: 'login-security',
-      detail,
+  try {
+    const { data, error } = await supabase.functions.invoke('login-security', {
+      body: {
+        action: 'reset_password',
+        email,
+      },
     });
+
+    const payload =
+      data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+
+    if (payload.ok === true || payload.emailed === true || payload.skipped === true) {
+      return true;
+    }
+
+    const detail = await functionErrorDetail(error, payload);
+    console.error(
+      'sendResetViaResend',
+      error ?? (detail || 'login-security reset failed'),
+    );
+    return false;
+  } catch (err) {
+    console.error('sendResetViaResend', err);
+    return false;
   }
-  return false;
 }
 
 export async function sendPasswordResetEmail(email: string): Promise<void> {
@@ -242,17 +254,21 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
   );
 }
 
-/** E-mail d’alerte + lien de déblocage. true si l’Edge Function a envoyé. */
+/** E-mail unique modèle B (blocage + déblocage). true si envoyé ou déjà envoyé. */
 export async function notifyAccountLocked(email: string): Promise<boolean> {
   try {
     const { data, error } = await supabase.functions.invoke('login-security', {
       body: { action: 'notify_lock', email: email.trim() },
     });
-    if (error) return false;
+    if (error) {
+      console.error('notifyAccountLocked', error);
+      return false;
+    }
     const payload =
       data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
     return payload.emailed === true || payload.alreadySent === true;
-  } catch {
+  } catch (err) {
+    console.error('notifyAccountLocked', err);
     return false;
   }
 }

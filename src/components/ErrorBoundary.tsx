@@ -23,9 +23,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    if (import.meta.env.DEV) {
-      console.error('App error:', error);
-    }
+    console.error('App error:', error);
   }
 
   render() {

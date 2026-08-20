@@ -44,8 +44,8 @@ export default function ResetPasswordScreen({
       if (updateError) throw updateError;
       try {
         await unlockLoginSecurity();
-      } catch {
-        /* SQL pas encore appliqué : le mot de passe est déjà à jour */
+      } catch (err) {
+        console.error('unlockLoginSecurity after password update', err);
       }
       onDone();
     } catch (err) {

@@ -145,27 +145,32 @@ async function createRecoveryLink(
   let lastError = "Impossible de créer le lien de réinitialisation";
 
   for (const params of attempts) {
-    const { data, error } = await admin.auth.admin.generateLink(params);
-    const props = (data?.properties || data || {}) as {
-      action_link?: string;
-      hashed_token?: string;
-      verification_type?: string;
-    };
+    try {
+      const { data, error } = await admin.auth.admin.generateLink(params);
+      const props = (data?.properties || data || {}) as {
+        action_link?: string;
+        hashed_token?: string;
+        verification_type?: string;
+      };
 
-    const resetUrl = recoveryUrlFromGenerateLink(props);
-    if (resetUrl) {
+      const resetUrl = recoveryUrlFromGenerateLink(props);
+      if (resetUrl) {
+        if (error?.message) {
+          console.error("login-security generateLink mailer", error.message);
+        }
+        return { url: resetUrl };
+      }
+
       if (error?.message) {
-        console.error("login-security generateLink mailer", error.message);
+        lastError = error.message;
+        console.error("login-security generateLink", error.message);
+        if (isUnknownUserMessage(error.message)) {
+          return { error: error.message };
+        }
       }
-      return { url: resetUrl };
-    }
-
-    if (error?.message) {
-      lastError = error.message;
-      console.error("login-security generateLink", error.message);
-      if (isUnknownUserMessage(error.message)) {
-        return { error: error.message };
-      }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : lastError;
+      console.error("login-security generateLink", err);
     }
   }
 
@@ -196,6 +201,9 @@ async function handlePasswordReset(
     to: email,
     subject: PASSWORD_RESET_SUBJECT,
     html: buildPasswordResetEmailHtml(link.url),
+  }).catch((err) => {
+    console.error("login-security resend reset", err);
+    return { ok: false as const, error: "Échec d'envoi Resend" };
   });
   if (!sent.ok) {
     console.error("login-security resend", sent.error);
@@ -239,7 +247,11 @@ async function handleNotifyLock(
     });
   }
 
-  await admin.auth.admin.signOut(row.user_id, "global");
+  try {
+    await admin.auth.admin.signOut(row.user_id, "global");
+  } catch (err) {
+    console.error("login-security signOut locked user", err);
+  }
 
   const { data: claimData, error: claimError } = await admin.rpc(
     "claim_login_lock_email",
@@ -258,12 +270,19 @@ async function handleNotifyLock(
     return json({ error: link.error }, 502);
   }
 
-  const sent = await sendResendEmail({
-    resendKey,
-    to: row.email,
-    subject: ACCOUNT_UNLOCK_SUBJECT,
-    html: buildAccountUnlockEmailHtml(link.url),
-  });
+  let sent: Awaited<ReturnType<typeof sendResendEmail>>;
+  try {
+    sent = await sendResendEmail({
+      resendKey,
+      to: row.email,
+      subject: ACCOUNT_UNLOCK_SUBJECT,
+      html: buildAccountUnlockEmailHtml(link.url),
+    });
+  } catch (err) {
+    console.error("login-security resend lock", err);
+    await releaseLockEmailClaim(admin, row.user_id);
+    return json({ error: "Échec d'envoi Resend" }, 502);
+  }
   if (!sent.ok) {
     await releaseLockEmailClaim(admin, row.user_id);
     return json({ error: sent.error }, 502);

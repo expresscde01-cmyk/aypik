@@ -107,7 +107,11 @@ export default function AuthScreen({
     const key = emailKey(currentEmail);
     if (!sendAlert || notifiedLockEmails.current.has(key)) return;
     notifiedLockEmails.current.add(key);
-    await notifyAccountLocked(currentEmail);
+    try {
+      await notifyAccountLocked(currentEmail);
+    } catch (err) {
+      console.error('applyLock notifyAccountLocked', err);
+    }
   };
 
   const handlePasswordFailure = async (currentEmail: string) => {
@@ -415,7 +419,7 @@ export default function AuthScreen({
                       disabled={resetBusy}
                       className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
                     >
-                      {resetBusy ? 'Envoi du lien...' : 'Mot de passe oublié ?'}
+                      {resetBusy ? 'Envoi du lien...' : 'Modifier mon mot de passe'}
                     </button>
                   )}
                 </div>
