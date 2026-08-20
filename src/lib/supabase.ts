@@ -1,3 +1,4 @@
+import './disableNavigatorLocks';
 import { createClient } from '@supabase/supabase-js';
 
 /** Projet hébergé aypik.fr — URL et clé anon publiques (RLS), jamais la service_role. */
@@ -30,9 +31,8 @@ const supabaseAnonKey = readPublicSupabaseEnv(
 );
 
 /**
- * Désactive Navigator LockManager (« lock immediately failed » → crash auth).
- * Dans @supabase/auth-js 2.57, `lock: false` est falsy : le client retombe
- * sur navigator.locks. Un no-op truthy est le seul moyen de vraiment le couper.
+ * `lock: false` est ignoré par @supabase/auth-js 2.57 (`if (settings.lock)`
+ * est falsy → navigator.locks). Un no-op truthy est l’équivalent réel.
  */
 async function disableAuthNavigatorLock<R>(
   _name: string,
@@ -60,3 +60,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
   },
 });
+
+(supabase.auth as any).lock = disableAuthNavigatorLock;
