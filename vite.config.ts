@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
@@ -21,11 +21,28 @@ function forbidInlineScripts(): Plugin {
   };
 }
 
+function requirePublicSupabaseEnv(mode: string): Plugin {
+  return {
+    name: 'require-public-supabase-env',
+    apply: 'build',
+    configResolved() {
+      if (mode !== 'production') return;
+      const env = loadEnv(mode, process.cwd(), 'VITE_');
+      const url = (env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+      if (url && !url.includes('YOUR_PROJECT') && !url.includes('supabase.co')) {
+        throw new Error(
+          `VITE_SUPABASE_URL invalide (${url}). Attendu : https://<ref>.supabase.co`,
+        );
+      }
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   // Chemins relatifs dans dist/ (./assets/...) : fonctionne à la racine
   // ou dans un sous-dossier o2switch, sans dépendre de l'URL absolue du domaine.
   base: './',
-  plugins: [react(), forbidInlineScripts()],
+  plugins: [react(), forbidInlineScripts(), requirePublicSupabaseEnv(mode)],
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
