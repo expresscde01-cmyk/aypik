@@ -25,13 +25,14 @@ function requirePublicSupabaseEnv(mode: string): Plugin {
   return {
     name: 'require-public-supabase-env',
     apply: 'build',
-    configResolved() {
+    config() {
       if (mode !== 'production') return;
       const env = loadEnv(mode, process.cwd(), 'VITE_');
-      const url = (env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
-      if (url && !url.includes('YOUR_PROJECT') && !url.includes('supabase.co')) {
+      const url = (env.VITE_SUPABASE_URL || '').trim();
+      const key = (env.VITE_SUPABASE_ANON_KEY || '').trim();
+      if (!url.includes('supabase.co') || !key.startsWith('eyJ')) {
         throw new Error(
-          `VITE_SUPABASE_URL invalide (${url}). Attendu : https://<ref>.supabase.co`,
+          'VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY absentes. Vérifie .env.production.',
         );
       }
     },
