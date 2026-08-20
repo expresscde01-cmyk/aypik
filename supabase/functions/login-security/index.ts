@@ -1,13 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
+  ACCOUNT_UNLOCK_SUBJECT,
+  buildAccountUnlockEmailHtml,
   buildPasswordRecoveryPageUrl,
   buildPasswordResetEmailHtml,
-  escapeHtml,
   getPublicSiteUrl,
   PASSWORD_RESET_SUBJECT,
   sendResendEmail,
-  wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
 
 const corsHeaders = {
@@ -54,6 +54,9 @@ Deno.serve(async (req) => {
     );
 
     if (action === "reset_password") {
+      if (await isAccountLocked(admin, email)) {
+        return await handleNotifyLock(admin, resendKey, email);
+      }
       return await handlePasswordReset(admin, resendKey, email);
     }
     if (action === "notify_lock") {
@@ -65,6 +68,32 @@ Deno.serve(async (req) => {
     return json({ error: message }, 500);
   }
 });
+
+function asJsonObject(data: unknown): Record<string, unknown> {
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+  if (data && typeof data === "object") return data as Record<string, unknown>;
+  return {};
+}
+
+async function isAccountLocked(
+  admin: SupabaseClient,
+  email: string,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc("login_security_status", {
+    p_email: email,
+  });
+  if (error) {
+    console.error("login-security status", error.message);
+    return false;
+  }
+  return asJsonObject(data).locked === true;
+}
 
 function recoveryUrlFromGenerateLink(params: {
   action_link?: string;
@@ -176,6 +205,15 @@ async function handlePasswordReset(
   return json({ ok: true, emailed: true, id: sent.id });
 }
 
+async function releaseLockEmailClaim(admin: SupabaseClient, userId: string) {
+  const { error } = await admin.rpc("release_login_lock_email", {
+    p_user: userId,
+  });
+  if (error) {
+    console.error("login-security release claim", error.message);
+  }
+}
+
 async function handleNotifyLock(
   admin: SupabaseClient,
   resendKey: string,
@@ -186,13 +224,11 @@ async function handleNotifyLock(
   });
   if (error) return json({ error: error.message }, 500);
 
-  const row = (data || {}) as {
+  const row = asJsonObject(data) as {
     ok?: boolean;
     error?: string;
     user_id?: string;
     email?: string;
-    display_name?: string;
-    lock_email_sent_at?: string | null;
   };
 
   if (!row.ok || !row.user_id || !row.email) {
@@ -205,51 +241,33 @@ async function handleNotifyLock(
 
   await admin.auth.admin.signOut(row.user_id, "global");
 
-  if (row.lock_email_sent_at) {
+  const { data: claimData, error: claimError } = await admin.rpc(
+    "claim_login_lock_email",
+    { p_user: row.user_id },
+  );
+  if (claimError) return json({ error: claimError.message }, 500);
+
+  const claim = asJsonObject(claimData);
+  if (claim.claimed !== true) {
     return json({ ok: true, alreadySent: true });
   }
 
   const link = await createRecoveryLink(admin, row.email);
-  if ("error" in link) return json({ error: link.error }, 502);
-
-  const displayName = escapeHtml(row.display_name || "toi");
-  const html = wrapTransactionalEmailHtml({
-    title: "Compte bloqué pour des raisons de sécurité",
-    bodyHtml: `
-        <p style="margin:0 0 12px;color:#e11d48;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Sécurité</p>
-        <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.3;">Ton compte Aypik a été bloqué</h1>
-        <p style="margin:0 0 12px;color:#374151;font-size:15px;line-height:1.6;">
-          Bonjour ${displayName},
-        </p>
-        <p style="margin:0 0 12px;color:#374151;font-size:15px;line-height:1.6;">
-          Nous avons détecté <strong>4 tentatives de connexion infructueuses</strong> consécutives
-          sur ton compte. Par mesure de sécurité, la connexion est bloquée.
-        </p>
-        <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
-          Pour débloquer ton compte, choisis un nouveau mot de passe via ce lien sécurisé.
-          Si tu n’es pas à l’origine de ces tentatives, ce changement protège aussi ton compte.
-        </p>
-        <p style="margin:0 0 24px;">
-          <a href="${escapeHtml(link.url)}" style="display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;">
-            Réinitialiser mon mot de passe
-          </a>
-        </p>
-        <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.55;">
-          Ce lien est valable pendant une durée limitée. Tu peux aussi utiliser
-          « Mot de passe oublié ? » sur la page de connexion.
-        </p>
-      `,
-  });
+  if ("error" in link) {
+    await releaseLockEmailClaim(admin, row.user_id);
+    return json({ error: link.error }, 502);
+  }
 
   const sent = await sendResendEmail({
     resendKey,
     to: row.email,
-    subject: "Aypik — Ton compte a été bloqué pour des raisons de sécurité",
-    html,
+    subject: ACCOUNT_UNLOCK_SUBJECT,
+    html: buildAccountUnlockEmailHtml(link.url),
   });
-  if (!sent.ok) return json({ error: sent.error }, 502);
-
-  await admin.rpc("mark_login_lock_email_sent", { p_user: row.user_id });
+  if (!sent.ok) {
+    await releaseLockEmailClaim(admin, row.user_id);
+    return json({ error: sent.error }, 502);
+  }
 
   return json({
     ok: true,

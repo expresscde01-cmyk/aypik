@@ -1,9 +1,16 @@
 -- Sécurité connexion — coller TOUT ce fichier dans l'éditeur SQL Supabase, puis Run.
 -- Correctif : 4 échecs consécutifs bloquent vraiment le compte.
--- Puis : supabase functions deploy login-security
+-- Puis :
+--   supabase functions deploy login-security
+--   supabase functions deploy auth-send-email
+-- Dashboard Authentication → Hooks → Send Email :
+--   URL    : https://<project>.supabase.co/functions/v1/auth-send-email
+--   Secret : même valeur que SEND_EMAIL_HOOK_SECRET
+-- Le hook n’envoie PAS les e-mails recovery (modèle A volontaire / modèle B
+-- blocage partent uniquement via Resend dans login-security).
 -- Sécurité connexion : 4 mots de passe faux consécutifs → blocage
--- jusqu’à réinitialisation. L’e-mail d’alerte part via l’Edge Function
--- login-security. Le déblocage se fait après changement de mot de passe.
+-- jusqu’à réinitialisation. Un seul e-mail (modèle B) au 4e échec.
+-- Le déblocage se fait après changement de mot de passe.
 
 CREATE TABLE IF NOT EXISTS public.login_security (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -458,5 +465,56 @@ REVOKE ALL ON FUNCTION public.record_login_failure(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.login_security_status(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.record_login_failure(text) TO anon, authenticated, postgres, service_role;
 GRANT EXECUTE ON FUNCTION public.login_security_status(text) TO anon, authenticated, postgres, service_role;
+
+-- Un seul e-mail de blocage : claim atomique avant Resend, release si l’envoi échoue.
+CREATE OR REPLACE FUNCTION public.claim_login_lock_email(p_user uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_user IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'missing_user');
+  END IF;
+
+  UPDATE public.login_security
+  SET lock_email_sent_at = now(),
+      updated_at = now()
+  WHERE user_id = p_user
+    AND locked_at IS NOT NULL
+    AND lock_email_sent_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'already_sent', true);
+  END IF;
+
+  RETURN jsonb_build_object('ok', true, 'claimed', true);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.release_login_lock_email(p_user uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_user IS NULL THEN
+    RETURN;
+  END IF;
+
+  UPDATE public.login_security
+  SET lock_email_sent_at = NULL,
+      updated_at = now()
+  WHERE user_id = p_user
+    AND locked_at IS NOT NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.claim_login_lock_email(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.release_login_lock_email(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_login_lock_email(uuid) TO postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.release_login_lock_email(uuid) TO postgres, service_role;
 
 NOTIFY pgrst, 'reload schema';

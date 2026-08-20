@@ -5,23 +5,15 @@ alwaysApply: true
 
 # Archive de déploiement aypik.fr
 
-Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine du projet. Sans ça, le site .fr ne peut pas être vérifié.
+Après **chaque** modification du front, lancer `npm run deploy` (ou au minimum `npm run build` + `npm run zip:deploy`).
 
-Ne pas attendre que l’utilisateur le demande.
-
-## Procédure
-
-1. `npm run build`
-2. Remplacer `aypik-deploy.zip` par le **contenu** de `dist/` (pas le dossier `dist` lui-même) :
-   - `index.html`, `assets/`, `.htaccess`, `favicon.svg`
-3. Ne jamais y mettre `.env`, `src/`, `supabase/`, ni secrets.
-
-Exemple PowerShell :
+## Commande unique (PC local)
 
 ```powershell
-npm run build
-Remove-Item .\aypik-deploy.zip -Force -ErrorAction SilentlyContinue
-tar -a -cf aypik-deploy.zip -C dist .
+cd C:\Users\expre\Videos\Site\project
+npm run deploy
 ```
 
-Confirmer brièvement la date de modification du zip une fois généré.
+Ça : build avec `.env.production` (VITE_SUPABASE_*), crée `aypik-deploy.zip`, copie vers `C:\Users\expre\Videos\Site`, et uploade sur cPanel si `O2SWITCH_FTP_*` est dans `.env`.
+
+Ne jamais mettre `.env`, `src/`, `supabase/` ni secrets dans le zip.
