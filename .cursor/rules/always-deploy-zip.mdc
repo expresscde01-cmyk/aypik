@@ -1,0 +1,22 @@
+---
+description: Always rebuild and zip aypik-deploy after site changes
+alwaysApply: true
+---
+
+# Deploy ZIP after every site change
+
+Whenever you modify the Aypik site in a way that should reach production (UI, CSS, JS/TS, `public/.htaccess`, assets, etc.):
+
+1. End the task by running **`npm run deploy`** (or `npm.cmd run deploy` on Windows).
+2. Do **not** wait for the user to ask for build or `aypik-deploy.zip`.
+3. `npm run deploy` already: builds production, copies `public/.htaccess` → `dist/.htaccess`, and regenerates `aypik-deploy.zip` for cPanel/o2switch.
+
+Skip only for pure docs/SQL-paste notes that are never uploaded via the zip, or when the user explicitly says not to deploy.
+
+## Off-limits: login-security
+
+Never read, modify, commit, or deploy anything under `supabase/functions/login-security/`, 
+`supabase/functions/_shared/email.ts`, or any `supabase/migrations/*login_security*` file, 
+even as a side effect of another task. This applies regardless of `alwaysApply` above.
+If a change seems to require touching these files, stop and ask the user first instead 
+of proceeding.
