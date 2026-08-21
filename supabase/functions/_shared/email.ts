@@ -77,7 +77,34 @@ export function buildPasswordResetBodyHtml(resetUrl: string): string {
     </p>
   `;
 }
+export const ACCOUNT_UNLOCK_SUBJECT = "Déblocage de votre compte Aypik";
 
+export function buildAccountUnlockBodyHtml(unlockUrl: string): string {
+  const url = escapeHtml(unlockUrl);
+  return `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Bonjour,</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
+      Votre compte a été temporairement bloqué pour des raisons de sécurité. Cliquez sur le lien ci-dessous pour le débloquer :
+    </p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;word-break:break-all;">
+      <a href="${url}">${url}</a>
+    </p>
+    <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
+      Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer cet e-mail.
+    </p>
+  `;
+}
+
+export function buildAccountUnlockEmailHtml(
+  unlockUrl: string,
+  siteUrl = getPublicSiteUrl(),
+): string {
+  return wrapTransactionalEmailHtml({
+    title: ACCOUNT_UNLOCK_SUBJECT,
+    siteUrl,
+    bodyHtml: buildAccountUnlockBodyHtml(unlockUrl),
+  });
+}
 export function buildPasswordResetEmailHtml(
   resetUrl: string,
   siteUrl = getPublicSiteUrl(),

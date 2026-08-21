@@ -3,13 +3,14 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   buildPasswordRecoveryPageUrl,
   buildPasswordResetEmailHtml,
+  buildAccountUnlockEmailHtml,
+  ACCOUNT_UNLOCK_SUBJECT,
   escapeHtml,
   getPublicSiteUrl,
   PASSWORD_RESET_SUBJECT,
   sendResendEmail,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -212,40 +213,13 @@ async function handleNotifyLock(
   const link = await createRecoveryLink(admin, row.email);
   if ("error" in link) return json({ error: link.error }, 502);
 
-  const displayName = escapeHtml(row.display_name || "toi");
-  const html = wrapTransactionalEmailHtml({
-    title: "Compte bloqué pour des raisons de sécurité",
-    bodyHtml: `
-        <p style="margin:0 0 12px;color:#e11d48;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Sécurité</p>
-        <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.3;">Ton compte Aypik a été bloqué</h1>
-        <p style="margin:0 0 12px;color:#374151;font-size:15px;line-height:1.6;">
-          Bonjour ${displayName},
-        </p>
-        <p style="margin:0 0 12px;color:#374151;font-size:15px;line-height:1.6;">
-          Nous avons détecté <strong>4 tentatives de connexion infructueuses</strong> consécutives
-          sur ton compte. Par mesure de sécurité, la connexion est bloquée.
-        </p>
-        <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
-          Pour débloquer ton compte, choisis un nouveau mot de passe via ce lien sécurisé.
-          Si tu n’es pas à l’origine de ces tentatives, ce changement protège aussi ton compte.
-        </p>
-        <p style="margin:0 0 24px;">
-          <a href="${escapeHtml(link.url)}" style="display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;">
-            Réinitialiser mon mot de passe
-          </a>
-        </p>
-        <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.55;">
-          Ce lien est valable pendant une durée limitée. Tu peux aussi utiliser
-          « Mot de passe oublié ? » sur la page de connexion.
-        </p>
-      `,
-  });
+  
 
   const sent = await sendResendEmail({
     resendKey,
     to: row.email,
-    subject: "Aypik — Ton compte a été bloqué pour des raisons de sécurité",
-    html,
+    subject: ACCOUNT_UNLOCK_SUBJECT,
+    html: buildAccountUnlockEmailHtml(link.url),
   });
   if (!sent.ok) return json({ error: sent.error }, 502);
 
@@ -256,6 +230,7 @@ async function handleNotifyLock(
     emailed: true,
     id: sent.id,
   });
+
 }
 
 function json(body: Record<string, unknown>, status = 200) {
