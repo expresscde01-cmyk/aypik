@@ -1,0 +1,25 @@
+﻿name: Protection login-security
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-login-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifier fichiers proteges
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bloquer si login-security est touche
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          echo "Fichiers modifies :"
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -Ei "^supabase/functions/login-security/|^supabase/functions/_shared/email\.ts$|login_security.*\.sql$"; then
+            echo "::error::Cette PR touche a login-security. Validation manuelle obligatoire avant tout merge."
+            exit 1
+          fi
+          echo "OK : aucun fichier protege touche."
