@@ -1157,10 +1157,10 @@ button.group[data-matched='true'] {
     infinite;
 }
 
-/* État 3 — Matché sans dialogue */
+/* État 3 — Matché sans dialogue (1er mot) */
 .match-card-matched-quiet {
-  background-color: #e8f5e9;
-  border: 1px solid #a5d6a7;
+  background-color: #d8f0da;
+  border: 1px solid #8bc990;
   box-shadow: 0 1px 2px rgba(46, 125, 50, 0.08);
 }
 
@@ -1221,9 +1221,9 @@ button.group[data-matched='true'] {
 }
 
 .match-chip-matched-quiet {
-  background-color: #e8f5e9;
+  background-color: #d8f0da;
   color: #1b5e20;
-  border: 1px solid #a5d6a7;
+  border: 1px solid #8bc990;
 }
 
 .match-chip-matched-chat {
@@ -1233,11 +1233,18 @@ button.group[data-matched='true'] {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
-/* Archives « Pas cette fois » (refus subi) — même mauve poudré que la notif */
+/* « Pas cette fois » (refus subi, état actif) */
 .match-card-declined {
-  background-color: rgba(243, 229, 245, 0.7);
+  background-color: #e8d4f0;
   border: 1px solid #ce93d8;
   box-shadow: 0 1px 2px rgba(123, 31, 162, 0.08);
+}
+
+/* « Pas cette fois — archives » — même mauve, un ton plus clair */
+.match-card-declined-archive {
+  background-color: #f8f1fa;
+  border: 1px solid #e1bee7;
+  box-shadow: 0 1px 2px rgba(123, 31, 162, 0.06);
 }
 
 /* Pop-up « que faire » : ouvert en haut/côtés, ancré à la carte mauve par le bas. */
@@ -1274,16 +1281,29 @@ button.group[data-matched='true'] {
 }
 
 .match-chip-declined {
-  background-color: rgba(243, 229, 245, 0.7);
+  background-color: #e8d4f0;
   color: #6a1b9a;
   border: 1px solid #ce93d8;
 }
 
-/* Matchs rompus / archivés — gris-bleu pastel, distinct des autres étages */
-.match-card-broken {
-  background-color: #eceff1;
-  border: 1.5px solid #b0bec5;
-  box-shadow: 0 1px 2px rgba(69, 90, 100, 0.08);
+.match-chip-declined-archive {
+  background-color: #f8f1fa;
+  color: #6a1b9a;
+  border: 1px solid #e1bee7;
+}
+
+/* Match rompu issu de « 1er mot » — vert pastel dérivé */
+.match-card-broken-quiet {
+  background-color: #eef8ef;
+  border: 1.5px solid #c5e4c7;
+  box-shadow: 0 1px 2px rgba(46, 125, 50, 0.06);
+}
+
+/* Match rompu issu de « Discussion en cours » — crème dérivé du blanc */
+.match-card-broken-chat {
+  background-color: #faf7f2;
+  border: 1.5px solid #e6e0d6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .match-chip-broken {
