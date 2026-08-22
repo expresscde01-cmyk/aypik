@@ -1292,18 +1292,41 @@ button.group[data-matched='true'] {
   border: 1px solid #e1bee7;
 }
 
-/* Match rompu issu de « 1er mot » — vert pastel, bordure verte visible */
+/* Match rompu issu de « 1er mot » — bordure alignée sur 1er mot actif */
 .match-card-broken-quiet {
   background-color: #eef8ef;
-  border: 1.5px solid #8bc990;
-  box-shadow: 0 1px 2px rgba(46, 125, 50, 0.06);
+  border: 2px solid #8bc990;
+  box-shadow: 0 1px 3px rgba(46, 125, 50, 0.1);
 }
 
-/* Match rompu issu de « Discussion en cours » — crème, bordure grise visible */
+/* Match rompu issu de « Discussion en cours » — bordure blanche sur crème */
 .match-card-broken-chat {
   background-color: #faf7f2;
-  border: 1.5px solid #c9c2b8;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge phrase d’origine — Matchs rompus */
+.match-broken-origin-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.15em 0.5em;
+  border-radius: 0.35rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.match-broken-origin-badge-quiet {
+  background-color: #8bc990;
+  border: 1px solid #8bc990;
+}
+
+.match-broken-origin-badge-chat {
+  background-color: #ffffff;
+  border: 1px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .match-chip-broken {
