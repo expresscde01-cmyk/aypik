@@ -1,0 +1,59 @@
+---
+description: Never present a cloud aypik-deploy.zip as ready to upload on the user's PC
+alwaysApply: true
+---
+
+# Cloud zip ≠ zip cPanel (règle absolue)
+
+Le fichier uploadé sur o2switch/cPanel est **uniquement** celui du PC Windows :
+
+`C:\Users\expre\Videos\Site\project\aypik-deploy.zip`
+
+`aypik-deploy.zip` est dans `.gitignore`. Il **n’est jamais** transporté par Git.
+
+Un agent cloud / Cursor Cloud / workspace `/workspace` qui lance `npm run deploy` crée un zip **sur la VM distante seulement**. Ce zip **n’arrive pas** sur la machine locale. L’utilisateur qui uploade alors l’ancien zip local croit à tort que le site a changé.
+
+## Interdit
+
+Ne jamais écrire, sans qualifier le **lieu** du fichier :
+
+- « le déploiement est prêt »
+- « aypik-deploy.zip a été régénéré »
+- « tu peux uploader le zip sur cPanel »
+- une date de modification du zip présentée comme celle du PC local
+
+si le travail s’est fait dans un environnement qui n’est **pas** le dossier Windows ci-dessus.
+
+## Comment savoir où on est
+
+- Chemin workspace `/workspace`, « Cloud Agent », « background agent », machine Linux distante → **cloud**. Le zip local **n’existe pas** ici.
+- Workspace clairement `C:\Users\expre\Videos\Site\project` (Cursor Desktop sur le PC) → **local**. Le zip régénéré **est** celui à uploader.
+
+En cas de doute : traiter comme **cloud**.
+
+## Fin de tâche — agent cloud (obligatoire)
+
+Après une modification front, on peut quand même lancer `npm run deploy` dans le cloud (cohérence dist/, zip gitignoré). Puis **dire textuellement** :
+
+Le zip généré ici n’est **que dans l’environnement cloud**. Il n’est **pas** sur ta machine (`C:\Users\expre\Videos\Site\project`). Git ne le transmet pas. Pour obtenir le fichier à uploader sur cPanel, **en local** :
+
+```powershell
+cd C:\Users\expre\Videos\Site\project
+git fetch origin
+git pull origin main
+npm run deploy
+```
+
+Si les changements sont encore sur une PR non fusionnée, remplacer `git pull origin main` par le checkout de la branche de la PR, puis `npm run deploy`.
+
+Uploader ensuite **ce** `aypik-deploy.zip` (celui du dossier Windows, date de modification **après** la commande locale).
+
+## Fin de tâche — Cursor réellement local
+
+Seulement si le workspace est le dossier Windows : préciser le chemin complet du zip, confirmer qu’il est **sur cette machine**, et qu’on peut l’uploader sur cPanel.
+
+## Repo GitHub
+
+Remote canonique : `https://github.com/expresscde01-cmyk/aypik`
+
+`git pull` synchronise le **code**. Ce n’est pas un substitut à `npm run deploy` local.

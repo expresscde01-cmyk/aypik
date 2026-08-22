@@ -5,9 +5,9 @@ alwaysApply: true
 
 # Archive de déploiement aypik.fr
 
-Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine du projet. Sans ça, le site .fr ne peut pas être vérifié.
+Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine **de l’espace de travail courant**. Sans rebuild **sur le PC Windows**, le site .fr ne peut pas être mis à jour : le zip est gitignoré, un agent cloud ne le dépose pas dans `C:\Users\expre\Videos\Site\project`.
 
-Ne pas attendre que l’utilisateur le demande.
+Ne pas attendre que l’utilisateur le demande. Voir aussi `.cursor/rules/cloud-zip-not-local.mdc`.
 
 ## Procédure
 
@@ -24,4 +24,6 @@ Remove-Item .\aypik-deploy.zip -Force -ErrorAction SilentlyContinue
 tar -a -cf aypik-deploy.zip -C dist .
 ```
 
-Confirmer brièvement la date de modification du zip une fois généré.
+Si le workspace est le PC Windows : confirmer le chemin `C:\Users\expre\Videos\Site\project\aypik-deploy.zip` et sa date.
+
+Si le workspace est cloud (`/workspace`) : **ne pas** présenter cette date comme celle du zip à uploader. Dire que le zip cloud n’est pas sur le PC, et donner `git pull` puis `npm run deploy` en local.
