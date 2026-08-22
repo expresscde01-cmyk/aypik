@@ -58,6 +58,7 @@ export default function AuthScreen({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [accountLocked, setAccountLocked] = useState(false);
   const [offerPasswordReset, setOfferPasswordReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
@@ -193,6 +194,10 @@ export default function AuthScreen({
           setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
           return;
         }
+        setSignupSuccess(true);
+        setInfo(
+          `Un email de confirmation a été envoyé à ${email}. Clique sur le lien qu'il contient pour activer ton compte.`
+        );
         return;
       }
 
