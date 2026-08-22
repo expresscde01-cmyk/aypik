@@ -2612,8 +2612,10 @@ export default function MatchesPage({
             {brokenMatchStatusLabel(card.action, card.createdAt)}
           </p>
           <p
-            className={`text-xs mt-0.5 ${
-              hadDialogue ? 'text-gray-600' : 'text-emerald-800'
+            className={`match-broken-origin-badge text-xs ${
+              hadDialogue
+                ? 'match-broken-origin-badge-chat text-gray-600'
+                : 'match-broken-origin-badge-quiet text-emerald-800'
             }`}
           >
             {brokenMatchOriginLabel(hadDialogue)}
