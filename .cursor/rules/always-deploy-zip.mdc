@@ -1,18 +1,26 @@
 ---
-description: Always rebuild and zip aypik-deploy after site changes
+description: Deploy zip only on the user's Windows PC — never npm run deploy in cloud /workspace
 alwaysApply: true
 ---
 
-# Deploy ZIP after every site change
+# Deploy ZIP — PC Windows uniquement
 
-Whenever you modify the Aypik site in a way that should reach production (UI, CSS, JS/TS, `public/.htaccess`, assets, etc.):
+Quand le site Aypik change (UI, CSS, JS/TS, `public/.htaccess`, assets, etc.) :
 
-1. End the task by running **`npm run deploy`** (or `npm.cmd run deploy` on Windows).
-2. Do **not** wait for the user to ask for build or `aypik-deploy.zip`.
-3. `npm run deploy` already: builds production, copies `public/.htaccess` → `dist/.htaccess`, and regenerates `aypik-deploy.zip` **in the current workspace only**.
-4. **Cloud vs PC :** that zip is what cPanel needs **only** if this workspace is the Windows folder `C:\Users\expre\Videos\Site\project`. A cloud `/workspace` zip never reaches that PC (file is gitignored). Follow `.cursor/rules/cloud-zip-not-local.mdc` : never say the deploy is ready for cPanel without stating **where** the zip lives, and tell the user to `git pull` then `npm run deploy` **on the PC**.
+## Agent cloud (`/workspace`, Cloud Agent)
 
-Skip only for pure docs/SQL-paste notes that are never uploaded via the zip, or when the user explicitly says not to deploy.
+- **Ne pas** lancer `npm run deploy`, `deploy-cpanel.mjs`, ni générer `aypik-deploy.zip`.
+- Fin de tâche : commit + push sur branche dédiée ; rappeler à l’utilisateur de lancer **`npm run deploy` sur son PC** après `git pull` (voir `.cursor/rules/cloud-zip-not-local.mdc`).
+- Vérification optionnelle : `npm run build` seulement (sans zip).
+
+Exception cloud : l’utilisateur demande explicitement **« génère le zip »** ou **« lance le déploiement »**.
+
+## Cursor sur le PC Windows (`C:\Users\expre\Videos\Site\project`)
+
+- Fin de tâche : `npm run deploy` (ou `npm.cmd run deploy`).
+- Confirmer le chemin `C:\Users\expre\Videos\Site\project\aypik-deploy.zip` avant de parler d’upload cPanel.
+
+Skip deploy pour docs/SQL jamais uploadés via le zip, ou si l’utilisateur dit de ne pas déployer.
 
 ## Off-limits: login-security
 
