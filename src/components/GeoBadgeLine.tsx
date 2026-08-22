@@ -1,5 +1,6 @@
 import {
   formatDistanceKmBadge,
+  GEO_PERIMETER_FILTER_LABEL,
   isGeoMacroBadgeLabel,
   profileCardGeoBadge,
   type GeoPerimeterFilter,
@@ -48,7 +49,8 @@ export function CardGeoFacts({
   distanceKm: number | null | undefined;
 }) {
   const badge = profileCardGeoBadge(flags, location, perimeter) || '\u00a0';
-  const km = formatDistanceKmBadge(distanceKm) || '\u00a0';
+  const isSameCity = badge === GEO_PERIMETER_FILTER_LABEL.city;
+  const km = isSameCity ? '\u00a0' : formatDistanceKmBadge(distanceKm) || '\u00a0'; 
   return (
     <div className="profile-card-geo">
       <GeoBadgeLine label={badge} />
