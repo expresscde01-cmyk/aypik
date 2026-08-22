@@ -31,6 +31,7 @@ import {
   declinedArchiveStatusLabel,
   waitArchiveStatusLabel,
   brokenMatchStatusLabel,
+  brokenMatchOriginLabel,
   type MatchRole,
 } from '@/lib/interactionCopy';
 import type { ProfileGender } from '@/components/ProfileSetup';
@@ -2554,15 +2555,14 @@ export default function MatchesPage({
   const renderBrokenCard = (card: BrokenMatchCard) => {
     const isFlash = card.origin === 'flash';
     const busy = brokenBusyId === card.archiveId;
+    const hadDialogue = peersWithChat.has(card.profile.id);
     return (
       <div
         id={`match-card-broken-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="broken"
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
-          peersWithChat.has(card.profile.id)
-            ? 'match-card-broken-chat'
-            : 'match-card-broken-quiet'
+          hadDialogue ? 'match-card-broken-chat' : 'match-card-broken-quiet'
         }`}
       >
         <button
@@ -2610,6 +2610,13 @@ export default function MatchesPage({
           )}
           <p className="text-xs text-slate-600 mt-1">
             {brokenMatchStatusLabel(card.action, card.createdAt)}
+          </p>
+          <p
+            className={`text-xs mt-0.5 ${
+              hadDialogue ? 'text-gray-600' : 'text-emerald-800'
+            }`}
+          >
+            {brokenMatchOriginLabel(hadDialogue)}
           </p>
         </div>
         <div className={CARD_ACTIONS_COL}>
