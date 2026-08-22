@@ -1292,17 +1292,17 @@ button.group[data-matched='true'] {
   border: 1px solid #e1bee7;
 }
 
-/* Match rompu issu de « 1er mot » — vert pastel, bordure verte visible */
+/* Match rompu issu de « 1er mot » — vert pastel, bordure verte contrastée */
 .match-card-broken-quiet {
   background-color: #eef8ef;
-  border: 1.5px solid #8bc990;
+  border: 2px solid #43a047;
   box-shadow: 0 1px 2px rgba(46, 125, 50, 0.06);
 }
 
-/* Match rompu issu de « Discussion en cours » — crème, bordure grise visible */
+/* Match rompu issu de « Discussion en cours » — crème, bordure grise contrastée */
 .match-card-broken-chat {
   background-color: #faf7f2;
-  border: 1.5px solid #c9c2b8;
+  border: 2px solid #78716c;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
