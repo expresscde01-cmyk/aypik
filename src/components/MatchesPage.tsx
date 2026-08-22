@@ -31,6 +31,7 @@ import {
   declinedArchiveStatusLabel,
   waitArchiveStatusLabel,
   brokenMatchStatusLabel,
+  brokenMatchOriginLabel,
   type MatchRole,
 } from '@/lib/interactionCopy';
 import type { ProfileGender } from '@/components/ProfileSetup';
@@ -2458,7 +2459,7 @@ export default function MatchesPage({
       <div
         id={`match-card-archive-${card.archiveId}`}
         data-match-state="declined-archive"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined-archive${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
       >
@@ -2537,7 +2538,7 @@ export default function MatchesPage({
     return (
       <section className="space-y-2" aria-label="Pas cette fois — archives">
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
-          <span className="match-intro-chip match-chip-declined">
+          <span className="match-intro-chip match-chip-declined-archive">
             Pas cette fois — archives
           </span>
           <span className="text-gray-400 font-normal">
@@ -2554,12 +2555,15 @@ export default function MatchesPage({
   const renderBrokenCard = (card: BrokenMatchCard) => {
     const isFlash = card.origin === 'flash';
     const busy = brokenBusyId === card.archiveId;
+    const hadDialogue = peersWithChat.has(card.profile.id);
     return (
       <div
         id={`match-card-broken-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="broken"
-        className="rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-broken"
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
+          hadDialogue ? 'match-card-broken-chat' : 'match-card-broken-quiet'
+        }`}
       >
         <button
           type="button"
@@ -2606,6 +2610,13 @@ export default function MatchesPage({
           )}
           <p className="text-xs text-slate-600 mt-1">
             {brokenMatchStatusLabel(card.action, card.createdAt)}
+          </p>
+          <p
+            className={`text-xs mt-0.5 ${
+              hadDialogue ? 'text-gray-600' : 'text-emerald-800'
+            }`}
+          >
+            {brokenMatchOriginLabel(hadDialogue)}
           </p>
         </div>
         <div className={CARD_ACTIONS_COL}>

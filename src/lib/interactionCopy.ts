@@ -264,6 +264,13 @@ export function brokenMatchStatusLabel(
   return when ? `Match rompu le ${when}` : 'Match rompu';
 }
 
+/** Origine d’une fiche « Matchs rompus » (avant rupture). */
+export function brokenMatchOriginLabel(hadDialogue: boolean): string {
+  return hadDialogue
+    ? "Provenait d'une discussion en cours"
+    : "Provenait d'un 1er mot";
+}
+
 /** Rappel local (fiche / Mes Matchs) pour celle/celui qui a choisi Attendre. */
 export function waitingMatchReminder(
   origin: InteractionOrigin,
