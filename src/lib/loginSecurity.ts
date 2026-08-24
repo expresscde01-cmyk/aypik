@@ -149,6 +149,26 @@ export async function fetchLoginLockStatus(email: string): Promise<boolean> {
   }
 }
 
+/**
+ * NOTE SÉCURITÉ (2026-08-24) : record_login_failure est appelable avec la clé
+ * anon sans qu'un vrai échec de connexion ait eu lieu (personne ne revérifie
+ * le mot de passe côté serveur). Anti-spam actuel : 1 échec compté max toutes
+ * les 30s par compte (migration harden_record_login_failure_throttle) — ça
+ * rend un verrouillage instantané impraticable, sans éliminer la possibilité
+ * théorique pour un attaquant patient.
+ *
+ * Option 1 en réserve si besoin de fermer complètement la faille (décision
+ * utilisateur, reportée volontairement) : faire transiter toute la tentative
+ * de connexion par l'Edge Function `login-security` (seule à appeler
+ * signInWithPassword, captcha consommé une fois), qui déciderait alors seule
+ * si un échec est réel avant d'appeler cette fonction en service_role.
+ * Alternative payante : plan Supabase Team (599 $/mois) pour le hook natif
+ * "Password Verification Attempt" (indisponible sur Free/Pro).
+ * Reporté pour ne pas risquer de régression sur le parcours de connexion
+ * tout juste stabilisé (bug Navigator LockManager + CAPTCHA Turnstile).
+ * Même note laissée en commentaire sur la fonction côté base (COMMENT ON
+ * FUNCTION record_login_failure).
+ */
 export async function recordLoginFailure(email: string): Promise<{
   locked: boolean;
   justLocked: boolean;
@@ -240,7 +260,10 @@ async function sendResetViaResend(email: string): Promise<boolean> {
   return false;
 }
 
-export async function sendPasswordResetEmail(email: string): Promise<void> {
+export async function sendPasswordResetEmail(
+  email: string,
+  captchaToken?: string
+): Promise<void> {
   const trimmed = normalizeResetEmail(email);
   const redirectTo = recoveryRedirectUrl();
 
@@ -250,6 +273,7 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
 
   const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
     redirectTo,
+    captchaToken,
   });
 
   if (!error) return;

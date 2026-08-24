@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Lock, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -7,6 +7,9 @@ import {
   translateAuthError,
 } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
+import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 const SUCCESS_MESSAGE = 'Votre mot de passe a été mis à jour avec succès';
 
@@ -66,6 +69,25 @@ export default function ChangePasswordSection() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
+
+  /**
+   * Après un enregistrement réussi, le bouton reste désactivé (même si le
+   * widget CAPTCHA se re-valide tout seul en arrière-plan) tant que la
+   * personne n'a pas retouché un des champs : ça évite qu'un bouton
+   * "prêt à re-cliquer" reste affiché juste après le message de succès.
+   */
+  const handleFieldChange =
+    (setter: (value: string) => void) => (value: string) => {
+      setter(value);
+      setSuccess(null);
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,12 +117,17 @@ export default function ChangePasswordSection() {
       setError('Le nouveau mot de passe doit être différent de l\'ancien.');
       return;
     }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Merci de valider le CAPTCHA avant de continuer.');
+      return;
+    }
 
     setSaving(true);
     try {
       const { error: verifyError } = await supabase.auth.signInWithPassword({
         email,
         password: currentPassword,
+        options: { captchaToken: captchaToken || undefined },
       });
       if (verifyError) {
         if (isInvalidLoginCredentials(verifyError)) {
@@ -122,6 +149,7 @@ export default function ChangePasswordSection() {
       setError(translateAuthError(err));
     } finally {
       setSaving(false);
+      resetCaptcha();
     }
   };
 
@@ -140,14 +168,14 @@ export default function ChangePasswordSection() {
           id="profile-current-password"
           label="Ancien mot de passe"
           value={currentPassword}
-          onChange={setCurrentPassword}
+          onChange={handleFieldChange(setCurrentPassword)}
           autoComplete="current-password"
         />
         <PasswordField
           id="profile-new-password"
           label="Nouveau mot de passe"
           value={newPassword}
-          onChange={setNewPassword}
+          onChange={handleFieldChange(setNewPassword)}
           autoComplete="new-password"
           placeholder="12 caractères min., majuscule, symbole"
           hint="Au moins 12 caractères, une majuscule et un caractère spécial."
@@ -156,9 +184,19 @@ export default function ChangePasswordSection() {
           id="profile-confirm-password"
           label="Confirmation du nouveau mot de passe"
           value={confirmPassword}
-          onChange={setConfirmPassword}
+          onChange={handleFieldChange(setConfirmPassword)}
           autoComplete="new-password"
         />
+
+        {TURNSTILE_SITE_KEY && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            className="flex justify-center"
+          />
+        )}
 
         {error && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
@@ -175,7 +213,11 @@ export default function ChangePasswordSection() {
 
         <button
           type="submit"
-          disabled={saving}
+          disabled={
+            saving ||
+            success !== null ||
+            (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
+          }
           className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60"
         >
           {saving ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}

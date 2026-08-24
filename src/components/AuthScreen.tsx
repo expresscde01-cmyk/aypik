@@ -40,6 +40,9 @@ import {
 import { LegalLink, SiteFooter } from '@/components/LegalTerms';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 type Mode = 'signin' | 'signup';
 
@@ -62,11 +65,18 @@ export default function AuthScreen({
   const [accountLocked, setAccountLocked] = useState(false);
   const [offerPasswordReset, setOfferPasswordReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const failCountByEmail = useRef<Map<string, number>>(new Map());
   const notifiedLockEmails = useRef<Set<string>>(new Set());
   const maxAdultBirthDate = latestBirthDateForAge(MIN_USER_AGE);
 
   const emailKey = (value: string) => value.trim().toLowerCase();
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -85,11 +95,15 @@ export default function AuthScreen({
       setError('Adresse e-mail invalide.');
       return;
     }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Merci de valider le CAPTCHA avant de continuer.');
+      return;
+    }
     if (resetBusy) return;
     setResetBusy(true);
     setInfo(null);
     try {
-      await sendPasswordResetEmail(email);
+      await sendPasswordResetEmail(email, captchaToken || undefined);
       setError(null);
       setOfferPasswordReset(false);
       setInfo(RESET_EMAIL_SENT_MESSAGE);
@@ -98,6 +112,7 @@ export default function AuthScreen({
       setError(translateAuthError(err));
     } finally {
       setResetBusy(false);
+      resetCaptcha();
     }
   };
 
@@ -175,6 +190,11 @@ export default function AuthScreen({
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Merci de valider le CAPTCHA avant de continuer.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -186,7 +206,10 @@ export default function AuthScreen({
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { birth_date: birthDate } },
+          options: {
+            data: { birth_date: birthDate },
+            captchaToken: captchaToken || undefined,
+          },
         });
         if (error) throw error;
         if (isObfuscatedDuplicateSignup(data.user)) {
@@ -218,6 +241,7 @@ export default function AuthScreen({
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: { captchaToken: captchaToken || undefined },
       });
       if (error) throw error;
       if (!data.session) {
@@ -248,6 +272,7 @@ export default function AuthScreen({
       setError(translateAuthError(err));
     } finally {
       setLoading(false);
+      resetCaptcha();
     }
   };
 
@@ -398,6 +423,16 @@ export default function AuthScreen({
               )}
             </div>
 
+            {TURNSTILE_SITE_KEY && (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onVerify={setCaptchaToken}
+                onExpire={() => setCaptchaToken(null)}
+                className="flex justify-center"
+              />
+            )}
+
             {info && (
               <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-50 text-emerald-800 text-sm animate-fadeIn">
                 <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -436,7 +471,11 @@ export default function AuthScreen({
 
             <button
               type="submit"
-              disabled={loading || (mode === 'signin' && accountLocked)}
+              disabled={
+                loading ||
+                (mode === 'signin' && accountLocked) ||
+                (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
+              }
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading
