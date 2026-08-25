@@ -13,6 +13,8 @@ import ProfileSetup, {
   PROFILE_CARD_COLUMNS,
   type Profile,
 } from '@/components/ProfileSetup';
+import PhoneVerification from '@/components/PhoneVerification';
+import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
   normalizeOpenMatchesOpts,
@@ -127,6 +129,11 @@ function AppShellView() {
     };
   }, [user]);
 
+  const isPostPhoneRequirementAccount =
+    Boolean(user?.created_at) &&
+    new Date(user!.created_at) >= new Date(PHONE_VERIFICATION_REQUIRED_SINCE);
+  const needsPhoneVerification =
+    Boolean(user) && !user?.phone_confirmed_at && isPostPhoneRequirementAccount;
   const needsProfile = !profileLoading && !profile;
   const displayName =
     profile?.display_name?.trim() ||
@@ -164,6 +171,10 @@ function AppShellView() {
         <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
       </div>
     );
+  }
+
+  if (needsPhoneVerification) {
+    return <PhoneVerification />;
   }
 
   if (needsProfile) {

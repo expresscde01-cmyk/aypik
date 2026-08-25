@@ -20,6 +20,10 @@ const CODE_MESSAGES: Record<string, string> = {
     "Pour des raisons de sécurité, ce compte est bloqué après plusieurs tentatives. Un e-mail vient de t'être envoyé pour réinitialiser ton mot de passe et débloquer ton compte.",
   validation_failed: 'Les informations saisies sont invalides.',
   same_password: 'Le nouveau mot de passe doit être différent de l\'ancien.',
+  phone_exists: 'Ce numéro de téléphone est déjà utilisé par un autre compte.',
+  sms_send_failed:
+    "Impossible d'envoyer le SMS pour le moment. Réessaie dans un instant.",
+  over_sms_send_rate_limit: 'Trop de SMS envoyés. Réessaie dans quelques minutes.',
 };
 
 const MESSAGE_PATTERNS: [RegExp, string][] = [
@@ -41,6 +45,11 @@ const MESSAGE_PATTERNS: [RegExp, string][] = [
   [/error sending recovery email/i, "Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Réessaie dans un instant."],
   [/failed to send a request to the edge function/i, "Impossible d'envoyer l'e-mail pour le moment. Réessaie dans un instant."],
   [/edge function/i, "Impossible d'envoyer l'e-mail pour le moment. Réessaie dans un instant."],
+  [/token has expired or is invalid/i, 'Code invalide ou expiré. Demande un nouveau code.'],
+  [/invalid.*otp/i, 'Code invalide ou expiré. Demande un nouveau code.'],
+  [/invalid phone number/i, 'Numéro de téléphone invalide.'],
+  [/phone_number_invalid/i, 'Numéro de téléphone invalide.'],
+  [/phone_provider_disabled/i, "La vérification par téléphone n'est pas disponible pour le moment."],
 ];
 
 const WEAK_PASSWORD_REASONS: Record<string, string> = {
