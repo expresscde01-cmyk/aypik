@@ -1302,8 +1302,8 @@ button.group[data-matched='true'] {
 .match-card-broken-quiet,
 .match-card-broken-chat {
   background-color: #e4e4e7;
-  border: 2px solid #a1a1aa;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #a1a1aa;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Badge phrase d’origine — Matchs rompus */
