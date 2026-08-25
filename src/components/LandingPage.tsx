@@ -364,7 +364,7 @@ export default function LandingPage({
         <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
           <div className="hero-headline-stack">
             <h1
-              className="hero-headline text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.15] animate-pop bg-clip-text text-transparent"
+              className="hero-headline text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.25] pb-1 animate-pop bg-clip-text text-transparent"
               style={{ backgroundImage: HERO_TITLE_GRADIENT }}
             >
               Un espace de rencontre
