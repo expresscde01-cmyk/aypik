@@ -1292,20 +1292,18 @@ button.group[data-matched='true'] {
   border: 1px solid #e1bee7;
 }
 
-/* Match rompu issu de « 1er mot » — bordure alignée sur 1er mot actif */
-.match-card-broken-quiet {
-  background-color: #eef8ef;
-  border: 2px solid #8bc990;
-  box-shadow: 0 1px 3px rgba(46, 125, 50, 0.1);
-}
-
-/* Match rompu issu de « Discussion en cours » — bordure blanche sur crème */
+/*
+ * Match rompu (« 1er mot » ou « Discussion en cours ») — même bordure grise
+ * neutre pour les deux origines : une fiche « Matchs rompus » est avant tout
+ * une fiche hors-jeu / écartée, l'origine reste indiquée par le badge texte
+ * en dessous, pas besoin d'un code couleur en plus qui la ferait paraître
+ * encore « active » (vert) ou en valoriserait une par rapport à l'autre.
+ */
+.match-card-broken-quiet,
 .match-card-broken-chat {
-  background-color: #faf7f2;
-  border: 2px solid #ffffff;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 2px 6px rgba(0, 0, 0, 0.05);
+  background-color: #f4f4f5;
+  border: 2px solid #d4d4d8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* Badge phrase d’origine — Matchs rompus */
