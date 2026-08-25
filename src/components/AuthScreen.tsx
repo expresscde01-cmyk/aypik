@@ -84,6 +84,7 @@ export default function AuthScreen({
     setInfo(null);
     setAccountLocked(false);
     setOfferPasswordReset(false);
+    setSignupSuccess(false);
   };
 
   const handleForgotPassword = async () => {
@@ -339,6 +340,28 @@ export default function AuthScreen({
             </button>
           </div>
 
+          {mode === 'signup' && signupSuccess ? (
+            <div className="space-y-4 text-center py-2">
+              <div className="mx-auto w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+                <ShieldCheck className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Vérifie ta boîte mail
+                </p>
+                <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                  {info}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                className="text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+              >
+                Retour à la connexion
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -487,6 +510,7 @@ export default function AuthScreen({
                     : 'Se connecter'}
             </button>
           </form>
+          )}
 
           <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
