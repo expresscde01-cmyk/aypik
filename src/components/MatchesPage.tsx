@@ -170,10 +170,11 @@ type BrokenMatchCard = {
   is_boosted?: boolean;
 };
 
-function sortByDateReceivedAsc(a: Match, b: Match): number {
+/** Plus récents en premier (haut/gauche), quel que soit l'étage. */
+function sortByDateReceivedDesc(a: Match, b: Match): number {
   const ta = new Date(a.date_received).getTime() || 0;
   const tb = new Date(b.date_received).getTime() || 0;
-  return ta - tb;
+  return tb - ta;
 }
 
 function ColorChip({
@@ -789,8 +790,8 @@ export default function MatchesPage({
         .sort((a, b) => {
           const ta = new Date(a.date_received).getTime() || 0;
           const tb = new Date(b.date_received).getTime() || 0;
-          // Plus anciens à gauche, plus récents à droite
-          return ta - tb;
+          // Plus récents en premier (haut/gauche), quel que soit l'étage
+          return tb - ta;
         });
 
       if (gen !== matchesLoadGen.current) return;
@@ -847,6 +848,10 @@ export default function MatchesPage({
           source: row.source === 'mine' ? 'mine' : 'theirs',
         });
       }
+      // Plus récents en premier (haut/gauche), quel que soit l'étage
+      list.sort(
+        (a, b) => Date.parse(b.archivedAt) - Date.parse(a.archivedAt)
+      );
       setDeclinedArchives(list);
       setOpenArchive((open) => {
         if (!open) return open;
@@ -891,6 +896,10 @@ export default function MatchesPage({
           is_boosted: boostSet.has(profile.id),
         });
       }
+      // Plus récents en premier (haut/gauche), quel que soit l'étage
+      list.sort(
+        (a, b) => Date.parse(b.declinedAt) - Date.parse(a.declinedAt)
+      );
       setPendingDeclined(list);
       setOpenPendingDeclined((open) => {
         if (!open) return open;
@@ -1029,6 +1038,10 @@ export default function MatchesPage({
           is_boosted: boostSet.has(profile.id),
         });
       }
+      // Plus récents en premier (haut/gauche), quel que soit l'étage
+      list.sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
+      );
       setBrokenMatches(list);
       setOpenBroken((open) => {
         if (!open) return open;
@@ -1908,14 +1921,14 @@ export default function MatchesPage({
       buckets[floor].push(match);
     }
     return {
-      new: buckets.new.sort(sortByDateReceivedAsc),
+      new: buckets.new.sort(sortByDateReceivedDesc),
       wait: buckets.wait
         .filter(
           (m) => !user || !isMineWaitArchived(user.id, m.profile.id)
         )
-        .sort(sortByDateReceivedAsc),
-      matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedAsc),
-      matchedChat: buckets['matched-chat'].sort(sortByDateReceivedAsc),
+        .sort(sortByDateReceivedDesc),
+      matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedDesc),
+      matchedChat: buckets['matched-chat'].sort(sortByDateReceivedDesc),
     };
   }, [
     matches,
