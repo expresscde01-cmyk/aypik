@@ -66,7 +66,7 @@ function createdAtMs(c: SortableCandidate): number {
   return c.created_at ? Date.parse(c.created_at) : 0;
 }
 
-function distanceKm(c: SortableCandidate): number {
+function distanceKm(c: { distance_km: number | null }): number {
   return typeof c.distance_km === 'number' && Number.isFinite(c.distance_km)
     ? c.distance_km
     : Number.POSITIVE_INFINITY;

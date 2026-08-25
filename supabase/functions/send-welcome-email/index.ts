@@ -202,7 +202,7 @@ function buildWelcomeBody(params: {
                 Fondateur reste visible. Sans tacite reconduction.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte sur Aypik — un espace bienveillant réservé
+                Belle découverte sur Aypik — un espace atypique réservé
                 exclusivement aux personnes sans enfants.
               </p>`;
 }

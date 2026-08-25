@@ -369,7 +369,7 @@ export default function LandingPage({
             >
               Un espace de rencontre
               <br />
-              bienveillant
+              atypique
             </h1>
             <HeroChildFreeStamp />
           </div>

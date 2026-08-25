@@ -250,8 +250,9 @@ export async function fetchDeclinedArchives(): Promise<DeclinedArchiveRow[]> {
   const server = (data || []).map((row) => ({
     id: String((row as DeclinedArchiveRow).id),
     actor_id: String((row as DeclinedArchiveRow).actor_id),
-    origin:
-      (row as DeclinedArchiveRow).origin === 'flash' ? 'flash' : 'like',
+    origin: ((row as DeclinedArchiveRow).origin === 'flash'
+      ? 'flash'
+      : 'like') as InteractionOrigin,
     declined_at: String((row as DeclinedArchiveRow).declined_at || ''),
     archived_at: String((row as DeclinedArchiveRow).archived_at || ''),
   }));

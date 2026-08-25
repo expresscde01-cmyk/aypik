@@ -203,7 +203,7 @@ export function CityAutocomplete({
         <p className="mt-1.5 text-xs text-emerald-700">
           Ville officielle sélectionnée
           {selected.codesPostaux[0]
-            ? ` · CP ${selected.codesPostaux.length > 1 ? `${[...selected.codesPostaux].sort()[0]}–${[...selected.codesPostaux].sort().at(-1)}` : selected.codesPostaux[0]}`
+            ? ` · CP ${selected.codesPostaux.length > 1 ? `${[...selected.codesPostaux].sort()[0]}–${[...selected.codesPostaux].sort().slice(-1)[0]}` : selected.codesPostaux[0]}`
             : ''}
         </p>
       )}
@@ -229,7 +229,7 @@ export function CityAutocomplete({
               commune.codesPostaux.length === 1
                 ? commune.codesPostaux[0]
                 : commune.codesPostaux.length > 1
-                  ? `${[...commune.codesPostaux].sort()[0]}–${[...commune.codesPostaux].sort().at(-1)}`
+                  ? `${[...commune.codesPostaux].sort()[0]}–${[...commune.codesPostaux].sort().slice(-1)[0]}`
                   : '';
             return (
               <li key={commune.code || commune.label} role="presentation">
