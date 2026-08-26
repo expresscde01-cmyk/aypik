@@ -1,10 +1,12 @@
 # o2switch (Apache) — SPA React/Vite + durcissement sécurité
 # Copié à la racine de dist/ au build : uploader avec index.html et assets/.
 # Ne déployer QUE le contenu de dist/ (ou aypik-deploy.zip), jamais le dépôt source.
+#
+# Entrée HTML : index.php (nonce CSP par requête pour Turnstile). Fallback index.html.
 
 Options -Indexes
 ServerSignature Off
-DirectoryIndex index.html
+DirectoryIndex index.php index.html
 AddDefaultCharset UTF-8
 
 <IfModule mod_mime.c>
@@ -17,6 +19,7 @@ AddDefaultCharset UTF-8
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/javascript application/json image/svg+xml
 </IfModule>
+
 <IfModule mod_brotli.c>
   AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css application/javascript application/json image/svg+xml
 </IfModule>
@@ -43,13 +46,14 @@ AddDefaultCharset UTF-8
   RewriteRule (?i)^(src|supabase|node_modules|\.git|scripts|migrations)(/|$) - [F,L]
   RewriteRule (?i)\.(env|sql|bak|old|config\.js)$ - [F,L]
 
-  # SPA : index.html. Les /assets/ manquants restent en 404
+  # SPA : index.php (nonce CSP). Les /assets/ manquants restent en 404
   # (sinon Apache servirait du HTML à la place d’un .js — CSP / parse error).
-  RewriteRule ^index\.html$ - [L]
+  RewriteRule ^index\.php$ - [L]
+  RewriteRule ^index\.html$ index.php [L]
   RewriteRule ^assets/ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . index.html [L]
+  RewriteRule . index.php [L]
 </IfModule>
 
 <IfModule mod_headers.c>
@@ -57,27 +61,24 @@ AddDefaultCharset UTF-8
   Header always unset X-Powered-By
 
   # Les CSP multiples se cumulent (la plus stricte gagne). On retire
-  # d'abord celle d'o2switch/cPanel avant d'en poser une compatible React.
+  # d'abord celle d'o2switch/cPanel. La CSP applicative est posée par
+  # index.php (nonce aléatoire par requête — requis pour Turnstile).
   Header unset Content-Security-Policy
   Header always unset Content-Security-Policy
   Header unset Content-Security-Policy-Report-Only
   Header always unset Content-Security-Policy-Report-Only
 
-  # script-src 'self' : un seul bundle JS externe (pas de script inline).
-  # Pas de hash ni de 'unsafe-inline' : un hash CSP annule 'unsafe-inline'.
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://js.stripe.com https://*.stripe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://geo.api.gouv.fr https://api.stripe.com https://*.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-ancestors 'none'"
-
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-Frame-Options "DENY"
   Header always set X-Permitted-Cross-Domain-Policies "none"
-  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self)"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
   Header always set Cross-Origin-Opener-Policy "same-origin"
   Header always set Cross-Origin-Resource-Policy "same-site"
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-  # index.html sans cache : sinon le navigateur garde l'ancien hash d'assets.
-  <FilesMatch "^index\.html$">
+  # HTML sans cache (nonce CSP + hash d'assets).
+  <FilesMatch "^(index\.html|index\.php)$">
     Header always set Cache-Control "no-cache, no-store, must-revalidate"
   </FilesMatch>
   <FilesMatch "\.(js|css|svg|woff2)$">

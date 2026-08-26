@@ -1,4 +1,4 @@
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
+import { loadStripe, type Stripe } from '@stripe/stripe-js/pure';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { supabase } from '@/lib/supabase';
 
@@ -11,8 +11,14 @@ const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
+/**
+ * Charge Stripe.js uniquement à la demande, et jamais en mode gratuit
+ * (`@stripe/stripe-js` non-pure injecte js.stripe.com dès l’import du module).
+ */
 export function getStripe() {
-  if (!stripePublishableKey) return Promise.resolve(null);
+  if (SITE_FREE_MODE || !stripePublishableKey) {
+    return Promise.resolve(null);
+  }
   if (!stripePromise) {
     stripePromise = loadStripe(stripePublishableKey);
   }
@@ -20,6 +26,7 @@ export function getStripe() {
 }
 
 export function isStripeConfigured() {
+  if (SITE_FREE_MODE) return false;
   return Boolean(stripePublishableKey);
 }
 
