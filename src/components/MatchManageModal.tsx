@@ -11,9 +11,13 @@ function firstName(name: string): string {
   return trimmed.split(/\s+/)[0] || trimmed;
 }
 
+export type MatchManageMode = 'manage' | 'broken' | 'waiting';
+export type MatchManageOrigin = 'like' | 'flash';
+
 export default function MatchManageModal({
   peer,
   mode,
+  origin = 'like',
   busy = false,
   error = null,
   onClose,
@@ -23,7 +27,9 @@ export default function MatchManageModal({
   onPurge,
 }: {
   peer: Pick<Profile, 'display_name' | 'photo_url'>;
-  mode: 'manage' | 'broken';
+  mode: MatchManageMode;
+  /** Requis pour `mode="waiting"` (Like ou Flash). */
+  origin?: MatchManageOrigin;
   busy?: boolean;
   error?: string | null;
   onClose: () => void;
@@ -34,6 +40,8 @@ export default function MatchManageModal({
 }) {
   const [confirmPurge, setConfirmPurge] = useState(false);
   const name = firstName(peer.display_name);
+  const kindLabel = origin === 'flash' ? 'flash' : 'like';
+  const showArchivePurge = mode === 'manage' || mode === 'waiting';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -49,7 +57,16 @@ export default function MatchManageModal({
   const title =
     mode === 'broken'
       ? `Match rompu avec ${name}`
-      : `Gestion du match avec ${name}`;
+      : mode === 'waiting'
+        ? `Gestion du ${kindLabel} avec ${name}`
+        : `Gestion du match avec ${name}`;
+
+  const description =
+    mode === 'broken'
+      ? 'Rétablis ce match ou supprime définitivement ce lien.'
+      : mode === 'waiting'
+        ? `Archive ce ${kindLabel} pour le retrouver dans Mis en attente par toi - archive, ou supprime-le définitivement.`
+        : 'Archive ce match pour le retrouver dans Matchs rompus, ou supprime-le définitivement.';
 
   return createPortal(
     <div
@@ -87,11 +104,7 @@ export default function MatchManageModal({
             >
               {title}
             </h2>
-            <p className="text-xs text-gray-500 mt-1">
-              {mode === 'broken'
-                ? 'Rétablis ce match ou supprime définitivement ce lien.'
-                : 'Archive ce match pour le retrouver dans Matchs rompus, ou supprime-le définitivement.'}
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
           </div>
           <button
             type="button"
@@ -109,7 +122,7 @@ export default function MatchManageModal({
           </p>
         ) : null}
 
-        {mode === 'manage' ? (
+        {showArchivePurge ? (
           <div className="p-4 flex flex-col gap-2">
             <button
               type="button"

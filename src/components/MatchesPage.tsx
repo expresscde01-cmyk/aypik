@@ -478,6 +478,8 @@ export default function MatchesPage({
   const [openPendingWaiting, setOpenPendingWaiting] =
     useState<PendingWaitingCard | null>(null);
   const [openBroken, setOpenBroken] = useState<BrokenMatchCard | null>(null);
+  /** Modale compacte après « sens interdit » sur une fiche Mis en attente. */
+  const [openWaitingManage, setOpenWaitingManage] = useState<Match | null>(null);
   const [brokenBusyId, setBrokenBusyId] = useState<string | null>(null);
   const restoredChatPeersRef = useRef<Set<string>>(new Set());
   const matchesLoadGen = useRef(0);
@@ -1499,7 +1501,8 @@ export default function MatchesPage({
         waiting: false,
         refused: true,
       };
-      setOpenProfile(refused);
+      setOpenWaitingManage(refused);
+      setOpenProfile(null);
       setError(null);
       matchesLoadGen.current += 1;
       forgetClearedWait(user.id, item.profile.id);
@@ -1517,7 +1520,7 @@ export default function MatchesPage({
         setPulseCategory(null);
         setPulseSingleId((id) => (id === item.profile.id ? null : id));
       } catch (err) {
-        setOpenProfile(item);
+        setOpenWaitingManage(null);
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       }
     },
@@ -1610,6 +1613,7 @@ export default function MatchesPage({
       });
       setError(null);
       setOpenProfile(null);
+      setOpenWaitingManage(null);
       setPulseCategory(null);
       setPulseSingleId((id) => (id === actorId ? null : id));
       setWaitArchives((prev) => [
@@ -3078,6 +3082,19 @@ export default function MatchesPage({
           onClose={() => setOpenBroken(null)}
           onRestore={() => void handleBrokenRestore(openBroken)}
           onPurge={() => void handleBrokenPurge(openBroken)}
+        />
+      )}
+
+      {openWaitingManage && (
+        <MatchManageModal
+          peer={openWaitingManage.profile}
+          mode="waiting"
+          origin={openWaitingManage.origin}
+          busy={actingId === openWaitingManage.profile.id}
+          error={null}
+          onClose={() => setOpenWaitingManage(null)}
+          onArchive={() => handleArchiveWaiting(openWaitingManage)}
+          onPurge={() => setOpenWaitingManage(null)}
         />
       )}
     </div>
