@@ -14,9 +14,9 @@ import {
 const VALUES = [
   {
     id: 'confiance',
-    title: 'Confiance & Vérification',
+    title: 'Sécurité & Authenticité',
     description:
-      'Un espace sécurisé où chaque profil est authentifié.',
+      'Chaque profil est authentifié pour bâtir une communauté de confiance.',
     Icon: ShieldCheck,
   },
   {
