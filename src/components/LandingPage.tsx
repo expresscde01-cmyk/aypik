@@ -1,5 +1,5 @@
 import { useState, useRef, type PointerEvent } from 'react';
-import { Gift, Heart, HeartHandshake, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalTerms';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
@@ -210,9 +210,10 @@ export function SiteHeader({
                 <button
                   type="button"
                   onClick={onSignOut}
-                  className="text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Déconnexion
+                  <LogOut className="w-4 h-4 shrink-0" aria-hidden />
                 </button>
               )}
             </div>

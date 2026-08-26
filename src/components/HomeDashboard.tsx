@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Compass,
   Heart,
+  LogOut,
   MapPin,
   MessageCircle,
   Sparkles,
@@ -268,9 +269,10 @@ export default function HomeDashboard({
               <button
                 type="button"
                 onClick={onSignOut}
-                className="text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 Déconnexion
+                <LogOut className="w-4 h-4 shrink-0" aria-hidden />
               </button>
             )}
           </div>
