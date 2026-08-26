@@ -182,57 +182,59 @@ export function SiteHeader({
 
   return (
     <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-      <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-        <a
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            onLogoClick?.();
-            if (window.location.pathname !== '/') {
-              window.history.pushState({}, '', '/');
-            }
-          }}
-          className="flex items-center gap-2.5 min-w-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
-          aria-label="Accueil Aypik"
-        >
-          <BrandMark size="sm" />
-          <BrandLockup />
-        </a>
+      <div className="max-w-3xl mx-auto px-4">
+        <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              onLogoClick?.();
+              if (window.location.pathname !== '/') {
+                window.history.pushState({}, '', '/');
+              }
+            }}
+            className="flex items-center gap-2 min-w-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+            aria-label="Accueil Aypik"
+          >
+            <BrandMark size="sm" />
+            <BrandLockup />
+          </a>
 
-        <div className="shrink-0">
-          {connected ? (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[12rem] truncate text-sm font-semibold text-gray-800">
-                <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
-                {displayName}
-              </span>
-              {onSignOut && (
-                <>
-                  <span
-                    className="w-px h-4 bg-gray-200 mx-0.5 shrink-0"
-                    aria-hidden
-                  />
-                  <button
-                    type="button"
-                    onClick={onSignOut}
-                    title="Déconnexion"
-                    aria-label="Déconnexion"
-                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" aria-hidden />
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onAuthClick?.('signup')}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold shadow-md shadow-rose-200/60 hover:opacity-95 transition-opacity"
-            >
-              Connexion / Inscription
-            </button>
-          )}
+          <div className="shrink-0">
+            {connected ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[12rem] truncate text-sm font-semibold text-gray-800">
+                  <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
+                  {displayName}
+                </span>
+                {onSignOut && (
+                  <>
+                    <span
+                      className="w-px h-4 bg-gray-200 mx-0.5 shrink-0"
+                      aria-hidden
+                    />
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      title="Déconnexion"
+                      aria-label="Déconnexion"
+                      className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" aria-hidden />
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAuthClick?.('signup')}
+                className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-rose-200/60 hover:opacity-95 transition-opacity"
+              >
+                Connexion / Inscription
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>

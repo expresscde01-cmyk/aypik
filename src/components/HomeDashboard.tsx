@@ -251,37 +251,39 @@ export default function HomeDashboard({
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <BrandMark size="sm" />
-            <BrandLockup />
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <NotificationsBell
-              onOpenInbox={onOpenMatches}
-              active={notificationsActive}
-            />
-            <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
-              <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
-              {displayName}
-            </span>
-            {onSignOut && (
-              <>
-                <span
-                  className="hidden sm:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
-                  aria-hidden
-                />
-                <button
-                  type="button"
-                  onClick={onSignOut}
-                  title="Déconnexion"
-                  aria-label="Déconnexion"
-                  className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" aria-hidden />
-                </button>
-              </>
-            )}
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <BrandMark size="sm" />
+              <BrandLockup />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <NotificationsBell
+                onOpenInbox={onOpenMatches}
+                active={notificationsActive}
+              />
+              <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
+                <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
+                {displayName}
+              </span>
+              {onSignOut && (
+                <>
+                  <span
+                    className="hidden sm:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    title="Déconnexion"
+                    aria-label="Déconnexion"
+                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" aria-hidden />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
