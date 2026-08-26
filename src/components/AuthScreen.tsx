@@ -7,9 +7,9 @@ import {
   ShieldCheck,
   Eye,
   EyeOff,
-  ArrowLeft,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import HomeBackButton from '@/components/HomeBackButton';
 import {
   EMAIL_ALREADY_REGISTERED_MESSAGE,
   isEmailAlreadyRegisteredError,
@@ -287,14 +287,9 @@ export default function AuthScreen({
 
       <div className="relative w-full max-w-md">
         {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Accueil
-          </button>
+          <div className="mb-4 flex justify-start">
+            <HomeBackButton onClick={onBack} />
+          </div>
         )}
 
         <div className="text-center mb-8">

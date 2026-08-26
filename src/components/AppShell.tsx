@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
+import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
+import HomeBackButton from '@/components/HomeBackButton';
 import MatchesPage from '@/components/MatchesPage';
 import NotificationsBell from '@/components/NotificationsBell';
 import UnreadBadge from '@/components/UnreadBadge';
@@ -254,17 +255,7 @@ function AppShellView() {
               <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => openTab('home')}
-                      className="inline-flex items-center gap-1.5 h-8 pl-1 pr-2.5 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 text-[13px] font-semibold transition-colors"
-                      aria-label="Retour à l’accueil"
-                    >
-                      <span className="w-6 h-6 rounded-full bg-white text-rose-500 flex items-center justify-center shadow-sm shadow-rose-100">
-                        <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
-                      </span>
-                      Accueil
-                    </button>
+                    <HomeBackButton onClick={() => openTab('home')} />
                     <h1 className="mt-3 text-2xl font-bold text-gray-900 tracking-tight">
                       Découvrir
                     </h1>
@@ -309,13 +300,7 @@ function AppShellView() {
           >
             <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
               <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => openTab('home')}
-                  className="text-sm font-semibold text-rose-600 hover:text-rose-700"
-                >
-                  ← Accueil
-                </button>
+                <HomeBackButton onClick={() => openTab('home')} />
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
@@ -352,6 +337,7 @@ function AppShellView() {
         {tab === 'profile' && (
           <ProfileSetup
             allowAccountDeletion
+            onHome={() => openTab('home')}
             onDone={async () => {
               await reloadViewerProfile();
               mountTab('home');
