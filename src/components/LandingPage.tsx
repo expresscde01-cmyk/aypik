@@ -124,8 +124,12 @@ function HeroChildFreeStamp() {
           onPointerEnter={moveLoupe}
           onPointerMove={moveLoupe}
           onPointerDown={(event) => {
+            event.preventDefault();
             event.currentTarget.setPointerCapture(event.pointerId);
             moveLoupe(event);
+          }}
+          onTouchStart={(event) => {
+            event.preventDefault();
           }}
           onPointerUp={(event) => {
             if (event.pointerType !== 'mouse') hideLoupe();
@@ -353,7 +357,7 @@ export default function LandingPage({
       />
 
       {/* Hero / Philosophie — une composition, brand first */}
-      <section className="relative isolate overflow-x-hidden">
+      <section className="hero-section relative isolate overflow-x-hidden">
         <div
           className="absolute inset-0 -z-10"
           style={{

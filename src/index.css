@@ -497,6 +497,15 @@ body {
   touch-action: manipulation;
 }
 
+.hero-section,
+.hero-section * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .hero-headline-stack {
   display: flex;
   flex-direction: column;
@@ -568,6 +577,9 @@ body {
   letter-spacing: -0.02em;
   line-height: 1;
   color: #1e293b;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .hero-loupe {
@@ -578,6 +590,9 @@ body {
   padding: 0.9rem 0.2rem;
   cursor: zoom-in;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .hero-loupe.is-on {
