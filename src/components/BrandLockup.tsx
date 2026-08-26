@@ -153,14 +153,11 @@ export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProp
   }
 
   return (
-    <div className={`min-w-0 flex items-baseline gap-2 ${className}`}>
+    <div className={`min-w-0 flex items-baseline gap-1 ${className}`}>
       <span className="shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none">
         {BRAND}
       </span>
-      <span className="min-w-0 truncate text-xs font-light text-gray-400 tracking-wide leading-none">
-        <span className="mr-1.5 text-gray-300" aria-hidden>
-          —
-        </span>
+      <span className="hidden sm:inline min-w-0 truncate text-xs font-light text-gray-400 tracking-wide leading-none">
         {BASELINE}
       </span>
     </div>

@@ -207,14 +207,21 @@ export function SiteHeader({
                 {displayName}
               </span>
               {onSignOut && (
-                <button
-                  type="button"
-                  onClick={onSignOut}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Déconnexion
-                  <LogOut className="w-4 h-4 shrink-0" aria-hidden />
-                </button>
+                <>
+                  <span
+                    className="w-px h-4 bg-gray-200 mx-0.5 shrink-0"
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    title="Déconnexion"
+                    aria-label="Déconnexion"
+                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" aria-hidden />
+                  </button>
+                </>
               )}
             </div>
           ) : (
