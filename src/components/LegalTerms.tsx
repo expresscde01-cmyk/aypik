@@ -154,7 +154,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 18 août 2026. Version applicable au
+              Dernière mise à jour : 26 août 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -440,6 +440,31 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 être adressé à {SUPPORT_EMAIL}.
               </p>
             </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.5 Genre et critères de mise en relation
+              </p>
+              <p>
+                Si l&apos;utilisateur ne renseigne pas son genre lors de
+                l&apos;inscription, son profil est présenté à l&apos;ensemble
+                des membres sans distinction de genre, et des profils de tout
+                genre lui sont réciproquement proposés, jusqu&apos;à ce que
+                cette information soit renseignée dans son profil.
+                L&apos;utilisateur peut renseigner ou modifier cette
+                information à tout moment depuis son profil ; les critères de
+                mise en relation en tiennent compte pour la suite.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">3.6 Mot de passe</p>
+              <p>
+                L&apos;utilisateur peut à tout moment modifier son mot de
+                passe depuis les paramètres de son profil (page Profil), sans
+                avoir besoin de contacter l&apos;éditeur. Il lui appartient
+                de choisir un mot de passe suffisamment robuste et de le
+                garder confidentiel.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -696,6 +721,19 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <h3 className="text-base font-bold text-gray-900">
               Annexe A — Glossaire
             </h3>
+            <div>
+              <p className="font-semibold text-gray-900">Mes Matchs</p>
+              <p>
+                Page regroupant les interactions de l&apos;utilisateur
+                (intérêts reçus, Matchs, archives et espaces associés). Sur
+                cette page, les profils sont classés par ordre chronologique
+                d&apos;apparition : les plus récemment ajoutés apparaissent
+                en haut à gauche de la grille, tandis que les profils apparus
+                antérieurement sont progressivement repoussés vers le bas à
+                droite, selon l&apos;ordre de lecture habituel (de gauche à
+                droite, puis de haut en bas).
+              </p>
+            </div>
             <div>
               <p className="font-semibold text-gray-900">Like</p>
               <p>
