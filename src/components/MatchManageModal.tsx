@@ -62,11 +62,23 @@ export default function MatchManageModal({
         : `Gestion du match avec ${name}`;
 
   const description =
-    mode === 'broken'
-      ? 'Rétablis ce match ou supprime définitivement ce lien.'
-      : mode === 'waiting'
-        ? `Archive ce ${kindLabel} pour le retrouver dans Mis en attente par toi - archive, ou supprime-le définitivement.`
-        : 'Archive ce match pour le retrouver dans Matchs rompus, ou supprime-le définitivement.';
+    mode === 'broken' ? (
+      'Rétablis ce match ou supprime définitivement ce lien.'
+    ) : mode === 'waiting' ? (
+      <>
+        Archive ce {kindLabel} pour le retrouver dans{' '}
+        <strong className="font-semibold text-gray-700">
+          Mis en attente par toi - archive
+        </strong>
+        , ou supprime-le définitivement.
+      </>
+    ) : (
+      <>
+        Archive ce match pour le retrouver dans{' '}
+        <strong className="font-semibold text-gray-700">Matchs rompus</strong>,
+        ou supprime-le définitivement.
+      </>
+    );
 
   return createPortal(
     <div
