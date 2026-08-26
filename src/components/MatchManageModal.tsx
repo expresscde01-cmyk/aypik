@@ -67,7 +67,7 @@ export default function MatchManageModal({
     ) : mode === 'waiting' ? (
       <>
         Archive ce {kindLabel} pour le retrouver dans{' '}
-        <strong className="font-semibold text-gray-700">
+        <strong className="font-bold text-gray-800">
           Mis en attente par toi - archive
         </strong>
         , ou supprime-le définitivement.
@@ -75,8 +75,8 @@ export default function MatchManageModal({
     ) : (
       <>
         Archive ce match pour le retrouver dans{' '}
-        <strong className="font-semibold text-gray-700">Matchs rompus</strong>,
-        ou supprime-le définitivement.
+        <strong className="font-bold text-gray-800">Matchs rompus</strong>, ou
+        supprime-le définitivement.
       </>
     );
 
