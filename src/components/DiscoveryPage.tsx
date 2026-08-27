@@ -919,7 +919,7 @@ export default function DiscoveryPage({
                   }}
                 />
               </div>
-              <label className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
                 <InterestOverlapSelect
                   value={minOverlap}
@@ -929,7 +929,7 @@ export default function DiscoveryPage({
                     setPrefs((prev) => ({ ...prev, minOverlap: next }));
                   }}
                 />
-              </label>
+              </div>
             </div>
           )}
         </div>
