@@ -34,3 +34,7 @@ service-account*.json
 supabase/.temp/
 .supabase/
 aypik-deploy.zip
+# Patches / diffs temporaires
+*.patch.txt
+*.patch
+
