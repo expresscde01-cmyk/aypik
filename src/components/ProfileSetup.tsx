@@ -916,11 +916,11 @@ export default function ProfileSetup({
                   Recevoir les notifications et actualisations par e-mail
                 </span>
                 <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
-                  En cochant cette option, vous acceptez de recevoir les
+                  En cochant cette option, tu acceptes de recevoir les
                   communications non essentielles de la plateforme, telles que
                   les nouveautés, les flashs ou les actualités du site. Les
-                  e-mails strictement nécessaires au bon fonctionnement du
-                  compte pourront toujours vous être envoyés.
+                  e-mails strictement nécessaires au bon fonctionnement de ton
+                  compte pourront toujours t&apos;être envoyés.
                 </span>
                 {(prefsSaving || prefsSaved) && (
                   <span
