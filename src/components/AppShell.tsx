@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -72,9 +72,8 @@ function AppShellView() {
   /** Invalide Accueil / Découvrir / Matchs uniquement après une vraie sauvegarde de profil. */
   const [profileEpoch, setProfileEpoch] = useState(0);
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
-  /** Bloc titre Découvrir : masqué au scroll bas, réaffiché au scroll haut. */
+  /** Bloc titre Découvrir : masqué au scroll, réaffiché seulement en haut de page. */
   const [discoverIntroCollapsed, setDiscoverIntroCollapsed] = useState(false);
-  const discoverScrollYRef = useRef(0);
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -136,34 +135,31 @@ function AppShellView() {
   useEffect(() => {
     if (tab !== 'discover') {
       setDiscoverIntroCollapsed(false);
-      discoverScrollYRef.current = 0;
       return;
     }
 
-    discoverScrollYRef.current = window.scrollY;
     let ticking = false;
+    /** Masquer après ce décalage ; ne réafficher qu’en haut de page. */
+    const hideAfterY = 12;
+    const showNearTopY = 8;
 
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
         const y = window.scrollY;
-        const delta = y - discoverScrollYRef.current;
-        const threshold = 8;
 
-        if (y < 40) {
+        if (y <= showNearTopY) {
           setDiscoverIntroCollapsed(false);
-        } else if (delta > threshold) {
+        } else if (y > hideAfterY) {
           setDiscoverIntroCollapsed(true);
-        } else if (delta < -threshold) {
-          setDiscoverIntroCollapsed(false);
         }
 
-        discoverScrollYRef.current = y;
         ticking = false;
       });
     };
 
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [tab]);
