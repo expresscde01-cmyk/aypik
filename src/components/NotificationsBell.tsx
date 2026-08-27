@@ -167,6 +167,24 @@ type PanelRow =
       soleName?: string | null;
     };
 
+/** Forme attendue si la fusion « À découvrir » + social est un jour réactivée (actuellement désactivée, voir `mergeNewWithSocial`). */
+type MergedNewSocial = {
+  social: { id: string };
+  actorId: string;
+  displayName: string;
+  origin: 'like' | 'flash';
+  at: number;
+} | null;
+
+/**
+ * Toujours `null` pour le moment (fusion désactivée) — passe par une fonction
+ * plutôt qu'un littéral direct pour que TypeScript garde le type large
+ * `MergedNewSocial` au lieu de figer la valeur à `null` partout où elle est lue.
+ */
+function getMergeNewWithSocial(): MergedNewSocial {
+  return null;
+}
+
 function sortRowsForTone(tone: NotifTone, rows: PanelRow[]): PanelRow[] {
   return [...rows].sort((a, b) => {
     if (tone === 'wait') {
@@ -451,7 +469,7 @@ export default function NotificationsBell({
   }, [socialItems, activeCatNew?.count, resolvedActorIds, matchedIds]);
 
   /** Like/Flash individuels restent au-dessus ; le récap « Tu as ces… ci-dessus » les relie. */
-  const mergeNewWithSocial = null;
+  const mergeNewWithSocial = getMergeNewWithSocial();
 
   const categoryUnread =
     (hasNewAlert && !mergeNewWithSocial ? 1 : 0) +

@@ -9,11 +9,11 @@ import {
 /**
  * Widget Cloudflare Turnstile (CAPTCHA) — rendu explicite via window.turnstile.
  *
- * Le script officiel est chargé dynamiquement (une seule fois, même si
- * plusieurs widgets sont montés) depuis challenges.cloudflare.com.
- * Ce host doit être autorisé dans script-src ET frame-src de la CSP
- * (voir public/.htaccess) sinon le widget ne s'affichera jamais et aucun
- * token ne sera émis.
+ * api.js est chargé en <script src="https://challenges.cloudflare.com/...">
+ * (pas de script inline maison). Cloudflare injecte ensuite des scripts
+ * inline dynamiques : on leur propage le nonce CSP lu depuis
+ * <meta name="csp-nonce"> (posé par public/index.php à chaque requête).
+ * Voir https://developers.cloudflare.com/turnstile/reference/content-security-policy/
  */
 
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -44,6 +44,14 @@ declare global {
   }
 }
 
+function readCspNonce(): string | undefined {
+  const raw = document
+    .querySelector('meta[name="csp-nonce"]')
+    ?.getAttribute('content')
+    ?.trim();
+  return raw || undefined;
+}
+
 function loadTurnstileScript(onReady: () => void): void {
   if (typeof window === 'undefined') return;
   if (window.turnstile) {
@@ -57,9 +65,13 @@ function loadTurnstileScript(onReady: () => void): void {
 
   const script = document.createElement('script');
   script.id = SCRIPT_ID;
-  script.src = `${SCRIPT_SRC}?onload=__onTurnstileLoad`;
+  script.src = `${SCRIPT_SRC}?render=explicit&onload=__onTurnstileLoad`;
   script.async = true;
   script.defer = true;
+  const nonce = readCspNonce();
+  if (nonce) {
+    script.nonce = nonce;
+  }
   (window as unknown as Record<string, unknown>).__onTurnstileLoad = () => {
     (window.__turnstileOnLoadCallbacks || []).forEach((cb) => cb());
     window.__turnstileOnLoadCallbacks = [];

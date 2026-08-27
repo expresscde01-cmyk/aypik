@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 export const DELETE_LINK_CONFIRM_MESSAGE =
-  'Êtes-vous sûr de vouloir supprimer ce lien ? Cette action est irréversible';
+  'Veux-tu vraiment supprimer ce lien ? Cette action est irréversible.';
 
 export default function ConfirmDeleteModal({
   busy = false,

@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Compass,
   Heart,
+  LogOut,
   MapPin,
   MessageCircle,
   Sparkles,
   UserRound,
 } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
-import { FounderBadge } from '@/components/membership/Badges';
+import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
@@ -250,29 +251,39 @@ export default function HomeDashboard({
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <BrandMark size="sm" />
-            <BrandLockup />
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <NotificationsBell
-              onOpenInbox={onOpenMatches}
-              active={notificationsActive}
-            />
-            <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
-              <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
-              {displayName}
-            </span>
-            {onSignOut && (
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                Déconnexion
-              </button>
-            )}
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <BrandMark size="sm" />
+              <BrandLockup />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <NotificationsBell
+                onOpenInbox={onOpenMatches}
+                active={notificationsActive}
+              />
+              <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
+                <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
+                {displayName}
+              </span>
+              {onSignOut && (
+                <>
+                  <span
+                    className="hidden sm:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    title="Déconnexion"
+                    aria-label="Déconnexion"
+                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" aria-hidden />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -411,14 +422,12 @@ export default function HomeDashboard({
                           {p.display_name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
-                        {p.age} ans
-                      </span>
-                      {p.is_founder && (
-                        <div className="absolute top-2 left-2 max-w-[70%]">
-                          <FounderBadge number={p.founder_number} size="sm" />
-                        </div>
-                      )}
+                      <ProfileCardCornerBadges
+                        age={p.age}
+                        isBoosted={p.is_boosted}
+                        isFounder={p.is_founder}
+                        founderNumber={p.founder_number}
+                      />
                       {unreadCount > 0 && (
                         <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
                           <MessageCircle className="w-3 h-3" />

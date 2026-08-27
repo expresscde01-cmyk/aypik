@@ -53,6 +53,7 @@ import {
   latestBirthDateForAge,
 } from '@/lib/dating';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import HomeBackButton from '@/components/HomeBackButton';
 
 export type ProfileGender = 'homme' | 'femme';
 
@@ -82,9 +83,12 @@ export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications
 
 export default function ProfileSetup({
   onDone,
+  onHome,
   allowAccountDeletion = false,
 }: {
   onDone: () => void;
+  /** Retour Accueil (onglet Profil connecté). Absent au 1er setup. */
+  onHome?: () => void;
   allowAccountDeletion?: boolean;
 }) {
   const { user, signOut } = useAuth();
@@ -526,6 +530,11 @@ export default function ProfileSetup({
 
         {canEditProfile && (
           <>
+        {onHome ? (
+          <div className="mb-4 flex justify-start">
+            <HomeBackButton onClick={onHome} />
+          </div>
+        ) : null}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
@@ -907,11 +916,11 @@ export default function ProfileSetup({
                   Recevoir les notifications et actualisations par e-mail
                 </span>
                 <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
-                  En cochant cette option, vous acceptez de recevoir les
+                  En cochant cette option, tu acceptes de recevoir les
                   communications non essentielles de la plateforme, telles que
                   les nouveautés, les flashs ou les actualités du site. Les
-                  e-mails strictement nécessaires au bon fonctionnement du
-                  compte pourront toujours vous être envoyés.
+                  e-mails strictement nécessaires au bon fonctionnement de ton
+                  compte pourront toujours t&apos;être envoyés.
                 </span>
                 {(prefsSaving || prefsSaved) && (
                   <span

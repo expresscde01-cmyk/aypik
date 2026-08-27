@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Compass, Heart, Home, User } from 'lucide-react';
+import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
+import HomeBackButton from '@/components/HomeBackButton';
 import MatchesPage from '@/components/MatchesPage';
 import NotificationsBell from '@/components/NotificationsBell';
 import UnreadBadge from '@/components/UnreadBadge';
@@ -13,6 +14,8 @@ import ProfileSetup, {
   PROFILE_CARD_COLUMNS,
   type Profile,
 } from '@/components/ProfileSetup';
+import PhoneVerification from '@/components/PhoneVerification';
+import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
   normalizeOpenMatchesOpts,
@@ -69,6 +72,8 @@ function AppShellView() {
   /** Invalide Accueil / Découvrir / Matchs uniquement après une vraie sauvegarde de profil. */
   const [profileEpoch, setProfileEpoch] = useState(0);
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
+  /** Bloc titre Découvrir : masqué au scroll, réaffiché seulement en haut de page. */
+  const [discoverIntroCollapsed, setDiscoverIntroCollapsed] = useState(false);
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -127,6 +132,43 @@ function AppShellView() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (tab !== 'discover') {
+      setDiscoverIntroCollapsed(false);
+      return;
+    }
+
+    let ticking = false;
+    /** Masquer après ce décalage ; ne réafficher qu’en haut de page. */
+    const hideAfterY = 12;
+    const showNearTopY = 8;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+
+        if (y <= showNearTopY) {
+          setDiscoverIntroCollapsed(false);
+        } else if (y > hideAfterY) {
+          setDiscoverIntroCollapsed(true);
+        }
+
+        ticking = false;
+      });
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tab]);
+
+  const isPostPhoneRequirementAccount =
+    Boolean(user?.created_at) &&
+    new Date(user!.created_at) >= new Date(PHONE_VERIFICATION_REQUIRED_SINCE);
+  const needsPhoneVerification =
+    Boolean(user) && !user?.phone_confirmed_at && isPostPhoneRequirementAccount;
   const needsProfile = !profileLoading && !profile;
   const displayName =
     profile?.display_name?.trim() ||
@@ -164,6 +206,10 @@ function AppShellView() {
         <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
       </div>
     );
+  }
+
+  if (needsPhoneVerification) {
+    return <PhoneVerification />;
   }
 
   if (needsProfile) {
@@ -239,45 +285,44 @@ function AppShellView() {
               tab === 'discover' ? 'min-h-full flex flex-col' : 'hidden'
             }
           >
-            <header className="sticky top-0 z-10 discover-sticky-header">
-              <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => openTab('home')}
-                      className="inline-flex items-center gap-1.5 h-8 pl-1 pr-2.5 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 text-[13px] font-semibold transition-colors"
-                      aria-label="Retour à l’accueil"
-                    >
-                      <span className="w-6 h-6 rounded-full bg-white text-rose-500 flex items-center justify-center shadow-sm shadow-rose-100">
-                        <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
-                      </span>
-                      Accueil
-                    </button>
-                    <h1 className="mt-3 text-2xl font-bold text-gray-900 tracking-tight">
-                      Découvrir
-                    </h1>
-                    <span
-                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
-                      aria-hidden
-                    />
-                    <p className="mt-1.5 text-sm text-gray-500 leading-snug">
-                      Découvre des profils qui pourraient te plaire
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
-                      <em>
-                        Les filtres sélectionnés ici s’appliqueront
-                        automatiquement dès que tu quitteras cette page pour
-                        personnaliser les suggestions qui te seront faites
-                        sur ta page Accueil.
-                      </em>
-                    </p>
-                  </div>
-                  <div className="shrink-0 -mr-1 -mt-0.5">
+            <header className="sticky top-0 z-30 discover-sticky-header">
+              <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 sm:pt-4 sm:pb-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <HomeBackButton onClick={() => openTab('home')} />
+                  <div className="shrink-0 -mr-1">
                     <NotificationsBell
                       onOpenInbox={openMatches}
                       active={tab === 'discover'}
                     />
+                  </div>
+                </div>
+                <div
+                  className={`discover-intro${
+                    discoverIntroCollapsed ? ' discover-intro--collapsed' : ''
+                  }`}
+                  aria-hidden={discoverIntroCollapsed}
+                >
+                  <div className="discover-intro-inner">
+                    <div className="discover-intro-motion pt-3 pb-2 sm:pb-2.5">
+                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                        Découvrir
+                      </h1>
+                      <span
+                        className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
+                        aria-hidden
+                      />
+                      <p className="mt-1.5 text-sm text-gray-500 leading-snug">
+                        Découvre des profils qui pourraient te plaire
+                      </p>
+                      <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
+                        <em>
+                          Les filtres sélectionnés ici s’appliqueront
+                          automatiquement dès que tu quitteras cette page pour
+                          personnaliser les suggestions qui te seront faites
+                          sur ta page Accueil.
+                        </em>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -298,13 +343,7 @@ function AppShellView() {
           >
             <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
               <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => openTab('home')}
-                  className="text-sm font-semibold text-rose-600 hover:text-rose-700"
-                >
-                  ← Accueil
-                </button>
+                <HomeBackButton onClick={() => openTab('home')} />
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
@@ -341,6 +380,7 @@ function AppShellView() {
         {tab === 'profile' && (
           <ProfileSetup
             allowAccountDeletion
+            onHome={() => openTab('home')}
             onDone={async () => {
               await reloadViewerProfile();
               mountTab('home');

@@ -1,5 +1,4 @@
 import { useId } from 'react';
-import { Heart } from 'lucide-react';
 
 type BrandLockupProps = {
   variant?: 'nav' | 'hero' | 'inline';
@@ -20,37 +19,72 @@ const BRAND_GRADIENT_STOPS = [
   { offset: '100%', color: '#fbbf24' },
 ] as const;
 
+/**
+ * Tracé Lucide Heart (viewBox 0 0 24 24) — ne pas modifier.
+ */
+export const BRAND_HEART_PATH =
+  'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z';
+
+/**
+ * Étincelle 4 branches fines (R=1), côtés concaves.
+ * M0,-R C(R*0.167),-(R*0.202) (R*0.202),-(R*0.167) R,0 … (+ symétriques).
+ */
+const BRAND_SPARKLE_PATH =
+  'M0,-1 C0.167,-0.202 0.202,-0.167 1,0 C0.202,0.167 0.167,0.202 0,1 C-0.167,0.202 -0.202,0.167 -1,0 C-0.202,-0.167 -0.167,-0.202 0,-1 Z';
+
+/** 12.5 % de H≈18 → étoile = 25 % de la hauteur du cœur. */
+const BRAND_SPARKLE_R = 2.25;
+
+/** Lobe droit ; pointe basse pile au creux (~y=7) ; pas de rotation. */
+const SPARKLE_TRANSFORM = `translate(15.5 ${7 - BRAND_SPARKLE_R}) scale(${BRAND_SPARKLE_R})`;
+
 type BrandHeartProps = {
   className?: string;
 };
 
-/** Heart filled with the brand gradient (top rose → bottom amber). */
+/** Heart filled with the brand gradient + clipped white sparkle. */
 export function BrandHeart({ className = 'w-6 h-6' }: BrandHeartProps) {
   const rawId = useId();
-  const gradId = `aypik-heart-${rawId.replace(/:/g, '')}`;
+  const uid = rawId.replace(/:/g, '');
+  const gradId = `aypik-heart-${uid}`;
+  const clipId = `aypik-heart-clip-${uid}`;
 
   return (
-    <>
-      <svg width={0} height={0} className="absolute" aria-hidden>
-        <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            {BRAND_GRADIENT_STOPS.map((stop) => (
-              <stop
-                key={stop.offset}
-                offset={stop.offset}
-                stopColor={stop.color}
-              />
-            ))}
-          </linearGradient>
-        </defs>
-      </svg>
-      <Heart
-        className={className}
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          {BRAND_GRADIENT_STOPS.map((stop) => (
+            <stop
+              key={stop.offset}
+              offset={stop.offset}
+              stopColor={stop.color}
+            />
+          ))}
+        </linearGradient>
+        <clipPath id={clipId}>
+          <path d={BRAND_HEART_PATH} />
+        </clipPath>
+      </defs>
+      <path
+        d={BRAND_HEART_PATH}
         fill={`url(#${gradId})`}
         stroke={`url(#${gradId})`}
-        aria-hidden
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-    </>
+      <g clipPath={`url(#${clipId})`}>
+        <g transform={SPARKLE_TRANSFORM}>
+          <path d={BRAND_SPARKLE_PATH} fill="#FFFFFF" />
+        </g>
+      </g>
+    </svg>
   );
 }
 
@@ -119,14 +153,16 @@ export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProp
   }
 
   return (
-    <div className={`min-w-0 flex items-baseline gap-2 ${className}`}>
+    <div
+      className={`min-w-0 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-1 ${className}`}
+    >
       <span className="shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none">
         {BRAND}
       </span>
-      <span className="min-w-0 truncate text-xs font-light text-gray-400 tracking-wide leading-none">
-        <span className="mr-1.5 text-gray-300" aria-hidden>
-          —
-        </span>
+      <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
+        Communauté sans enfants
+      </span>
+      <span className="hidden sm:inline min-w-0 truncate text-xs font-light text-gray-400 tracking-wide leading-none">
         {BASELINE}
       </span>
     </div>
