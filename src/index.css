@@ -424,6 +424,19 @@ body {
   transform: scaleX(1);
 }
 
+/* Mobile only : bulle « Nouveaux profils » ancrée à gauche, une ligne, pas de coupe à gauche. */
+@media (max-width: 639px) {
+  .discovery-sort-pill:first-child .discovery-sort-hint {
+    left: 0;
+    transform: none;
+    max-width: none;
+  }
+
+  .discovery-sort-pill:first-child .discovery-sort-hint-panel {
+    transform-origin: 0% 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .discovery-sort-hint,
   .discovery-sort-hint-panel,
