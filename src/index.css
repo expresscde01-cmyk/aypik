@@ -26,6 +26,8 @@ body {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  /* Au-dessus des z-index locaux des cartes (Flash/Like), sous les modales. */
+  isolation: isolate;
 }
 
 /* Icônes de tri uniquement — jamais les autres icônes du site */

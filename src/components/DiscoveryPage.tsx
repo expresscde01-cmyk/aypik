@@ -1218,7 +1218,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   return (
     <li>
       <article
-        className={`relative rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
+        className={`relative isolate rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
           unreadCount > 0
             ? 'border-rose-300 ring-2 ring-rose-100'
             : 'border-gray-100 hover:border-rose-100'
@@ -1309,7 +1309,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             distanceKm={c.distance_km}
           />
           <div
-            className="relative z-10 flex items-center justify-center gap-2 pt-1.5 overflow-visible"
+            className="relative z-[2] flex items-center justify-center gap-2 pt-1.5 overflow-visible"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -1321,7 +1321,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                   onFlash(c);
                 }}
                 disabled={busy || alreadyFlashed}
-                className="group relative z-10 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer overflow-visible hover:z-20"
+                className="group relative w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer overflow-visible"
                 aria-label={
                   alreadyFlashed
                     ? `Déjà flashé ${c.display_name}`
@@ -1329,7 +1329,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 }
               >
                 <Zap className="w-4 h-4 text-white" fill="white" />
-                <span className="pointer-events-none absolute z-30 top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-amber-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-amber-800 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                <span className="pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-amber-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-amber-800 shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
                   {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'}
                 </span>
               </button>
@@ -1341,7 +1341,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 onLike(c);
               }}
               disabled={busy || likesExhausted || alreadyLiked}
-              className="group relative z-10 w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-40 cursor-pointer overflow-visible hover:z-20"
+              className="group relative w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer overflow-visible"
               aria-label={
                 alreadyLiked
                   ? `Déjà liké ${c.display_name}`
@@ -1349,7 +1349,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
               }
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
-              <span className="pointer-events-none absolute z-30 top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+              <span className="pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
                 {alreadyLiked
                   ? 'Déjà liké'
                   : likesExhausted

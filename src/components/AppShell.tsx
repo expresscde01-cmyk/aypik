@@ -251,7 +251,7 @@ function AppShellView() {
               tab === 'discover' ? 'min-h-full flex flex-col' : 'hidden'
             }
           >
-            <header className="sticky top-0 z-10 discover-sticky-header">
+            <header className="sticky top-0 z-30 discover-sticky-header">
               <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
