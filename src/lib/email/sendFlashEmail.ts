@@ -1,5 +1,7 @@
-import { supabase } from '@/lib/supabase';
-
+/**
+ * @deprecated Les e-mails Flash / Like / Match partent désormais côté serveur
+ * (pg_net → Edge Function send-social-email). Ne plus appeler depuis le client.
+ */
 export type SendFlashEmailInput = {
   notificationId: string;
   flashId: string;
@@ -16,59 +18,14 @@ export type SendFlashEmailResult = {
   id?: string | null;
 };
 
-/**
- * Envoie l'e-mail transactionnel « flash reçu » via Edge Function Resend.
- * Non bloquant : les échecs réseau ne doivent pas casser l'UX flash.
- */
+/** No-op conservé pour compat éventuelle — l’envoi est serveur. */
 export async function sendFlashReceivedEmail(
-  input: SendFlashEmailInput
+  _input: SendFlashEmailInput
 ): Promise<SendFlashEmailResult> {
-  try {
-    const { data, error } = await supabase.functions.invoke('send-flash-email', {
-      body: {
-        notificationId: input.notificationId,
-        flashId: input.flashId,
-        toUserId: input.toUserId,
-        fromDisplayName: input.fromDisplayName?.trim() || undefined,
-      },
-    });
-
-    if (error) {
-      return { ok: false, error: error.message };
-    }
-
-    const payload =
-      data && typeof data === 'object'
-        ? (data as Record<string, unknown>)
-        : {};
-
-    if (payload.error && !payload.ok) {
-      return {
-        ok: false,
-        skipped: payload.skipped === true,
-        skippedReason:
-          typeof payload.skippedReason === 'string'
-            ? payload.skippedReason
-            : null,
-        error: String(payload.error),
-      };
-    }
-
-    return {
-      ok: true,
-      alreadySent: payload.alreadySent === true,
-      skipped: payload.skipped === true,
-      skippedReason:
-        typeof payload.skippedReason === 'string'
-          ? payload.skippedReason
-          : null,
-      id: typeof payload.id === 'string' ? payload.id : null,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : 'Échec envoi e-mail',
-    };
-  }
+  return {
+    ok: true,
+    skipped: true,
+    skippedReason: 'server_side_dispatch',
+    error: null,
+  };
 }

@@ -24,7 +24,6 @@ import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
-import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import {
   GEO_PERIMETER_FILTER_LABEL,
   GEO_PERIMETER_MENU,
@@ -790,22 +789,10 @@ export default function DiscoveryPage({
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
-            : `Flash envoyé à ${candidate.display_name} ✨`
+            : result.matched
+              ? `C’est un match avec ${candidate.display_name} !`
+              : `Flash envoyé à ${candidate.display_name} ✨`
         );
-
-        if (
-          result.should_notify_email &&
-          result.notification_id &&
-          result.flash_id &&
-          result.to_user
-        ) {
-          void sendFlashReceivedEmail({
-            notificationId: result.notification_id,
-            flashId: result.flash_id,
-            toUserId: result.to_user,
-            fromDisplayName: result.from_display_name,
-          });
-        }
 
         window.setTimeout(() => setToast(null), 2800);
       } catch {

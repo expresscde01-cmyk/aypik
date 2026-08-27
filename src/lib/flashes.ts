@@ -8,6 +8,7 @@ import {
 export type SendFlashResult = {
   ok: boolean;
   already_flashed?: boolean;
+  matched?: boolean;
   flash_id?: string;
   notification_id?: string;
   to_user?: string;
@@ -35,6 +36,7 @@ export async function sendFlash(toUserId: string): Promise<SendFlashResult> {
   return {
     ok: payload.ok === true,
     already_flashed: payload.already_flashed === true,
+    matched: payload.matched === true,
     flash_id: typeof payload.flash_id === 'string' ? payload.flash_id : undefined,
     notification_id:
       typeof payload.notification_id === 'string'

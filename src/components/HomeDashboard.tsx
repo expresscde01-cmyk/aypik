@@ -30,7 +30,6 @@ import { queryKeys } from '@/lib/queryClient';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
-import { sendFlashReceivedEmail } from '@/lib/email/sendFlashEmail';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
 
 type HomeSuggestion = SuggestedProfile & {
@@ -221,22 +220,10 @@ export default function HomeDashboard({
         setToast(
           result.already_flashed
             ? 'Tu as déjà flashé ce profil'
-            : `Flash envoyé à ${candidate.display_name} ✨`
+            : result.matched
+              ? `C’est un match avec ${candidate.display_name} !`
+              : `Flash envoyé à ${candidate.display_name} ✨`
         );
-
-        if (
-          result.should_notify_email &&
-          result.notification_id &&
-          result.flash_id &&
-          result.to_user
-        ) {
-          void sendFlashReceivedEmail({
-            notificationId: result.notification_id,
-            flashId: result.flash_id,
-            toUserId: result.to_user,
-            fromDisplayName: result.from_display_name,
-          });
-        }
 
         window.setTimeout(() => setToast(null), 2800);
       } catch {

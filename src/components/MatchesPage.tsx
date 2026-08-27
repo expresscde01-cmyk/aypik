@@ -668,7 +668,12 @@ export default function MatchesPage({
       const matchIdSet = new Set(matchEntries.map((m) => m.id));
 
       for (const f of incomingFlashes) {
-        if (matchIdSet.has(f.from_user) || !sentSet.has(f.from_user)) continue;
+        if (
+          matchIdSet.has(f.from_user) ||
+          (!sentSet.has(f.from_user) && !outgoingFlashMap.has(f.from_user))
+        ) {
+          continue;
+        }
         const mine = myFirstAt(f.from_user);
         const role = matchRoleFromDates(mine, f.created_at);
         matchEntries.push({
