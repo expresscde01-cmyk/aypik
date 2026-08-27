@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
 import { PROFILE_OWN_COLUMNS, type Profile } from '@/components/ProfileSetup';
-import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
+import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   AdvancedFiltersTeaser,
@@ -1246,17 +1246,12 @@ const DiscoveryCard = memo(function DiscoveryCard({
               {c.display_name.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
-            {c.age} ans
-          </span>
-          {(c.is_boosted || c.is_founder) && (
-            <div className="absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]">
-              {c.is_boosted && <BoostedBadge size="sm" />}
-              {c.is_founder && (
-                <FounderBadge number={c.founder_number} size="sm" />
-              )}
-            </div>
-          )}
+          <ProfileCardCornerBadges
+            age={c.age}
+            isBoosted={c.is_boosted}
+            isFounder={c.is_founder}
+            founderNumber={c.founder_number}
+          />
           {unreadCount > 0 && (
             <button
               type="button"

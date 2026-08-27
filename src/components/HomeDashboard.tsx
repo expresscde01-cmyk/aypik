@@ -10,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
-import { FounderBadge } from '@/components/membership/Badges';
+import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
@@ -422,14 +422,12 @@ export default function HomeDashboard({
                           {p.display_name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
-                        {p.age} ans
-                      </span>
-                      {p.is_founder && (
-                        <div className="absolute top-2 left-2 max-w-[70%]">
-                          <FounderBadge number={p.founder_number} size="sm" />
-                        </div>
-                      )}
+                      <ProfileCardCornerBadges
+                        age={p.age}
+                        isBoosted={p.is_boosted}
+                        isFounder={p.is_founder}
+                        founderNumber={p.founder_number}
+                      />
                       {unreadCount > 0 && (
                         <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
                           <MessageCircle className="w-3 h-3" />
