@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -72,6 +72,9 @@ function AppShellView() {
   /** Invalide Accueil / Découvrir / Matchs uniquement après une vraie sauvegarde de profil. */
   const [profileEpoch, setProfileEpoch] = useState(0);
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
+  /** Bloc titre Découvrir : masqué au scroll bas, réaffiché au scroll haut. */
+  const [discoverIntroCollapsed, setDiscoverIntroCollapsed] = useState(false);
+  const discoverScrollYRef = useRef(0);
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -129,6 +132,41 @@ function AppShellView() {
       active = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (tab !== 'discover') {
+      setDiscoverIntroCollapsed(false);
+      discoverScrollYRef.current = 0;
+      return;
+    }
+
+    discoverScrollYRef.current = window.scrollY;
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const delta = y - discoverScrollYRef.current;
+        const threshold = 8;
+
+        if (y < 40) {
+          setDiscoverIntroCollapsed(false);
+        } else if (delta > threshold) {
+          setDiscoverIntroCollapsed(true);
+        } else if (delta < -threshold) {
+          setDiscoverIntroCollapsed(false);
+        }
+
+        discoverScrollYRef.current = y;
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tab]);
 
   const isPostPhoneRequirementAccount =
     Boolean(user?.created_at) &&
@@ -252,34 +290,43 @@ function AppShellView() {
             }
           >
             <header className="sticky top-0 z-30 discover-sticky-header">
-              <div className="max-w-2xl mx-auto px-4 pt-3 pb-4 sm:pt-4 sm:pb-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <HomeBackButton onClick={() => openTab('home')} />
-                    <h1 className="mt-3 text-2xl font-bold text-gray-900 tracking-tight">
-                      Découvrir
-                    </h1>
-                    <span
-                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
-                      aria-hidden
-                    />
-                    <p className="mt-1.5 text-sm text-gray-500 leading-snug">
-                      Découvre des profils qui pourraient te plaire
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
-                      <em>
-                        Les filtres sélectionnés ici s’appliqueront
-                        automatiquement dès que tu quitteras cette page pour
-                        personnaliser les suggestions qui te seront faites
-                        sur ta page Accueil.
-                      </em>
-                    </p>
-                  </div>
-                  <div className="shrink-0 -mr-1 -mt-0.5">
+              <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 sm:pt-4 sm:pb-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <HomeBackButton onClick={() => openTab('home')} />
+                  <div className="shrink-0 -mr-1">
                     <NotificationsBell
                       onOpenInbox={openMatches}
                       active={tab === 'discover'}
                     />
+                  </div>
+                </div>
+                <div
+                  className={`discover-intro${
+                    discoverIntroCollapsed ? ' discover-intro--collapsed' : ''
+                  }`}
+                  aria-hidden={discoverIntroCollapsed}
+                >
+                  <div className="discover-intro-inner">
+                    <div className="discover-intro-motion pt-3 pb-2 sm:pb-2.5">
+                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                        Découvrir
+                      </h1>
+                      <span
+                        className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
+                        aria-hidden
+                      />
+                      <p className="mt-1.5 text-sm text-gray-500 leading-snug">
+                        Découvre des profils qui pourraient te plaire
+                      </p>
+                      <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
+                        <em>
+                          Les filtres sélectionnés ici s’appliqueront
+                          automatiquement dès que tu quitteras cette page pour
+                          personnaliser les suggestions qui te seront faites
+                          sur ta page Accueil.
+                        </em>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

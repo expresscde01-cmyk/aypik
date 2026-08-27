@@ -30,6 +30,35 @@ body {
   isolation: isolate;
 }
 
+.discover-intro {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 280ms ease,
+    opacity 240ms ease;
+}
+
+.discover-intro--collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.discover-intro-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.discover-intro-motion {
+  transform: translateY(0);
+  transition: transform 280ms ease;
+}
+
+.discover-intro--collapsed .discover-intro-motion {
+  transform: translateY(-0.5rem);
+}
+
 /* Icônes de tri uniquement — jamais les autres icônes du site */
 .discovery-sort-pills .sort-icon {
   display: inline-flex;
@@ -402,8 +431,14 @@ body {
   .discovery-sort-toggle-thumb,
   .geo-exclusive-toggle-track,
   .geo-exclusive-toggle-thumb,
-  .discovery-filters--off {
+  .discovery-filters--off,
+  .discover-intro,
+  .discover-intro-motion {
     transition: none;
+  }
+
+  .discover-intro--collapsed .discover-intro-motion {
+    transform: none;
   }
 }
 
