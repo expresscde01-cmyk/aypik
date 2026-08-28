@@ -9,9 +9,9 @@
   html, body { margin: 0; padding: 0; height: 100%; background: #fdf9f6; font-family: Arial, Helvetica, sans-serif; color: #374151; }
   .wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
   .card { max-width: 440px; width: 100%; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 24px; padding: 40px 32px; text-align: center; box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06); }
-  .icon { width: 56px; height: 56px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 16px; }
-  h1 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 800; color: #f97316; }
-  h2 { margin: 0 0 16px; font-size: 22px; line-height: 1.3; color: #111827; }
+  .icon { width: 64px; height: 64px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #f3f4f6; border-radius: 18px; box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08); }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 800; color: #111827; }
+  h2 { margin: 16px 0 16px; font-size: 22px; line-height: 1.3; color: #111827; }
   p { margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4b5563; }
   .sub { margin-top: 20px; font-size: 13px; color: #9ca3af; }
 </style>
@@ -20,8 +20,15 @@
   <div class="wrap">
     <div class="card">
       <div class="icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        <svg width="34" height="34" viewBox="0 0 24 24">
+          <defs>
+            <linearGradient id="heartGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f43f5e"/>
+              <stop offset="100%" stop-color="#fbbf24"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#heartGrad)" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+          <path fill="#ffffff" d="M16.3 5.2l.55 1.65 1.65.55-1.65.55-.55 1.65-.55-1.65-1.65-.55 1.65-.55z"/>
         </svg>
       </div>
       <h1>Aypik</h1>

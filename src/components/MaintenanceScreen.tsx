@@ -3,20 +3,23 @@ const DEFAULT_LINES = [
   'Le site sera de retour très bientôt — merci de votre patience !',
 ] as const;
 
-function HeartIcon() {
+function LogoMark() {
   return (
-    <svg
-      width={26}
-      height={26}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#f97316"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    <svg width={34} height={34} viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id="heartGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f43f5e" />
+          <stop offset="100%" stopColor="#fbbf24" />
+        </linearGradient>
+      </defs>
+      <path
+        fill="url(#heartGrad)"
+        d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"
+      />
+      <path
+        fill="#ffffff"
+        d="M16.3 5.2l.55 1.65 1.65.55-1.65.55-.55 1.65-.55-1.65-1.65-.55 1.65-.55z"
+      />
     </svg>
   );
 }
@@ -56,34 +59,36 @@ export default function MaintenanceScreen({
       >
         <div
           style={{
-            width: 56,
-            height: 56,
+            width: 64,
+            height: 64,
             margin: '0 auto 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#f3f4f6',
-            borderRadius: 16,
+            background: '#ffffff',
+            border: '1px solid #f3f4f6',
+            borderRadius: 18,
+            boxShadow: '0 6px 16px rgba(17, 24, 39, 0.08)',
           }}
           aria-hidden
         >
-          <HeartIcon />
+          <LogoMark />
         </div>
         <h1
           style={{
             margin: '0 0 4px',
-            fontSize: 13,
-            letterSpacing: '0.22em',
+            fontSize: 20,
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
             fontWeight: 800,
-            color: '#f97316',
+            color: '#111827',
           }}
         >
           Aypik
         </h1>
         <h2
           style={{
-            margin: '0 0 16px',
+            margin: '16px 0 16px',
             fontSize: 22,
             lineHeight: 1.3,
             color: '#111827',
