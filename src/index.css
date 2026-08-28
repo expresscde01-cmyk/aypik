@@ -1695,3 +1695,32 @@ button.group[data-matched='true'] {
     opacity: 0;
   }
 }
+
+/* Maintenance — battement du logo (aligné sur public/maintenance.html) */
+.maintenance-screen .icon svg {
+  transform-origin: center;
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%,
+  38%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.14);
+  }
+  24% {
+    transform: scale(1);
+  }
+  32% {
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maintenance-screen .icon svg {
+    animation: none;
+  }
+}
