@@ -3,6 +3,24 @@ const DEFAULT_LINES = [
   'Le site sera de retour très bientôt — merci de votre patience !',
 ] as const;
 
+function HeartIcon() {
+  return (
+    <svg
+      width={26}
+      height={26}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#f97316"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
+
 export default function MaintenanceScreen({
   message,
 }: {
@@ -19,7 +37,7 @@ export default function MaintenanceScreen({
         justifyContent: 'center',
         padding: 24,
         boxSizing: 'border-box',
-        background: '#fff7f5',
+        background: '#fdf9f6',
         fontFamily: 'Arial, Helvetica, sans-serif',
         color: '#374151',
       }}
@@ -29,11 +47,11 @@ export default function MaintenanceScreen({
           maxWidth: 440,
           width: '100%',
           background: '#ffffff',
-          border: '1px solid #ffe4e6',
+          border: '1px solid #e5e7eb',
           borderRadius: 24,
           padding: '40px 32px',
           textAlign: 'center',
-          boxShadow: '0 10px 30px rgba(225, 29, 72, 0.06)',
+          boxShadow: '0 10px 30px rgba(17, 24, 39, 0.06)',
         }}
       >
         <div
@@ -44,13 +62,12 @@ export default function MaintenanceScreen({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#fff1f2',
+            background: '#f3f4f6',
             borderRadius: 16,
-            fontSize: 28,
           }}
           aria-hidden
         >
-          ❤️
+          <HeartIcon />
         </div>
         <h1
           style={{
