@@ -282,6 +282,16 @@ body {
   margin-left: auto;
 }
 
+/* Liste ouverte : scroll interne pour atteindre PARTOUT (surtout desktop).
+   max-height viewport-aware — si tout tient, pas de barre de scroll (mobile OK). */
+.geo-perimeter-menu {
+  max-height: min(22.5rem, calc(100dvh - 9rem));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Fiches profil — géo (règle figée). Ne pas fusionner, ne pas omettre une ligne. */
 .profile-card-geo {
   display: flex;

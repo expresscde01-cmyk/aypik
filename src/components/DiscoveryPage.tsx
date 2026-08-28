@@ -146,7 +146,7 @@ function GeoPerimeterSelect({
   }, [disabled]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative overflow-visible">
       <button
         type="button"
         disabled={disabled}
@@ -181,7 +181,7 @@ function GeoPerimeterSelect({
         <ul
           role="listbox"
           aria-label="Périmètre géographique"
-          className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+          className="geo-perimeter-menu absolute z-40 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
         >
           <li className="px-2 pt-0.5 pb-1">
             <button
@@ -873,7 +873,7 @@ export default function DiscoveryPage({
           {filtersActive && showFilters && (
             <div
               id="discovery-filters-panel"
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-3 space-y-2.5"
+              className="rounded-2xl border border-rose-100 bg-white px-3 py-3 space-y-2.5 overflow-visible"
             >
               <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
