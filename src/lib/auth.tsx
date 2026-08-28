@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import {
+  clearCachedRecoveryToken,
   consumeRecoveryParamsFromUrl,
   fetchOwnLoginLocked,
-  getRecoveryTokenFromUrl,
   isPasswordRecoveryRedirect,
+  takeRecoveryTokenFromUrl,
 } from '@/lib/loginSecurity';
 
 interface AuthContextValue {
@@ -29,10 +30,11 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [passwordRecovery, setPasswordRecovery] = useState(() =>
-    isPasswordRecoveryRedirect()
-  );
-  const recoveryRef = useRef(isPasswordRecoveryRedirect());
+  const [passwordRecovery, setPasswordRecovery] = useState(() => {
+    takeRecoveryTokenFromUrl();
+    return isPasswordRecoveryRedirect();
+  });
+  const recoveryRef = useRef(passwordRecovery);
 
   useEffect(() => {
     let mounted = true;
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null);
           setPasswordRecovery(false);
           recoveryRef.current = false;
+          clearCachedRecoveryToken();
           setLoading(false);
           return;
         }
@@ -56,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const boot = async () => {
-      const recoveryToken = getRecoveryTokenFromUrl();
+      const recoveryToken = takeRecoveryTokenFromUrl();
       if (recoveryToken) {
         const { data, error } = await supabase.auth.verifyOtp({
           type: recoveryToken.type,
@@ -71,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         consumeRecoveryParamsFromUrl();
+        clearCachedRecoveryToken();
       }
 
       const { data } = await supabase.auth.getSession();
@@ -100,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         recoveryRef.current = false;
         setPasswordRecovery(false);
+        clearCachedRecoveryToken();
         setSession(null);
         setLoading(false);
         return;
@@ -121,12 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     recoveryRef.current = false;
     setPasswordRecovery(false);
+    clearCachedRecoveryToken();
     setSession(null);
   };
 
   const finishPasswordRecovery = () => {
     recoveryRef.current = false;
     setPasswordRecovery(false);
+    clearCachedRecoveryToken();
   };
 
   return (

@@ -71,9 +71,10 @@ export function getRecoveryTokenFromUrl(): RecoveryToken | null {
   return { tokenHash, type };
 }
 
-const AUTH_URL_KEYS = [
-  'reset',
-  'type',
+/** Jeton lu une fois, pour le remount Strict Mode après replaceState. */
+let cachedRecoveryToken: RecoveryToken | null = null;
+
+const AUTH_SECRET_KEYS = [
   'token_hash',
   'token',
   'code',
@@ -86,30 +87,60 @@ const AUTH_URL_KEYS = [
   'provider_refresh_token',
 ] as const;
 
-/** Retire tokens / codes d’auth de l’URL (query + hash) après consommation. */
-export function consumeRecoveryParamsFromUrl(): void {
+const AUTH_FLAG_KEYS = ['reset', 'type'] as const;
+
+function stripAuthKeysFromUrl(keys: readonly string[]): void {
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
-  for (const key of AUTH_URL_KEYS) {
+  for (const key of keys) {
     url.searchParams.delete(key);
   }
   if (url.hash) {
     const hash = new URLSearchParams(url.hash.replace(/^#/, ''));
-    for (const key of AUTH_URL_KEYS) {
+    for (const key of keys) {
       hash.delete(key);
     }
     const nextHash = hash.toString();
     url.hash = nextHash ? nextHash : '';
   }
   const next = `${url.pathname}${url.search}${url.hash}`;
-  if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+  if (
+    next !==
+    `${window.location.pathname}${window.location.search}${window.location.hash}`
+  ) {
     window.history.replaceState({}, '', next);
   }
 }
 
+/** Retire le jeton (query + hash) dès qu’il a été lu, sans attendre verifyOtp. */
+export function consumeRecoverySecretsFromUrl(): void {
+  stripAuthKeysFromUrl(AUTH_SECRET_KEYS);
+}
+
+/** Retire tokens / flags d’auth de l’URL (query + hash) après consommation. */
+export function consumeRecoveryParamsFromUrl(): void {
+  stripAuthKeysFromUrl([...AUTH_SECRET_KEYS, ...AUTH_FLAG_KEYS]);
+}
+
+/**
+ * Lit le jeton de recovery, le mémorise, puis le retire de l’URL tout de suite
+ * (même principe que ?unsubscribed=). `reset` / `type` restent jusqu’à
+ * consumeRecoveryParamsFromUrl pour garder l’écran « Nouveau mot de passe ».
+ */
+export function takeRecoveryTokenFromUrl(): RecoveryToken | null {
+  const token = getRecoveryTokenFromUrl();
+  if (token) cachedRecoveryToken = token;
+  consumeRecoverySecretsFromUrl();
+  return token ?? cachedRecoveryToken;
+}
+
+export function clearCachedRecoveryToken(): void {
+  cachedRecoveryToken = null;
+}
+
 export function isPasswordRecoveryRedirect(): boolean {
   if (typeof window === 'undefined') return false;
-  if (getRecoveryTokenFromUrl()) return true;
+  if (cachedRecoveryToken || getRecoveryTokenFromUrl()) return true;
   const params = paramsFromLocation();
   if (params.get('reset') === '1' || params.get('type') === 'recovery') {
     return true;
