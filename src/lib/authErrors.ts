@@ -17,7 +17,7 @@ const CODE_MESSAGES: Record<string, string> = {
   over_email_send_rate_limit:
     "Trop d'e-mails envoyés. Réessaie plus tard.",
   account_locked:
-    "Pour des raisons de sécurité, ce compte est bloqué après plusieurs tentatives. Un e-mail vient de t'être envoyé pour réinitialiser ton mot de passe et débloquer ton compte.",
+    "Pour des raisons de sécurité, ce compte est bloqué. Consulte ta boîte mail pour le lien de déblocage, ou utilise « Mot de passe oublié » si tu ne l'as pas reçu.",
   validation_failed: 'Les informations saisies sont invalides.',
   same_password: 'Le nouveau mot de passe doit être différent de l\'ancien.',
   phone_exists: 'Ce numéro de téléphone est déjà utilisé par un autre compte.',

@@ -21,8 +21,8 @@ import {
 import { emailIsRegistered } from '@/lib/signupEmail';
 import { validateSignupPassword } from '@/lib/password';
 import {
+  ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE,
   ACCOUNT_LOCKED_MESSAGE,
-  LOGIN_FAILURE_LIMIT,
   RESET_EMAIL_SENT_MESSAGE,
   clearLoginFailuresIfAllowed,
   fetchLoginLockStatus,
@@ -67,7 +67,6 @@ export default function AuthScreen({
   const [resetBusy, setResetBusy] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
-  const failCountByEmail = useRef<Map<string, number>>(new Map());
   const notifiedLockEmails = useRef<Set<string>>(new Set());
   const maxAdultBirthDate = latestBirthDateForAge(MIN_USER_AGE);
 
@@ -117,36 +116,36 @@ export default function AuthScreen({
     }
   };
 
-  const applyLock = async (currentEmail: string, sendAlert: boolean) => {
+  /**
+   * Affiche le verrouillage uniquement si le serveur a locked_at.
+   * E-mail « Déblocage… » (notify_lock) seulement au passage just_locked —
+   * jamais de fallback reset_password qui mentirait sur le type d’e-mail.
+   */
+  const applyServerLock = async (
+    currentEmail: string,
+    justLocked: boolean
+  ) => {
     setAccountLocked(true);
-    setOfferPasswordReset(false);
-    setError(ACCOUNT_LOCKED_MESSAGE);
     const key = emailKey(currentEmail);
-    if (!sendAlert || notifiedLockEmails.current.has(key)) return;
-    notifiedLockEmails.current.add(key);
-    const emailed = await notifyAccountLocked(currentEmail);
-    if (!emailed) {
-      try {
-        await sendPasswordResetEmail(currentEmail);
-      } catch {
-        /* e-mail de déblocage : silence en prod */
+
+    if (justLocked && !notifiedLockEmails.current.has(key)) {
+      notifiedLockEmails.current.add(key);
+      const emailed = await notifyAccountLocked(currentEmail);
+      if (emailed) {
+        setOfferPasswordReset(false);
+        setError(ACCOUNT_LOCKED_MESSAGE);
+        return;
       }
     }
+
+    setOfferPasswordReset(true);
+    setError(ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE);
   };
 
   const handlePasswordFailure = async (currentEmail: string) => {
-    const key = emailKey(currentEmail);
-    const localCount = (failCountByEmail.current.get(key) || 0) + 1;
-    failCountByEmail.current.set(key, localCount);
-
     const result = await recordLoginFailure(currentEmail);
-    const locked =
-      result.locked || localCount >= LOGIN_FAILURE_LIMIT;
-    if (locked) {
-      await applyLock(
-        currentEmail,
-        result.justLocked || localCount >= LOGIN_FAILURE_LIMIT
-      );
+    if (result.locked) {
+      await applyServerLock(currentEmail, result.justLocked);
       return;
     }
 
@@ -186,8 +185,8 @@ export default function AuthScreen({
     }
 
     if (mode === 'signin' && accountLocked) {
-      setOfferPasswordReset(false);
-      setError(ACCOUNT_LOCKED_MESSAGE);
+      setOfferPasswordReset(true);
+      setError(ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE);
       return;
     }
 
@@ -225,17 +224,9 @@ export default function AuthScreen({
         return;
       }
 
-      const alreadyBlocked =
-        (failCountByEmail.current.get(emailKey(email)) || 0) >=
-        LOGIN_FAILURE_LIMIT;
-      if (alreadyBlocked) {
-        await applyLock(email, false);
-        return;
-      }
-
       const locked = await fetchLoginLockStatus(email);
       if (locked) {
-        await applyLock(email, false);
+        await applyServerLock(email, false);
         return;
       }
 
@@ -250,11 +241,10 @@ export default function AuthScreen({
         return;
       }
 
-      failCountByEmail.current.delete(emailKey(email));
       const stillLocked = await clearLoginFailuresIfAllowed();
       if (stillLocked) {
         await supabase.auth.signOut();
-        await applyLock(email, false);
+        await applyServerLock(email, false);
       }
     } catch (err) {
       if (mode === 'signup' && isEmailAlreadyRegisteredError(err)) {
@@ -369,11 +359,12 @@ export default function AuthScreen({
                   required
                   value={email}
                   onChange={(e) => {
-                    const next = e.target.value;
-                    setEmail(next);
-                    const count =
-                      failCountByEmail.current.get(emailKey(next)) || 0;
-                    setAccountLocked(count >= LOGIN_FAILURE_LIMIT);
+                    setEmail(e.target.value);
+                    if (accountLocked) {
+                      setAccountLocked(false);
+                      setOfferPasswordReset(false);
+                      setError(null);
+                    }
                   }}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
                   placeholder="toi@exemple.com"

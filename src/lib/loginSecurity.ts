@@ -1,9 +1,15 @@
 import { supabase } from '@/lib/supabase';
 
+/** Seuil serveur (record_login_failure) — ne pas utiliser pour un verrouillage local. */
 export const LOGIN_FAILURE_LIMIT = 4;
 
+/** Affiché uniquement après un notify_lock réussi (e-mail « Déblocage de votre compte Aypik »). */
 export const ACCOUNT_LOCKED_MESSAGE =
   "Pour des raisons de sécurité, ce compte est bloqué après plusieurs tentatives. Un e-mail vient de t'être envoyé pour réinitialiser ton mot de passe et débloquer ton compte.";
+
+/** Compte verrouillé côté serveur, sans nouvel e-mail de déblocage dans cette session. */
+export const ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE =
+  "Pour des raisons de sécurité, ce compte est bloqué. Consulte ta boîte mail pour le lien de déblocage, ou utilise « Mot de passe oublié » si tu ne l'as pas reçu.";
 
 export const RESET_EMAIL_SENT_MESSAGE =
   "Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.";
