@@ -37,6 +37,15 @@ AddDefaultCharset UTF-8
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # ==================== MODE MAINTENANCE (statique) ====================
+  # Pour ACTIVER : décommenter les 3 lignes RewriteCond/RewriteRule ci-dessous
+  # Pour DÉSACTIVER : recommenter (remettre le # en début de ligne)
+  #
+  # RewriteCond %{REQUEST_URI} !^/maintenance\.html$
+  # RewriteCond %{QUERY_STRING} !(^|&)bypass=5M7sF1J21KeHq_qT9GSRvl3tehZ4zQBv(&|$)
+  # RewriteRule ^(.*)$ /maintenance.html [R=302,L]
+  # ==================== FIN MODE MAINTENANCE ====================
+
   # Forcer HTTPS
   RewriteCond %{HTTPS} off
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
@@ -50,6 +59,7 @@ AddDefaultCharset UTF-8
   # (sinon Apache servirait du HTML à la place d’un .js — CSP / parse error).
   RewriteRule ^index\.php$ - [L]
   RewriteRule ^index\.html$ index.php [L]
+  RewriteRule ^maintenance\.html$ - [L]
   RewriteRule ^assets/ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
@@ -78,7 +88,7 @@ AddDefaultCharset UTF-8
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
   # HTML sans cache (nonce CSP + hash d'assets).
-  <FilesMatch "^(index\.html|index\.php)$">
+  <FilesMatch "^(index\.html|index\.php|maintenance\.html)$">
     Header always set Cache-Control "no-cache, no-store, must-revalidate"
   </FilesMatch>
   <FilesMatch "\.(js|css|svg|woff2)$">

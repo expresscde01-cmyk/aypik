@@ -8,7 +8,9 @@ import LandingPage from '@/components/LandingPage';
 import AuthScreen from '@/components/AuthScreen';
 import ResetPasswordScreen from '@/components/ResetPasswordScreen';
 import RouteFallback from '@/components/RouteFallback';
+import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { createAppQueryClient } from '@/lib/queryClient';
+import { fetchMaintenanceStatus } from '@/lib/maintenance';
 import LegalTermsPage, {
   closeLegalTerms,
   isLegalTermsOpen,
@@ -179,14 +181,41 @@ function AppContent() {
   );
 }
 
+function MaintenanceGate({ children }: { children: ReactNode }) {
+  const [gate, setGate] = useState<'checking' | 'on' | 'off'>('checking');
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchMaintenanceStatus().then((status) => {
+      if (cancelled) return;
+      if (status.maintenance) {
+        setMessage(status.message);
+        setGate('on');
+        return;
+      }
+      setGate('off');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (gate === 'checking') return <RouteFallback />;
+  if (gate === 'on') return <MaintenanceScreen message={message} />;
+  return children;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </QueryClientProvider>
+      <MaintenanceGate>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </QueryClientProvider>
+      </MaintenanceGate>
     </ErrorBoundary>
   );
 }
