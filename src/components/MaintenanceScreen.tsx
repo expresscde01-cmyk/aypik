@@ -20,9 +20,12 @@ function LogoMark() {
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <path fill="url(#heartGrad)" d={HEART_PATH} />
-      <path fill="url(#heartHighlight)" d={HEART_PATH} />
+      <g className="heart-shape">
+        <path fill="url(#heartGrad)" d={HEART_PATH} />
+        <path className="heart-highlight" fill="url(#heartHighlight)" d={HEART_PATH} />
+      </g>
       <path
+        className="sparkle"
         fill="#ffffff"
         d="M16.3 5.2l.55 1.65 1.65.55-1.65.55-.55 1.65-.55-1.65-1.65-.55 1.65-.55z"
       />
@@ -38,93 +41,19 @@ export default function MaintenanceScreen({
   const lines = message?.trim() ? [message.trim()] : DEFAULT_LINES;
 
   return (
-    <div
-      className="maintenance-screen"
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        boxSizing: 'border-box',
-        background: '#fdf9f6',
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        color: '#374151',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 440,
-          width: '100%',
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: 24,
-          padding: '40px 32px',
-          textAlign: 'center',
-          boxShadow: '0 10px 30px rgba(17, 24, 39, 0.06)',
-        }}
-      >
-        <div
-          className="icon"
-          style={{
-            width: 64,
-            height: 64,
-            margin: '0 auto 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#ffffff',
-            border: '1px solid #f3f4f6',
-            borderRadius: 18,
-            boxShadow: '0 6px 16px rgba(17, 24, 39, 0.08)',
-          }}
-          aria-hidden
-        >
-          <LogoMark />
-        </div>
-        <h1
-          style={{
-            margin: '0 0 4px',
-            fontSize: 20,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            fontWeight: 800,
-            color: '#111827',
-          }}
-        >
-          Aypik
-        </h1>
-        <h2
-          style={{
-            margin: '16px 0 16px',
-            fontSize: 22,
-            lineHeight: 1.3,
-            color: '#111827',
-          }}
-        >
-          Site en maintenance
-        </h2>
-        {lines.map((line) => (
-          <p
-            key={line}
-            style={{
-              margin: '0 0 8px',
-              fontSize: 15,
-              lineHeight: 1.6,
-              color: '#4b5563',
-            }}
-          >
-            {line}
-          </p>
-        ))}
-        <div
-          style={{
-            marginTop: 20,
-            fontSize: 13,
-            color: '#9ca3af',
-          }}
-        >
-          Si besoin, réessayez dans quelques minutes.
+    <div className="maintenance-screen">
+      <div className="page-glow" />
+      <div className="wrap">
+        <div className="card">
+          <div className="icon" aria-hidden>
+            <LogoMark />
+          </div>
+          <h1>Aypik</h1>
+          <h2>Site en maintenance</h2>
+          {lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <div className="sub">Si besoin, réessayez dans quelques minutes.</div>
         </div>
       </div>
     </div>
