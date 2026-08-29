@@ -333,8 +333,8 @@ export default function AccountMenu({
                 Réinitialiser tes filtres de recherche
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Réinitialiser tes filtres jusqu&apos;aux régions voisines et à
-                1 centre d&apos;intérêt en commun&nbsp;?
+                Réinitialiser tes filtres : périmètre élargi jusqu&apos;aux
+                régions voisines, et 1 centre d&apos;intérêt en commun&nbsp;?
               </p>
               <div className="flex gap-3 pt-1">
                 <button
