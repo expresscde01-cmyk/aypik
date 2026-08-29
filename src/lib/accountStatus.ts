@@ -1,3 +1,5 @@
+import { supabase } from '@/lib/supabase';
+
 /** Statuts de compte affichés dans le header. Extensible sans changer le markup. */
 export type AccountStatusId = 'paused' | 'deactivated' | 'incognito';
 
@@ -102,4 +104,47 @@ export function saveVisibilityUiMode(
   } catch {
     /* ignore */
   }
+}
+
+export type MyAccountFlags = {
+  paused_at: string | null;
+  incognito_at: string | null;
+  deactivated_at: string | null;
+};
+
+/** Drapeaux du compte connecté — RPC SECURITY DEFINER (pas de SELECT incognito_at). */
+export async function fetchMyAccountFlags(): Promise<MyAccountFlags | null> {
+  const { data, error } = await supabase.rpc('my_account_flags');
+  if (!error && data != null) {
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | Partial<MyAccountFlags>
+      | undefined;
+    if (row && typeof row === 'object') {
+      return {
+        paused_at: row.paused_at ?? null,
+        incognito_at: row.incognito_at ?? null,
+        deactivated_at: row.deactivated_at ?? null,
+      };
+    }
+  }
+
+  const { data: auth } = await supabase.auth.getUser();
+  const id = auth.user?.id;
+  if (!id) return null;
+
+  const fallback = await supabase
+    .from('profiles')
+    .select('paused_at, deactivated_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (fallback.error || !fallback.data) return null;
+  const row = fallback.data as {
+    paused_at?: string | null;
+    deactivated_at?: string | null;
+  };
+  return {
+    paused_at: row.paused_at ?? null,
+    incognito_at: null,
+    deactivated_at: row.deactivated_at ?? null,
+  };
 }

@@ -27,6 +27,7 @@ import { setProfileIncognito } from '@/lib/profileIncognito';
 import { setProfileDeactivated } from '@/lib/profileDeactivated';
 import { usePresenceHeartbeat } from '@/lib/presence';
 import {
+  fetchMyAccountFlags,
   loadVisibilityUiMode,
   resolveAccountStatuses,
   saveVisibilityUiMode,
@@ -209,41 +210,11 @@ function AppShellView() {
     if (!user) return;
     let active = true;
     void (async () => {
-      let { data, error } = await supabase
-        .from('profiles')
-        .select('paused_at, incognito_at, deactivated_at')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (
-        error &&
-        /deactivated_at|incognito_at/i.test(error.message || '')
-      ) {
-        const retry = await supabase
-          .from('profiles')
-          .select('paused_at, incognito_at')
-          .eq('id', user.id)
-          .maybeSingle();
-        data = retry.data as typeof data;
-        error = retry.error;
-        if (error && /incognito_at/i.test(error.message || '')) {
-          const retryPause = await supabase
-            .from('profiles')
-            .select('paused_at')
-            .eq('id', user.id)
-            .maybeSingle();
-          data = retryPause.data as typeof data;
-          error = retryPause.error;
-        }
-      }
+      const row = await fetchMyAccountFlags();
       if (!active) return;
-      const row = data as {
-        paused_at?: string | null;
-        incognito_at?: string | null;
-        deactivated_at?: string | null;
-      } | null;
-      const isPaused = !error && Boolean(row?.paused_at);
-      const dbDeactivated = !error && Boolean(row?.deactivated_at);
-      const dbIncognito = !error && Boolean(row?.incognito_at);
+      const isPaused = Boolean(row?.paused_at);
+      const dbDeactivated = Boolean(row?.deactivated_at);
+      const dbIncognito = Boolean(row?.incognito_at);
       setPaused(isPaused);
       if (isPaused) {
         saveVisibilityUiMode(user.id, null);
