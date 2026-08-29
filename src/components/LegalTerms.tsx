@@ -154,7 +154,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 26 août 2026. Version applicable au
+              Dernière mise à jour : 29 août 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -260,8 +260,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 les « CGU ») ont pour objet de définir les conditions
                 d&apos;accès et d&apos;utilisation du Service {BRAND_NAME} :
                 création de profil, découverte de membres, expressions
-                d&apos;intérêt (Like, Flash), constitution de Matchs et
-                messagerie conditionnée à un Match.
+                d&apos;intérêt (Like, Flash), constitution de Matchs,
+                messagerie conditionnée à un Match, et paramètres de
+                visibilité du compte.
               </p>
               <p>
                 Les présentes CGU ne constituent pas des conditions générales
@@ -465,6 +466,120 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 garder confidentiel.
               </p>
             </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.7 Découvrir, suggestions et visibilité du compte
+              </p>
+              <p className="font-semibold text-gray-900">
+                3.7.1 Filtrage des suggestions
+              </p>
+              <p>
+                Les profils proposés sur Découvrir et dans les suggestions
+                de l&apos;Accueil sont établis selon les critères de mise en
+                relation (article 3.5) et le fonctionnement décrit au
+                glossaire (Like, Flash, Match).
+              </p>
+              <p>
+                Un profil auquel l&apos;utilisateur a déjà adressé un Like
+                ou un Flash n&apos;est plus présenté dans Découvrir ni dans
+                les suggestions de l&apos;Accueil. Cette exclusion ne
+                supprime pas l&apos;interaction déjà enregistrée : le
+                profil demeure gérable depuis Mes Matchs, selon son statut
+                (À étudier, Match, archive, etc.).
+              </p>
+              <p className="font-semibold text-gray-900">
+                3.7.2 Modes de visibilité
+              </p>
+              <p>
+                L&apos;utilisateur choisit un seul mode de visibilité à la
+                fois, depuis le menu du compte (entrée « Visibilité »). Les
+                libellés ci-dessous sont ceux affichés dans ce menu.
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">Normale.</span>{' '}
+                Le profil est visible normalement : il peut être proposé
+                dans Découvrir et dans les suggestions de l&apos;Accueil,
+                sous réserve des filtres de l&apos;article 3.7.1 et des
+                autres conditions des présentes. Le statut de présence en
+                ligne (article 3.8) peut être affiché aux autres membres.
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">
+                  Incognito.
+                </span>{' '}
+                L&apos;utilisateur continue d&apos;utiliser le Service. Son
+                profil peut toujours être proposé dans Découvrir et dans
+                les suggestions. En revanche, il n&apos;apparaît pas « en
+                ligne » aux yeux des autres membres (article 3.8).
+                L&apos;utilisateur Incognito continue, quant à lui, de voir
+                le statut en ligne des autres membres, lorsque celui-ci
+                leur est applicable.
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">
+                  Ne plus apparaître dans Découvrir et Suggestions.
+                </span>{' '}
+                Le profil n&apos;est plus proposé aux autres membres dans
+                Découvrir ni dans les suggestions de l&apos;Accueil. Les
+                Matchs déjà constitués, les conversations et les
+                interactions déjà enregistrées (Likes, Flashs) sont
+                conservés. L&apos;utilisateur peut continuer d&apos;utiliser
+                le Service, y compris Mes Matchs et la messagerie
+                conditionnée à un Match.
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">
+                  Mettre le compte en pause.
+                </span>{' '}
+                Le compte est mis en pause complète. L&apos;utilisateur
+                peut encore se connecter ; l&apos;usage du Service est alors
+                limité à la réactivation du compte. Le profil n&apos;est
+                plus proposé dans Découvrir ni dans les suggestions de
+                l&apos;Accueil pendant la durée de la pause. Aucun nouveau
+                Like, Flash ou message n&apos;est enregistré à destination
+                de ce compte pendant la pause ; un membre qui tente une
+                telle interaction en est informé. Les Matchs, conversations et
+                interactions déjà existants ne sont pas supprimés ; ils
+                redeviennent utilisables à la réactivation. Les Likes,
+                Flashs et messages qui auraient été adressés pendant la
+                pause ne sont pas conservés.
+              </p>
+              <p>
+                Un compte dont l&apos;utilisateur a choisi l&apos;un des
+                modes ci-dessus, y compris « Mettre le compte en pause »,
+                demeure un compte actif au sens des présentes CGU. Le
+                statut de Membre Fondateur et le numéro associé ne sont
+                pas perdus. Seule la suppression définitive du compte,
+                dans les conditions de l&apos;article 7.2, emporte la
+                perte définitive de ce badge et de ce numéro.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.8 Présence en ligne
+              </p>
+              <p>
+                Lorsqu&apos;un membre utilise le Service dans une session
+                active, un horodatage de dernière activité
+                (last_active_at) peut être mis à jour périodiquement. Un
+                profil est considéré comme « en ligne » lorsqu&apos;une
+                activité récente est constatée (fenêtre de quelques
+                minutes) et que le mode Incognito n&apos;est pas actif.
+              </p>
+              <p>
+                Ce statut peut être signalé aux autres membres par un
+                indicateur visuel (point vert) sur la photo de profil,
+                notamment dans Découvrir, les suggestions de l&apos;Accueil
+                et Mes Matchs. L&apos;horodatage lui-même n&apos;est pas
+                affiché aux autres membres. En mode Incognito, le profil
+                n&apos;est jamais présenté comme en ligne, même si le
+                membre utilise effectivement le Service.
+              </p>
+              <p>
+                Le traitement de last_active_at est décrit à l&apos;article
+                7.1.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -500,7 +615,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Le statut de Membre Fondateur et son numéro associé sont
               strictement liés au compte actif. En cas de désinscription ou
               de suppression du compte, le badge est définitivement perdu et
-              ne pourra pas être réattribué.
+              ne pourra pas être réattribué. Un compte dont la visibilité
+              est restreinte ou qui est mis en pause au sens de
+              l&apos;article 3.7 demeure un compte actif ; voir également
+              l&apos;article 7.2.
             </p>
             <p>
               Cette offre ne constitue ni un contrat de vente, ni un
@@ -616,8 +734,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 L&apos;éditeur est responsable du traitement des données
                 personnelles collectées pour fournir le Service (compte,
-                profil, interactions, messages, journaux techniques
-                nécessaires à la sécurité). Le traitement repose
+                profil, interactions, messages, horodatage de dernière
+                activité last_active_at visé à l&apos;article 3.8, journaux
+                techniques nécessaires à la sécurité). Le traitement repose
                 principalement sur l&apos;exécution du contrat
                 d&apos;utilisation (les présentes CGU) et, le cas échéant,
                 sur le consentement (par exemple notifications e-mail ou
@@ -648,6 +767,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 L&apos;utilisateur peut à tout moment demander la suppression
                 de son compte et de l&apos;intégralité de ses données
                 personnelles depuis les paramètres de son profil.
+              </p>
+              <p>
+                Les modes de visibilité de l&apos;article 3.7, y compris
+                « Mettre le compte en pause », ne constituent pas une
+                suppression du compte. Le profil et les données demeurent ;
+                le compte reste actif. La perte du statut de Membre
+                Fondateur et du numéro associé n&apos;intervient qu&apos;en
+                cas de désinscription ou de suppression au titre du présent
+                article 7.2.
               </p>
               <p>
                 Pour l&apos;utilisateur, cette suppression est définitive :
@@ -694,6 +822,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
           </section>
 
+          {/*
+            Pause d’abonnement : non applicable tant que SITE_FREE_MODE
+            (aucune offre payante). La clause est dans l’annexe ci-dessus,
+            affichée seulement lorsque des CGV / modules payants existent.
+          */}
           {!SITE_FREE_MODE && (
             <section className="space-y-3">
               <h3 className="text-base font-bold text-gray-900">
@@ -705,6 +838,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 exclusivement dans des Conditions Générales de Vente
                 distinctes, acceptées au moment de la souscription. Stripe et
                 PayPal peuvent être utilisés comme prestataires de paiement.
+              </p>
+              <p>
+                Si l&apos;utilisateur dispose alors d&apos;un abonnement
+                payant, la mise en pause du compte (article 3.7) n&apos;emporte
+                pas, par elle-même, la résiliation de cet abonnement. Les
+                effets sur la facturation, la période déjà payée et une
+                éventuelle suspension de prélèvement relèvent exclusivement
+                des CGV acceptées lors de la souscription.
               </p>
               <p>
                 Les membres disposant d&apos;un abonnement Premium actif
@@ -858,6 +999,39 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 visibilité.
               </p>
             </div>
+            <div>
+              <p className="font-semibold text-gray-900">Découvrir</p>
+              <p>
+                Page permettant de parcourir des profils compatibles, selon
+                les critères de mise en relation et le filtrage décrits à
+                l&apos;article 3.7.1.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Suggestions</p>
+              <p>
+                Profils proposés sur l&apos;Accueil. Ils obéissent au même
+                filtrage que Découvrir (article 3.7.1) et aux modes de
+                visibilité de l&apos;article 3.7.2.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Visibilité</p>
+              <p>
+                Paramètre du compte à choix unique, accessible depuis le
+                menu du compte. Les quatre modes sont : Normale, Incognito,
+                Ne plus apparaître dans Découvrir et Suggestions, et
+                Mettre le compte en pause (article 3.7.2).
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">En ligne</p>
+              <p>
+                Indicateur (point vert sur la photo) signalant qu&apos;un
+                membre a une activité récente et n&apos;est pas en mode
+                Incognito. Voir l&apos;article 3.8.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -914,6 +1088,43 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 strictement liés au compte actif. En cas de désinscription
                 ou de suppression du compte, le badge est définitivement
                 perdu et ne pourra pas être réattribué.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Un profil que j&apos;ai déjà liké ou flashé peut-il
+                réapparaître dans Découvrir&nbsp;?
+              </p>
+              <p>
+                Non. Il n&apos;est plus proposé dans Découvrir ni dans les
+                suggestions de l&apos;Accueil (article 3.7.1). L&apos;interaction
+                reste gérable depuis Mes Matchs.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Quelle est la différence entre mettre le compte en pause et
+                supprimer mon compte&nbsp;?
+              </p>
+              <p>
+                « Mettre le compte en pause » (article 3.7) laisse le compte
+                actif : le badge Membre Fondateur et son numéro sont
+                conservés ; le profil n&apos;est plus proposé dans Découvrir
+                ni dans les suggestions, et les nouvelles interactions ne
+                sont pas enregistrées le temps de la pause. La suppression
+                (article 7.2) est définitive : le profil n&apos;est plus
+                utilisé, les données sont effacées après le délai de purge,
+                et le badge Fondateur est perdu.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Que signifie le point vert sur une photo de profil&nbsp;?
+              </p>
+              <p>
+                Il indique que le membre est considéré comme en ligne
+                (article 3.8). Ce point n&apos;apparaît pas si ce membre a
+                activé Incognito.
               </p>
             </div>
           </section>
