@@ -35,25 +35,25 @@ export function resolveVisibilityChoice(
   return 'visible';
 }
 
-/** Texte entre parenthèses sur la ligne Visibilité du menu. */
-export function visibilityMenuHint(choice: VisibilityChoice): string | null {
+/** Libellé d’état affiché après « Visibilité – » dans le menu. */
+export function visibilityMenuHint(choice: VisibilityChoice): string {
   if (choice === 'paused') return 'Hors découverte';
   if (choice === 'deactivated') return 'Compte désactivé';
   if (choice === 'incognito') return 'Incognito';
-  return null;
+  return 'Normale';
 }
 
 export const VISIBILITY_RADIO_OPTIONS: {
   id: VisibilityChoice;
   label: string;
 }[] = [
-  { id: 'visible', label: 'Visible normalement' },
+  { id: 'visible', label: 'Normale' },
+  { id: 'incognito', label: 'Incognito' },
   {
     id: 'paused',
     label: 'Ne plus apparaître dans Découvrir et Suggestions',
   },
   { id: 'deactivated', label: 'Désactiver mon compte' },
-  { id: 'incognito', label: 'Incognito' },
 ];
 
 export const ACCOUNT_STATUS_HOME_BANNER: Record<

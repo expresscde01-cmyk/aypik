@@ -184,14 +184,14 @@ export default function AccountMenu({
               setError(null);
               setVisibilityOpen((v) => !v);
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] font-medium text-gray-800 hover:bg-rose-50 hover:text-rose-700 transition-colors disabled:opacity-50"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] font-medium text-gray-800 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
             <span className="shrink-0 opacity-80">
               <Eye className="w-4 h-4" />
             </span>
             <span className="min-w-0 flex-1">
-              Visibilité
-              {visibilityHint ? ` (${visibilityHint})` : ''}
+              Visibilité –{' '}
+              <span className="text-emerald-600">{visibilityHint}</span>
             </span>
             <ChevronDown
               className={`w-4 h-4 text-emerald-600 transition-transform shrink-0 ${
@@ -216,22 +216,22 @@ export default function AccountMenu({
                     aria-checked={checked}
                     disabled={visibilityBusy}
                     onClick={() => void handleVisibilitySelect(option.id)}
-                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 text-left text-[13px] leading-snug transition-colors disabled:opacity-50 ${
+                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 text-left text-[13px] leading-snug transition-colors disabled:opacity-50 hover:bg-slate-50 ${
                       checked
                         ? 'font-semibold text-gray-900'
-                        : 'font-medium text-gray-700 hover:bg-white'
+                        : 'font-medium text-gray-700'
                     }`}
                   >
                     <span
                       className={`mt-0.5 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                         checked
-                          ? 'border-rose-500'
+                          ? 'border-emerald-600'
                           : 'border-gray-300'
                       }`}
                       aria-hidden
                     >
                       {checked && (
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
                       )}
                     </span>
                     <span>{option.label}</span>
@@ -343,8 +343,8 @@ function MenuItem({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] font-medium transition-colors disabled:opacity-50 ${
         destructive
-          ? 'text-red-600 hover:bg-red-50'
-          : 'text-gray-800 hover:bg-rose-50 hover:text-rose-700'
+          ? 'text-red-600 hover:bg-rose-50'
+          : 'text-gray-800 hover:bg-slate-50'
       }`}
     >
       <span className="shrink-0 opacity-80">{icon}</span>
