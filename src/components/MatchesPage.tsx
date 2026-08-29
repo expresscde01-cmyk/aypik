@@ -43,6 +43,7 @@ import RestoreLinkButton from '@/components/RestoreLinkButton';
 import WaitButton from '@/components/WaitButton';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
+import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import MatchManageModal from '@/components/MatchManageModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
@@ -244,13 +245,33 @@ async function fetchProfileBundle(ids: string[]): Promise<{
   }
   const nowIso = new Date().toISOString();
   const [profiles, memberships, boosts] = await Promise.all([
-    fetchByIdChunks<Profile>(ids, (chunk) =>
-      supabase
+    fetchByIdChunks<Profile>(ids, async (chunk) => {
+      const rpc = await supabase.rpc('card_profiles', { p_ids: chunk });
+      if (!rpc.error && rpc.data) {
+        const rows = (rpc.data as Profile[]).map((row) => ({
+          ...row,
+          bio: row.bio || '',
+          location: row.location || '',
+          interests: row.interests || [],
+          photo_url: row.photo_url || '',
+          is_online: Boolean(row.is_online),
+        }));
+        return { data: rows, error: null };
+      }
+      const fb = await supabase
         .from('profiles')
         .select(PROFILE_CARD_COLUMNS)
         .in('id', chunk)
-        .is('deletion_requested_at', null)
-    ),
+        .is('deletion_requested_at', null);
+      return {
+        data:
+          (fb.data as Profile[] | null)?.map((p) => ({
+            ...p,
+            is_online: false,
+          })) ?? null,
+        error: fb.error,
+      };
+    }),
     fetchByIdChunks<{
       user_id: string;
       is_founder: boolean | null;
@@ -2064,6 +2085,7 @@ export default function MatchesPage({
               {match.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={match.profile.is_online} size="avatar" />
           {isFlash && isPending && (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
@@ -2222,6 +2244,7 @@ export default function MatchesPage({
               {card.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
@@ -2394,6 +2417,7 @@ export default function MatchesPage({
               {card.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
@@ -2505,6 +2529,7 @@ export default function MatchesPage({
               {card.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
@@ -2604,6 +2629,7 @@ export default function MatchesPage({
               {card.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />

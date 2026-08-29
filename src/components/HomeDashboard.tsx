@@ -15,6 +15,7 @@ import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
+import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
@@ -31,6 +32,7 @@ import { queryKeys } from '@/lib/queryClient';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
+import { userErrorMessage } from '@/lib/userError';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
 import {
   ACCOUNT_STATUS_HOME_BANNER,
@@ -209,8 +211,8 @@ export default function HomeDashboard({
         }
 
         await refresh();
-      } catch {
-        setActionError('Une erreur est survenue');
+      } catch (err) {
+        setActionError(userErrorMessage(err, 'Une erreur est survenue'));
       } finally {
         setActingId(null);
       }
@@ -459,6 +461,7 @@ export default function HomeDashboard({
                           {p.display_name.charAt(0).toUpperCase()}
                         </div>
                       )}
+                      <OnlinePresenceDot online={p.is_online} />
                       <ProfileCardCornerBadges
                         age={p.age}
                         isBoosted={p.is_boosted}

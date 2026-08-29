@@ -38,7 +38,7 @@ export function resolveVisibilityChoice(
 /** Libellé d’état affiché après « Visibilité – » dans le menu. */
 export function visibilityMenuHint(choice: VisibilityChoice): string {
   if (choice === 'paused') return 'Hors découverte';
-  if (choice === 'deactivated') return 'Compte désactivé';
+  if (choice === 'deactivated') return 'En pause';
   if (choice === 'incognito') return 'Incognito';
   return 'Normale';
 }
@@ -53,7 +53,7 @@ export const VISIBILITY_RADIO_OPTIONS: {
     id: 'paused',
     label: 'Ne plus apparaître dans Découvrir et Suggestions',
   },
-  { id: 'deactivated', label: 'Désactiver mon compte' },
+  { id: 'deactivated', label: 'Mettre le compte en pause' },
 ];
 
 export const ACCOUNT_STATUS_HOME_BANNER: Record<
@@ -66,7 +66,7 @@ export const ACCOUNT_STATUS_HOME_BANNER: Record<
       'text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
   },
   deactivated: {
-    text: 'Ton compte est désactivé : tu ne peux plus interagir avec l’application tant que tu ne l’as pas réactivé.',
+    text: 'Ton compte est en pause : tu ne peux plus interagir avec l’application tant que tu ne l’as pas réactivé. Les messages, likes et flashs reçus pendant cette période ne seront pas conservés.',
     className:
       'text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
   },

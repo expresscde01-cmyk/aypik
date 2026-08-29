@@ -18,8 +18,8 @@ export const ACCOUNT_STATUS_VARIANTS: Record<AccountStatusId, StatusVariant> = {
       'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100',
   },
   deactivated: {
-    label: 'Compte désactivé',
-    title: 'Compte désactivé — changer la visibilité',
+    label: 'En pause',
+    title: 'En pause — réactiver le compte',
     Icon: Ban,
     className: 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200',
   },

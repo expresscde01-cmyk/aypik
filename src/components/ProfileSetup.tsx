@@ -69,13 +69,14 @@ export interface Profile {
   lat?: number | null;
   lng?: number | null;
   last_active_at?: string | null;
+  is_online?: boolean;
   email_notifications_enabled?: boolean;
   deletion_requested_at?: string | null;
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
 export const PROFILE_CARD_COLUMNS =
-  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, last_active_at, deletion_requested_at';
+  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at';
 
 /** Profil du compte connecté (préférences e-mail en plus). */
 export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled`;

@@ -53,6 +53,7 @@ import {
 import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
+import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
@@ -735,8 +736,8 @@ export default function DiscoveryPage({
         }
 
         await refresh();
-      } catch {
-        setError('Une erreur est survenue');
+      } catch (err) {
+        setError(userErrorMessage(err, 'Une erreur est survenue'));
       } finally {
         setActingId(null);
       }
@@ -1233,6 +1234,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
               {c.display_name.charAt(0).toUpperCase()}
             </div>
           )}
+          <OnlinePresenceDot online={c.is_online} />
           <ProfileCardCornerBadges
             age={c.age}
             isBoosted={c.is_boosted}

@@ -64,6 +64,7 @@ export type SuggestRow = {
   activity_score: number | null;
   is_founder: boolean | null;
   founder_number: number | null;
+  is_online?: boolean | null;
 };
 
 export function mapSuggestRow(
@@ -112,6 +113,7 @@ export function mapSuggestRow(
     updated_at: row.updated_at || undefined,
     last_active_at: row.last_active_at,
     activity_score: Number(row.activity_score) || 0,
+    is_online: Boolean(row.is_online),
   };
 }
 

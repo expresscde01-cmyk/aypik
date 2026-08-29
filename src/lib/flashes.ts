@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { MEMBER_UNAVAILABLE_MESSAGE } from '@/lib/userError';
 import {
   SITE_FREE_MODE,
   isFounderPrivilegeActive,
@@ -76,6 +77,9 @@ export function flashErrorMessage(
   error?: string | null,
   status?: OfferStatusLike
 ): string {
+  if (error && error.includes('member_unavailable')) {
+    return MEMBER_UNAVAILABLE_MESSAGE;
+  }
   switch (error) {
     case 'flash_reserved_for_founders':
     case 'flash_not_available_for_founders':

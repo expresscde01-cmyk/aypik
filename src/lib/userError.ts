@@ -17,7 +17,11 @@ export function userErrorMessage(
   return fallback;
 }
 
+export const MEMBER_UNAVAILABLE_MESSAGE =
+  'Ce membre n’est pas disponible actuellement.';
+
 function friendlyDbMessage(msg: string, fallback: string): string {
+  if (msg.includes('member_unavailable')) return MEMBER_UNAVAILABLE_MESSAGE;
   if (msg.includes('minors_not_allowed')) return ADULTS_ONLY_MESSAGE;
   if (msg.includes('decision_locked_refuse')) {
     return 'Tu as déjà refusé ce profil.';

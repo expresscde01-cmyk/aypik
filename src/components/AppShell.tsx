@@ -13,7 +13,7 @@ import ProfileSetup, {
   PROFILE_CARD_COLUMNS,
   type Profile,
 } from '@/components/ProfileSetup';
-import PhoneVerification from '@/components/PhoneVerification';
+import AccountPausedScreen from '@/components/AccountPausedScreen';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
@@ -23,6 +23,9 @@ import {
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
 import { flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import { setProfilePaused } from '@/lib/profilePause';
+import { setProfileIncognito } from '@/lib/profileIncognito';
+import { setProfileDeactivated } from '@/lib/profileDeactivated';
+import { usePresenceHeartbeat } from '@/lib/presence';
 import {
   loadVisibilityUiMode,
   resolveAccountStatuses,
@@ -87,6 +90,15 @@ function AppShellView() {
   >(null);
   const [accountMenuRequestKey, setAccountMenuRequestKey] = useState(0);
 
+  usePresenceHeartbeat(
+    Boolean(
+      user &&
+        profile &&
+        !profile.deletion_requested_at &&
+        visibilityUi !== 'deactivated'
+    )
+  );
+
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
     setSuggestionPrefsEpoch((n) => n + 1);
@@ -125,8 +137,18 @@ function AppShellView() {
   const applyVisibilityChoice = useCallback(
     async (choice: VisibilityChoice): Promise<string | null> => {
       if (!user) return 'Session invalide.';
-      const err = await setProfilePaused(user.id, choice === 'paused');
-      if (err) return err;
+      const pauseErr = await setProfilePaused(user.id, choice === 'paused');
+      if (pauseErr) return pauseErr;
+      const incognitoErr = await setProfileIncognito(
+        user.id,
+        choice === 'incognito'
+      );
+      if (incognitoErr && choice === 'incognito') return incognitoErr;
+      const deactivatedErr = await setProfileDeactivated(
+        user.id,
+        choice === 'deactivated'
+      );
+      if (deactivatedErr && choice === 'deactivated') return deactivatedErr;
       setPaused(choice === 'paused');
       if (choice === 'deactivated' || choice === 'incognito') {
         saveVisibilityUiMode(user.id, choice);
@@ -186,24 +208,71 @@ function AppShellView() {
   useEffect(() => {
     if (!user) return;
     let active = true;
-    void supabase
-      .from('profiles')
-      .select('paused_at')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return;
-        const isPaused = !error && Boolean(
-          (data as { paused_at?: string | null } | null)?.paused_at
-        );
-        setPaused(isPaused);
-        if (isPaused) {
-          saveVisibilityUiMode(user.id, null);
-          setVisibilityUi(null);
-          return;
+    void (async () => {
+      let { data, error } = await supabase
+        .from('profiles')
+        .select('paused_at, incognito_at, deactivated_at')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (
+        error &&
+        /deactivated_at|incognito_at/i.test(error.message || '')
+      ) {
+        const retry = await supabase
+          .from('profiles')
+          .select('paused_at, incognito_at')
+          .eq('id', user.id)
+          .maybeSingle();
+        data = retry.data as typeof data;
+        error = retry.error;
+        if (error && /incognito_at/i.test(error.message || '')) {
+          const retryPause = await supabase
+            .from('profiles')
+            .select('paused_at')
+            .eq('id', user.id)
+            .maybeSingle();
+          data = retryPause.data as typeof data;
+          error = retryPause.error;
         }
-        setVisibilityUi(loadVisibilityUiMode(user.id));
-      });
+      }
+      if (!active) return;
+      const row = data as {
+        paused_at?: string | null;
+        incognito_at?: string | null;
+        deactivated_at?: string | null;
+      } | null;
+      const isPaused = !error && Boolean(row?.paused_at);
+      const dbDeactivated = !error && Boolean(row?.deactivated_at);
+      const dbIncognito = !error && Boolean(row?.incognito_at);
+      setPaused(isPaused);
+      if (isPaused) {
+        saveVisibilityUiMode(user.id, null);
+        setVisibilityUi(null);
+        return;
+      }
+      if (dbDeactivated) {
+        saveVisibilityUiMode(user.id, 'deactivated');
+        setVisibilityUi('deactivated');
+        return;
+      }
+      if (dbIncognito) {
+        saveVisibilityUiMode(user.id, 'incognito');
+        setVisibilityUi('incognito');
+        return;
+      }
+      const ui = loadVisibilityUiMode(user.id);
+      if (ui === 'deactivated') {
+        void setProfileDeactivated(user.id, true);
+        setVisibilityUi('deactivated');
+        return;
+      }
+      if (ui === 'incognito') {
+        void setProfileIncognito(user.id, true);
+        setVisibilityUi('incognito');
+        return;
+      }
+      setVisibilityUi(ui);
+    })();
     return () => {
       active = false;
     };
@@ -339,6 +408,14 @@ function AppShellView() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  if (visibilityUi === 'deactivated') {
+    return (
+      <AccountPausedScreen
+        onReactivate={() => applyVisibilityChoice('visible')}
+      />
     );
   }
 
