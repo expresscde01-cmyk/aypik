@@ -22,6 +22,13 @@ import {
 } from '@/lib/matchesNav';
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
 import { flushDiscoverPrefs } from '@/lib/suggestionPrefs';
+import { setProfilePaused } from '@/lib/profilePause';
+import {
+  loadVisibilityUiMode,
+  resolveAccountStatuses,
+  saveVisibilityUiMode,
+  type VisibilityChoice,
+} from '@/lib/accountStatus';
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -31,7 +38,8 @@ function initialTabFromQuery(): Tab {
   if (
     open === 'preferences' ||
     open === 'profile' ||
-    open === 'temoignage'
+    open === 'temoignage' ||
+    open === 'password'
   ) {
     return 'profile';
   }
@@ -73,6 +81,11 @@ function AppShellView() {
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
   /** Bloc titre Découvrir : masqué au scroll, réaffiché seulement en haut de page. */
   const [discoverIntroCollapsed, setDiscoverIntroCollapsed] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [visibilityUi, setVisibilityUi] = useState<
+    'deactivated' | 'incognito' | null
+  >(null);
+  const [accountMenuRequestKey, setAccountMenuRequestKey] = useState(0);
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -87,6 +100,45 @@ function AppShellView() {
       return copy;
     });
   }, []);
+
+  const openProfileSection = useCallback(
+    (section?: 'profile' | 'password' | 'preferences') => {
+      if (section === 'password' || section === 'preferences') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('open', section);
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+      if (tab === 'discover') persistDiscoverPrefs();
+      mountTab('profile');
+      setTab('profile');
+    },
+    [mountTab, persistDiscoverPrefs, tab]
+  );
+
+  const openAccountStatusManager = useCallback(() => {
+    if (tab === 'discover') persistDiscoverPrefs();
+    mountTab('home');
+    setTab('home');
+    setAccountMenuRequestKey((k) => k + 1);
+  }, [mountTab, persistDiscoverPrefs, tab]);
+
+  const applyVisibilityChoice = useCallback(
+    async (choice: VisibilityChoice): Promise<string | null> => {
+      if (!user) return 'Session invalide.';
+      const err = await setProfilePaused(user.id, choice === 'paused');
+      if (err) return err;
+      setPaused(choice === 'paused');
+      if (choice === 'deactivated' || choice === 'incognito') {
+        saveVisibilityUiMode(user.id, choice);
+        setVisibilityUi(choice);
+      } else {
+        saveVisibilityUiMode(user.id, null);
+        setVisibilityUi(null);
+      }
+      return null;
+    },
+    [user]
+  );
 
   const reloadViewerProfile = useCallback(async () => {
     if (!user) return null;
@@ -126,6 +178,32 @@ function AppShellView() {
         setProfileLoading(false);
       }
     })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    void supabase
+      .from('profiles')
+      .select('paused_at')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        const isPaused = !error && Boolean(
+          (data as { paused_at?: string | null } | null)?.paused_at
+        );
+        setPaused(isPaused);
+        if (isPaused) {
+          saveVisibilityUiMode(user.id, null);
+          setVisibilityUi(null);
+          return;
+        }
+        setVisibilityUi(loadVisibilityUiMode(user.id));
+      });
     return () => {
       active = false;
     };
@@ -174,6 +252,11 @@ function AppShellView() {
     user?.email?.split('@')[0] ||
     'Membre';
   const accountDeleted = Boolean(profile?.deletion_requested_at);
+  const accountStatuses = resolveAccountStatuses({
+    paused,
+    deactivated: !paused && visibilityUi === 'deactivated',
+    incognito: !paused && visibilityUi === 'incognito',
+  });
 
   const openMatches = (actorId?: string | null, opts?: OpenMatchesOpts) => {
     const {
@@ -269,12 +352,20 @@ function AppShellView() {
               onSignOut={signOut}
               onOpenDiscover={() => openTab('discover')}
               onOpenMatches={openMatches}
-              onOpenProfile={() => setTab('profile')}
+              onOpenProfile={() => openProfileSection()}
+              onOpenPassword={() => openProfileSection('password')}
+              onOpenNotifications={() => openProfileSection('preferences')}
               unreadTotal={unread.total}
               unreadBySender={unread.bySender}
               profileEpoch={profileEpoch}
               suggestionPrefsEpoch={suggestionPrefsEpoch}
               notificationsActive={tab === 'home'}
+              paused={paused}
+              visibilityUi={visibilityUi}
+              onVisibilityChange={applyVisibilityChoice}
+              accountMenuRequestKey={accountMenuRequestKey}
+              accountStatuses={accountStatuses}
+              onAccountStatusClick={openAccountStatusManager}
             />
           </div>
         )}
@@ -289,6 +380,8 @@ function AppShellView() {
               onHome={() => openTab('home')}
               onOpenInbox={openMatches}
               notificationsActive={tab === 'discover'}
+              accountStatuses={accountStatuses}
+              onAccountStatusClick={openAccountStatusManager}
             >
               <div
                 className={`discover-intro${
@@ -338,8 +431,10 @@ function AppShellView() {
               onHome={() => openTab('home')}
               onOpenInbox={openMatches}
               notificationsActive={tab === 'matches'}
+              accountStatuses={accountStatuses}
+              onAccountStatusClick={openAccountStatusManager}
               center={
-                <span className="text-sm font-semibold text-gray-800 truncate">
+                <span className="text-sm font-semibold text-gray-800 truncate min-w-0">
                   {displayName}
                 </span>
               }
@@ -374,6 +469,8 @@ function AppShellView() {
               onHome={() => openTab('home')}
               onOpenInbox={openMatches}
               notificationsActive={tab === 'profile'}
+              accountStatuses={accountStatuses}
+              onAccountStatusClick={openAccountStatusManager}
             />
             <ProfileSetup
               allowAccountDeletion

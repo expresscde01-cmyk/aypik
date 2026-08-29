@@ -7,8 +7,9 @@ import {
   MapPin,
   MessageCircle,
   Sparkles,
-  UserRound,
 } from 'lucide-react';
+import AccountMenu from '@/components/AccountMenu';
+import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -31,6 +32,12 @@ import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
+import {
+  ACCOUNT_STATUS_HOME_BANNER,
+  resolveVisibilityChoice,
+  type AccountStatusId,
+  type VisibilityChoice,
+} from '@/lib/accountStatus';
 
 type HomeSuggestion = SuggestedProfile & {
   is_founder?: boolean;
@@ -43,23 +50,39 @@ export default function HomeDashboard({
   onOpenDiscover,
   onOpenMatches,
   onOpenProfile,
+  onOpenPassword,
+  onOpenNotifications,
   unreadTotal = 0,
   unreadBySender = {},
   profileEpoch = 0,
   suggestionPrefsEpoch = 0,
   notificationsActive = true,
+  paused = false,
+  visibilityUi = null,
+  onVisibilityChange,
+  accountMenuRequestKey = 0,
+  accountStatuses = [],
+  onAccountStatusClick,
 }: {
   displayName: string;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
   onOpenMatches: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
   onOpenProfile: () => void;
+  onOpenPassword: () => void;
+  onOpenNotifications: () => void;
   unreadTotal?: number;
   unreadBySender?: Record<string, number>;
   profileEpoch?: number;
   /** Incrémenté à chaque sortie de Découvrir : force la relecture des filtres. */
   suggestionPrefsEpoch?: number;
   notificationsActive?: boolean;
+  paused?: boolean;
+  visibilityUi?: 'deactivated' | 'incognito' | null;
+  onVisibilityChange?: (choice: VisibilityChoice) => Promise<string | null>;
+  accountMenuRequestKey?: number;
+  accountStatuses?: AccountStatusId[];
+  onAccountStatusClick?: (id: AccountStatusId) => void;
 }) {
   const { user } = useAuth();
   const { status, refresh } = useMembership();
@@ -249,10 +272,32 @@ export default function HomeDashboard({
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
               />
-              <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
-                <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
-                {displayName}
-              </span>
+              {onSignOut && user?.id ? (
+                <AccountMenu
+                  displayName={displayName}
+                  visibilityChoice={resolveVisibilityChoice({
+                    paused,
+                    deactivated: !paused && visibilityUi === 'deactivated',
+                    incognito: !paused && visibilityUi === 'incognito',
+                  })}
+                  onVisibilityChange={
+                    onVisibilityChange ?? (async () => null)
+                  }
+                  openRequestKey={accountMenuRequestKey}
+                  onOpenProfile={onOpenProfile}
+                  onOpenPassword={onOpenPassword}
+                  onOpenNotifications={onOpenNotifications}
+                  onSignOut={onSignOut}
+                />
+              ) : (
+                <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
+                  {displayName}
+                </span>
+              )}
+              <AccountStatusBadges
+                statuses={accountStatuses}
+                onSelect={onAccountStatusClick}
+              />
               {onSignOut && (
                 <>
                   <span
@@ -290,6 +335,11 @@ export default function HomeDashboard({
             Des profils proches de toi, de ton âge et de tes centres
             d’intérêt — sélectionnés pour toi.
           </p>
+          {accountStatuses[0] && (
+            <p className={ACCOUNT_STATUS_HOME_BANNER[accountStatuses[0]].className}>
+              {ACCOUNT_STATUS_HOME_BANNER[accountStatuses[0]].text}
+            </p>
+          )}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
             <button
               type="button"

@@ -181,14 +181,17 @@ export default function ProfileSetup({
     if (loading) return;
     const params = new URLSearchParams(window.location.search);
     const open = params.get('open');
-    if (open !== 'preferences' && open !== 'temoignage') return;
+    if (open !== 'preferences' && open !== 'temoignage' && open !== 'password')
+      return;
 
     if (open === 'preferences') setPrefsHint(true);
     const t = window.setTimeout(() => {
       const target =
         open === 'temoignage'
           ? testimonialRef.current
-          : preferencesRef.current;
+          : open === 'password'
+            ? document.getElementById('change-password')
+            : preferencesRef.current;
       target?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',

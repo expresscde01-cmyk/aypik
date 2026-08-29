@@ -154,7 +154,10 @@ export default function ChangePasswordSection() {
   };
 
   return (
-    <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8">
+    <div
+      id="change-password"
+      className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
+    >
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
         MOT DE PASSE
       </h2>
