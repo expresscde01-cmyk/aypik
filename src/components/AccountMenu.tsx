@@ -194,19 +194,19 @@ export default function AccountMenu({
             }}
           />
           <MenuItem
-            icon={<Lock className="w-4 h-4" />}
-            label="Modifier mon mot de passe"
-            onClick={() => {
-              close();
-              onOpenPassword();
-            }}
-          />
-          <MenuItem
             icon={<Bell className="w-4 h-4" />}
             label="Notifications"
             onClick={() => {
               close();
               onOpenNotifications();
+            }}
+          />
+          <MenuItem
+            icon={<Lock className="w-4 h-4" />}
+            label="Modifier mon mot de passe"
+            onClick={() => {
+              close();
+              onOpenPassword();
             }}
           />
           <button
@@ -276,11 +276,6 @@ export default function AccountMenu({
             </div>
           )}
           <MenuItem
-            icon={<RefreshCw className="w-4 h-4" />}
-            label="Actualiser la page"
-            onClick={handleRefreshPage}
-          />
-          <MenuItem
             icon={<Filter className="w-4 h-4" />}
             label="Réinitialiser mes filtres de recherche"
             disabled={!user?.id}
@@ -289,6 +284,11 @@ export default function AccountMenu({
               setConfirmResetFilters(true);
               close();
             }}
+          />
+          <MenuItem
+            icon={<RefreshCw className="w-4 h-4" />}
+            label="Actualiser la page"
+            onClick={handleRefreshPage}
           />
           <div className="my-1.5 border-t border-gray-100" role="separator" />
           <MenuItem
