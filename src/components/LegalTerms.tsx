@@ -355,6 +355,25 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <h3 className="text-base font-bold text-gray-900">
               Article 3 — Conditions d&apos;accès
             </h3>
+            <p>
+              Aux fins des présentes, les termes « site » et
+              « application » désignent le même Service {BRAND_NAME},
+              accessible via un navigateur à l&apos;adresse{' '}
+              <a
+                href="https://aypik.fr"
+                className="underline underline-offset-2 hover:text-rose-600"
+              >
+                https://aypik.fr
+              </a>{' '}
+              ou installé sur un appareil (application web progressive,
+              ou PWA).
+              L&apos;installation ne donne lieu à aucune collecte de
+              données supplémentaire par rapport à l&apos;usage via
+              navigateur. Le Service n&apos;étant pas distribué via
+              Google Play ou l&apos;App Store, aucune condition
+              d&apos;utilisation tierce de ces plateformes ne
+              s&apos;applique.
+            </p>
             <div>
               <p className="font-semibold text-gray-900">
                 3.1 Majorité — 18 ans révolus
