@@ -154,7 +154,7 @@ export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProp
 
   return (
     <div
-      className={`min-w-0 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-1 ${className}`}
+      className={`min-w-0 sm:min-w-max flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-1 ${className}`}
     >
       <span className="shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none">
         {BRAND}
@@ -162,7 +162,7 @@ export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProp
       <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
         Communauté sans enfants
       </span>
-      <span className="hidden sm:inline min-w-0 truncate text-xs font-light text-gray-400 tracking-wide leading-none">
+      <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
         {BASELINE}
       </span>
     </div>
