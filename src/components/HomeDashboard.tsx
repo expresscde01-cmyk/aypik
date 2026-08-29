@@ -469,7 +469,9 @@ export default function HomeDashboard({
                         founderNumber={p.founder_number}
                       />
                       {unreadCount > 0 && (
-                        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
+                        <span className={`absolute right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md ${
+                          p.is_founder ? 'bottom-9 sm:bottom-2' : 'bottom-2'
+                        }`}>
                           <MessageCircle className="w-3 h-3" />
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>

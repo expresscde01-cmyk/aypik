@@ -3,21 +3,28 @@ import { Award, Sparkles } from 'lucide-react';
 export function FounderBadge({
   number,
   size = 'md',
+  compact = false,
 }: {
   number?: number | null;
   size?: 'sm' | 'md';
+  compact?: boolean;
 }) {
   const pad = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
+  const compactPad =
+    size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs';
   const icon = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5';
+  const numberLabel = typeof number === 'number' ? ` #${number}` : '';
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200 ${pad}`}
+      className={`inline-flex items-center rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200 ${
+        compact ? `${compactPad} gap-0.5 whitespace-nowrap` : `${pad} gap-1`
+      }`}
       title="Membre Fondateur"
     >
       <Award className={icon} />
-      Membre Fondateur
-      {typeof number === 'number' ? ` #${number}` : ''}
+      {compact ? 'Fondateur' : 'Membre Fondateur'}
+      {numberLabel}
     </span>
   );
 }
@@ -37,7 +44,7 @@ export function BoostedBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
   );
 }
 
-/** Badges photo partagés (Accueil + Découvrir) : âge à droite, Boosté / Fondateur empilés à gauche. */
+/** Badges photo partagés (Accueil + Découvrir). */
 export function ProfileCardCornerBadges({
   age,
   isBoosted,
@@ -55,13 +62,24 @@ export function ProfileCardCornerBadges({
         {age} ans
       </span>
       {(isBoosted || isFounder) && (
-        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]">
+        <div
+          className={`absolute top-2 left-2 flex flex-col gap-1 items-start max-w-[70%]${
+            isBoosted ? '' : ' hidden sm:flex'
+          }`}
+        >
           {isBoosted ? <BoostedBadge size="sm" /> : null}
           {isFounder ? (
-            <FounderBadge number={founderNumber} size="sm" />
+            <span className="hidden sm:inline-flex">
+              <FounderBadge number={founderNumber} size="sm" />
+            </span>
           ) : null}
         </div>
       )}
+      {isFounder ? (
+        <div className="absolute bottom-2 right-2 z-[3] max-w-[calc(100%-2.75rem)] sm:hidden">
+          <FounderBadge number={founderNumber} size="sm" compact />
+        </div>
+      ) : null}
     </>
   );
 }
