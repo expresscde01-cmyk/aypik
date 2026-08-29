@@ -113,15 +113,10 @@ export function loadSuggestionPrefs(
   }
 }
 
-/** Même région + 1 centre d’intérêt — ne touche pas au profil ni aux matchs. */
+/** Remet les filtres aux défauts produit. Ne touche pas au profil ni aux matchs. */
 export function resetSuggestionSearchPrefs(userId: string): SuggestionPrefs {
-  const next = parseSuggestionPrefs({
-    geoPerimeter: 'region',
-    geoRadiusKm: GEO_RADIUS_KM_DEFAULT,
-    geoExclusive: false,
-    minOverlap: 1,
-  });
-  saveSuggestionPrefs(userId, next);
+  const next = parseSuggestionPrefs(DEFAULT_SUGGESTION_PREFS);
+  saveSuggestionPrefs(userId, DEFAULT_SUGGESTION_PREFS);
   syncDiscoverPrefs(userId, next);
   return next;
 }
