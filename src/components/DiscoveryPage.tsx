@@ -432,7 +432,7 @@ export default function DiscoveryPage({
   const [showFiltersHint, setShowFiltersHint] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [prefs, setPrefs] = useSuggestionPrefs(userId, {
-    listen: false,
+    listen: true,
     persistOnChange: false,
   });
   const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap } = prefs;

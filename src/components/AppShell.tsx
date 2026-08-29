@@ -21,7 +21,7 @@ import {
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
-import { flushDiscoverPrefs } from '@/lib/suggestionPrefs';
+import { flushDiscoverPrefs, subscribeSuggestionPrefs } from '@/lib/suggestionPrefs';
 import { setProfilePaused } from '@/lib/profilePause';
 import { setProfileIncognito } from '@/lib/profileIncognito';
 import { setProfileDeactivated } from '@/lib/profileDeactivated';
@@ -103,6 +103,13 @@ function AppShellView() {
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
     setSuggestionPrefsEpoch((n) => n + 1);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    return subscribeSuggestionPrefs(user.id, () => {
+      setSuggestionPrefsEpoch((n) => n + 1);
+    });
   }, [user?.id]);
 
   const mountTab = useCallback((next: Tab) => {

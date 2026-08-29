@@ -18,6 +18,8 @@ export function createAppQueryClient() {
   });
 }
 
+export const queryClient = createAppQueryClient();
+
 export const queryKeys = {
   signupCount: () => ['platform-signup-count'] as const,
   discoverViewer: (userId: string | undefined, epoch: number) =>

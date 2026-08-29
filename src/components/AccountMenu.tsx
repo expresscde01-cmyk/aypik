@@ -4,13 +4,19 @@ import {
   Bell,
   ChevronDown,
   Eye,
+  Filter,
   Lock,
   LogOut,
+  RefreshCw,
   Trash2,
   UserRound,
 } from 'lucide-react';
 import { requestAccountDeletion } from '@/lib/deleteAccount';
 import { userErrorMessage } from '@/lib/userError';
+import { useAuth } from '@/lib/auth';
+import { clearAypikAppCache } from '@/lib/appCache';
+import { queryClient } from '@/lib/queryClient';
+import { resetSuggestionSearchPrefs } from '@/lib/suggestionPrefs';
 import {
   VISIBILITY_RADIO_OPTIONS,
   visibilityMenuHint,
@@ -37,9 +43,11 @@ export default function AccountMenu({
   /** Incrémenté pour ouvrir le menu (badge statut) sur le sous-menu Visibilité. */
   openRequestKey?: number;
 }) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmResetFilters, setConfirmResetFilters] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +68,7 @@ export default function AccountMenu({
         setOpen(false);
         setVisibilityOpen(false);
         setConfirmDelete(false);
+        setConfirmResetFilters(false);
       }
     };
     document.addEventListener('mousedown', onDoc);
@@ -69,6 +78,15 @@ export default function AccountMenu({
       window.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!confirmResetFilters) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setConfirmResetFilters(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmResetFilters]);
 
   useEffect(() => {
     if (openRequestKey < 1) return;
@@ -99,6 +117,23 @@ export default function AccountMenu({
     } finally {
       setVisibilityBusy(false);
     }
+  };
+
+  const handleRefreshPage = () => {
+    close();
+    clearAypikAppCache();
+    window.location.reload();
+  };
+
+  const handleResetFilters = () => {
+    if (!user?.id) {
+      setConfirmResetFilters(false);
+      return;
+    }
+    resetSuggestionSearchPrefs(user.id);
+    void queryClient.invalidateQueries({ queryKey: ['suggest-profiles'] });
+    setConfirmResetFilters(false);
+    close();
   };
 
   const handleDelete = async () => {
@@ -240,6 +275,21 @@ export default function AccountMenu({
               })}
             </div>
           )}
+          <MenuItem
+            icon={<RefreshCw className="w-4 h-4" />}
+            label="Actualiser la page"
+            onClick={handleRefreshPage}
+          />
+          <MenuItem
+            icon={<Filter className="w-4 h-4" />}
+            label="Réinitialiser mes filtres de recherche"
+            disabled={!user?.id}
+            onClick={() => {
+              setError(null);
+              setConfirmResetFilters(true);
+              close();
+            }}
+          />
           <div className="my-1.5 border-t border-gray-100" role="separator" />
           <MenuItem
             icon={<Trash2 className="w-4 h-4" />}
@@ -259,13 +309,53 @@ export default function AccountMenu({
               onSignOut();
             }}
           />
-          {error && !confirmDelete && (
+          {error && !confirmDelete && !confirmResetFilters && (
             <p className="mx-2 mt-1 mb-0.5 px-2 py-1.5 rounded-lg bg-red-50 text-red-700 text-[11px] leading-snug">
               {error}
             </p>
           )}
         </div>
       )}
+
+      {confirmResetFilters &&
+        createPortal(
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/40">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="account-reset-filters-title"
+              className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4"
+            >
+              <h3
+                id="account-reset-filters-title"
+                className="text-base font-bold text-gray-900"
+              >
+                Réinitialiser tes filtres de recherche
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Réinitialiser tes filtres à Même région et 1 centre d&apos;intérêt
+                en commun&nbsp;?
+              </p>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setConfirmResetFilters(false)}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {confirmDelete &&
         createPortal(

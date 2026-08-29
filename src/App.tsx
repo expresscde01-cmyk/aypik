@@ -9,14 +9,12 @@ import AuthScreen from '@/components/AuthScreen';
 import ResetPasswordScreen from '@/components/ResetPasswordScreen';
 import RouteFallback from '@/components/RouteFallback';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
-import { createAppQueryClient } from '@/lib/queryClient';
+import { queryClient } from '@/lib/queryClient';
 import { fetchMaintenanceStatus } from '@/lib/maintenance';
 import LegalTermsPage, {
   closeLegalTerms,
   isLegalTermsOpen,
 } from '@/components/LegalTerms';
-
-const queryClient = createAppQueryClient();
 
 const UNSUBSCRIBED_SUCCESS_MESSAGE =
   "Vous êtes désabonné·e. Vous ne recevrez plus d'e-mails de notification de la part d'Aypik. Les e-mails strictement nécessaires au fonctionnement du compte (sécurité, facturation) peuvent encore vous être envoyés.";

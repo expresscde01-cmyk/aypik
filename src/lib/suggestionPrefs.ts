@@ -113,6 +113,19 @@ export function loadSuggestionPrefs(
   }
 }
 
+/** Même région + 1 centre d’intérêt — ne touche pas au profil ni aux matchs. */
+export function resetSuggestionSearchPrefs(userId: string): SuggestionPrefs {
+  const next = parseSuggestionPrefs({
+    geoPerimeter: 'region',
+    geoRadiusKm: GEO_RADIUS_KM_DEFAULT,
+    geoExclusive: false,
+    minOverlap: 1,
+  });
+  saveSuggestionPrefs(userId, next);
+  syncDiscoverPrefs(userId, next);
+  return next;
+}
+
 export function saveSuggestionPrefs(
   userId: string,
   prefs: SuggestionPrefs
