@@ -5,9 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
-import HomeBackButton from '@/components/HomeBackButton';
+import AppTabHeader from '@/components/AppTabHeader';
 import MatchesPage from '@/components/MatchesPage';
-import NotificationsBell from '@/components/NotificationsBell';
 import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalTerms';
 import ProfileSetup, {
@@ -285,48 +284,42 @@ function AppShellView() {
               tab === 'discover' ? 'min-h-full flex flex-col' : 'hidden'
             }
           >
-            <header className="sticky top-0 z-30 discover-sticky-header">
-              <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 sm:pt-4 sm:pb-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <HomeBackButton onClick={() => openTab('home')} />
-                  <div className="shrink-0 -mr-1">
-                    <NotificationsBell
-                      onOpenInbox={openMatches}
-                      active={tab === 'discover'}
+            <AppTabHeader
+              variant="discover"
+              onHome={() => openTab('home')}
+              onOpenInbox={openMatches}
+              notificationsActive={tab === 'discover'}
+            >
+              <div
+                className={`discover-intro${
+                  discoverIntroCollapsed ? ' discover-intro--collapsed' : ''
+                }`}
+                aria-hidden={discoverIntroCollapsed}
+              >
+                <div className="discover-intro-inner">
+                  <div className="discover-intro-motion pt-3 pb-2 sm:pb-2.5">
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                      Découvrir
+                    </h1>
+                    <span
+                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
+                      aria-hidden
                     />
-                  </div>
-                </div>
-                <div
-                  className={`discover-intro${
-                    discoverIntroCollapsed ? ' discover-intro--collapsed' : ''
-                  }`}
-                  aria-hidden={discoverIntroCollapsed}
-                >
-                  <div className="discover-intro-inner">
-                    <div className="discover-intro-motion pt-3 pb-2 sm:pb-2.5">
-                      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                        Découvrir
-                      </h1>
-                      <span
-                        className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
-                        aria-hidden
-                      />
-                      <p className="mt-1.5 text-sm text-gray-500 leading-snug">
-                        Découvre des profils qui pourraient te plaire
-                      </p>
-                      <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
-                        <em>
-                          Les filtres sélectionnés ici s’appliqueront
-                          automatiquement dès que tu quitteras cette page pour
-                          personnaliser les suggestions qui te seront faites
-                          sur ta page Accueil.
-                        </em>
-                      </p>
-                    </div>
+                    <p className="mt-1.5 text-sm text-gray-500 leading-snug">
+                      Découvre des profils qui pourraient te plaire
+                    </p>
+                    <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
+                      <em>
+                        Les filtres sélectionnés ici s’appliqueront
+                        automatiquement dès que tu quitteras cette page pour
+                        personnaliser les suggestions qui te seront faites
+                        sur ta page Accueil.
+                      </em>
+                    </p>
                   </div>
                 </div>
               </div>
-            </header>
+            </AppTabHeader>
             <DiscoveryPage
               unreadBySender={unread.bySender}
               onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
@@ -341,18 +334,16 @@ function AppShellView() {
               tab === 'matches' ? 'min-h-full flex flex-col' : 'hidden'
             }
           >
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
-              <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-                <HomeBackButton onClick={() => openTab('home')} />
+            <AppTabHeader
+              onHome={() => openTab('home')}
+              onOpenInbox={openMatches}
+              notificationsActive={tab === 'matches'}
+              center={
                 <span className="text-sm font-semibold text-gray-800 truncate">
                   {displayName}
                 </span>
-                <NotificationsBell
-                  onOpenInbox={openMatches}
-                  active={tab === 'matches'}
-                />
-              </div>
-            </div>
+              }
+            />
             <MatchesPage
               pageActive={tab === 'matches'}
               focusActorId={inboxActorId}
@@ -378,15 +369,21 @@ function AppShellView() {
           </div>
         )}
         {tab === 'profile' && (
-          <ProfileSetup
-            allowAccountDeletion
-            onHome={() => openTab('home')}
-            onDone={async () => {
-              await reloadViewerProfile();
-              mountTab('home');
-              setTab('home');
-            }}
-          />
+          <div className="min-h-full flex flex-col">
+            <AppTabHeader
+              onHome={() => openTab('home')}
+              onOpenInbox={openMatches}
+              notificationsActive={tab === 'profile'}
+            />
+            <ProfileSetup
+              allowAccountDeletion
+              onDone={async () => {
+                await reloadViewerProfile();
+                mountTab('home');
+                setTab('home');
+              }}
+            />
+          </div>
         )}
       </main>
 

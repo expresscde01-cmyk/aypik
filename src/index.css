@@ -12,6 +12,35 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Bouton Accueil — source unique (indépendant du verre dépoli des headers). */
+:root {
+  --home-back-bg: #fff1f2;
+  --home-back-fg: #e11d48;
+  --home-back-bg-hover: #ffe4e6;
+  --home-back-fg-hover: #be123c;
+  --home-back-icon-bg: #ffffff;
+}
+
+.home-back-button {
+  background-color: var(--home-back-bg);
+  color: var(--home-back-fg);
+  isolation: isolate;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.home-back-button:hover {
+  background-color: var(--home-back-bg-hover);
+  color: var(--home-back-fg-hover);
+}
+
+.home-back-button__glyph {
+  background-color: var(--home-back-icon-bg);
+  color: inherit;
+  box-shadow: 0 1px 2px 0 var(--home-back-bg-hover);
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
