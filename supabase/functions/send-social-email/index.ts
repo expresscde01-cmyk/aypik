@@ -177,7 +177,7 @@ function buildSocialEmail(params: {
                 Connecte-toi pour découvrir ce profil et répondre si le feeling est réciproque.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un espace atypique réservé exclusivement aux personnes sans enfants.
+                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
               </p>`,
     };
   }
@@ -194,7 +194,7 @@ function buildSocialEmail(params: {
                 Connecte-toi pour voir ce profil — le Like reste discret jusqu'à un match.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un espace atypique réservé exclusivement aux personnes sans enfants.
+                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
               </p>`,
     };
   }
@@ -216,7 +216,7 @@ function buildSocialEmail(params: {
                 Connecte-toi pour démarrer la conversation.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un espace atypique réservé exclusivement aux personnes sans enfants.
+                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
               </p>`,
     };
   }
@@ -239,7 +239,7 @@ function buildSocialEmail(params: {
                 Connecte-toi pour démarrer la conversation.
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un espace atypique réservé exclusivement aux personnes sans enfants.
+                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
               </p>`,
   };
 }
