@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -174,6 +174,8 @@ function AppShellView() {
     setProfileEpoch((n) => n + 1);
     return data as Profile | null;
   }, [user]);
+
+  const navHidden = useBottomNavAutoHide(tab);
 
   const openTab = useCallback(
     (next: Tab) => {
@@ -534,7 +536,11 @@ function AppShellView() {
 
       <SiteFooter compact />
 
-      <nav className="bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20">
+      <nav
+        className={`app-bottom-nav bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20${
+          navHidden ? ' app-bottom-nav--hidden' : ''
+        }`}
+      >
         <div className="max-w-2xl mx-auto px-2 h-16 flex items-center justify-around">
           <NavButton
             icon={<Home className="w-5 h-5" />}
@@ -570,6 +576,67 @@ function AppShellView() {
       </nav>
     </div>
   );
+}
+
+/**
+ * Auto-hide de la barre du bas (même composant sticky sur tous les viewports).
+ * Scroll bas → cache ; haut et bas de page → réaffiche.
+ * Un scroll vers le haut en milieu de page ne réaffiche pas la barre.
+ * lastY est toujours mis à jour pour que le prochain scroll bas reste détectable.
+ */
+function useBottomNavAutoHide(resetKey: unknown) {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    setHidden(false);
+    lastY.current = Math.max(0, window.scrollY);
+    let ticking = false;
+    const edgePx = 32;
+
+    const apply = () => {
+      ticking = false;
+      const y = Math.max(0, window.scrollY);
+      const viewportH = window.visualViewport?.height ?? window.innerHeight;
+      const maxY = Math.max(
+        0,
+        document.documentElement.scrollHeight - viewportH
+      );
+      const atTop = y <= edgePx;
+      const atBottom = y >= maxY - edgePx;
+      const notScrollable = maxY < 16;
+
+      if (notScrollable || atTop || atBottom) {
+        lastY.current = y;
+        setHidden(false);
+        return;
+      }
+
+      if (Math.abs(y - lastY.current) > 8) {
+        setHidden(true);
+      }
+
+      lastY.current = y;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(apply);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.visualViewport?.addEventListener('resize', onScroll);
+    apply();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      window.visualViewport?.removeEventListener('resize', onScroll);
+    };
+  }, [resetKey]);
+
+  return hidden;
 }
 
 function NavButton({
