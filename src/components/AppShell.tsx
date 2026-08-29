@@ -580,17 +580,21 @@ function AppShellView() {
 
 /**
  * Auto-hide de la barre du bas (même composant sticky sur tous les viewports).
- * Scroll bas → cache ; haut et bas de page → réaffiche.
- * Un scroll vers le haut en milieu de page ne réaffiche pas la barre.
- * lastY est toujours mis à jour pour que le prochain scroll bas reste détectable.
+ * Scroll (haut ou bas) au-delà de 8px cumulés → cache.
+ * Haut / bas de page, ou changement d’onglet → réaffiche.
+ * lastY n’est mis à jour qu’au franchissement du seuil ou à une inversion
+ * de direction, pour que les petits deltas (trackpad) s’accumulent.
  */
 function useBottomNavAutoHide(resetKey: unknown) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
+  const sampleY = useRef(0);
 
   useEffect(() => {
     setHidden(false);
-    lastY.current = Math.max(0, window.scrollY);
+    const startY = Math.max(0, window.scrollY);
+    lastY.current = startY;
+    sampleY.current = startY;
     let ticking = false;
     const edgePx = 32;
 
@@ -608,15 +612,28 @@ function useBottomNavAutoHide(resetKey: unknown) {
 
       if (notScrollable || atTop || atBottom) {
         lastY.current = y;
+        sampleY.current = y;
         setHidden(false);
         return;
       }
 
-      if (Math.abs(y - lastY.current) > 8) {
-        setHidden(true);
+      const fromOrigin = y - lastY.current;
+      const fromSample = y - sampleY.current;
+      sampleY.current = y;
+
+      if (
+        fromSample !== 0 &&
+        fromOrigin !== 0 &&
+        Math.sign(fromOrigin) !== Math.sign(fromSample)
+      ) {
+        lastY.current = y;
+        return;
       }
 
-      lastY.current = y;
+      if (Math.abs(y - lastY.current) > 8) {
+        lastY.current = y;
+        setHidden(true);
+      }
     };
 
     const onScroll = () => {
