@@ -279,6 +279,7 @@ BEGIN
       AND p.has_children = false
       AND p.deletion_requested_at IS NULL
       AND p.paused_at IS NULL
+      AND p.deactivated_at IS NULL
       AND p.id NOT IN (SELECT uid FROM excluded)
       AND (
         my_gender IS NULL
