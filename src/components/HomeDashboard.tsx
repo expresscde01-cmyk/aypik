@@ -430,7 +430,7 @@ export default function HomeDashboard({
               </button>
             </div>
           ) : (
-            <ul className="grid grid-cols-2 gap-3 sm:gap-4">
+            <ul className="profile-cards-grid overflow-visible">
               {suggestions.slice(0, HOME_SUGGESTIONS_MAX).map((p) => {
                 const unreadCount = unreadBySender[p.id] || 0;
                 return (

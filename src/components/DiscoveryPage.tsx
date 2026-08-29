@@ -1099,7 +1099,7 @@ export default function DiscoveryPage({
                 : 'Profils masqués. Les filtres n’ont pas changé le résultat.'}
             </p>
           ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 overflow-visible">
+          <ul className="profile-cards-grid overflow-visible">
             {displayed.map((c, index) => (
                 <DiscoveryCard
                   key={c.id}

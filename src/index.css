@@ -103,6 +103,28 @@ body {
   pointer-events: none;
 }
 
+/* Grilles Accueil / Découvrir : 2 colonnes, 3 dès 1440px, cartes ≥ ~300px. */
+.profile-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .profile-cards-grid {
+    gap: 1rem;
+  }
+}
+
+@screen wide {
+  .profile-cards-grid {
+    grid-template-columns: repeat(3, minmax(18.75rem, 1fr));
+    width: min(100vw - 2rem, 70rem);
+    max-width: 70rem;
+    margin-left: calc(50% - min(50vw - 1rem, 35rem));
+  }
+}
+
 /* Icônes de tri uniquement — jamais les autres icônes du site */
 .discovery-sort-pills .sort-icon {
   display: inline-flex;
