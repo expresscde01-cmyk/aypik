@@ -19,6 +19,9 @@ body {
   --home-back-bg-hover: #ffe4e6;
   --home-back-fg-hover: #be123c;
   --home-back-icon-bg: #ffffff;
+  /* Rouge de suppression — source unique (compte, lien, etc.) */
+  --color-delete: #dc2626;
+  --color-delete-hover: #b91c1c;
 }
 
 .home-back-button {
@@ -1982,17 +1985,17 @@ button.group[data-matched='true'] {
     font-size: 0.9375rem;
     opacity: 0.55;
     background-color: #fff;
-    color: #dc2626;
-    border-color: #dc2626;
+    color: var(--color-delete);
+    border-color: var(--color-delete);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
   40% {
     transform: scale(1.03);
     font-size: 1.125rem;
     opacity: 1;
-    background-color: #dc2626;
+    background-color: var(--color-delete);
     color: #fff;
-    border-color: #dc2626;
+    border-color: var(--color-delete);
     box-shadow:
       0 0 0 4px rgba(220, 38, 38, 0.22),
       0 6px 16px rgba(220, 38, 38, 0.28);
@@ -2001,11 +2004,25 @@ button.group[data-matched='true'] {
     transform: scale(1);
     font-size: 1.125rem;
     opacity: 1;
-    background-color: #dc2626;
+    background-color: var(--color-delete);
     color: #fff;
-    border-color: #dc2626;
+    border-color: var(--color-delete);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
+}
+
+.btn-delete-confirm {
+  background-color: var(--color-delete);
+  color: #fff;
+  border: 1px solid var(--color-delete);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.btn-delete-confirm:hover:not(:disabled) {
+  background-color: var(--color-delete-hover);
+  border-color: var(--color-delete-hover);
 }
 
 .delete-confirm-actions > button {
@@ -2016,8 +2033,8 @@ button.group[data-matched='true'] {
   font-size: 0.9375rem;
   line-height: 1.25;
   background-color: #fff;
-  color: #dc2626;
-  border: 1px solid #dc2626;
+  color: var(--color-delete);
+  border: 1px solid var(--color-delete);
   opacity: 0.55;
   cursor: not-allowed;
   transition:
@@ -2031,8 +2048,8 @@ button.group[data-matched='true'] {
 .delete-confirm-btn:not(.delete-confirm-btn--ready):hover,
 .delete-confirm-btn:not(.delete-confirm-btn--ready):active {
   background-color: #fff;
-  color: #dc2626;
-  border-color: #dc2626;
+  color: var(--color-delete);
+  border-color: var(--color-delete);
   box-shadow: none;
   transform: none;
   filter: none;
@@ -2040,16 +2057,16 @@ button.group[data-matched='true'] {
 
 .delete-confirm-btn--ready {
   font-size: 1.125rem;
-  background-color: #dc2626;
+  background-color: var(--color-delete);
   color: #fff;
-  border-color: #dc2626;
+  border-color: var(--color-delete);
   opacity: 1;
   cursor: pointer;
 }
 
 .delete-confirm-btn--ready:not(:disabled):hover {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
+  background-color: var(--color-delete-hover);
+  border-color: var(--color-delete-hover);
 }
 
 .delete-confirm-btn--ready:not(:disabled) {

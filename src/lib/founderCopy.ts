@@ -15,7 +15,7 @@ export const FOUNDER_BENEFIT_NO_CARD =
 export const FOUNDER_BENEFIT_UNLIMITED_LIKES =
   'Likes et Flash illimités offerts avec notification immédiate';
 export const FOUNDER_BENEFIT_BOOST_FIRST_MONTH =
-  'Boost profil offert le 1er mois (visibilité maximale auprès de tous les membres)';
+  'Boost offert le 1er mois pour une visibilité maximale auprès de tous les membres';
 export const FOUNDER_BENEFIT_FLASH =
   'Flash offert (notification immédiate)';
 

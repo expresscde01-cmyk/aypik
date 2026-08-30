@@ -56,7 +56,7 @@ export default function ConfirmDeleteModal({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className="py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+            className="py-2.5 rounded-xl btn-delete-confirm text-sm font-semibold disabled:opacity-40"
           >
             {busy ? '…' : 'Supprimer'}
           </button>

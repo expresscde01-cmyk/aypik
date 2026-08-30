@@ -7,8 +7,6 @@ import {
   HeaderTaglineWidthProbe,
   useHeaderTaglineCompact,
 } from '@/lib/useHeaderTaglineCompact';
-import { SiteFooter } from '@/components/LegalTerms';
-import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
   FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
   FOUNDER_BENEFIT_NO_CARD,

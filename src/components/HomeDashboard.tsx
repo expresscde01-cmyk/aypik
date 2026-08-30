@@ -22,13 +22,6 @@ import {
   HeaderTaglineWidthProbe,
   useHeaderTaglineCompact,
 } from '@/lib/useHeaderTaglineCompact';
-import { ProfileCardCornerBadges } from '@/components/membership/Badges';
-import NotificationsBell from '@/components/NotificationsBell';
-import ProfileDetailModal from '@/components/ProfileDetailModal';
-import ProfilePhoto from '@/components/ProfilePhoto';
-import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
-import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
-import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   fetchSuggestedProfiles,
   HOME_SUGGESTIONS_MAX,
