@@ -19,6 +19,17 @@ import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
+  HeaderTaglineWidthProbe,
+  useHeaderTaglineCompact,
+} from '@/lib/useHeaderTaglineCompact';
+import { ProfileCardCornerBadges } from '@/components/membership/Badges';
+import NotificationsBell from '@/components/NotificationsBell';
+import ProfileDetailModal from '@/components/ProfileDetailModal';
+import ProfilePhoto from '@/components/ProfilePhoto';
+import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
+import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
+import { CardGeoFacts } from '@/components/GeoBadgeLine';
+import {
   fetchSuggestedProfiles,
   HOME_SUGGESTIONS_MAX,
   type SuggestedProfile,
@@ -87,6 +98,8 @@ export default function HomeDashboard({
   onAccountStatusClick?: (id: AccountStatusId) => void;
 }) {
   const { user } = useAuth();
+  const { compact: taglineCompact, rowRef, rightRef, probeRef } =
+    useHeaderTaglineCompact();
   const { status, refresh } = useMembership();
   const [hiddenIds, setHiddenIds] = useState(() => new Set<string>());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -263,13 +276,19 @@ export default function HomeDashboard({
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+        <div className="w-full max-w-2xl mx-auto px-4 lg:max-w-none lg:px-8">
+          <div
+            ref={rowRef}
+            className="relative flex w-full items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+          >
             <div className="flex items-center gap-2 min-w-0">
               <BrandMark size="sm" />
-              <BrandLockup />
+              <BrandLockup compact={taglineCompact} />
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div
+              ref={rightRef}
+              className="flex items-center gap-1 shrink-0 lg:ml-auto"
+            >
               <NotificationsBell
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
@@ -309,15 +328,15 @@ export default function HomeDashboard({
                   <button
                     type="button"
                     onClick={onSignOut}
-                    title="Déconnexion"
-                    aria-label="Déconnexion"
-                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
                   >
                     <LogOut className="w-4 h-4" aria-hidden />
+                    Déconnexion
                   </button>
                 </>
               )}
             </div>
+            <HeaderTaglineWidthProbe probeRef={probeRef} />
           </div>
         </div>
       </header>

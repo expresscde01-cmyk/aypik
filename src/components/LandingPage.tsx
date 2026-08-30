@@ -4,6 +4,12 @@ import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLo
 import { SiteFooter } from '@/components/LegalTerms';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
+  HeaderTaglineWidthProbe,
+  useHeaderTaglineCompact,
+} from '@/lib/useHeaderTaglineCompact';
+import { SiteFooter } from '@/components/LegalTerms';
+import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
+import {
   FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
   FOUNDER_BENEFIT_NO_CARD,
   FOUNDER_BENEFIT_UNLIMITED_LIKES,
@@ -179,11 +185,16 @@ export function SiteHeader({
   onLogoClick?: () => void;
 }) {
   const connected = Boolean(displayName);
+  const { compact: taglineCompact, rowRef, rightRef, probeRef } =
+    useHeaderTaglineCompact();
 
   return (
     <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+        <div
+          ref={rowRef}
+          className="relative flex w-full items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+        >
           <a
             href="/"
             onClick={(e) => {
@@ -197,10 +208,10 @@ export function SiteHeader({
             aria-label="Accueil Aypik"
           >
             <BrandMark size="sm" />
-            <BrandLockup />
+            <BrandLockup compact={taglineCompact} />
           </a>
 
-          <div className="shrink-0">
+          <div ref={rightRef} className="shrink-0">
             {connected ? (
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[12rem] truncate text-sm font-semibold text-gray-800">
@@ -216,11 +227,10 @@ export function SiteHeader({
                     <button
                       type="button"
                       onClick={onSignOut}
-                      title="Déconnexion"
-                      aria-label="Déconnexion"
-                      className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
                     >
                       <LogOut className="w-4 h-4" aria-hidden />
+                      Déconnexion
                     </button>
                   </>
                 )}
@@ -235,6 +245,7 @@ export function SiteHeader({
               </button>
             )}
           </div>
+          <HeaderTaglineWidthProbe probeRef={probeRef} />
         </div>
       </div>
     </header>

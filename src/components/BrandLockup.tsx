@@ -3,10 +3,13 @@ import { useId } from 'react';
 type BrandLockupProps = {
   variant?: 'nav' | 'hero' | 'inline';
   className?: string;
+  /** Overrides the sm breakpoint: stacked short tagline vs inline long phrase. */
+  compact?: boolean;
 };
 
 const BRAND = 'Aypik';
 const BASELINE = 'Le site de rencontre destiné aux personnes sans enfants';
+const BRAND_SHORT_TAGLINE = 'Communauté sans enfants';
 
 /** Same stops as AYPIK wordmark — rose vif → ambre */
 export const BRAND_GRADIENT_CSS =
@@ -116,7 +119,11 @@ export function BrandMark({ size = 'md', className = '' }: BrandMarkProps) {
   );
 }
 
-export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProps) {
+export function BrandLockup({
+  variant = 'nav',
+  className = '',
+  compact,
+}: BrandLockupProps) {
   if (variant === 'hero') {
     return (
       <div className={`text-center ${className}`}>
@@ -152,23 +159,49 @@ export function BrandLockup({ variant = 'nav', className = '' }: BrandLockupProp
     );
   }
 
+  const stacked =
+    compact === true
+      ? true
+      : compact === false
+        ? false
+        : null;
+
   return (
     <div
-      className={`min-w-0 sm:min-w-max flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-1 ${className}`}
+      className={`min-w-0 flex ${
+        stacked === true
+          ? 'flex-col gap-0.5'
+          : stacked === false
+            ? 'flex-row items-baseline gap-1'
+            : 'flex-col gap-0.5 sm:min-w-max sm:flex-row sm:items-baseline sm:gap-1'
+      } ${className}`}
     >
       <span className="shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none">
         {BRAND}
       </span>
-      <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
-        Communauté sans enfants
-      </span>
-      <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
-        {BASELINE}
-      </span>
+      {stacked === true ? (
+        <span className="text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
+          {BRAND_SHORT_TAGLINE}
+        </span>
+      ) : stacked === false ? (
+        <span className="whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
+          {BASELINE}
+        </span>
+      ) : (
+        <>
+          <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
+            {BRAND_SHORT_TAGLINE}
+          </span>
+          <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
+            {BASELINE}
+          </span>
+        </>
+      )}
     </div>
   );
 }
 
 export const BRAND_NAME = BRAND;
 export const BRAND_BASELINE = BASELINE;
+export const BRAND_SHORT_TAGLINE_TEXT = BRAND_SHORT_TAGLINE;
 export const BRAND_FULL = `${BRAND} — ${BASELINE}`;
