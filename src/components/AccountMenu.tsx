@@ -47,6 +47,7 @@ export default function AccountMenu({
   const [open, setOpen] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
   const [confirmResetFilters, setConfirmResetFilters] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
@@ -87,6 +88,11 @@ export default function AccountMenu({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [confirmResetFilters]);
+
+  useEffect(() => {
+    if (!confirmDelete) return;
+    setDeleteAcknowledged(false);
+  }, [confirmDelete]);
 
   useEffect(() => {
     if (openRequestKey < 1) return;
@@ -137,6 +143,7 @@ export default function AccountMenu({
   };
 
   const handleDelete = async () => {
+    if (!deleteAcknowledged) return;
     setError(null);
     setDeleting(true);
     try {
@@ -195,7 +202,7 @@ export default function AccountMenu({
           />
           <MenuItem
             icon={<Bell className="w-4 h-4" />}
-            label="Notifications"
+            label="Préférences e-mail"
             onClick={() => {
               close();
               onOpenNotifications();
@@ -207,6 +214,16 @@ export default function AccountMenu({
             onClick={() => {
               close();
               onOpenPassword();
+            }}
+          />
+          <MenuItem
+            icon={<Filter className="w-4 h-4" />}
+            label="Réinitialiser mes filtres de recherche"
+            disabled={!user?.id}
+            onClick={() => {
+              setError(null);
+              setConfirmResetFilters(true);
+              close();
             }}
           />
           <button
@@ -276,16 +293,6 @@ export default function AccountMenu({
             </div>
           )}
           <MenuItem
-            icon={<Filter className="w-4 h-4" />}
-            label="Réinitialiser mes filtres de recherche"
-            disabled={!user?.id}
-            onClick={() => {
-              setError(null);
-              setConfirmResetFilters(true);
-              close();
-            }}
-          />
-          <MenuItem
             icon={<RefreshCw className="w-4 h-4" />}
             label="Actualiser la page"
             onClick={handleRefreshPage}
@@ -297,6 +304,7 @@ export default function AccountMenu({
             destructive
             onClick={() => {
               setError(null);
+              setDeleteAcknowledged(false);
               setConfirmDelete(true);
               close();
             }}
@@ -378,12 +386,25 @@ export default function AccountMenu({
                 numéro d&apos;inscription seront également perdus et ne
                 pourront pas être récupérés.
               </p>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteAcknowledged}
+                  onChange={(e) => setDeleteAcknowledged(e.target.checked)}
+                  className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed">
+                  Je comprends que cette action est immédiate et définitive,
+                  et que si je suis Membre Fondateur, je perdrai également ce
+                  statut ainsi que mon numéro d&apos;inscription.
+                </span>
+              </label>
               {error && (
                 <p className="text-sm text-red-700 bg-red-50 rounded-xl px-3 py-2">
                   {error}
                 </p>
               )}
-              <div className="flex gap-3 pt-1">
+              <div className="delete-confirm-actions flex gap-3 pt-1 items-stretch">
                 <button
                   type="button"
                   onClick={() => {
@@ -391,17 +412,38 @@ export default function AccountMenu({
                     setError(null);
                   }}
                   disabled={deleting}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                  className="flex-1 min-w-0 basis-0 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center text-center"
                 >
                   Annuler
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleDelete()}
-                  disabled={deleting}
-                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                  disabled={deleting || !deleteAcknowledged}
+                  aria-label={
+                    deleting ? 'Suppression...' : 'Confirmer la suppression'
+                  }
+                  className={`delete-confirm-btn flex-1 min-w-0 basis-0 py-3 rounded-xl font-semibold flex items-center justify-center${
+                    deleteAcknowledged ? ' delete-confirm-btn--ready' : ''
+                  }`}
                 >
-                  {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+                  {deleting ? (
+                    'Suppression...'
+                  ) : deleteAcknowledged ? (
+                    <span className="text-center leading-snug" aria-hidden>
+                      <span className="font-extrabold [-webkit-text-stroke:0.5px_currentColor]">
+                        CONFIRMER
+                      </span>
+                      <br />
+                      la suppression
+                    </span>
+                  ) : (
+                    <span className="text-center leading-snug" aria-hidden>
+                      Confirmer
+                      <br />
+                      la suppression
+                    </span>
+                  )}
                 </button>
               </div>
             </div>

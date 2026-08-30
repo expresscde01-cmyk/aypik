@@ -1975,3 +1975,99 @@ button.group[data-matched='true'] {
   .maintenance-screen .heart-highlight { animation: none; opacity: 1; }
   .maintenance-screen .heart-shape { animation: none; transform: scale(1); }
 }
+
+@keyframes delete-confirm-activate {
+  0% {
+    transform: scale(1);
+    font-size: 0.9375rem;
+    opacity: 0.55;
+    background-color: #fff;
+    color: #dc2626;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+  40% {
+    transform: scale(1.03);
+    font-size: 1.125rem;
+    opacity: 1;
+    background-color: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+    box-shadow:
+      0 0 0 4px rgba(220, 38, 38, 0.22),
+      0 6px 16px rgba(220, 38, 38, 0.28);
+  }
+  100% {
+    transform: scale(1);
+    font-size: 1.125rem;
+    opacity: 1;
+    background-color: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.delete-confirm-actions > button {
+  min-height: 4.75rem;
+}
+
+.delete-confirm-btn {
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  background-color: #fff;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  opacity: 0.55;
+  cursor: not-allowed;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease,
+    font-size 0.2s ease;
+}
+
+.delete-confirm-btn:not(.delete-confirm-btn--ready):hover,
+.delete-confirm-btn:not(.delete-confirm-btn--ready):active {
+  background-color: #fff;
+  color: #dc2626;
+  border-color: #dc2626;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+.delete-confirm-btn--ready {
+  font-size: 1.125rem;
+  background-color: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.delete-confirm-btn--ready:not(:disabled):hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.delete-confirm-btn--ready:not(:disabled) {
+  animation: delete-confirm-activate 0.55s ease-out 1;
+  animation-iteration-count: 1;
+}
+
+.delete-confirm-btn--ready:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delete-confirm-btn {
+    transition: none;
+  }
+
+  .delete-confirm-btn--ready:not(:disabled) {
+    animation: none;
+  }
+}
+

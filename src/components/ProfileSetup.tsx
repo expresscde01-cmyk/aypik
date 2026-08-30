@@ -102,6 +102,7 @@ export default function ProfileSetup({
   const [claimingOffer, setClaimingOffer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [displayName, setDisplayName] = useState('');
@@ -462,7 +463,13 @@ export default function ProfileSetup({
     }
   };
 
+  useEffect(() => {
+    if (!confirmDelete) return;
+    setDeleteAcknowledged(false);
+  }, [confirmDelete]);
+
   const handleDeleteAccount = async () => {
+    if (!deleteAcknowledged) return;
     setError(null);
     setDeleting(true);
 
@@ -981,7 +988,10 @@ export default function ProfileSetup({
 
             <button
               type="button"
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => {
+                setDeleteAcknowledged(false);
+                setConfirmDelete(true);
+              }}
               className="w-full py-3 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
@@ -1008,22 +1018,61 @@ export default function ProfileSetup({
                     statut et ton numéro d&apos;inscription seront également
                     perdus et ne pourront pas être récupérés.
                   </p>
-                  <div className="flex gap-3 pt-1">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteAcknowledged}
+                      onChange={(e) =>
+                        setDeleteAcknowledged(e.target.checked)
+                      }
+                      className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+                    />
+                    <span className="text-sm text-gray-700 leading-relaxed">
+                      Je comprends que cette action est immédiate et
+                      définitive, et que si je suis Membre Fondateur, je
+                      perdrai également ce statut ainsi que mon numéro
+                      d&apos;inscription.
+                    </span>
+                  </label>
+                  <div className="delete-confirm-actions flex gap-3 pt-1 items-stretch">
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(false)}
                       disabled={deleting}
-                      className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                      className="flex-1 min-w-0 basis-0 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center text-center"
                     >
                       Annuler
                     </button>
                     <button
                       type="button"
                       onClick={handleDeleteAccount}
-                      disabled={deleting}
-                      className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                      disabled={deleting || !deleteAcknowledged}
+                      aria-label={
+                        deleting
+                          ? 'Suppression...'
+                          : 'Confirmer la suppression'
+                      }
+                      className={`delete-confirm-btn flex-1 min-w-0 basis-0 py-3 rounded-xl font-semibold flex items-center justify-center${
+                        deleteAcknowledged ? ' delete-confirm-btn--ready' : ''
+                      }`}
                     >
-                      {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+                      {deleting ? (
+                        'Suppression...'
+                      ) : deleteAcknowledged ? (
+                        <span className="text-center leading-snug" aria-hidden>
+                          <span className="font-extrabold [-webkit-text-stroke:0.5px_currentColor]">
+                            CONFIRMER
+                          </span>
+                          <br />
+                          la suppression
+                        </span>
+                      ) : (
+                        <span className="text-center leading-snug" aria-hidden>
+                          Confirmer
+                          <br />
+                          la suppression
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
