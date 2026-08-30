@@ -10,6 +10,7 @@ export type MatchBreakRow = {
   origin: MatchBreakOrigin;
   action: MatchBreakAction;
   created_at: string;
+  initiated_by: string | null;
 };
 
 function asBreakOrigin(value: unknown): MatchBreakOrigin {
@@ -20,19 +21,50 @@ function asBreakAction(value: unknown): MatchBreakAction {
   return value === 'break' ? 'break' : 'archive';
 }
 
+/** Archive unilatérale, ou rupture dont le viewer est l’auteur → « par toi ». */
+export function matchBreakSource(
+  action: MatchBreakAction,
+  initiatedBy: string | null | undefined,
+  viewerId: string
+): 'mine' | 'theirs' {
+  if (action === 'archive') return 'mine';
+  if (initiatedBy && initiatedBy !== viewerId) return 'theirs';
+  return 'mine';
+}
+
 export async function fetchMatchBreaks(): Promise<MatchBreakRow[]> {
-  const { data, error } = await supabase
+  const mapRows = (
+    data: unknown[] | null,
+    withInitiator: boolean
+  ): MatchBreakRow[] =>
+    (data || []).map((raw) => {
+      const row = raw as MatchBreakRow & { initiated_by?: string | null };
+      return {
+        id: String(row.id),
+        peer_id: String(row.peer_id),
+        origin: asBreakOrigin(row.origin),
+        action: asBreakAction(row.action),
+        created_at: String(row.created_at || ''),
+        initiated_by: withInitiator
+          ? typeof row.initiated_by === 'string'
+            ? row.initiated_by
+            : null
+          : null,
+      };
+    });
+
+  const withCol = await supabase
+    .from('match_breaks')
+    .select('id, peer_id, origin, action, created_at, initiated_by')
+    .order('created_at', { ascending: false });
+  if (!withCol.error) return mapRows(withCol.data, true);
+
+  const fallback = await supabase
     .from('match_breaks')
     .select('id, peer_id, origin, action, created_at')
     .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((row) => ({
-    id: String((row as MatchBreakRow).id),
-    peer_id: String((row as MatchBreakRow).peer_id),
-    origin: asBreakOrigin((row as MatchBreakRow).origin),
-    action: asBreakAction((row as MatchBreakRow).action),
-    created_at: String((row as MatchBreakRow).created_at || ''),
-  }));
+  if (fallback.error) throw fallback.error;
+  return mapRows(fallback.data, false);
 }
 
 async function callMatchRpc(

@@ -67,7 +67,7 @@ export default function MatcherButton({
             );
           })}
         </span>
-        <span className="relative z-[1] flex h-8 w-8 items-center justify-center rounded-full bg-[#FCE4EC] text-[#E91E63]">
+        <span className="relative z-[1] flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-white">
           <CrownIcon size="1.15rem" />
         </span>
       </span>

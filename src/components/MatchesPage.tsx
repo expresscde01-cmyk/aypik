@@ -11,7 +11,7 @@ import {
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
-import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
+import { FounderBadge } from '@/components/membership/Badges';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
 import { userErrorMessage } from '@/lib/userError';
@@ -30,6 +30,7 @@ import {
   waitingMatchReminder,
   declinedArchiveStatusLabel,
   waitArchiveStatusLabel,
+  waitingByOtherStatusLabel,
   brokenMatchStatusLabel,
   brokenMatchOriginLabel,
   type MatchRole,
@@ -48,6 +49,7 @@ import MatchManageModal from '@/components/MatchManageModal';
 import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
   fetchInboxResponses,
+  fetchPendingByOthers,
   respondToInboxInterest,
   restoreWaitFromArchive,
   type InboxDecision,
@@ -80,6 +82,7 @@ import {
 } from '@/lib/matchesInboxSync';
 import {
   fetchMatchBreaks,
+  matchBreakSource,
   restoreBrokenMatch,
   purgeBrokenMatch,
   type MatchBreakAction,
@@ -159,6 +162,17 @@ type PendingWaitingCard = {
   is_boosted?: boolean;
 };
 
+type WaitingByOtherCard = {
+  peerId: string;
+  createdAt: string;
+  origin: ReceivedOrigin;
+  profile: Profile;
+  age: number;
+  is_founder?: boolean;
+  founder_number?: number | null;
+  is_boosted?: boolean;
+};
+
 type BrokenMatchCard = {
   archiveId: string;
   createdAt: string;
@@ -169,6 +183,7 @@ type BrokenMatchCard = {
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
+  source: 'mine' | 'theirs';
 };
 
 /** Plus récents en premier (haut/gauche), quel que soit l'étage. */
@@ -322,7 +337,7 @@ function HintActionIcon({
     >
       {kind === 'archive' ? (
         <Folder
-          className="archive-folder h-3 w-3 text-[#FFC107]"
+          className="archive-folder h-3 w-3 text-[var(--color-archive-icon)]"
           strokeWidth={2.4}
         />
       ) : (
@@ -398,10 +413,25 @@ function cardActionTooltip(
 const CARD_ACTIONS_COL =
   'match-card-actions flex flex-col flex-nowrap items-center justify-center gap-1 flex-shrink-0 -my-0.5 overflow-visible';
 
+function stopMatchCardClick(e: { stopPropagation: () => void }) {
+  e.stopPropagation();
+}
+
+function MatchCardActions({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className={CARD_ACTIONS_COL}
+      onClick={stopMatchCardClick}
+      onPointerDown={stopMatchCardClick}
+    >
+      {children}
+    </div>
+  );
+}
+
 function CardIdentity({
   name,
   age,
-  isBoosted,
   isFounder,
   founderNumber,
   nameClass = 'text-gray-900',
@@ -409,7 +439,6 @@ function CardIdentity({
 }: {
   name: string;
   age: number;
-  isBoosted?: boolean;
   isFounder?: boolean;
   founderNumber?: number | null;
   nameClass?: string;
@@ -421,14 +450,14 @@ function CardIdentity({
         <h3 className={`font-semibold truncate ${nameClass}`}>{name}</h3>
         <span className={`text-sm shrink-0 ${ageClass}`}>{age} ans</span>
       </div>
-      {isBoosted ? (
-        <div className="mt-0.5">
-          <BoostedBadge size="sm" />
-        </div>
-      ) : null}
       {isFounder ? (
         <div className="mt-0.5">
-          <FounderBadge number={founderNumber} size="sm" />
+          <span className="hidden lg:inline-flex">
+            <FounderBadge number={founderNumber} size="sm" />
+          </span>
+          <span className="lg:hidden">
+            <FounderBadge size="sm" compact />
+          </span>
         </div>
       ) : null}
     </>
@@ -483,6 +512,9 @@ export default function MatchesPage({
   const [pendingWaiting, setPendingWaiting] = useState<PendingWaitingCard[]>(
     []
   );
+  const [waitingByOthers, setWaitingByOthers] = useState<WaitingByOtherCard[]>(
+    []
+  );
   const [brokenMatches, setBrokenMatches] = useState<BrokenMatchCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -498,6 +530,8 @@ export default function MatchesPage({
   );
   const [openPendingWaiting, setOpenPendingWaiting] =
     useState<PendingWaitingCard | null>(null);
+  const [openWaitingByOther, setOpenWaitingByOther] =
+    useState<WaitingByOtherCard | null>(null);
   const [openBroken, setOpenBroken] = useState<BrokenMatchCard | null>(null);
   /** Modale compacte après « sens interdit » sur une fiche Mis en attente. */
   const [openWaitingManage, setOpenWaitingManage] = useState<Match | null>(null);
@@ -1035,6 +1069,59 @@ export default function MatchesPage({
     }
   }, [user]);
 
+  const loadWaitingByOthers = useCallback(async () => {
+    if (!user) {
+      setWaitingByOthers([]);
+      return;
+    }
+    try {
+      const rows = await fetchPendingByOthers();
+      if (rows.length === 0) {
+        setWaitingByOthers([]);
+        setOpenWaitingByOther(null);
+        setError((prev) =>
+          prev?.includes('COLLER-PENDING-BY-OTHERS') ? null : prev
+        );
+        return;
+      }
+      const { byId, founderMap, boostSet } = await fetchProfileBundle(
+        [...new Set(rows.map((r) => r.peer_id))]
+      );
+      const list: WaitingByOtherCard[] = [];
+      for (const row of rows) {
+        const profile = byId.get(row.peer_id);
+        if (!profile) continue;
+        list.push({
+          peerId: row.peer_id,
+          createdAt: row.created_at,
+          origin: row.origin,
+          profile,
+          age: ageFromBirthDate(profile.birth_date),
+          is_founder: founderMap.has(profile.id),
+          founder_number: founderMap.get(profile.id) ?? null,
+          is_boosted: boostSet.has(profile.id),
+        });
+      }
+      list.sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
+      );
+      setWaitingByOthers(list);
+      setOpenWaitingByOther((open) => {
+        if (!open) return open;
+        return list.find((c) => c.peerId === open.peerId) ?? null;
+      });
+      setError((prev) =>
+        prev?.includes('COLLER-PENDING-BY-OTHERS') ? null : prev
+      );
+    } catch {
+      setWaitingByOthers([]);
+      setOpenWaitingByOther(null);
+      setError((prev) =>
+        prev?.includes('COLLER-PENDING-BY-OTHERS') ? null : prev
+      );
+    }
+  }, [user]);
+
   const loadBrokenMatches = useCallback(async () => {
     if (!user) {
       setBrokenMatches([]);
@@ -1064,6 +1151,7 @@ export default function MatchesPage({
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
+          source: matchBreakSource(row.action, row.initiated_by, user.id),
         });
       }
       // Plus récents en premier (haut/gauche), quel que soit l'étage
@@ -1092,6 +1180,7 @@ export default function MatchesPage({
         loadPendingDeclined(),
         loadWaitArchives(),
         loadPendingWaiting(),
+        loadWaitingByOthers(),
         loadBrokenMatches(),
       ]);
       if (active) setLoading(false);
@@ -1105,6 +1194,7 @@ export default function MatchesPage({
     loadPendingDeclined,
     loadWaitArchives,
     loadPendingWaiting,
+    loadWaitingByOthers,
     loadBrokenMatches,
   ]);
 
@@ -1120,6 +1210,7 @@ export default function MatchesPage({
     void loadPendingDeclined();
     void loadWaitArchives();
     void loadPendingWaiting();
+    void loadWaitingByOthers();
     void loadBrokenMatches();
   }, [
     pageActive,
@@ -1128,6 +1219,7 @@ export default function MatchesPage({
     loadPendingDeclined,
     loadWaitArchives,
     loadPendingWaiting,
+    loadWaitingByOthers,
     loadBrokenMatches,
   ]);
 
@@ -1151,6 +1243,7 @@ export default function MatchesPage({
       void loadPendingDeclined();
       void loadWaitArchives();
       void loadPendingWaiting();
+      void loadWaitingByOthers();
       void loadBrokenMatches();
       void unread.refresh();
     }, 180);
@@ -1276,19 +1369,23 @@ export default function MatchesPage({
         : undefined);
 
     if (pending.waitingIncoming) {
+      const liveCard = findByHint(waitingByOthers);
       const pendingCard = findByHint(pendingWaiting);
       const archivedCard = findByHint(waitArchives);
-      const card = pendingCard || archivedCard;
+      const card = liveCard || pendingCard || archivedCard;
       pendingFocusRef.current = null;
       onFocusActorConsumed?.();
       if (!card) return;
       setPulseCategory(null);
       setPulseSingleId(card.profile.id);
-      const elId = pendingCard
-        ? `match-card-wait-pending-${pendingCard.notificationId}`
-        : `match-card-wait-archive-${archivedCard?.archiveId ?? ''}`;
+      const elId = liveCard
+        ? `match-card-wait-by-other-${liveCard.peerId}`
+        : pendingCard
+          ? `match-card-wait-pending-${pendingCard.notificationId}`
+          : `match-card-wait-archive-${archivedCard?.archiveId ?? ''}`;
       scrollMatchCardIntoView(elId);
-      if (pendingCard) setOpenPendingWaiting(pendingCard);
+      if (liveCard) setOpenWaitingByOther(liveCard);
+      else if (pendingCard) setOpenPendingWaiting(pendingCard);
       else setOpenWaitArchive(archivedCard!);
       return;
     }
@@ -1415,6 +1512,7 @@ export default function MatchesPage({
     declinedArchives,
     pendingWaiting,
     waitArchives,
+    waitingByOthers,
     loadPendingDeclined,
     loadDeclinedArchives,
   ]);
@@ -1869,6 +1967,7 @@ export default function MatchesPage({
 
   const handleBrokenRestore = useCallback(
     async (card: BrokenMatchCard) => {
+      if (card.source !== 'mine') return;
       if (brokenBusyId) return;
       setBrokenBusyId(card.archiveId);
       setError(null);
@@ -1982,6 +2081,19 @@ export default function MatchesPage({
       );
   }, [waitArchives, matches]);
 
+  const visibleWaitingByOthers = useMemo(() => {
+    const hideIds = new Set<string>();
+    for (const m of matches) {
+      if (m.kind === 'match') hideIds.add(m.profile.id);
+    }
+    for (const id of brokenPeerIds) hideIds.add(id);
+    return waitingByOthers
+      .filter((card) => !hideIds.has(card.profile.id))
+      .sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
+      );
+  }, [waitingByOthers, matches, brokenPeerIds]);
+
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
     const next: MatchesInboxEntry[] = matches
@@ -2066,11 +2178,15 @@ export default function MatchesPage({
                 : 'matched-quiet'
               : 'new'
         }
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${cardTone}`}
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${cardTone}`}
+        onClick={() => setOpenProfile(match)}
       >
         <button
           type="button"
-          onClick={() => setOpenProfile(match)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenProfile(match);
+          }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
           aria-label={`Voir le profil de ${match.profile.display_name}`}
         >
@@ -2107,7 +2223,6 @@ export default function MatchesPage({
           <CardIdentity
             name={match.profile.display_name}
             age={match.age}
-            isBoosted={match.is_boosted}
             isFounder={match.is_founder}
             founderNumber={match.founder_number}
           />
@@ -2140,16 +2255,23 @@ export default function MatchesPage({
         </div>
 
         {isPending && !match.alreadyLiked ? (
-          <div className={CARD_ACTIONS_COL}>
+          <MatchCardActions>
             <MatcherButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
               disabled={likesExhausted}
               matched={match.alreadyLiked}
-              tooltip={cardActionTooltip(0, isToStudy ? 3 : 2)}
+              tooltip={cardActionTooltip(0, isToStudy || match.waiting ? 3 : 2)}
               onClick={() => void handleMatchBack(match)}
             />
-            {isToStudy ? (
+            {match.waiting ? (
+              <ArchiveButton
+                name={match.profile.display_name}
+                busy={actingId === match.profile.id}
+                tooltip={cardActionTooltip(1, 3)}
+                onClick={() => handleArchiveWaiting(match)}
+              />
+            ) : isToStudy ? (
               <WaitButton
                 name={match.profile.display_name}
                 busy={actingId === match.profile.id}
@@ -2160,9 +2282,12 @@ export default function MatchesPage({
             <RefuseButton
               name={match.profile.display_name}
               busy={actingId === match.profile.id}
-              tooltip={cardActionTooltip(isToStudy ? 2 : 1, isToStudy ? 3 : 2)}
+              tooltip={cardActionTooltip(
+                isToStudy || match.waiting ? 2 : 1,
+                isToStudy || match.waiting ? 3 : 2
+              )}
               variant={match.waiting ? 'ban' : 'trash'}
-              label={match.waiting ? 'Refuser' : 'Supprimer'}
+              label={match.waiting ? 'Jeter' : 'Supprimer'}
               onClick={() => {
                 if (match.waiting) {
                   void handleRefuseWaiting(match);
@@ -2171,13 +2296,18 @@ export default function MatchesPage({
                 void handleInboxDecision(match, 'refuse');
               }}
             />
-          </div>
+          </MatchCardActions>
         ) : (
-          <ChatBubbleButton
-            name={match.profile.display_name}
-            unreadCount={unreadCount}
-            onClick={() => setChatPeer(match.profile)}
-          />
+          <div
+            onClick={stopMatchCardClick}
+            onPointerDown={stopMatchCardClick}
+          >
+            <ChatBubbleButton
+              name={match.profile.display_name}
+              unreadCount={unreadCount}
+              onClick={() => setChatPeer(match.profile)}
+            />
+          </div>
         )}
       </div>
     );
@@ -2210,15 +2340,20 @@ export default function MatchesPage({
         id={`match-card-wait-archive-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="wait-archive"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
           theirs ? 'match-card-wait-theirs' : 'match-card-wait-archive'
         }${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
+        onClick={() => {
+          consumeAttentionPulse(card.profile.id);
+          setOpenWaitArchive(card);
+        }}
       >
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             consumeAttentionPulse(card.profile.id);
             setOpenWaitArchive(card);
           }}
@@ -2260,7 +2395,6 @@ export default function MatchesPage({
           <CardIdentity
             name={card.profile.display_name}
             age={card.age}
-            isBoosted={card.is_boosted}
             isFounder={card.is_founder}
             founderNumber={card.founder_number}
             nameClass={theirs ? 'text-amber-950/90' : 'text-amber-950'}
@@ -2289,7 +2423,7 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <div className={CARD_ACTIONS_COL}>
+        <MatchCardActions>
           {card.source === 'mine' ? (
             <RestoreLinkButton
               name={card.profile.display_name}
@@ -2309,6 +2443,76 @@ export default function MatchesPage({
             )}
             onClick={() => void handleDeleteWaitArchive(card)}
           />
+        </MatchCardActions>
+      </div>
+    );
+  };
+
+  const renderWaitingByOtherCard = (card: WaitingByOtherCard) => {
+    const isFlash = card.origin === 'flash';
+    return (
+      <div
+        id={`match-card-wait-by-other-${card.peerId}`}
+        key={card.peerId}
+        data-match-state="wait-by-other"
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-wait-by-other${
+          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+        }`}
+        onClick={() => {
+          consumeAttentionPulse(card.profile.id);
+          setOpenWaitingByOther(card);
+        }}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            consumeAttentionPulse(card.profile.id);
+            setOpenWaitingByOther(card);
+          }}
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 flex-shrink-0"
+          aria-label={`Voir le profil de ${card.profile.display_name}`}
+        >
+          {card.profile.photo_url ? (
+            <ProfilePhoto
+              src={card.profile.photo_url}
+              width={112}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-amber-700/60">
+              {card.profile.display_name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
+          {isFlash ? (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
+              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+              <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+            </span>
+          )}
+        </button>
+        <div className="flex-1 min-w-0">
+          <CardIdentity
+            name={card.profile.display_name}
+            age={card.age}
+            isFounder={card.is_founder}
+            founderNumber={card.founder_number}
+            nameClass="text-amber-950"
+            ageClass="text-amber-900/60"
+          />
+          {card.profile.location && (
+            <p className="text-xs flex items-center gap-1 mt-0.5 text-amber-900/70">
+              <MapPin className="w-3 h-3" />
+              {card.profile.location}
+            </p>
+          )}
+          <p className="text-xs mt-1 text-amber-950/80">
+            {waitingByOtherStatusLabel(card.origin, card.createdAt)}
+          </p>
         </div>
       </div>
     );
@@ -2317,11 +2521,14 @@ export default function MatchesPage({
   const renderWaitFloor = () => {
     const mineActive = floors.wait;
     const mineArchived = visibleWaitArchives.filter((c) => c.source === 'mine');
+    const theirsLive = visibleWaitingByOthers;
+    const livePeerIds = new Set(theirsLive.map((c) => c.profile.id));
     const theirsArchived = visibleWaitArchives.filter(
-      (c) => c.source === 'theirs'
+      (c) => c.source === 'theirs' && !livePeerIds.has(c.profile.id)
     );
     if (
       mineActive.length === 0 &&
+      theirsLive.length === 0 &&
       mineArchived.length === 0 &&
       theirsArchived.length === 0
     ) {
@@ -2339,6 +2546,21 @@ export default function MatchesPage({
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {mineActive.map((m) => renderMatchCard(m))}
+            </div>
+          </div>
+        ) : null}
+        {theirsLive.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <span className="match-intro-chip match-chip-wait-by-other">
+                Mis en attente par l&apos;autre
+              </span>
+              <span className="text-gray-400 font-normal">
+                ({theirsLive.length})
+              </span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {theirsLive.map((card) => renderWaitingByOtherCard(card))}
             </div>
           </div>
         ) : null}
@@ -2361,7 +2583,7 @@ export default function MatchesPage({
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-wait-theirs">
-                Mis en attente par l&apos;autre
+                Mis en attente par l&apos;autre - archive
               </span>
               <span className="text-gray-400 font-normal">
                 ({theirsArchived.length})
@@ -2393,13 +2615,18 @@ export default function MatchesPage({
       <div
         id={`match-card-declined-${card.notificationId}`}
         data-match-state="declined-pending"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined${
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
+        onClick={() => {
+          consumeAttentionPulse(card.profile.id);
+          setOpenPendingDeclined(card);
+        }}
       >
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             consumeAttentionPulse(card.profile.id);
             setOpenPendingDeclined(card);
           }}
@@ -2433,7 +2660,6 @@ export default function MatchesPage({
           <CardIdentity
             name={card.profile.display_name}
             age={card.age}
-            isBoosted={card.is_boosted}
             isFounder={card.is_founder}
             founderNumber={card.founder_number}
             nameClass="text-purple-950"
@@ -2450,7 +2676,7 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <div className={CARD_ACTIONS_COL}>
+        <MatchCardActions>
           <ArchiveButton
             name={card.profile.display_name}
             busy={busy}
@@ -2464,7 +2690,7 @@ export default function MatchesPage({
             tooltip={cardActionTooltip(1, 2)}
             onClick={() => void handlePendingDeclined(card, false)}
           />
-        </div>
+        </MatchCardActions>
       </div>
       </div>
     );
@@ -2505,13 +2731,18 @@ export default function MatchesPage({
       <div
         id={`match-card-archive-${card.archiveId}`}
         data-match-state="declined-archive"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn match-card-declined-archive${
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined-archive${
           pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
         }`}
+        onClick={() => {
+          consumeAttentionPulse(card.profile.id);
+          setOpenArchive(card);
+        }}
       >
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             consumeAttentionPulse(card.profile.id);
             setOpenArchive(card);
           }}
@@ -2545,7 +2776,6 @@ export default function MatchesPage({
           <CardIdentity
             name={card.profile.display_name}
             age={card.age}
-            isBoosted={card.is_boosted}
             isFounder={card.is_founder}
             founderNumber={card.founder_number}
             nameClass="text-purple-950"
@@ -2566,7 +2796,7 @@ export default function MatchesPage({
           </p>
         </div>
 
-        <div className={CARD_ACTIONS_COL}>
+        <MatchCardActions>
           <RefuseButton
             name={card.profile.display_name}
             busy={declinedBusyId === card.archiveId}
@@ -2574,7 +2804,7 @@ export default function MatchesPage({
             tooltip={cardActionTooltip(0, 1)}
             onClick={() => void handleDeleteArchived(card)}
           />
-        </div>
+        </MatchCardActions>
       </div>
       </div>
     );
@@ -2608,15 +2838,19 @@ export default function MatchesPage({
         id={`match-card-broken-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="broken"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn ${
+        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
           hadDialogue ? 'match-card-broken-chat' : 'match-card-broken-quiet'
         }`}
+        onClick={() => setOpenBroken(card)}
       >
         <button
           type="button"
-          onClick={() => setOpenBroken(card)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenBroken(card);
+          }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0"
-          aria-label={`Gérer le match rompu avec ${card.profile.display_name}`}
+          aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
             <ProfilePhoto
@@ -2644,7 +2878,6 @@ export default function MatchesPage({
           <CardIdentity
             name={card.profile.display_name}
             age={card.age}
-            isBoosted={card.is_boosted}
             isFounder={card.is_founder}
             founderNumber={card.founder_number}
             nameClass="text-slate-800"
@@ -2669,40 +2902,66 @@ export default function MatchesPage({
             {brokenMatchOriginLabel(hadDialogue)}
           </p>
         </div>
-        <div className={CARD_ACTIONS_COL}>
-          <RestoreLinkButton
-            name={card.profile.display_name}
-            busy={busy}
-            tooltip={cardActionTooltip(0, 2)}
-            onClick={() => void handleBrokenRestore(card)}
-          />
+        <MatchCardActions>
+          {card.source === 'mine' ? (
+            <RestoreLinkButton
+              name={card.profile.display_name}
+              busy={busy}
+              tooltip={cardActionTooltip(0, 2)}
+              onClick={() => void handleBrokenRestore(card)}
+            />
+          ) : null}
           <RefuseButton
             name={card.profile.display_name}
             busy={busy}
             label="Supprimer"
-            tooltip={cardActionTooltip(1, 2)}
+            tooltip={cardActionTooltip(
+              card.source === 'mine' ? 1 : 0,
+              card.source === 'mine' ? 2 : 1
+            )}
             onClick={() => void handleBrokenPurge(card)}
           />
-        </div>
+        </MatchCardActions>
       </div>
     );
   };
 
   const renderBrokenFloor = () => {
-    if (brokenMatches.length === 0) return null;
+    const mineBroken = brokenMatches.filter((c) => c.source === 'mine');
+    const theirsBroken = brokenMatches.filter((c) => c.source === 'theirs');
+    if (mineBroken.length === 0 && theirsBroken.length === 0) return null;
     return (
-      <section className="space-y-2" aria-label="Matchs rompus">
-        <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
-          <span className="match-intro-chip match-chip-broken">
-            Matchs rompus
-          </span>
-          <span className="text-gray-400 font-normal">
-            ({brokenMatches.length})
-          </span>
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {brokenMatches.map((card) => renderBrokenCard(card))}
-        </div>
+      <section className="space-y-6" aria-label="Matchs rompus">
+        {mineBroken.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <span className="match-intro-chip match-chip-broken">
+                Matchs rompus par toi
+              </span>
+              <span className="text-gray-400 font-normal">
+                ({mineBroken.length})
+              </span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {mineBroken.map((card) => renderBrokenCard(card))}
+            </div>
+          </div>
+        ) : null}
+        {theirsBroken.length > 0 ? (
+          <div className="space-y-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
+              <span className="match-intro-chip match-chip-broken-theirs">
+                Matchs rompus par l&apos;autre
+              </span>
+              <span className="text-gray-400 font-normal">
+                ({theirsBroken.length})
+              </span>
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {theirsBroken.map((card) => renderBrokenCard(card))}
+            </div>
+          </div>
+        ) : null}
       </section>
     );
   };
@@ -2718,7 +2977,7 @@ export default function MatchesPage({
     );
   }
 
-  if (error && matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && brokenMatches.length === 0) {
+  if (error && matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && waitingByOthers.length === 0 && brokenMatches.length === 0) {
     return (
       <div className="flex items-center justify-center py-20 px-4">
         <div className="flex items-start gap-2 p-4 rounded-xl bg-red-50 text-red-700 text-sm max-w-md">
@@ -2729,7 +2988,7 @@ export default function MatchesPage({
     );
   }
 
-  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && brokenMatches.length === 0) {
+  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && waitingByOthers.length === 0 && brokenMatches.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -2817,6 +3076,18 @@ export default function MatchesPage({
           lorsqu&apos;il y aura eu au moins un échange.
         </p>
         <p>
+          Les profils que tu as toi-même mis en attente apparaissent dans{' '}
+          <span className="match-intro-chip match-chip-wait">
+            Mis en attente par toi
+          </span>
+          . Si c&apos;est l&apos;autre personne qui a mis ton like ou ton flash
+          en attente, tu le retrouveras dans{' '}
+          <span className="match-intro-chip match-chip-wait-by-other">
+            Mis en attente par l&apos;autre
+          </span>{' '}
+          : tu pourras consulter le profil, la décision lui appartenant.
+        </p>
+        <p>
           Tu trouveras également sur cette page tous les profils qui ont décliné
           un de tes likes ou de tes flashs. Tu pourras choisir ensuite entre{' '}
           <span className="match-intro-chip match-chip-declined">
@@ -2828,9 +3099,15 @@ export default function MatchesPage({
           Un match déjà validé peut être archivé ou rompu depuis la conversation.
           Tu le retrouveras alors dans{' '}
           <span className="match-intro-chip match-chip-broken">
-            Matchs rompus
-          </span>
-          , pour le rétablir ou le supprimer définitivement.
+            Matchs rompus par toi
+          </span>{' '}
+          si c&apos;est toi qui as pris cette décision (tu pourras alors le
+          rétablir ou le supprimer), ou dans{' '}
+          <span className="match-intro-chip match-chip-broken-theirs">
+            Matchs rompus par l&apos;autre
+          </span>{' '}
+          si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
+          pourras uniquement le supprimer).
         </p>
       </div>
 
@@ -2976,6 +3253,7 @@ export default function MatchesPage({
           onLike={() => undefined}
           onFlash={() => undefined}
           onSkip={() => setOpenArchive(null)}
+          onPurgeLink={() => void handleDeleteArchived(openArchive)}
         />
       )}
 
@@ -3068,6 +3346,41 @@ export default function MatchesPage({
         />
       )}
 
+      {openWaitingByOther && (
+        <ProfileDetailModal
+          candidate={{
+            id: openWaitingByOther.profile.id,
+            display_name: openWaitingByOther.profile.display_name,
+            photo_url: openWaitingByOther.profile.photo_url,
+            age: openWaitingByOther.age,
+            bio: openWaitingByOther.profile.bio,
+            location: openWaitingByOther.profile.location,
+            interests: openWaitingByOther.profile.interests,
+            is_boosted: openWaitingByOther.is_boosted,
+            is_founder: openWaitingByOther.is_founder,
+            founder_number: openWaitingByOther.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openWaitingByOther.origin,
+            originLabel: originHistoryLabel(
+              openWaitingByOther.origin,
+              openWaitingByOther.createdAt
+            ),
+            waitingIncoming: true,
+            refused: false,
+            viewerGender: myGender,
+          }}
+          onClose={() => setOpenWaitingByOther(null)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenWaitingByOther(null)}
+        />
+      )}
+
       {openWaitArchive && (
         <ProfileDetailModal
           candidate={{
@@ -3101,18 +3414,54 @@ export default function MatchesPage({
           onLike={() => undefined}
           onFlash={() => undefined}
           onSkip={() => setOpenWaitArchive(null)}
+          onRestoreLink={
+            openWaitArchive.source === 'mine'
+              ? () => void handleRestoreWaitArchive(openWaitArchive)
+              : undefined
+          }
+          onPurgeLink={() => void handleDeleteWaitArchive(openWaitArchive)}
         />
       )}
 
       {openBroken && (
-        <MatchManageModal
-          peer={openBroken.profile}
-          mode="broken"
+        <ProfileDetailModal
+          candidate={{
+            id: openBroken.profile.id,
+            display_name: openBroken.profile.display_name,
+            photo_url: openBroken.profile.photo_url,
+            age: openBroken.age,
+            bio: openBroken.profile.bio,
+            location: openBroken.profile.location,
+            interests: openBroken.profile.interests,
+            is_boosted: openBroken.is_boosted,
+            is_founder: openBroken.is_founder,
+            founder_number: openBroken.founder_number,
+          }}
+          alreadyFlashed
+          alreadyLiked
           busy={brokenBusyId === openBroken.archiveId}
-          error={null}
+          likesExhausted={false}
+          showFlashCta={false}
+          inboxHistory={{
+            origin: openBroken.origin,
+            originLabel: brokenMatchStatusLabel(
+              openBroken.action,
+              openBroken.createdAt
+            ),
+            waiting: false,
+            refused: false,
+            viewerGender: myGender,
+          }}
           onClose={() => setOpenBroken(null)}
-          onRestore={() => void handleBrokenRestore(openBroken)}
-          onPurge={() => void handleBrokenPurge(openBroken)}
+          onLike={() => undefined}
+          onFlash={() => undefined}
+          onSkip={() => setOpenBroken(null)}
+          onRestoreLink={
+            openBroken.source === 'mine'
+              ? () => void handleBrokenRestore(openBroken)
+              : undefined
+          }
+          onPurgeLink={() => void handleBrokenPurge(openBroken)}
         />
       )}
 

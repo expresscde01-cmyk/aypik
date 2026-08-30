@@ -945,8 +945,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Action permettant de conserver un profil reçu (Like ou Flash)
                 afin de l&apos;étudier plus tard, sans le refuser ni le
-                matcher immédiatement. Le profil reste accessible depuis Mes
-                Matchs jusqu&apos;à une décision définitive.
+                matcher immédiatement. Le profil reste alors accessible
+                depuis Mes Matchs, dans « Mis en attente par toi », jusqu&apos;à
+                une décision définitive (Matcher, refuser ou archiver).
+                Réciproquement, lorsqu&apos;un autre membre met en attente le
+                Like ou le Flash de l&apos;utilisateur, ce profil apparaît
+                pour l&apos;utilisateur dans « Mis en attente par l&apos;autre
+                », en consultation uniquement : la décision d&apos;attendre,
+                de matcher ou de refuser appartient à l&apos;autre membre.
               </p>
             </div>
             <div>
@@ -1005,9 +1011,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p className="font-semibold text-gray-900">Matchs rompus</p>
               <p>
                 Espace de conservation des Matchs archivés ou rompus depuis
-                une conversation déjà validée. L&apos;utilisateur peut
-                rétablir le Match (et l&apos;accès à la messagerie) ou le
-                supprimer définitivement.
+                une conversation déjà validée, distingué selon l&apos;auteur
+                de la décision. Si l&apos;utilisateur est lui-même à
+                l&apos;origine de l&apos;archivage ou de la rupture, le Match
+                apparaît dans « Matchs rompus par toi » : il peut alors
+                rétablir le lien (et l&apos;accès à la messagerie) ou le
+                supprimer définitivement. Si c&apos;est l&apos;autre
+                personne qui a rompu le lien, le Match apparaît dans « Matchs
+                rompus par l&apos;autre » : seule la suppression définitive
+                est possible, le rétablissement n&apos;étant pas proposé.
               </p>
             </div>
             <div>

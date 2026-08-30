@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import HomeBackButton from '@/components/HomeBackButton';
 import NotificationsBell from '@/components/NotificationsBell';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
+import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
 import type { AccountStatusId } from '@/lib/accountStatus';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
 
@@ -9,8 +10,6 @@ type AppTabHeaderProps = {
   onHome: () => void;
   onOpenInbox?: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
   notificationsActive: boolean;
-  /** Titre centré (Mes Matchs). */
-  center?: ReactNode;
   /** Contenu sous la rangée Accueil / cloche (intro Découvrir). */
   children?: ReactNode;
   variant?: 'page' | 'discover';
@@ -23,23 +22,22 @@ export default function AppTabHeader({
   onHome,
   onOpenInbox,
   notificationsActive,
-  center,
   children,
   variant = 'page',
   accountStatuses = [],
   onAccountStatusClick,
 }: AppTabHeaderProps) {
   const navRow = (
-    <div className="flex items-center justify-between gap-3">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
       <HomeBackButton onClick={onHome} />
-      <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
-        {center}
+      <div className="flex items-center justify-center gap-2 min-w-0">
+        <OwnerBoostIndicator />
         <AccountStatusBadges
           statuses={accountStatuses}
           onSelect={onAccountStatusClick}
         />
       </div>
-      <div className="shrink-0 -mr-1">
+      <div className="shrink-0 justify-self-end">
         <NotificationsBell
           onOpenInbox={onOpenInbox}
           active={notificationsActive}

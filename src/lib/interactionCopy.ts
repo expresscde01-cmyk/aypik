@@ -236,6 +236,18 @@ export function declinedArchiveStatusLabel(
     : `A décliné ton ${label}`;
 }
 
+/** Carte live « Mis en attente par l’autre ». */
+export function waitingByOtherStatusLabel(
+  origin: InteractionOrigin,
+  at?: string | null
+): string {
+  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const when = at ? formatInteractionDate(at) : '';
+  return when
+    ? `A mis ton ${label} en attente le ${when}`
+    : `A mis ton ${label} en attente`;
+}
+
 /** Carte jaune archivée dans « Mis en attente ». */
 export function waitArchiveStatusLabel(
   origin: InteractionOrigin,

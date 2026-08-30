@@ -50,6 +50,9 @@ function friendlyDbMessage(msg: string, fallback: string): string {
   if (msg.includes('suggest_profiles')) {
     return 'Catalogue indisponible : colle COLLER-DISCOVERY-CATALOG.sql dans l’éditeur SQL Supabase, puis Run.';
   }
+  if (msg.includes('not_initiator')) {
+    return 'Seul celui qui a rompu le lien peut le rétablir.';
+  }
   if (
     msg.includes('manage_active_match') ||
     msg.includes('restore_broken_match') ||
@@ -57,6 +60,9 @@ function friendlyDbMessage(msg: string, fallback: string): string {
     msg.includes('match_breaks')
   ) {
     return 'Action indisponible : colle COLLER-MATCH-BREAKS.sql dans l’éditeur SQL Supabase, puis Run.';
+  }
+  if (msg.includes('get_pending_by_others')) {
+    return 'Action indisponible : colle COLLER-PENDING-BY-OTHERS.sql dans l’éditeur SQL Supabase, puis Run.';
   }
   if (msg.includes('dismiss_declined_notification')) {
     return 'Action indisponible : colle COLLER-DECLINED-ARCHIVES.sql dans l’éditeur SQL Supabase, puis Run.';

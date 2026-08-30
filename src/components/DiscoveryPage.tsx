@@ -1237,7 +1237,6 @@ const DiscoveryCard = memo(function DiscoveryCard({
           <OnlinePresenceDot online={c.is_online} />
           <ProfileCardCornerBadges
             age={c.age}
-            isBoosted={c.is_boosted}
             isFounder={c.is_founder}
             founderNumber={c.founder_number}
           />
@@ -1248,9 +1247,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 e.stopPropagation();
                 onOpenUnread(c);
               }}
-              className={`pointer-events-auto absolute right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600 ${
-                c.is_founder ? 'bottom-9 sm:bottom-2' : 'bottom-2'
-              }`}
+              className={`pointer-events-auto absolute right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600 bottom-2`}
               aria-label={unreadMessagesLabel(unreadCount)}
             >
               <MessageCircle className="w-3 h-3" />

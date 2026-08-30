@@ -29,12 +29,12 @@ export default function ArchiveButton({
     >
       <span className="pointer-events-none relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm">
         <Folder
-          className="archive-folder w-3.5 h-3.5 text-[#FFC107] transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0"
+          className="archive-folder w-3.5 h-3.5 text-[var(--color-archive-icon)] transition-opacity duration-200 group-hover:opacity-0 group-focus-visible:opacity-0"
           strokeWidth={2.4}
           aria-hidden
         />
         <FolderOpen
-          className="archive-folder absolute left-1/2 top-1/2 w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 text-[#FFC107] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="archive-folder absolute left-1/2 top-1/2 w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 text-[var(--color-archive-icon)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
           strokeWidth={2.4}
           aria-hidden
         />

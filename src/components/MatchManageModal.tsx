@@ -75,8 +75,10 @@ export default function MatchManageModal({
     ) : (
       <>
         Archive ce match pour le retrouver dans{' '}
-        <strong className="font-bold text-gray-800">Matchs rompus</strong>, ou
-        supprime-le définitivement.
+        <strong className="font-bold text-gray-800">
+          Matchs rompus par toi
+        </strong>
+        , ou supprime-le définitivement.
       </>
     );
 
@@ -140,7 +142,7 @@ export default function MatchManageModal({
               type="button"
               disabled={busy}
               onClick={onArchive}
-              className="w-full py-2.5 rounded-xl bg-amber-100 text-amber-950 text-sm font-semibold hover:bg-amber-200 disabled:opacity-40"
+              className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
             >
               {busy ? '…' : 'Archiver'}
             </button>
@@ -148,7 +150,7 @@ export default function MatchManageModal({
               type="button"
               disabled={busy}
               onClick={() => setConfirmPurge(true)}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 leading-tight"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl btn-purge-trigger text-sm font-semibold disabled:opacity-40 leading-tight"
             >
               {busy ? (
                 '…'
@@ -170,7 +172,7 @@ export default function MatchManageModal({
               type="button"
               disabled={busy}
               onClick={onRestore}
-              className="w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40"
+              className="w-full py-2.5 rounded-xl btn-restore-link text-sm font-semibold disabled:opacity-40"
             >
               {busy ? '…' : 'Rétablir'}
             </button>
@@ -178,7 +180,7 @@ export default function MatchManageModal({
               type="button"
               disabled={busy}
               onClick={() => setConfirmPurge(true)}
-              className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-slate-50 disabled:opacity-40"
+              className="w-full py-2.5 rounded-xl btn-purge-trigger text-sm font-semibold disabled:opacity-40"
             >
               {busy ? '…' : 'Supprimer définitivement'}
             </button>
@@ -189,6 +191,11 @@ export default function MatchManageModal({
       {confirmPurge ? (
         <ConfirmDeleteModal
           busy={busy}
+          message={
+            mode === 'manage'
+              ? 'Rompre ce lien ? Tu le retrouveras dans Matchs rompus par toi, pour le rétablir ou le supprimer. Ton interlocuteur le verra dans Matchs rompus par l’autre, sans pouvoir le rétablir.'
+              : undefined
+          }
           onCancel={() => setConfirmPurge(false)}
           onConfirm={() => {
             setConfirmPurge(false);

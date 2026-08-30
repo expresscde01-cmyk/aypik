@@ -20,7 +20,7 @@ import {
   validateProfilePhoto,
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
-import { FounderBadge, BoostedBadge } from '@/components/membership/Badges';
+import { FounderBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import { ContactLink, LegalLink } from '@/components/LegalTerms';
@@ -545,12 +545,9 @@ export default function ProfileSetup({
           <p className="text-gray-500 text-sm mt-1">
             Renseigne tes informations pour apparaître dans les recherches
           </p>
-          {(status.is_founder || status.has_boost) && (
+          {status.is_founder && (
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
-              {status.is_founder && (
-                <FounderBadge number={status.founder_number} />
-              )}
-              {status.has_boost && <BoostedBadge />}
+              <FounderBadge number={status.founder_number} />
             </div>
           )}
         </div>

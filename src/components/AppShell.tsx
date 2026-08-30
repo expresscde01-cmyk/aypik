@@ -490,11 +490,6 @@ function AppShellView() {
               notificationsActive={tab === 'matches'}
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
-              center={
-                <span className="text-sm font-semibold text-gray-800 truncate min-w-0">
-                  {displayName}
-                </span>
-              }
             />
             <MatchesPage
               pageActive={tab === 'matches'}

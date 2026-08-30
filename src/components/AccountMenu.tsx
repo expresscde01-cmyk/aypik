@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Bell,
@@ -53,6 +53,7 @@ export default function AccountMenu({
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const visibilityHint = visibilityMenuHint(visibilityChoice);
 
@@ -77,6 +78,45 @@ export default function AccountMenu({
     return () => {
       document.removeEventListener('mousedown', onDoc);
       window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    const place = () => {
+      const mobile = window.innerWidth < 1024;
+      if (!mobile) {
+        menu.style.position = '';
+        menu.style.top = '';
+        menu.style.right = '';
+        menu.style.left = '';
+        menu.style.width = '';
+        menu.style.marginTop = '';
+        menu.style.borderTopRightRadius = '';
+        menu.style.borderBottomRightRadius = '';
+        return;
+      }
+      const triggerBottom =
+        rootRef.current?.getBoundingClientRect().bottom ?? 0;
+      menu.style.position = 'fixed';
+      menu.style.top = `${triggerBottom + 6}px`;
+      menu.style.right = '0px';
+      menu.style.left = 'auto';
+      menu.style.width = 'min(22rem, 100vw)';
+      menu.style.marginTop = '0px';
+      menu.style.borderTopRightRadius = '0';
+      menu.style.borderBottomRightRadius = '0';
+    };
+
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
     };
   }, [open]);
 
@@ -187,10 +227,11 @@ export default function AccountMenu({
 
       {open && (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label="Menu du compte"
-          className="absolute right-0 top-full mt-1.5 z-40 w-[min(100vw-2rem,22rem)] rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl shadow-gray-200/80 animate-fadeIn"
+          className="absolute right-0 top-full mt-1.5 z-40 w-[min(100vw-2rem,22rem)] max-lg:rounded-r-none rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl shadow-gray-200/80 animate-fadeIn"
         >
           <MenuItem
             icon={<UserRound className="w-4 h-4" />}

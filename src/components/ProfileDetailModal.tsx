@@ -1,7 +1,7 @@
 import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BoostedBadge, FounderBadge } from '@/components/membership/Badges';
+import { FounderBadge } from '@/components/membership/Badges';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import { CardGeoFacts } from '@/components/GeoBadgeLine';
@@ -67,6 +67,8 @@ export default function ProfileDetailModal({
   onDeclinedDelete,
   onWaitingArchive,
   onWaitingDiscard,
+  onRestoreLink,
+  onPurgeLink,
 }: {
   candidate: ProfileDetailCandidate;
   geoPerimeter?: GeoPerimeterFilter | null;
@@ -87,6 +89,8 @@ export default function ProfileDetailModal({
   onDeclinedDelete?: () => void;
   onWaitingArchive?: () => void;
   onWaitingDiscard?: () => void;
+  onRestoreLink?: () => void;
+  onPurgeLink?: () => void;
 }) {
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
@@ -103,7 +107,12 @@ export default function ProfileDetailModal({
     Boolean(inboxHistory?.refused) &&
     (Boolean(onWaitingArchive) || Boolean(onWaitingDiscard));
   const showWaitingSheetActions =
-    !showRefusedSheetActions && (waitingLocked || waitingIncomingSheet);
+    !showRefusedSheetActions &&
+    (waitingLocked ||
+      (waitingIncomingSheet &&
+        (Boolean(onWaitingArchive) || Boolean(onWaitingDiscard))));
+  const showArchiveLinkActions =
+    Boolean(onRestoreLink) || Boolean(onPurgeLink);
 
   const [confirmDelete, setConfirmDelete] = useState<(() => void) | null>(
     null
@@ -183,11 +192,6 @@ export default function ProfileDetailModal({
               >
                 {candidate.display_name}
               </h2>
-              {candidate.is_boosted ? (
-                <div className="mt-1">
-                  <BoostedBadge size="sm" />
-                </div>
-              ) : null}
               {candidate.is_founder ? (
                 <div className="mt-1">
                   <FounderBadge number={candidate.founder_number} size="sm" />
@@ -246,7 +250,7 @@ export default function ProfileDetailModal({
             <button
               type="button"
               onClick={onOpenChat}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
+              className="btn-open-conversation w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
             >
               <MessageCircle className="w-4 h-4" />
               {unreadMessagesLabel(unreadCount)} — ouvrir
@@ -254,6 +258,7 @@ export default function ProfileDetailModal({
           ) : null}
 
           {inboxHistory ? (
+            <>
             <div
               className={`rounded-2xl px-4 py-3 space-y-2 ${
                 inboxHistory.origin === 'flash'
@@ -303,7 +308,7 @@ export default function ProfileDetailModal({
                       disabled={busy}
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => fireDeclined(e, onDeclinedArchive)}
-                      className="w-full py-2.5 rounded-xl bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 disabled:opacity-40 cursor-pointer"
+                      className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                     >
                       {busy ? '…' : 'Archiver'}
                     </button>
@@ -314,7 +319,7 @@ export default function ProfileDetailModal({
                       disabled={busy}
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => requestDelete(e, onDeclinedDelete)}
-                      className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+                      className="btn-purge-trigger w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                     >
                       {busy ? '…' : 'Supprimer'}
                     </button>
@@ -342,21 +347,37 @@ export default function ProfileDetailModal({
                 <button
                   type="button"
                   onClick={onOpenChat}
-                  className="w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
+                  className="btn-open-conversation w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
                 >
                   <MessageCircle className="w-4 h-4" />
                   Ouvrir la conversation
                 </button>
               ) : null}
 
-              {showRefusedSheetActions || showWaitingSheetActions ? (
+              {showWaitingSheetActions ? (
                 <div className="flex flex-col gap-2 pt-1 relative z-20 pointer-events-auto">
+                  {waitingLocked ? (
+                    <button
+                      type="button"
+                      disabled={busy || likesExhausted}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onInboxDecision) onInboxDecision('match');
+                        else onLike();
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 disabled:opacity-40 cursor-pointer"
+                    >
+                      {busy ? '…' : <MatcherWord />}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     disabled={busy || !onWaitingArchive}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => fireDeclined(e, onWaitingArchive)}
-                    className="w-full py-2.5 px-2 rounded-xl bg-amber-400 text-amber-950 text-sm font-semibold hover:bg-amber-300 disabled:opacity-40 cursor-pointer"
+                    className="btn-archive w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                   >
                     {busy ? '…' : 'Archiver'}
                   </button>
@@ -370,7 +391,33 @@ export default function ProfileDetailModal({
                         else onInboxDecision?.('refuse');
                       })
                     }
-                    className="w-full py-2.5 px-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 leading-tight cursor-pointer"
+                    className="btn-discard-outline w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 leading-tight cursor-pointer bg-white border border-[#dc2626] text-[#dc2626]"
+                  >
+                    {busy ? '…' : 'Jeter'}
+                  </button>
+                </div>
+              ) : showRefusedSheetActions ? (
+                <div className="flex flex-col gap-2 pt-1 relative z-20 pointer-events-auto">
+                  <button
+                    type="button"
+                    disabled={busy || !onWaitingArchive}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => fireDeclined(e, onWaitingArchive)}
+                    className="btn-archive w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
+                  >
+                    {busy ? '…' : 'Archiver'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) =>
+                      requestDelete(e, () => {
+                        if (onWaitingDiscard) onWaitingDiscard();
+                        else onInboxDecision?.('refuse');
+                      })
+                    }
+                    className="btn-discard-outline w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 leading-tight cursor-pointer bg-white border border-[#dc2626] text-[#dc2626]"
                   >
                     {busy ? '…' : 'Jeter'}
                   </button>
@@ -381,7 +428,7 @@ export default function ProfileDetailModal({
                     type="button"
                     disabled={busy || likesExhausted}
                     onClick={() => onInboxDecision?.('match')}
-                    className="w-full py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 disabled:opacity-40"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 disabled:opacity-40"
                   >
                     <MatcherWord />
                   </button>
@@ -389,7 +436,7 @@ export default function ProfileDetailModal({
                     type="button"
                     disabled={busy}
                     onClick={() => onInboxDecision?.('wait')}
-                    className="w-full py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+                    className="btn-wait w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
                   >
                     Attendre
                   </button>
@@ -397,13 +444,40 @@ export default function ProfileDetailModal({
                     type="button"
                     disabled={busy}
                     onClick={() => onInboxDecision?.('refuse')}
-                    className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-[#dc2626] hover:bg-gray-50 disabled:opacity-40"
                   >
                     Refuser
                   </button>
                 </div>
               ) : null}
             </div>
+            {showArchiveLinkActions ? (
+              <div className="flex flex-col gap-2 relative z-20 pointer-events-auto">
+                {onRestoreLink ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => fireDeclined(e, onRestoreLink)}
+                    className="btn-restore-link w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
+                  >
+                    {busy ? '…' : 'Rétablir le lien'}
+                  </button>
+                ) : null}
+                {onPurgeLink ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => requestDelete(e, onPurgeLink)}
+                    className="btn-purge-trigger w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
+                  >
+                    {busy ? '…' : 'Supprimer'}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </>
           ) : (
             <div className="flex items-center justify-center gap-4 pt-2 overflow-visible">
               <button

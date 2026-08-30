@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
+import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -93,6 +94,18 @@ export default function HomeDashboard({
   const { user } = useAuth();
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
+  const [pcHeader, setPcHeader] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(min-width: 1024px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setPcHeader(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
   const { status, refresh } = useMembership();
   const [hiddenIds, setHiddenIds] = useState(() => new Set<string>());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -266,13 +279,36 @@ export default function HomeDashboard({
     [user, actingId, flashedIds, status, showFlashCta]
   );
 
+  const accountMenu =
+    onSignOut && user?.id ? (
+      <AccountMenu
+        displayName={displayName}
+        visibilityChoice={resolveVisibilityChoice({
+          paused,
+          deactivated: !paused && visibilityUi === 'deactivated',
+          incognito: !paused && visibilityUi === 'incognito',
+        })}
+        onVisibilityChange={onVisibilityChange ?? (async () => null)}
+        openRequestKey={accountMenuRequestKey}
+        onOpenProfile={onOpenProfile}
+        onOpenPassword={onOpenPassword}
+        onOpenNotifications={onOpenNotifications}
+        onSignOut={onSignOut}
+      />
+    ) : (
+      <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
+        {displayName}
+      </span>
+    );
+
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-        <div className="w-full max-w-2xl mx-auto px-4 lg:max-w-none lg:px-8">
+        {pcHeader ? (
+        <div className="w-full px-8">
           <div
             ref={rowRef}
-            className="relative flex w-full items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+            className="relative flex w-full items-center justify-between gap-3 h-14"
           >
             <div className="flex items-center gap-2 min-w-0">
               <BrandMark size="sm" />
@@ -280,34 +316,14 @@ export default function HomeDashboard({
             </div>
             <div
               ref={rightRef}
-              className="flex items-center gap-1 shrink-0 lg:ml-auto"
+              className="flex items-center gap-1 shrink-0 ml-auto"
             >
               <NotificationsBell
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
               />
-              {onSignOut && user?.id ? (
-                <AccountMenu
-                  displayName={displayName}
-                  visibilityChoice={resolveVisibilityChoice({
-                    paused,
-                    deactivated: !paused && visibilityUi === 'deactivated',
-                    incognito: !paused && visibilityUi === 'incognito',
-                  })}
-                  onVisibilityChange={
-                    onVisibilityChange ?? (async () => null)
-                  }
-                  openRequestKey={accountMenuRequestKey}
-                  onOpenProfile={onOpenProfile}
-                  onOpenPassword={onOpenPassword}
-                  onOpenNotifications={onOpenNotifications}
-                  onSignOut={onSignOut}
-                />
-              ) : (
-                <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
-                  {displayName}
-                </span>
-              )}
+              {accountMenu}
+              <OwnerBoostIndicator />
               <AccountStatusBadges
                 statuses={accountStatuses}
                 onSelect={onAccountStatusClick}
@@ -315,13 +331,13 @@ export default function HomeDashboard({
               {onSignOut && (
                 <>
                   <span
-                    className="hidden sm:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
+                    className="hidden lg:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
                     aria-hidden
                   />
                   <button
                     type="button"
                     onClick={onSignOut}
-                    className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
+                    className="hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
                   >
                     <LogOut className="w-4 h-4" aria-hidden />
                     Déconnexion
@@ -332,6 +348,28 @@ export default function HomeDashboard({
             <HeaderTaglineWidthProbe probeRef={probeRef} />
           </div>
         </div>
+        ) : (
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <BrandMark size="sm" />
+              <BrandLockup />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <NotificationsBell
+                onOpenInbox={onOpenMatches}
+                active={notificationsActive}
+              />
+              {accountMenu}
+              <OwnerBoostIndicator iconOnlyOnMobile />
+              <AccountStatusBadges
+                statuses={accountStatuses}
+                onSelect={onAccountStatusClick}
+              />
+            </div>
+          </div>
+        </div>
+        )}
       </header>
 
       <div className="max-w-2xl mx-auto w-full px-4 pt-8 pb-10 space-y-8">
@@ -476,14 +514,11 @@ export default function HomeDashboard({
                       <OnlinePresenceDot online={p.is_online} />
                       <ProfileCardCornerBadges
                         age={p.age}
-                        isBoosted={p.is_boosted}
                         isFounder={p.is_founder}
                         founderNumber={p.founder_number}
                       />
                       {unreadCount > 0 && (
-                        <span className={`absolute right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md ${
-                          p.is_founder ? 'bottom-9 sm:bottom-2' : 'bottom-2'
-                        }`}>
+                        <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
                           <MessageCircle className="w-3 h-3" />
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>

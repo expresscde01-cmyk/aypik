@@ -188,6 +188,34 @@ export async function fetchInboxResponses(): Promise<InboxResponseRow[]> {
   return (data || []) as InboxResponseRow[];
 }
 
+export type PendingByOtherRow = {
+  peer_id: string;
+  origin: InboxOrigin;
+  created_at: string;
+};
+
+/** Likes/flashs que l’autre a mis en attente (RPC, hors RLS). */
+export async function fetchPendingByOthers(): Promise<PendingByOtherRow[]> {
+  const { data, error } = await supabase.rpc('get_pending_by_others');
+  if (error) throw error;
+  return (data || [])
+    .map((raw) => {
+      const row = raw as {
+        peer_id?: unknown;
+        user_id?: unknown;
+        origin?: unknown;
+        created_at?: unknown;
+      };
+      const peerId = String(row.peer_id || row.user_id || '');
+      return {
+        peer_id: peerId,
+        origin: (row.origin === 'flash' ? 'flash' : 'like') as InboxOrigin,
+        created_at: String(row.created_at || ''),
+      };
+    })
+    .filter((row) => row.peer_id);
+}
+
 export async function respondToInboxInterest(
   actorId: string,
   decision: InboxDecision,
