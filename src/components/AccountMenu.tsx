@@ -18,10 +18,12 @@ import { clearAypikAppCache } from '@/lib/appCache';
 import { queryClient } from '@/lib/queryClient';
 import { resetSuggestionSearchPrefs } from '@/lib/suggestionPrefs';
 import {
+  ACCOUNT_STATUS_HOME_BANNER,
   VISIBILITY_RADIO_OPTIONS,
   visibilityMenuHint,
   type VisibilityChoice,
 } from '@/lib/accountStatus';
+import { visibilityHintTextClass } from '@/components/AccountStatusBadge';
 
 export default function AccountMenu({
   displayName,
@@ -49,6 +51,7 @@ export default function AccountMenu({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
   const [confirmResetFilters, setConfirmResetFilters] = useState(false);
+  const [confirmPause, setConfirmPause] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,18 +63,22 @@ export default function AccountMenu({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
+      if (confirmPause) return;
       if (!rootRef.current?.contains(e.target as Node)) {
         setOpen(false);
         setVisibilityOpen(false);
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        setVisibilityOpen(false);
-        setConfirmDelete(false);
-        setConfirmResetFilters(false);
+      if (e.key !== 'Escape') return;
+      if (confirmPause) {
+        setConfirmPause(false);
+        return;
       }
+      setOpen(false);
+      setVisibilityOpen(false);
+      setConfirmDelete(false);
+      setConfirmResetFilters(false);
     };
     document.addEventListener('mousedown', onDoc);
     window.addEventListener('keydown', onKey);
@@ -79,7 +86,7 @@ export default function AccountMenu({
       document.removeEventListener('mousedown', onDoc);
       window.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, confirmPause]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -144,9 +151,10 @@ export default function AccountMenu({
   const close = () => {
     setOpen(false);
     setVisibilityOpen(false);
+    setConfirmPause(false);
   };
 
-  const handleVisibilitySelect = async (choice: VisibilityChoice) => {
+  const applyVisibility = async (choice: VisibilityChoice) => {
     if (choice === visibilityChoice) {
       close();
       return;
@@ -164,6 +172,17 @@ export default function AccountMenu({
       setVisibilityBusy(false);
     }
   };
+
+  const handleVisibilitySelect = (choice: VisibilityChoice) => {
+    if (choice === 'deactivated' && visibilityChoice !== 'deactivated') {
+      setError(null);
+      setConfirmPause(true);
+      return;
+    }
+    void applyVisibility(choice);
+  };
+
+  const cancelPauseConfirm = () => setConfirmPause(false);
 
   const handleRefreshPage = () => {
     close();
@@ -231,7 +250,7 @@ export default function AccountMenu({
           id={menuId}
           role="menu"
           aria-label="Menu du compte"
-          className="absolute right-0 top-full mt-1.5 z-40 w-[min(100vw-2rem,22rem)] max-lg:rounded-r-none rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl shadow-gray-200/80 animate-fadeIn"
+          className="absolute right-0 top-full mt-1.5 z-50 isolate w-[min(100vw-2rem,22rem)] max-lg:rounded-r-none rounded-2xl border border-gray-100 bg-white py-1.5 shadow-lg animate-fadeIn"
         >
           <MenuItem
             icon={<UserRound className="w-4 h-4" />}
@@ -284,7 +303,9 @@ export default function AccountMenu({
             </span>
             <span className="min-w-0 flex-1">
               Visibilité –{' '}
-              <span className="text-emerald-600">{visibilityHint}</span>
+              <span className={visibilityHintTextClass(visibilityChoice)}>
+                {visibilityHint}
+              </span>
             </span>
             <ChevronDown
               className={`w-4 h-4 text-emerald-600 transition-transform shrink-0 ${
@@ -297,7 +318,7 @@ export default function AccountMenu({
             <div
               role="group"
               aria-label="Visibilité"
-              className="mx-2 mb-1.5 rounded-xl border border-gray-100 bg-gray-50/80 py-1"
+              className="mx-2 mb-1.5 rounded-xl border border-gray-100 bg-gray-50 py-1"
             >
               {VISIBILITY_RADIO_OPTIONS.map((option) => {
                 const checked = option.id === visibilityChoice;
@@ -308,7 +329,7 @@ export default function AccountMenu({
                     role="menuitemradio"
                     aria-checked={checked}
                     disabled={visibilityBusy}
-                    onClick={() => void handleVisibilitySelect(option.id)}
+                    onClick={() => handleVisibilitySelect(option.id)}
                     className={`w-full flex items-start gap-2.5 px-2.5 py-2 text-left text-[13px] leading-snug transition-colors disabled:opacity-50 hover:bg-slate-50 ${
                       checked
                         ? 'font-semibold text-gray-900'
@@ -358,13 +379,69 @@ export default function AccountMenu({
               onSignOut();
             }}
           />
-          {error && !confirmDelete && !confirmResetFilters && (
+          {error && !confirmDelete && !confirmResetFilters && !confirmPause && (
             <p className="mx-2 mt-1 mb-0.5 px-2 py-1.5 rounded-lg bg-red-50 text-red-700 text-[11px] leading-snug">
               {error}
             </p>
           )}
         </div>
       )}
+
+      {confirmPause &&
+        createPortal(
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/40"
+              aria-label="Annuler"
+              onClick={cancelPauseConfirm}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="account-pause-title"
+              aria-describedby="account-pause-desc"
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4"
+            >
+              <h3
+                id="account-pause-title"
+                className="text-base font-bold text-gray-900"
+              >
+                Es-tu sûr de vouloir mettre ton compte en pause ?
+              </h3>
+              <p
+                id="account-pause-desc"
+                className="text-sm text-gray-700 leading-relaxed"
+              >
+                {ACCOUNT_STATUS_HOME_BANNER.deactivated.text}
+              </p>
+              {error ? (
+                <p className="text-sm text-red-700 bg-red-50 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              ) : null}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={cancelPauseConfirm}
+                  disabled={visibilityBusy}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void applyVisibility('deactivated')}
+                  disabled={visibilityBusy}
+                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60"
+                >
+                  {visibilityBusy ? '…' : 'Mettre en pause'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {confirmResetFilters &&
         createPortal(

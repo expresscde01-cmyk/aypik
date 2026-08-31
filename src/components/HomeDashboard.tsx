@@ -311,7 +311,7 @@ export default function HomeDashboard({
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
-      <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
+      <header className="sticky top-0 z-40 isolate bg-white/85 backdrop-blur-md border-b border-rose-100/80">
         {pcHeader ? (
         <div className="w-full px-8">
           <div className="max-w-7xl mx-auto">

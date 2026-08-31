@@ -40,7 +40,7 @@ export default function OwnerBoostIndicator({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 h-6 rounded-full border text-[11px] font-semibold shrink-0 bg-amber-50 text-amber-900 border-amber-200 ${
+      className={`inline-flex items-center gap-1 h-6 rounded-full border text-[11px] font-semibold shrink-0 bg-[#FFEDD5] text-[#8A6D1D] border-[#8A6D1D] ${
         iconOnlyOnMobile
           ? 'pl-1 pr-1 sm:pr-2 sm:max-w-none'
           : 'pl-1 pr-2 max-w-[13rem] sm:max-w-none'

@@ -1,10 +1,11 @@
 import { Ban, EyeOff, PauseCircle, type LucideIcon } from 'lucide-react';
-import type { AccountStatusId } from '@/lib/accountStatus';
+import type { AccountStatusId, VisibilityChoice } from '@/lib/accountStatus';
 
 type StatusVariant = {
   label: string;
   title: string;
   Icon: LucideIcon;
+  textClass: string;
   className: string;
 };
 
@@ -14,23 +15,30 @@ export const ACCOUNT_STATUS_VARIANTS: Record<AccountStatusId, StatusVariant> = {
     label: 'Hors découverte',
     title: 'Hors découverte — changer la visibilité',
     Icon: PauseCircle,
-    className:
-      'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100',
+    textClass: 'text-amber-800',
+    className: 'bg-amber-50 border-amber-200 hover:bg-amber-100',
   },
   deactivated: {
     label: 'En pause',
     title: 'En pause — réactiver le compte',
     Icon: Ban,
-    className: 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200',
+    textClass: 'text-gray-700',
+    className: 'bg-gray-100 border-gray-200 hover:bg-gray-200',
   },
   incognito: {
     label: 'Incognito',
     title: 'Mode Incognito — changer la visibilité',
     Icon: EyeOff,
-    className:
-      'bg-violet-50 text-violet-800 border-violet-200 hover:bg-violet-100',
+    textClass: 'text-violet-800',
+    className: 'bg-violet-50 border-violet-200 hover:bg-violet-100',
   },
 };
+
+/** Couleur du libellé « Visibilité – {statut} » : même teinte que le badge header. */
+export function visibilityHintTextClass(choice: VisibilityChoice): string {
+  if (choice === 'visible') return 'text-emerald-600';
+  return ACCOUNT_STATUS_VARIANTS[choice].textClass;
+}
 
 export function AccountStatusBadge({
   status,
@@ -47,7 +55,7 @@ export function AccountStatusBadge({
       title={variant.title}
       aria-label={variant.title}
       onClick={onClick}
-      className={`inline-flex items-center gap-1 h-6 pl-1 pr-2 rounded-full border text-[11px] font-semibold shrink-0 transition-colors ${variant.className}`}
+      className={`inline-flex items-center gap-1 h-6 pl-1 pr-2 rounded-full border text-[11px] font-semibold shrink-0 transition-colors ${variant.textClass} ${variant.className}`}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden />
       {variant.label}

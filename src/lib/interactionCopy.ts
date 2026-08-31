@@ -290,7 +290,7 @@ export function waitingMatchReminder(
 ): string {
   const kind = origin === 'flash' ? 'Flash' : 'Like';
   const ready = viewerGender === 'femme' ? 'prête' : 'prêt';
-  return `Tu as mis ce ${kind} en attente : matche ou refuse quand tu seras ${ready}.`;
+  return `Tu as mis ce ${kind} en attente : matche, archive ou refuse quand tu seras ${ready}.`;
 }
 
 /** Après un refus (sens interdit) : suite Jeter / Archiver. */

@@ -177,7 +177,7 @@ export default function AppTabHeader({
 
   if (variant === 'discover') {
     return (
-      <header className="sticky top-0 z-30 discover-sticky-header">
+      <header className="sticky top-0 z-40 discover-sticky-header">
         {pcHeader ? (
           <div className="w-full px-8">
             <div className="max-w-7xl mx-auto h-14 flex items-center">
@@ -196,7 +196,7 @@ export default function AppTabHeader({
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-40 isolate bg-white border-b border-gray-100">
       <div className={pcHeader ? 'w-full px-8' : 'max-w-2xl mx-auto px-4 h-14 flex items-center'}>
         <div className={pcHeader ? 'max-w-7xl mx-auto' : 'w-full'}>{navRow}</div>
       </div>

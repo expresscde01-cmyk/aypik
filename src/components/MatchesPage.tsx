@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Folder, Heart, MapPin, AlertCircle, Zap, X } from 'lucide-react';
+import { ChevronDown, Folder, Heart, MapPin, AlertCircle, Zap, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import ChatScreen from '@/components/ChatScreen';
@@ -210,6 +210,50 @@ function ColorChip({
           : 'match-chip-matched-chat';
   return (
     <span className={`match-intro-chip ${toneClass}`}>{label}</span>
+  );
+}
+
+type IntroSectionId = 'avant' | 'pendant' | 'apres';
+
+/** Un onglet/accordéon replié par défaut du glossaire "Mes Matchs". */
+function IntroAccordionSection({
+  id,
+  title,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  id: IntroSectionId;
+  title: string;
+  isOpen: boolean;
+  onToggle: (id: IntroSectionId) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="border border-gray-200 rounded-xl bg-white overflow-hidden"
+      style={{ borderLeft: '3px solid #EA580C' }}
+    >
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors"
+      >
+        {title}
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-3 text-sm text-gray-600 space-y-3">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -519,6 +563,10 @@ export default function MatchesPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chatPeer, setChatPeer] = useState<Profile | null>(null);
+  const [openIntroSection, setOpenIntroSection] =
+    useState<IntroSectionId | null>(null);
+  const toggleIntroSection = (id: IntroSectionId) =>
+    setOpenIntroSection((current) => (current === id ? null : id));
   const [openProfile, setOpenProfile] = useState<Match | null>(null);
   const [openArchive, setOpenArchive] = useState<DeclinedArchiveCard | null>(
     null
@@ -3061,54 +3109,83 @@ export default function MatchesPage({
         Mes Matchs (
         {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
-      <div className="match-intro text-sm text-gray-600 mb-5">
-        <p>
-          Tu trouveras sur cette page tous les profils qui t&apos;ont adressé un{' '}
-          <ColorChip label="like ou flash — à étudier" tone="new" />. Tu pourras
-          soit les refuser (pour qu&apos;ils disparaissent de cette page), soit
-          les{' '}
-          <ColorChip label="mettre en attente" tone="wait" /> (pour les étudier
-          plus tard), soit les matcher pour voir ainsi ces profils passer à
-          l&apos;étape des matchs. Tous tes matchs seront ensuite soit classés{' '}
-          <ColorChip label="1er mot" tone="matched-quiet" />
-          , soit classés{' '}
-          <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
-          lorsqu&apos;il y aura eu au moins un échange.
-        </p>
-        <p>
-          Les profils que tu as toi-même mis en attente apparaissent dans{' '}
-          <span className="match-intro-chip match-chip-wait">
-            Mis en attente par toi
-          </span>
-          . Si c&apos;est l&apos;autre personne qui a mis ton like ou ton flash
-          en attente, tu le retrouveras dans{' '}
-          <span className="match-intro-chip match-chip-wait-by-other">
-            Mis en attente par l&apos;autre
-          </span>{' '}
-          : tu pourras consulter le profil, la décision lui appartenant.
-        </p>
-        <p>
-          Tu trouveras également sur cette page tous les profils qui ont décliné
-          un de tes likes ou de tes flashs. Tu pourras choisir ensuite entre{' '}
-          <span className="match-intro-chip match-chip-declined">
-            les archiver ou les supprimer
-          </span>
-          .
-        </p>
-        <p>
-          Un match déjà validé peut être archivé ou rompu depuis la conversation.
-          Tu le retrouveras alors dans{' '}
-          <span className="match-intro-chip match-chip-broken">
-            Matchs rompus par toi
-          </span>{' '}
-          si c&apos;est toi qui as pris cette décision (tu pourras alors le
-          rétablir ou le supprimer), ou dans{' '}
-          <span className="match-intro-chip match-chip-broken-theirs">
-            Matchs rompus par l&apos;autre
-          </span>{' '}
-          si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
-          pourras uniquement le supprimer).
-        </p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
+        Glossaire
+      </p>
+      <div className="mb-5 space-y-2">
+        <IntroAccordionSection
+          id="avant"
+          title="Avant"
+          isOpen={openIntroSection === 'avant'}
+          onToggle={toggleIntroSection}
+        >
+          <p>
+            Tu trouveras sur cette page tous les profils qui t&apos;ont adressé
+            un <ColorChip label="like ou flash — à étudier" tone="new" />. Tu
+            pourras soit les refuser (pour qu&apos;ils disparaissent de cette
+            page), soit les{' '}
+            <ColorChip label="mettre en attente" tone="wait" /> (pour les
+            étudier plus tard), soit les matcher pour voir ainsi ces profils
+            passer à l&apos;étape des matchs.
+          </p>
+          <p>
+            Les profils que tu as toi-même mis en attente apparaissent dans{' '}
+            <span className="match-intro-chip match-chip-wait">
+              Mis en attente par toi
+            </span>
+            . Si c&apos;est l&apos;autre personne qui a mis ton like ou ton
+            flash en attente, tu le retrouveras dans{' '}
+            <span className="match-intro-chip match-chip-wait-by-other">
+              Mis en attente par l&apos;autre
+            </span>{' '}
+            : tu pourras consulter le profil, la décision lui appartenant.
+          </p>
+          <p>
+            Tu trouveras également sur cette page tous les profils qui ont
+            décliné un de tes likes ou de tes flashs. Tu pourras choisir
+            ensuite entre{' '}
+            <span className="match-intro-chip match-chip-declined">
+              les archiver ou les supprimer
+            </span>
+            .
+          </p>
+        </IntroAccordionSection>
+
+        <IntroAccordionSection
+          id="pendant"
+          title="Pendant"
+          isOpen={openIntroSection === 'pendant'}
+          onToggle={toggleIntroSection}
+        >
+          <p>
+            Tous tes matchs sont classés soit{' '}
+            <ColorChip label="1er mot" tone="matched-quiet" />, soit{' '}
+            <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
+            lorsqu&apos;il y aura eu au moins un échange.
+          </p>
+        </IntroAccordionSection>
+
+        <IntroAccordionSection
+          id="apres"
+          title="Après"
+          isOpen={openIntroSection === 'apres'}
+          onToggle={toggleIntroSection}
+        >
+          <p>
+            Un match déjà validé peut être archivé ou rompu depuis la
+            conversation. Tu le retrouveras alors dans{' '}
+            <span className="match-intro-chip match-chip-broken">
+              Matchs rompus par toi
+            </span>{' '}
+            si c&apos;est toi qui as pris cette décision (tu pourras alors le
+            rétablir ou le supprimer), ou dans{' '}
+            <span className="match-intro-chip match-chip-broken-theirs">
+              Matchs rompus par l&apos;autre
+            </span>{' '}
+            si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
+            pourras uniquement le supprimer).
+          </p>
+        </IntroAccordionSection>
       </div>
 
       {error && (
@@ -3119,7 +3196,7 @@ export default function MatchesPage({
       )}
 
       {/* Étages du haut vers le bas : dialogue → match quiet → attente → à étudier */}
-      <div className="space-y-6">
+      <div className="space-y-6 border-t border-gray-200 pt-4">
         {renderFloor(
           'matched-chat',
           'Discussion en cours',
