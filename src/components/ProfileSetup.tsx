@@ -23,10 +23,10 @@ import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { FounderBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
-import { ContactLink, LegalLink } from '@/components/LegalTerms';
 import ChangePasswordSection from '@/components/ChangePasswordSection';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { isPaidPremiumActive } from '@/lib/membership';
+import { formatBoostUntil } from '@/components/membership/OwnerBoostIndicator';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import {
   CITY_SELECTION_REQUIRED_ERROR,
@@ -550,6 +550,13 @@ export default function ProfileSetup({
               <FounderBadge number={status.founder_number} />
             </div>
           )}
+          {status.has_boost ? (
+            <p className="text-xs font-medium text-[#8A6D1D] mt-2">
+              {status.boost_ends_at
+                ? `Boost actif jusqu’au ${formatBoostUntil(status.boost_ends_at).date}`
+                : 'Boost actif'}
+            </p>
+          ) : null}
         </div>
 
         <form
@@ -965,15 +972,6 @@ export default function ProfileSetup({
         )}
 
         {allowAccountDeletion && <ChangePasswordSection />}
-
-        {allowAccountDeletion && (
-          <p className="mt-6 text-center text-xs text-gray-400 leading-relaxed">
-            Vous avez des questions ? <ContactLink />
-            <br />
-            Conditions d&apos;utilisation :{' '}
-            <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium text-gray-500" />
-          </p>
-        )}
 
         {allowAccountDeletion && (
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">

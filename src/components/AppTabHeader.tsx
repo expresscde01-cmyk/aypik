@@ -106,18 +106,16 @@ export default function AppTabHeader({
       />
     ) : null;
 
-  /** Rangée mobile — inchangée. */
+  /** Rangée mobile — Accueil à gauche, Boost + visibilité + cloche groupés à droite. */
   const mobileRow = (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+    <div className="flex w-full items-center justify-between gap-2">
       <HomeBackButton onClick={onHome} />
-      <div className="flex items-center justify-center gap-2 min-w-0">
-        <OwnerBoostIndicator />
+      <div className="flex items-center justify-end gap-2 min-w-0 shrink">
+        <OwnerBoostIndicator shortLabel />
         <AccountStatusBadges
           statuses={accountStatuses}
           onSelect={onAccountStatusClick}
         />
-      </div>
-      <div className="shrink-0 justify-self-end">
         <NotificationsBell
           onOpenInbox={onOpenInbox}
           active={notificationsActive}

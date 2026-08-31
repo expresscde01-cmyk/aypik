@@ -84,6 +84,11 @@ function FounderActiveBanner({
           )}
           {status.has_premium && <PremiumBadge />}
         </div>
+        {status.has_premium ? (
+          <p className="text-xs font-medium text-amber-950/80 leading-snug">
+            Premium : tes avantages Fondateur pendant 6 mois, dont le Boost offert le 1er mois.
+          </p>
+        ) : null}
 
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-amber-950 tracking-tight leading-tight">

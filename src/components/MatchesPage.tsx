@@ -257,6 +257,23 @@ function IntroAccordionSection({
   );
 }
 
+function MatchStageBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-semibold tracking-wide text-gray-400 mb-1.5">
+        {label}
+      </p>
+      <div className="space-y-6 border-t border-gray-200 pt-4">{children}</div>
+    </div>
+  );
+}
+
 function earliestIso(...values: (string | null | undefined)[]): string | null {
   let best: string | null = null;
   let bestTime = Infinity;
@@ -2142,6 +2159,24 @@ export default function MatchesPage({
       );
   }, [waitingByOthers, matches, brokenPeerIds]);
 
+  const waitLivePeerIds = useMemo(
+    () => new Set(visibleWaitingByOthers.map((c) => c.profile.id)),
+    [visibleWaitingByOthers]
+  );
+  const hasPendantStage =
+    floors.matchedChat.length > 0 || floors.matchedQuiet.length > 0;
+  const hasAvantStage =
+    floors.new.length > 0 ||
+    floors.wait.length > 0 ||
+    visibleWaitingByOthers.length > 0 ||
+    visibleWaitArchives.some((c) => c.source === 'mine') ||
+    visibleWaitArchives.some(
+      (c) => c.source === 'theirs' && !waitLivePeerIds.has(c.profile.id)
+    ) ||
+    pendingDeclined.length > 0 ||
+    declinedArchives.length > 0;
+  const hasApresStage = brokenMatches.length > 0;
+
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
     const next: MatchesInboxEntry[] = matches
@@ -3195,23 +3230,35 @@ export default function MatchesPage({
         </div>
       )}
 
-      {/* Étages du haut vers le bas : dialogue → match quiet → attente → à étudier */}
-      <div className="space-y-6 border-t border-gray-200 pt-4">
-        {renderFloor(
-          'matched-chat',
-          'Discussion en cours',
-          floors.matchedChat
-        )}
-        {renderFloor(
-          'matched-quiet',
-          '1er mot',
-          floors.matchedQuiet
-        )}
-        {renderWaitFloor()}
-        {renderFloor('new', 'Like / Flash à étudier', floors.new)}
-        {renderPendingDeclinedFloor()}
-        {renderDeclinedArchiveFloor()}
-        {renderBrokenFloor()}
+      {/* Étages : Pendant → Avant → Après (même découpage que le glossaire) */}
+      <div className="space-y-8">
+        {hasPendantStage ? (
+          <MatchStageBlock label="Pendant">
+            {renderFloor(
+              'matched-chat',
+              'Discussion en cours',
+              floors.matchedChat
+            )}
+            {renderFloor(
+              'matched-quiet',
+              '1er mot',
+              floors.matchedQuiet
+            )}
+          </MatchStageBlock>
+        ) : null}
+        {hasAvantStage ? (
+          <MatchStageBlock label="Avant">
+            {renderWaitFloor()}
+            {renderFloor('new', 'Like / Flash à étudier', floors.new)}
+            {renderPendingDeclinedFloor()}
+            {renderDeclinedArchiveFloor()}
+          </MatchStageBlock>
+        ) : null}
+        {hasApresStage ? (
+          <MatchStageBlock label="Après">
+            {renderBrokenFloor()}
+          </MatchStageBlock>
+        ) : null}
       </div>
 
       {openProfile && (

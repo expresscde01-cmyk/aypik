@@ -154,7 +154,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 29 août 2026. Version applicable au
+              Dernière mise à jour : 31 août 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -569,7 +569,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 demeure un compte actif au sens des présentes CGU. Le
                 statut de Membre Fondateur et le numéro associé ne sont
                 pas perdus. Seule la suppression définitive du compte,
-                dans les conditions de l&apos;article 7.2, emporte la
+                dans les conditions de l&apos;article 8.2, emporte la
                 perte définitive de ce badge et de ce numéro.
               </p>
             </div>
@@ -596,7 +596,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Le traitement de last_active_at est décrit à l&apos;article
-                7.1.
+                8.1.
               </p>
             </div>
           </section>
@@ -619,9 +619,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               fonctionnels sont consentis à titre gracieux, sans engagement
               de durée, sans tacite reconduction et sans aucune demande de
               carte bancaire. Ils comprennent notamment, selon les
-              fonctionnalités effectivement déployées : likes illimités, un
-              Flash, et un boost de visibilité du profil pendant le premier
-              mois.
+              fonctionnalités effectivement déployées : likes et Flash
+              illimités, ainsi qu&apos;un boost de visibilité du profil
+              pendant le premier mois.
             </p>
             <p>
               À l&apos;issue de ces six mois, les avantages fonctionnels
@@ -637,7 +637,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               ne pourra pas être réattribué. Un compte dont la visibilité
               est restreinte ou qui est mis en pause au sens de
               l&apos;article 3.7 demeure un compte actif ; voir également
-              l&apos;article 7.2.
+              l&apos;article 8.2.
             </p>
             <p>
               Cette offre ne constitue ni un contrat de vente, ni un
@@ -648,11 +648,33 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 5 — Propriété intellectuelle et contenus utilisateurs
+              Article 5 — Boost et statut Premium
+            </h3>
+            <p>
+              Le statut « Premium » affiché sur le profil des membres ayant
+              bénéficié de l&apos;offre de lancement (« Membre Fondateur »)
+              correspond à un ensemble d&apos;avantages temporaires accordés
+              pour une durée de 6 mois à compter de l&apos;inscription :
+              likes et Flash illimités, ainsi qu&apos;un Boost offert pendant
+              le premier mois. La validité de ce Boost est consultable à tout
+              moment depuis la page « Mon profil ».
+            </p>
+            <p>
+              L&apos;obtention d&apos;un Boost, quelle que soit la manière
+              dont il est accordé, ne confère pas à elle seule le statut
+              « Premium ». Le statut « Premium » pourra, à terme, faire
+              l&apos;objet de conditions d&apos;attribution distinctes de
+              celles applicables au Boost.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Article 6 — Propriété intellectuelle et contenus utilisateurs
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
-                5.1 Éléments de la plateforme
+                6.1 Éléments de la plateforme
               </p>
               <p>
                 L&apos;ensemble de la structure du Site, de son code source,
@@ -665,7 +687,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
             </div>
             <div>
-              <p className="font-semibold text-gray-900">5.2 Marque</p>
+              <p className="font-semibold text-gray-900">6.2 Marque</p>
               <p>
                 Le nom {BRAND_NAME}, ses déclinaisons et son identité
                 visuelle sont protégés. Toute utilisation non autorisée est
@@ -674,7 +696,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                5.3 Contenus publiés par l&apos;utilisateur
+                6.3 Contenus publiés par l&apos;utilisateur
               </p>
               <p>
                 L&apos;utilisateur conserve les droits qu&apos;il détient sur
@@ -701,7 +723,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 6 — Responsabilités
+              Article 7 — Responsabilités
             </h3>
             <p>
               {BRAND_NAME} est un outil de mise en relation. L&apos;éditeur
@@ -744,11 +766,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 7 — Données personnelles, résiliation et droit applicable
+              Article 8 — Données personnelles, résiliation et droit applicable
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
-                7.1 Protection des données (RGPD)
+                8.1 Protection des données (RGPD)
               </p>
               <p>
                 L&apos;éditeur est responsable du traitement des données
@@ -780,7 +802,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                7.2 Résiliation et suppression du compte
+                8.2 Résiliation et suppression du compte
               </p>
               <p>
                 L&apos;utilisateur peut à tout moment demander la suppression
@@ -794,7 +816,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 le compte reste actif. La perte du statut de Membre
                 Fondateur et du numéro associé n&apos;intervient qu&apos;en
                 cas de désinscription ou de suppression au titre du présent
-                article 7.2.
+                article 8.2.
               </p>
               <p>
                 Pour l&apos;utilisateur, cette suppression est définitive :
@@ -821,7 +843,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                7.3 Droit applicable et tribunaux compétents
+                8.3 Droit applicable et tribunaux compétents
               </p>
               <p>
                 Les présentes CGU sont régies par le droit français.
@@ -1106,7 +1128,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Elle est demandée depuis le profil. Le profil n&apos;est plus
                 visible. Les données sont irrémédiablement effacées après un
-                délai de purge de 30 jours (article 7.2).
+                délai de purge de 30 jours (article 8.2).
               </p>
             </div>
             <div>
@@ -1143,7 +1165,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 conservés ; le profil n&apos;est plus proposé dans Découvrir
                 ni dans les suggestions, et les nouvelles interactions ne
                 sont pas enregistrées le temps de la pause. La suppression
-                (article 7.2) est définitive : le profil n&apos;est plus
+                (article 8.2) est définitive : le profil n&apos;est plus
                 utilisé, les données sont effacées après le délai de purge,
                 et le badge Fondateur est perdu.
               </p>
