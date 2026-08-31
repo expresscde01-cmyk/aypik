@@ -101,6 +101,15 @@ function UnsubscribeBanner({
 
 function AppContent() {
   const { session, loading, passwordRecovery, finishPasswordRecovery } = useAuth();
+  /**
+   * Vérifiée en parallèle de la session (et plus en amont, de façon
+   * bloquante) : les deux appels réseau démarrent au même moment au premier
+   * chargement au lieu de s'enchaîner l'un après l'autre, ce qui réduit
+   * d'autant le temps avant le premier affichage utile (avant : durée
+   * maintenance + durée session ; après : max des deux).
+   */
+  const { gate: maintenanceGate, message: maintenanceMessage } =
+    useMaintenanceGate();
   const [showLegal, setShowLegal] = useState(isLegalTermsOpen);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
@@ -136,10 +145,12 @@ function AppContent() {
   }, [session]);
 
   let page: ReactNode;
-  if (showLegal) {
-    page = <LegalTermsPage onClose={closeLegalTerms} />;
-  } else if (loading) {
+  if (maintenanceGate === 'on') {
+    page = <MaintenanceScreen message={maintenanceMessage} />;
+  } else if (maintenanceGate === 'checking' || loading) {
     page = <RouteFallback />;
+  } else if (showLegal) {
+    page = <LegalTermsPage onClose={closeLegalTerms} />;
   } else if (session && passwordRecovery) {
     page = <ResetPasswordScreen onDone={finishPasswordRecovery} />;
   } else if (session) {
@@ -165,7 +176,7 @@ function AppContent() {
 
   return (
     <>
-      {unsubNotice && (
+      {unsubNotice && maintenanceGate !== 'on' && (
         <UnsubscribeBanner
           notice={unsubNotice}
           onClose={() => {
@@ -179,7 +190,15 @@ function AppContent() {
   );
 }
 
-function MaintenanceGate({ children }: { children: ReactNode }) {
+/**
+ * Démarre la vérification de maintenance dès le montage — indépendamment
+ * de la session (voir AppContent) — plutôt que de bloquer tout l'arbre en
+ * amont comme le faisait l'ancien composant MaintenanceGate.
+ */
+function useMaintenanceGate(): {
+  gate: 'checking' | 'on' | 'off';
+  message: string | null;
+} {
   const [gate, setGate] = useState<'checking' | 'on' | 'off'>('checking');
   const [message, setMessage] = useState<string | null>(null);
 
@@ -199,21 +218,17 @@ function MaintenanceGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (gate === 'checking') return <RouteFallback />;
-  if (gate === 'on') return <MaintenanceScreen message={message} />;
-  return children;
+  return { gate, message };
 }
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <MaintenanceGate>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </QueryClientProvider>
-      </MaintenanceGate>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
