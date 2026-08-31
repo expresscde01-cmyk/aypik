@@ -198,8 +198,8 @@ export type PendingByOtherRow = {
 export async function fetchPendingByOthers(): Promise<PendingByOtherRow[]> {
   const { data, error } = await supabase.rpc('get_pending_by_others');
   if (error) throw error;
-  return (data || [])
-    .map((raw) => {
+  return ((data || []) as unknown[])
+    .map((raw: unknown) => {
       const row = raw as {
         peer_id?: unknown;
         user_id?: unknown;

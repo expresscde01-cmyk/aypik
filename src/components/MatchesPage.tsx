@@ -3362,6 +3362,7 @@ export default function MatchesPage({
           }}
           alreadyFlashed
           alreadyLiked
+          busy={false}
           likesExhausted={false}
           showFlashCta={false}
           inboxHistory={{

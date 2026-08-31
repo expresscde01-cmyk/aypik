@@ -1,4 +1,5 @@
-import { loadStripe, type Stripe } from '@stripe/stripe-js/pure';
+import { loadStripe } from '@stripe/stripe-js/pure';
+import type { Stripe } from '@stripe/stripe-js';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { supabase } from '@/lib/supabase';
 

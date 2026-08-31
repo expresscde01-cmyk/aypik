@@ -13,9 +13,9 @@ import {
 
 export function useHeaderTaglineCompact(): {
   compact: boolean;
-  rowRef: RefObject<HTMLDivElement | null>;
-  rightRef: RefObject<HTMLDivElement | null>;
-  probeRef: RefObject<HTMLDivElement | null>;
+  rowRef: RefObject<HTMLDivElement>;
+  rightRef: RefObject<HTMLDivElement>;
+  probeRef: RefObject<HTMLDivElement>;
 } {
   const rowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -74,7 +74,7 @@ export function useHeaderTaglineCompact(): {
 export function HeaderTaglineWidthProbe({
   probeRef,
 }: {
-  probeRef: RefObject<HTMLDivElement | null>;
+  probeRef: RefObject<HTMLDivElement>;
 }) {
   return (
     <div
@@ -104,9 +104,9 @@ export function HeaderTaglineWidthProbe({
  */
 export function useMobileTaglineFits(): {
   fits: boolean;
-  rowRef: RefObject<HTMLDivElement | null>;
-  rightRef: RefObject<HTMLDivElement | null>;
-  probeRef: RefObject<HTMLDivElement | null>;
+  rowRef: RefObject<HTMLDivElement>;
+  rightRef: RefObject<HTMLDivElement>;
+  probeRef: RefObject<HTMLDivElement>;
 } {
   const rowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -166,7 +166,7 @@ export function useMobileTaglineFits(): {
 export function MobileTaglineWidthProbe({
   probeRef,
 }: {
-  probeRef: RefObject<HTMLDivElement | null>;
+  probeRef: RefObject<HTMLDivElement>;
 }) {
   return (
     <div
