@@ -21,7 +21,9 @@ import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { CardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   HeaderTaglineWidthProbe,
+  MobileTaglineWidthProbe,
   useHeaderTaglineCompact,
+  useMobileTaglineFits,
 } from '@/lib/useHeaderTaglineCompact';
 import {
   fetchSuggestedProfiles,
@@ -94,6 +96,12 @@ export default function HomeDashboard({
   const { user } = useAuth();
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
+  const {
+    fits: mobileTaglineFits,
+    rowRef: mobileTaglineRowRef,
+    rightRef: mobileTaglineRightRef,
+    probeRef: mobileTaglineProbeRef,
+  } = useMobileTaglineFits();
   const [pcHeader, setPcHeader] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -352,12 +360,18 @@ export default function HomeDashboard({
         </div>
         ) : (
         <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0">
+          <div
+            ref={mobileTaglineRowRef}
+            className="relative flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+          >
             <div className="flex items-center gap-2 min-w-0">
               <BrandMark size="sm" />
-              <BrandLockup />
+              <BrandLockup hideTagline={!mobileTaglineFits} />
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div
+              ref={mobileTaglineRightRef}
+              className="flex items-center gap-1 shrink-0"
+            >
               <NotificationsBell
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
@@ -369,6 +383,7 @@ export default function HomeDashboard({
                 onSelect={onAccountStatusClick}
               />
             </div>
+            <MobileTaglineWidthProbe probeRef={mobileTaglineProbeRef} />
           </div>
         </div>
         )}

@@ -20,3 +20,24 @@ export function taglineNeedsCompact({
   }
   return neededPx > availablePx;
 }
+
+/**
+ * Version binaire "tient / ne tient pas" (sans notion de viewport), utilisée
+ * pour décider d'afficher ou de masquer entièrement le slogan mobile plutôt
+ * que de le tronquer — cf. useMobileTaglineFits.
+ */
+export function taglineFits({
+  availablePx,
+  neededPx,
+  currentlyFits,
+}: {
+  availablePx: number;
+  neededPx: number;
+  currentlyFits: boolean;
+}): boolean {
+  if (neededPx <= 0 || availablePx <= 0) return currentlyFits;
+  if (currentlyFits) {
+    return neededPx <= availablePx - HEADER_TAGLINE_HYSTERESIS_PX;
+  }
+  return neededPx <= availablePx;
+}

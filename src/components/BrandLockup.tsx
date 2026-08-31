@@ -5,6 +5,12 @@ type BrandLockupProps = {
   className?: string;
   /** Overrides the sm breakpoint: stacked short tagline vs inline long phrase. */
   compact?: boolean;
+  /**
+   * Masque entièrement le slogan court mobile (au lieu de le tronquer)
+   * quand il n'y a plus la place de l'afficher en entier — voir
+   * useMobileTaglineFits. Sans effet sur le slogan long PC (`hidden sm:inline`).
+   */
+  hideTagline?: boolean;
 };
 
 const BRAND = 'Aypik';
@@ -123,6 +129,7 @@ export function BrandLockup({
   variant = 'nav',
   className = '',
   compact,
+  hideTagline = false,
 }: BrandLockupProps) {
   if (variant === 'hero') {
     return (
@@ -168,7 +175,7 @@ export function BrandLockup({
 
   return (
     <div
-      className={`min-w-0 flex ${
+      className={`min-w-0 overflow-hidden flex ${
         stacked === true
           ? 'flex-col gap-0.5'
           : stacked === false
@@ -180,19 +187,21 @@ export function BrandLockup({
         {BRAND}
       </span>
       {stacked === true ? (
-        <span className="text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
+        <span className="text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis">
           {BRAND_SHORT_TAGLINE}
         </span>
       ) : stacked === false ? (
-        <span className="whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
+        <span className="whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis">
           {BASELINE}
         </span>
       ) : (
         <>
-          <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap">
-            {BRAND_SHORT_TAGLINE}
-          </span>
-          <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none">
+          {!hideTagline && (
+            <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+              {BRAND_SHORT_TAGLINE}
+            </span>
+          )}
+          <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis">
             {BASELINE}
           </span>
         </>
