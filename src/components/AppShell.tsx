@@ -439,6 +439,15 @@ function AppShellView() {
               notificationsActive={tab === 'discover'}
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
+              displayName={displayName}
+              onSignOut={signOut}
+              onOpenProfile={() => openProfileSection()}
+              onOpenPassword={() => openProfileSection('password')}
+              onOpenNotifications={() => openProfileSection('preferences')}
+              paused={paused}
+              visibilityUi={visibilityUi}
+              onVisibilityChange={applyVisibilityChoice}
+              accountMenuRequestKey={accountMenuRequestKey}
             >
               <div
                 className={`discover-intro${
@@ -490,6 +499,15 @@ function AppShellView() {
               notificationsActive={tab === 'matches'}
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
+              displayName={displayName}
+              onSignOut={signOut}
+              onOpenProfile={() => openProfileSection()}
+              onOpenPassword={() => openProfileSection('password')}
+              onOpenNotifications={() => openProfileSection('preferences')}
+              paused={paused}
+              visibilityUi={visibilityUi}
+              onVisibilityChange={applyVisibilityChoice}
+              accountMenuRequestKey={accountMenuRequestKey}
             />
             <MatchesPage
               pageActive={tab === 'matches'}
@@ -523,6 +541,15 @@ function AppShellView() {
               notificationsActive={tab === 'profile'}
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
+              displayName={displayName}
+              onSignOut={signOut}
+              onOpenProfile={() => openProfileSection()}
+              onOpenPassword={() => openProfileSection('password')}
+              onOpenNotifications={() => openProfileSection('preferences')}
+              paused={paused}
+              visibilityUi={visibilityUi}
+              onVisibilityChange={applyVisibilityChoice}
+              accountMenuRequestKey={accountMenuRequestKey}
             />
             <ProfileSetup
               allowAccountDeletion

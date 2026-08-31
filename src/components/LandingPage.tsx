@@ -1,4 +1,4 @@
-import { useState, useRef, type PointerEvent } from 'react';
+import { useState, useEffect, useRef, type PointerEvent } from 'react';
 import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalTerms';
@@ -185,10 +185,24 @@ export function SiteHeader({
   const connected = Boolean(displayName);
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
+  /** Même bascule que le header de l’app : largeur alignée à partir de 1024px. */
+  const [pcHeader, setPcHeader] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(min-width: 1024px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setPcHeader(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
-      <div className="max-w-3xl mx-auto px-4">
+      <div className={pcHeader ? 'w-full px-8' : 'max-w-3xl mx-auto px-4'}>
+        <div className={pcHeader ? 'max-w-7xl mx-auto' : undefined}>
         <div
           ref={rowRef}
           className="relative flex w-full items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
@@ -244,6 +258,7 @@ export function SiteHeader({
             )}
           </div>
           <HeaderTaglineWidthProbe probeRef={probeRef} />
+        </div>
         </div>
       </div>
     </header>

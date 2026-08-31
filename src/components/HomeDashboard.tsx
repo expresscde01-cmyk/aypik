@@ -306,46 +306,48 @@ export default function HomeDashboard({
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
         {pcHeader ? (
         <div className="w-full px-8">
-          <div
-            ref={rowRef}
-            className="relative flex w-full items-center justify-between gap-3 h-14"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <BrandMark size="sm" />
-              <BrandLockup compact={taglineCompact} />
-            </div>
+          <div className="max-w-7xl mx-auto">
             <div
-              ref={rightRef}
-              className="flex items-center gap-1 shrink-0 ml-auto"
+              ref={rowRef}
+              className="relative flex w-full items-center justify-between gap-3 h-14"
             >
-              <NotificationsBell
-                onOpenInbox={onOpenMatches}
-                active={notificationsActive}
-              />
-              {accountMenu}
-              <OwnerBoostIndicator />
-              <AccountStatusBadges
-                statuses={accountStatuses}
-                onSelect={onAccountStatusClick}
-              />
-              {onSignOut && (
-                <>
-                  <span
-                    className="hidden lg:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
-                    aria-hidden
-                  />
-                  <button
-                    type="button"
-                    onClick={onSignOut}
-                    className="hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
-                  >
-                    <LogOut className="w-4 h-4" aria-hidden />
-                    Déconnexion
-                  </button>
-                </>
-              )}
+              <div className="flex items-center gap-2 min-w-0">
+                <BrandMark size="sm" />
+                <BrandLockup compact={taglineCompact} />
+              </div>
+              <div
+                ref={rightRef}
+                className="flex items-center gap-1 shrink-0 ml-auto"
+              >
+                <NotificationsBell
+                  onOpenInbox={onOpenMatches}
+                  active={notificationsActive}
+                />
+                {accountMenu}
+                <OwnerBoostIndicator />
+                <AccountStatusBadges
+                  statuses={accountStatuses}
+                  onSelect={onAccountStatusClick}
+                />
+                {onSignOut && (
+                  <>
+                    <span
+                      className="hidden lg:block w-px h-4 bg-gray-200 mx-1.5 shrink-0"
+                      aria-hidden
+                    />
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
+                    >
+                      <LogOut className="w-4 h-4" aria-hidden />
+                      Déconnexion
+                    </button>
+                  </>
+                )}
+              </div>
+              <HeaderTaglineWidthProbe probeRef={probeRef} />
             </div>
-            <HeaderTaglineWidthProbe probeRef={probeRef} />
           </div>
         </div>
         ) : (
@@ -407,12 +409,12 @@ export default function HomeDashboard({
               className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
               aria-label={
                 unreadTotal > 0
-                  ? `Mes matchs, ${unreadMessagesLabel(unreadTotal)}`
-                  : 'Mes matchs'
+                  ? `Mes Matchs, ${unreadMessagesLabel(unreadTotal)}`
+                  : 'Mes Matchs'
               }
             >
               <Heart className="w-4 h-4 text-rose-500" />
-              Mes matchs
+              Mes Matchs
               {unreadTotal > 0 && (
                 <UnreadBadge
                   count={unreadTotal}

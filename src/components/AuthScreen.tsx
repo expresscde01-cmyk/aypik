@@ -9,7 +9,6 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import HomeBackButton from '@/components/HomeBackButton';
 import {
   EMAIL_ALREADY_REGISTERED_MESSAGE,
   isEmailAlreadyRegisteredError,
@@ -276,12 +275,6 @@ export default function AuthScreen({
       </div>
 
       <div className="relative w-full max-w-md">
-        {onBack && (
-          <div className="mb-4 flex justify-start">
-            <HomeBackButton onClick={onBack} />
-          </div>
-        )}
-
         <div className="text-center mb-8">
           <a
             href="/"
