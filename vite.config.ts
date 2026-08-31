@@ -33,12 +33,9 @@ export default defineConfig(({ mode }) => ({
     // Pas de polyfill inline ni de <link modulepreload> (CSP script-src 'self').
     modulePreload: false,
     assetsInlineLimit: 0,
-    rollupOptions: {
-      output: {
-        // Un seul JS : pas de chunks lazy bloqués par Apache / CSP.
-        inlineDynamicImports: true,
-      },
-    },
+    // Découpage de code (chunks lazy via import()) : nécessite 'strict-dynamic'
+    // dans la CSP de public/index.php pour que les chunks chargés dynamiquement
+    // héritent de la confiance du script noncé. Sans ça, la CSP les bloque.
   },
   resolve: {
     alias: {

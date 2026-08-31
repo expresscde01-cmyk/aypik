@@ -25,14 +25,17 @@ if (!is_readable($htmlPath)) {
 $nonce = bin2hex(random_bytes(16));
 
 // CSP mode gratuit (SITE_FREE_MODE) : pas de Stripe/PayPal.
-// script-src : 'self' (bundle Vite) + nonce (inline Turnstile propagé) + host CF.
+// script-src : 'self' (bundle Vite) + nonce (inline Turnstile propagé) + host CF
+// + 'strict-dynamic' (propage la confiance du script noncé aux chunks Vite
+// chargés dynamiquement — sans lui, le découpage de code JS est bloqué par la CSP).
+// Navigateurs sans 'strict-dynamic' : retombent sur 'self' + nonce + host CF ci-dessus.
 // Quand les paiements seront réactivés, réintroduire js.stripe.com / *.stripe.com /
 // *.stripe.network / PayPal dans script-src, connect-src, frame-src, form-action, img-src.
 $csp = implode(
     '; ',
     [
         "default-src 'self'",
-        "script-src 'self' 'nonce-{$nonce}' https://challenges.cloudflare.com",
+        "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic' https://challenges.cloudflare.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' data: blob: https://*.supabase.co",

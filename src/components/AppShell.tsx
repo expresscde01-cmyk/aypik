@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
-import DiscoveryPage from '@/components/DiscoveryPage';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
-import MatchesPage from '@/components/MatchesPage';
 import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalTerms';
 import ProfileSetup, {
@@ -14,6 +12,7 @@ import ProfileSetup, {
   type Profile,
 } from '@/components/ProfileSetup';
 import AccountPausedScreen from '@/components/AccountPausedScreen';
+import PhoneVerification from '@/components/PhoneVerification';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
@@ -33,6 +32,16 @@ import {
   saveVisibilityUiMode,
   type VisibilityChoice,
 } from '@/lib/accountStatus';
+
+/**
+ * Chargées à la demande : ce sont les plus gros écrans de l’app (cartes,
+ * filtres, messagerie). Ne pas les inclure dans le bundle initial réduit
+ * le poids du premier chargement pour tout le monde, y compris ceux qui
+ * ne visitent qu’Accueil. Nécessite 'strict-dynamic' dans la CSP
+ * (public/index.php) — voir commentaire dans vite.config.ts.
+ */
+const DiscoveryPage = lazy(() => import('@/components/DiscoveryPage'));
+const MatchesPage = lazy(() => import('@/components/MatchesPage'));
 
 type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
@@ -479,12 +488,14 @@ function AppShellView() {
                 </div>
               </div>
             </AppTabHeader>
-            <DiscoveryPage
-              unreadBySender={unread.bySender}
-              onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
-              profileEpoch={profileEpoch}
-              pageActive={tab === 'discover'}
-            />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <DiscoveryPage
+                unreadBySender={unread.bySender}
+                onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
+                profileEpoch={profileEpoch}
+                pageActive={tab === 'discover'}
+              />
+            </Suspense>
           </div>
         )}
         {mountedTabs.has('matches') && (
@@ -509,28 +520,30 @@ function AppShellView() {
               onVisibilityChange={applyVisibilityChoice}
               accountMenuRequestKey={accountMenuRequestKey}
             />
-            <MatchesPage
-              pageActive={tab === 'matches'}
-              focusActorId={inboxActorId}
-              focusOpenChat={inboxOpenChat}
-              focusHighlight={inboxHighlight}
-              focusHintName={inboxHintName}
-              focusPulseCategory={inboxPulseCategory}
-              focusDeclined={inboxDeclined}
-              focusWaitingIncoming={inboxWaitingIncoming}
-              focusKey={inboxFocusKey}
-              profileEpoch={profileEpoch}
-              onChatClosed={() => void unread.refresh()}
-              onFocusActorConsumed={() => {
-                setInboxActorId(null);
-                setInboxOpenChat(false);
-                setInboxHighlight(false);
-                setInboxHintName(null);
-                setInboxPulseCategory(null);
-                setInboxDeclined(false);
-                setInboxWaitingIncoming(false);
-              }}
-            />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <MatchesPage
+                pageActive={tab === 'matches'}
+                focusActorId={inboxActorId}
+                focusOpenChat={inboxOpenChat}
+                focusHighlight={inboxHighlight}
+                focusHintName={inboxHintName}
+                focusPulseCategory={inboxPulseCategory}
+                focusDeclined={inboxDeclined}
+                focusWaitingIncoming={inboxWaitingIncoming}
+                focusKey={inboxFocusKey}
+                profileEpoch={profileEpoch}
+                onChatClosed={() => void unread.refresh()}
+                onFocusActorConsumed={() => {
+                  setInboxActorId(null);
+                  setInboxOpenChat(false);
+                  setInboxHighlight(false);
+                  setInboxHintName(null);
+                  setInboxPulseCategory(null);
+                  setInboxDeclined(false);
+                  setInboxWaitingIncoming(false);
+                }}
+              />
+            </Suspense>
           </div>
         )}
         {tab === 'profile' && (
@@ -683,6 +696,15 @@ function useBottomNavAutoHide(resetKey: unknown) {
   }, [resetKey]);
 
   return hidden;
+}
+
+/** Repli affiché pendant le chargement à la demande d’un onglet lourd. */
+function TabLoadingFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center py-16">
+      <div className="w-8 h-8 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+    </div>
+  );
 }
 
 function NavButton({
