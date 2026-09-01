@@ -3362,7 +3362,8 @@ export default function MatchesPage({
         >
           <p>
             Tous tes matchs sont classés soit{' '}
-            <ColorChip label="1er mot" tone="matched-quiet" />, soit{' '}
+            <ColorChip label="1er mot" tone="matched-quiet" /> dès qu&apos;un
+            like ou un flash devient réciproque, soit{' '}
             <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
             lorsqu&apos;il y aura eu au moins un échange.
           </p>
