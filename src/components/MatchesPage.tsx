@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Folder, Heart, MapPin, AlertCircle, Zap, X } from 'lucide-react';
+import { ChevronDown, Folder, Heart, MapPin, AlertCircle, MessageCircle, Zap, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import ChatScreen from '@/components/ChatScreen';
@@ -38,6 +38,7 @@ import {
 import type { ProfileGender } from '@/components/ProfileSetup';
 import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
+import { CrownIcon } from '@/components/MatcherWord';
 import RefuseButton from '@/components/RefuseButton';
 import ArchiveButton from '@/components/ArchiveButton';
 import RestoreLinkButton from '@/components/RestoreLinkButton';
@@ -213,18 +214,167 @@ function ColorChip({
   );
 }
 
+/** Poubelle — même tracé que RefuseButton / HintActionIcon. */
+function RefuseTrashGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <g className="refuse-trash-lid">
+        <path d="M3 6h18" />
+        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      </g>
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <line x1="10" x2="10" y1="11" y2="17" />
+      <line x1="14" x2="14" y1="11" y2="17" />
+    </svg>
+  );
+}
+
+/** Chaîne ouverte — même tracé que RestoreLinkButton, état repos. */
+function RestoreChainGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`restore-chain ${className ?? ''}`.trim()}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <g className="restore-chain-left">
+        <path d="M9 17H7A5 5 0 0 1 7 7h2" />
+      </g>
+      <g className="restore-chain-right">
+        <path d="M15 7h2a5 5 0 1 1 0 10h-2" />
+      </g>
+      <path className="restore-chain-bar" d="M8 12h8" />
+    </svg>
+  );
+}
+
+function IntroLegendBracket({
+  label,
+  span,
+}: {
+  label: string;
+  span: 'full' | 'mid';
+}) {
+  return (
+    <div
+      className={`match-intro-legend-bracket match-intro-legend-bracket--${span} text-gray-300`}
+      aria-hidden
+    >
+      <span className="match-intro-legend-bracket-line" />
+      <span className="match-intro-legend-bracket-label text-gray-500">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function IntroLegendBar({
+  columns,
+  children,
+}: {
+  columns: 2 | 4;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`match-intro-legend-bar match-intro-legend-bar--${columns}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function IntroLegendAvant() {
+  return (
+    <div className="match-intro-legend">
+      <div className="match-intro-legend-brackets">
+        <IntroLegendBracket label="Like ou Flash" span="full" />
+        <IntroLegendBracket label="Mis de côté" span="mid" />
+      </div>
+      <IntroLegendBar columns={4}>
+        <span className="match-intro-legend-seg match-chip-new">Nouveaux</span>
+        <span className="match-intro-legend-seg match-chip-wait">Par toi</span>
+        <span className="match-intro-legend-seg match-chip-wait-by-other">
+          Par l&apos;autre
+        </span>
+        <span className="match-intro-legend-seg match-intro-legend-seg--actions match-chip-declined">
+          <span className="sr-only">
+            À supprimer, archiver ou matcher
+          </span>
+          <span className="match-intro-legend-icons" aria-hidden>
+            <span className="match-intro-legend-a">À</span>
+            <RefuseTrashGlyph className="refuse-trash h-3 w-3" />
+            <span>,</span>
+            <Folder className="h-3 w-3" strokeWidth={2.4} />
+            <span>,</span>
+            <CrownIcon size="0.75rem" />
+          </span>
+        </span>
+      </IntroLegendBar>
+    </div>
+  );
+}
+
+function IntroLegendPendant() {
+  return (
+    <div className="match-intro-legend">
+      <IntroLegendBar columns={2}>
+        <span className="match-intro-legend-seg match-chip-matched-quiet">
+          1er mot
+        </span>
+        <span className="match-intro-legend-seg match-chip-matched-chat">
+          Discussions en cours
+        </span>
+      </IntroLegendBar>
+    </div>
+  );
+}
+
+function IntroLegendApres() {
+  return (
+    <div className="match-intro-legend">
+      <IntroLegendBar columns={2}>
+        <span className="match-intro-legend-seg match-chip-broken">
+          Match rompu par toi
+        </span>
+        <span className="match-intro-legend-seg match-chip-broken-theirs">
+          Match rompu par l&apos;autre
+        </span>
+      </IntroLegendBar>
+    </div>
+  );
+}
+
 type IntroSectionId = 'avant' | 'pendant' | 'apres';
 
 /** Un onglet/accordéon replié par défaut du glossaire "Mes Matchs". */
 function IntroAccordionSection({
   id,
   title,
+  titleIcons,
+  legend,
   isOpen,
   onToggle,
   children,
 }: {
   id: IntroSectionId;
   title: string;
+  titleIcons: React.ReactNode;
+  legend: React.ReactNode;
   isOpen: boolean;
   onToggle: (id: IntroSectionId) => void;
   children: React.ReactNode;
@@ -238,15 +388,26 @@ function IntroAccordionSection({
         type="button"
         onClick={() => onToggle(id)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-2.5 text-left bg-white hover:bg-gray-50 transition-colors"
       >
-        {title}
-        <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-          aria-hidden
-        />
+        <span className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-semibold text-gray-800">{title}</span>
+            <span
+              className="inline-flex items-center gap-0.5 text-gray-400 shrink-0"
+              aria-hidden
+            >
+              {titleIcons}
+            </span>
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+            aria-hidden
+          />
+        </span>
+        {legend}
       </button>
       {isOpen && (
         <div className="px-4 pb-3 text-sm text-gray-600 space-y-3">
@@ -402,23 +563,7 @@ function HintActionIcon({
           strokeWidth={2.4}
         />
       ) : (
-        <svg
-          viewBox="0 0 24 24"
-          className="refuse-trash h-3 w-3 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.4}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <g className="refuse-trash-lid">
-            <path d="M3 6h18" />
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-          </g>
-          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-          <line x1="10" x2="10" y1="11" y2="17" />
-          <line x1="14" x2="14" y1="11" y2="17" />
-        </svg>
+        <RefuseTrashGlyph className="refuse-trash h-3 w-3 text-gray-500" />
       )}
     </span>
   );
@@ -3151,6 +3296,13 @@ export default function MatchesPage({
         <IntroAccordionSection
           id="avant"
           title="Avant"
+          titleIcons={
+            <>
+              <Heart className="w-3.5 h-3.5" fill="currentColor" />
+              <Zap className="w-3.5 h-3.5" fill="currentColor" />
+            </>
+          }
+          legend={<IntroLegendAvant />}
           isOpen={openIntroSection === 'avant'}
           onToggle={toggleIntroSection}
         >
@@ -3189,6 +3341,8 @@ export default function MatchesPage({
         <IntroAccordionSection
           id="pendant"
           title="Pendant"
+          titleIcons={<MessageCircle className="w-3.5 h-3.5" />}
+          legend={<IntroLegendPendant />}
           isOpen={openIntroSection === 'pendant'}
           onToggle={toggleIntroSection}
         >
@@ -3203,6 +3357,13 @@ export default function MatchesPage({
         <IntroAccordionSection
           id="apres"
           title="Après"
+          titleIcons={
+            <>
+              <RestoreChainGlyph className="w-3.5 h-3.5" />
+              <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
+            </>
+          }
+          legend={<IntroLegendApres />}
           isOpen={openIntroSection === 'apres'}
           onToggle={toggleIntroSection}
         >

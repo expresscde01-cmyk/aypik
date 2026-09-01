@@ -1366,6 +1366,136 @@ button.group[data-matched='true'] {
   margin-top: 0.2em;
 }
 
+/* Bande-légende (état fermé) des accordéons Glossaire — structure seule.
+   Couleurs de statut : classes .match-chip-* ci-dessous. */
+.match-intro-legend,
+.match-intro-legend-brackets,
+.match-intro-legend-bracket,
+.match-intro-legend-bracket-label {
+  background-color: inherit;
+}
+
+.match-intro-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  margin-top: 0.55rem;
+}
+
+.match-intro-legend-brackets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 0.05rem;
+}
+
+.match-intro-legend-bracket {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.05rem;
+}
+
+.match-intro-legend-bracket--full {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.match-intro-legend-bracket--mid {
+  grid-column: 2 / 4;
+  grid-row: 2;
+}
+
+.match-intro-legend-bracket-line {
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  top: 50%;
+  border-top: 1px solid currentColor;
+  pointer-events: none;
+}
+
+.match-intro-legend-bracket-line::before,
+.match-intro-legend-bracket-line::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  height: 6px;
+  border-left: 1px solid currentColor;
+}
+
+.match-intro-legend-bracket-line::before {
+  left: 0;
+}
+
+.match-intro-legend-bracket-line::after {
+  right: 0;
+}
+
+.match-intro-legend-bracket-label {
+  position: relative;
+  z-index: 1;
+  padding: 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.match-intro-legend-bar {
+  display: grid;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.match-intro-legend-bar--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.match-intro-legend-bar--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.match-intro-legend-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 2.15rem;
+  padding: 0.25rem 0.2rem;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 0;
+  white-space: normal;
+}
+
+.match-intro-legend-seg--actions {
+  white-space: nowrap;
+  font-size: 0.58rem;
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+}
+
+.match-intro-legend-icons {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* Même air que l’espace autour des virgules (le texte brut collait au SVG). */
+.match-intro-legend-a {
+  flex-shrink: 0;
+  margin-inline-end: 0.1rem;
+}
+
 /* Pastilles légende dans l’intro Mes Matchs */
 .match-intro-chip {
   display: inline;
