@@ -1454,6 +1454,11 @@ button.group[data-matched='true'] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.match-intro-legend-bar--4 > .match-intro-legend-seg {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .match-intro-legend-bar--2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1474,10 +1479,89 @@ button.group[data-matched='true'] {
 }
 
 .match-intro-legend-seg--actions {
-  white-space: nowrap;
   font-size: 0.58rem;
-  padding-left: 0.1rem;
-  padding-right: 0.1rem;
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.match-intro-legend-seg--split {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid #ce93d8;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.match-intro-legend-actions-split {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.15rem;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.match-intro-legend-actions-declined,
+.match-intro-legend-actions-match {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 50%;
+  padding: 0.25rem 0.08rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+/* Mauve : rejet — fond .match-chip-declined, texte/icônes inchangés */
+.match-intro-legend-actions-declined {
+  background-color: #e8d4f0;
+  color: #6a1b9a;
+}
+
+/* Rose : matcher — fond bg-rose-600 (= text-rose-600 du MatcherWord), texte/icône text-white */
+.match-intro-legend-actions-match {
+  @apply bg-rose-600 text-white;
+  justify-content: center;
+}
+
+/* « À [couronne] » centré ; « ou » ancré à gauche avec écart = 2× (À → couronne) */
+.match-intro-legend-match-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  --match-intro-legend-icon-gap: 0.08rem;
+  --match-intro-legend-a-trail: 0.1rem;
+}
+
+.match-intro-legend-match-icons {
+  flex-shrink: 0;
+  gap: var(--match-intro-legend-icon-gap);
+}
+
+.match-intro-legend-match-icons .match-intro-legend-a {
+  margin-inline-end: var(--match-intro-legend-a-trail);
+}
+
+.match-intro-legend-match-ou {
+  position: absolute;
+  right: 100%;
+  margin-right: calc(
+    2 * (var(--match-intro-legend-a-trail) + var(--match-intro-legend-icon-gap))
+  );
+  top: 50%;
+  transform: translateY(-50%);
+  flex-shrink: 0;
+  color: #6a1b9a;
 }
 
 .match-intro-legend-icons {
@@ -1485,9 +1569,11 @@ button.group[data-matched='true'] {
   flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 0.1rem;
+  gap: 0.08rem;
+  max-width: 100%;
   color: inherit;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 /* Même air que l’espace autour des virgules (le texte brut collait au SVG). */

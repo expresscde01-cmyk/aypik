@@ -38,7 +38,7 @@ import {
 import type { ProfileGender } from '@/components/ProfileSetup';
 import ChatBubbleButton from '@/components/ChatBubbleButton';
 import MatcherButton from '@/components/MatcherButton';
-import { CrownIcon } from '@/components/MatcherWord';
+import MatcherWord, { CrownIcon } from '@/components/MatcherWord';
 import RefuseButton from '@/components/RefuseButton';
 import ArchiveButton from '@/components/ArchiveButton';
 import RestoreLinkButton from '@/components/RestoreLinkButton';
@@ -311,17 +311,28 @@ function IntroLegendAvant() {
         <span className="match-intro-legend-seg match-chip-wait-by-other">
           Par l&apos;autre
         </span>
-        <span className="match-intro-legend-seg match-intro-legend-seg--actions match-chip-declined">
+        <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--split">
           <span className="sr-only">
-            À supprimer, archiver ou matcher
+            À supprimer, archiver ou À matcher
           </span>
-          <span className="match-intro-legend-icons" aria-hidden>
-            <span className="match-intro-legend-a">À</span>
-            <RefuseTrashGlyph className="refuse-trash h-3 w-3" />
-            <span>,</span>
-            <Folder className="h-3 w-3" strokeWidth={2.4} />
-            <span>,</span>
-            <CrownIcon size="0.75rem" />
+          <span className="match-intro-legend-actions-split" aria-hidden>
+            <span className="match-intro-legend-actions-declined">
+              <span className="match-intro-legend-icons">
+                <span className="match-intro-legend-a">À</span>
+                <RefuseTrashGlyph className="refuse-trash h-3 w-3" />
+                <span>,</span>
+                <Folder className="h-3 w-3" strokeWidth={2.4} />
+              </span>
+            </span>
+            <span className="match-intro-legend-actions-match">
+              <span className="match-intro-legend-match-group">
+                <span className="match-intro-legend-match-ou">ou</span>
+                <span className="match-intro-legend-icons match-intro-legend-match-icons">
+                  <span className="match-intro-legend-a">À</span>
+                  <CrownIcon size="0.75rem" />
+                </span>
+              </span>
+            </span>
           </span>
         </span>
       </IntroLegendBar>
@@ -3312,8 +3323,11 @@ export default function MatchesPage({
             pourras soit les refuser (pour qu&apos;ils disparaissent de cette
             page), soit les{' '}
             <ColorChip label="mettre en attente" tone="wait" /> (pour les
-            étudier plus tard), soit les matcher pour voir ainsi ces profils
-            passer à l&apos;étape des matchs.
+            étudier plus tard), soit les{' '}
+            <span className="match-intro-chip inline-flex items-center border border-rose-100 bg-white text-rose-600">
+              <MatcherWord />
+            </span>{' '}
+            pour voir ainsi ces profils passer à l&apos;étape des matchs.
           </p>
           <p>
             Les profils que tu as toi-même mis en attente apparaissent dans{' '}
