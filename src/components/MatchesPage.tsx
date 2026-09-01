@@ -3381,6 +3381,10 @@ export default function MatchesPage({
             si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
             pourras uniquement le supprimer).
           </p>
+          <p>
+            Tes autres matchs, eux, restent bien actifs et continuent
+            normalement — et de nouvelles rencontres sont déjà en chemin.
+          </p>
         </IntroAccordionSection>
       </div>
 
