@@ -459,6 +459,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 lorsque la gravité des faits le justifie. Un signalement peut
                 être adressé à {SUPPORT_EMAIL}.
               </p>
+              <p>
+                L&apos;utilisateur dont le compte a été suspendu ou
+                supprimé pour manquement aux présentes CGU peut contester
+                cette décision en écrivant à {SUPPORT_EMAIL}, en exposant
+                les éléments qu&apos;il souhaite voir pris en compte.
+                L&apos;éditeur examine cette contestation dans un délai
+                raisonnable.
+              </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">
@@ -786,6 +794,21 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 (hébergeur, infrastructure technique, envoi d&apos;e-mails),
                 établis dans l&apos;Union européenne ou offrant des garanties
                 appropriées.
+              </p>
+              <p>
+                Cookies et traceurs. Le Service utilise, à ce jour,
+                uniquement des cookies strictement nécessaires à son
+                fonctionnement (notamment le maintien de la session de
+                connexion), pour lesquels aucun consentement préalable
+                n&apos;est requis. Si l&apos;éditeur venait à mettre en
+                place, à l&apos;avenir, des cookies ou traceurs non
+                essentiels (par exemple à des fins de mesure
+                d&apos;audience), l&apos;utilisateur en serait informé au
+                moyen d&apos;un bandeau dédié lui permettant d&apos;accepter,
+                de refuser ou de personnaliser son consentement avant leur
+                dépôt, conformément à la réglementation applicable. Une
+                politique de cookies dédiée serait alors publiée et
+                accessible depuis le Site.
               </p>
               <p>
                 L&apos;utilisateur dispose des droits d&apos;accès,
