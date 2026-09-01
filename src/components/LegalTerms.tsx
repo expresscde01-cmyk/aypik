@@ -171,7 +171,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </p>
             <p>
               Le Service repose sur la transparence, la bienveillance et le
-              refus des « dark patterns » : pas de piégeage, pas
+              refus des « dark patterns » : pas de pratiques trompeuses, pas
               d&apos;engagement caché, pas de carte bancaire exigée pour
               s&apos;inscrire ou utiliser le cœur du Service, pas de
               réduction artificielle des fonctionnalités de base destinée à
@@ -390,7 +390,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 l&apos;âge déclaré est inférieur à 18 ans.
               </p>
               <p>
-                {BRAND_NAME} se réserve le droit de refuser, suspendre ou
+                L&apos;éditeur se réserve le droit de refuser, suspendre ou
                 supprimer, sans préavis, tout compte dont le titulaire
                 s&apos;avérerait mineur ou aurait fourni une date de
                 naissance inexacte afin de contourner cette interdiction.
@@ -426,7 +426,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 compris au moyen d&apos;adresses distinctes.
               </p>
               <p>
-                {BRAND_NAME} peut refuser l&apos;inscription, suspendre ou
+                L&apos;éditeur peut refuser l&apos;inscription, suspendre ou
                 supprimer, sans préavis ni indemnité, tout compte constituant
                 un doublon, une multi-détention ou une tentative de
                 contournement. L&apos;utilisateur ne saurait alors prétendre
@@ -651,20 +651,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Article 5 — Boost et statut Premium
             </h3>
             <p>
-              Le statut « Premium » affiché sur le profil des membres ayant
-              bénéficié de l&apos;offre de lancement (« Membre Fondateur »)
-              correspond à un ensemble d&apos;avantages temporaires accordés
-              pour une durée de 6 mois à compter de l&apos;inscription :
-              likes et Flash illimités, ainsi qu&apos;un Boost offert pendant
-              le premier mois. La validité de ce Boost est consultable à tout
-              moment depuis la page « Mon profil ».
-            </p>
-            <p>
-              L&apos;obtention d&apos;un Boost, quelle que soit la manière
-              dont il est accordé, ne confère pas à elle seule le statut
-              « Premium ». Le statut « Premium » pourra, à terme, faire
-              l&apos;objet de conditions d&apos;attribution distinctes de
-              celles applicables au Boost.
+              Le badge « Premium » est le libellé d&apos;affichage des
+              avantages Fondateur pendant leur période d&apos;activation de
+              6 mois (article 4) : il matérialise visuellement, sur le
+              profil, que ces avantages (likes et Flash illimités, Boost
+              offert le premier mois) sont actuellement actifs. Il disparaît
+              à l&apos;issue des 6 mois, à la différence du titre
+              honorifique « Membre Fondateur » et de son numéro, qui restent
+              affichés tant que le compte est actif (article 4). La validité
+              du Boost est consultable à tout moment depuis la page « Mon
+              profil ».
             </p>
           </section>
 
