@@ -191,11 +191,6 @@ export default function MatchManageModal({
       {confirmPurge ? (
         <ConfirmDeleteModal
           busy={busy}
-          message={
-            mode === 'manage'
-              ? 'Rompre ce lien ? Tu le retrouveras dans Matchs rompus par toi, pour le rétablir ou le supprimer. Ton interlocuteur le verra dans Matchs rompus par l’autre, sans pouvoir le rétablir.'
-              : undefined
-          }
           onCancel={() => setConfirmPurge(false)}
           onConfirm={() => {
             setConfirmPurge(false);

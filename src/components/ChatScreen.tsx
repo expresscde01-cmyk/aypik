@@ -17,7 +17,7 @@ import {
 } from '@/lib/messaging';
 import {
   archiveActiveMatch,
-  breakActiveMatch,
+  purgeActiveMatch,
 } from '@/lib/matchBreaks';
 import { userErrorMessage } from '@/lib/userError';
 import MatchManageModal from '@/components/MatchManageModal';
@@ -218,12 +218,12 @@ export default function ChatScreen({
     }
   };
 
-  const runManage = async (action: 'archive' | 'break') => {
+  const runManage = async (action: 'archive' | 'purge') => {
     if (manageBusy) return;
     setManageBusy(true);
     setManageError(null);
     try {
-      if (action === 'break') await breakActiveMatch(peer.id);
+      if (action === 'purge') await purgeActiveMatch(peer.id);
       else await archiveActiveMatch(peer.id);
       setShowManage(false);
       onMatchHidden?.();
@@ -232,8 +232,8 @@ export default function ChatScreen({
       setManageError(
         userErrorMessage(
           err,
-          action === 'break'
-            ? 'Impossible de rompre ce lien.'
+          action === 'purge'
+            ? 'Impossible de supprimer définitivement ce lien.'
             : 'Impossible d’archiver ce match.'
         )
       );
@@ -422,7 +422,7 @@ export default function ChatScreen({
           error={manageError}
           onClose={() => setShowManage(false)}
           onArchive={() => void runManage('archive')}
-          onPurge={() => void runManage('break')}
+          onPurge={() => void runManage('purge')}
         />
       ) : null}
     </div>,
