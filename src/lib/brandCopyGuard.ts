@@ -1,4 +1,4 @@
-/** Classe sur le nom AYPIK et le slogan long du bandeau (BrandLockup nav). */
+/** Classe sur le nom AYPIK et les slogans du bandeau nav (long + court mobile). */
 export const BRAND_LOCKUP_NO_COPY_CLASS = 'brand-lockup-no-copy';
 
 function isBrandLockupNoCopyTarget(target: EventTarget | null): boolean {

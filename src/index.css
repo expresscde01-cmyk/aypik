@@ -656,7 +656,7 @@ body {
   touch-action: manipulation;
 }
 
-/* Bandeau — nom AYPIK + slogan long (BrandLockup nav, .brand-lockup-no-copy). */
+/* Bandeau — nom AYPIK + slogans nav (long desktop, court mobile, .brand-lockup-no-copy). */
 .brand-lockup-no-copy {
   -webkit-user-select: none;
   -moz-user-select: none;

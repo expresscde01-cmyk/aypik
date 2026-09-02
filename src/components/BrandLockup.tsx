@@ -190,7 +190,9 @@ export function BrandLockup({
         {BRAND}
       </span>
       {stacked === true ? (
-        <span className="text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+        <span
+          className={`text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
+        >
           {BRAND_SHORT_TAGLINE}
         </span>
       ) : stacked === false ? (
@@ -202,7 +204,9 @@ export function BrandLockup({
       ) : (
         <>
           {!hideTagline && (
-            <span className="sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+            <span
+              className={`sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
+            >
               {BRAND_SHORT_TAGLINE}
             </span>
           )}
