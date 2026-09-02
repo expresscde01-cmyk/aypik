@@ -79,6 +79,10 @@ export const ACCOUNT_STATUS_HOME_BANNER: Record<
   },
 };
 
+/** Corps de la modale de confirmation avant mise en pause (conditionnel). */
+export const ACCOUNT_PAUSE_CONFIRM_DESCRIPTION =
+  'Si ton compte est en pause : tu ne peux plus interagir avec l’application tant que tu ne l’as pas réactivé. Les messages, likes et flashs reçus pendant cette période ne seront pas conservés.';
+
 const visibilityUiKey = (userId: string) =>
   `aypik.accountVisibilityUi.${userId}`;
 

@@ -99,6 +99,8 @@ function AppShellView() {
     'deactivated' | 'incognito' | null
   >(null);
   const [accountMenuRequestKey, setAccountMenuRequestKey] = useState(0);
+  /** Incrémenté à chaque navigation menu → sous-section profil (rejoue le scroll). */
+  const [profileFocusKey, setProfileFocusKey] = useState(0);
 
   usePresenceHeartbeat(
     Boolean(
@@ -132,6 +134,7 @@ function AppShellView() {
 
   const openProfileSection = useCallback(
     (section?: 'profile' | 'password' | 'preferences') => {
+      setProfileFocusKey((k) => k + 1);
       if (section === 'password' || section === 'preferences') {
         const url = new URL(window.location.href);
         url.searchParams.set('open', section);
@@ -566,6 +569,7 @@ function AppShellView() {
             />
             <ProfileSetup
               allowAccountDeletion
+              profileFocusKey={profileFocusKey}
               onDone={async () => {
                 await reloadViewerProfile();
                 mountTab('home');

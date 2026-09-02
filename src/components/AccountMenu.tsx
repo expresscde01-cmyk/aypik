@@ -18,7 +18,7 @@ import { clearAypikAppCache } from '@/lib/appCache';
 import { queryClient } from '@/lib/queryClient';
 import { resetSuggestionSearchPrefs } from '@/lib/suggestionPrefs';
 import {
-  ACCOUNT_STATUS_HOME_BANNER,
+  ACCOUNT_PAUSE_CONFIRM_DESCRIPTION,
   VISIBILITY_RADIO_OPTIONS,
   visibilityMenuHint,
   type VisibilityChoice,
@@ -413,7 +413,7 @@ export default function AccountMenu({
                 id="account-pause-desc"
                 className="text-sm text-gray-700 leading-relaxed"
               >
-                {ACCOUNT_STATUS_HOME_BANNER.deactivated.text}
+                {ACCOUNT_PAUSE_CONFIRM_DESCRIPTION}
               </p>
               {error ? (
                 <p className="text-sm text-red-700 bg-red-50 rounded-xl px-3 py-2">
@@ -459,8 +459,9 @@ export default function AccountMenu({
                 Réinitialiser tes filtres de recherche
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Réinitialise tes filtres : périmètre élargi jusqu&apos;aux
-                régions voisines, et 1 centre d&apos;intérêt en commun.
+                Réinitialise tes filtres à leurs valeurs par défaut : périmètre
+                élargi jusqu&apos;aux régions voisines, et 1 centre
+                d&apos;intérêt en commun.
               </p>
               <div className="flex gap-3 pt-1">
                 <button

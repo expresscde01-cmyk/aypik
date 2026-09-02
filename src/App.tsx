@@ -15,6 +15,7 @@ import LegalTermsPage, {
   closeLegalTerms,
   isLegalTermsOpen,
 } from '@/components/LegalTerms';
+import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 
 const UNSUBSCRIBED_SUCCESS_MESSAGE =
   "Vous êtes désabonné·e. Vous ne recevrez plus d'e-mails de notification de la part d'Aypik. Les e-mails strictement nécessaires au fonctionnement du compte (sécurité, facturation) peuvent encore vous être envoyés.";
@@ -226,6 +227,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <BrandLockupCopyGuard />
           <AppContent />
         </AuthProvider>
       </QueryClientProvider>

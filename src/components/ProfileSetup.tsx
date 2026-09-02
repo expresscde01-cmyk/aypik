@@ -84,9 +84,12 @@ export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications
 export default function ProfileSetup({
   onDone,
   allowAccountDeletion = false,
+  profileFocusKey = 0,
 }: {
   onDone: () => void;
   allowAccountDeletion?: boolean;
+  /** Incrémenté par AppShell à chaque navigation menu → profil (scroll rejoué). */
+  profileFocusKey?: number;
 }) {
   const { user, signOut } = useAuth();
   const {
@@ -183,29 +186,32 @@ export default function ProfileSetup({
     if (loading) return;
     const params = new URLSearchParams(window.location.search);
     const open = params.get('open');
-    if (open !== 'preferences' && open !== 'temoignage' && open !== 'password')
-      return;
+    if (open === 'preferences' || open === 'temoignage' || open === 'password') {
+      if (open === 'preferences') setPrefsHint(true);
+      const t = window.setTimeout(() => {
+        const target =
+          open === 'temoignage'
+            ? testimonialRef.current
+            : open === 'password'
+              ? document.getElementById('change-password')
+              : preferencesRef.current;
+        target?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 120);
 
-    if (open === 'preferences') setPrefsHint(true);
-    const t = window.setTimeout(() => {
-      const target =
-        open === 'temoignage'
-          ? testimonialRef.current
-          : open === 'password'
-            ? document.getElementById('change-password')
-            : preferencesRef.current;
-      target?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }, 120);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('open');
+      window.history.replaceState({}, '', url.pathname + url.search);
 
-    const url = new URL(window.location.href);
-    url.searchParams.delete('open');
-    window.history.replaceState({}, '', url.pathname + url.search);
+      return () => window.clearTimeout(t);
+    }
 
-    return () => window.clearTimeout(t);
-  }, [loading]);
+    if (profileFocusKey > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [loading, profileFocusKey]);
 
   useEffect(() => {
     if (!photoFile) {

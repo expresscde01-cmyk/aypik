@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { BRAND_LOCKUP_NO_COPY_CLASS } from '@/lib/brandCopyGuard';
 
 type BrandLockupProps = {
   variant?: 'nav' | 'hero' | 'inline';
@@ -183,7 +184,9 @@ export function BrandLockup({
             : 'flex-col gap-0.5 sm:min-w-max sm:flex-row sm:items-baseline sm:gap-1'
       } ${className}`}
     >
-      <span className="shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none">
+      <span
+        className={`shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none ${BRAND_LOCKUP_NO_COPY_CLASS}`}
+      >
         {BRAND}
       </span>
       {stacked === true ? (
@@ -191,7 +194,9 @@ export function BrandLockup({
           {BRAND_SHORT_TAGLINE}
         </span>
       ) : stacked === false ? (
-        <span className="whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis">
+        <span
+          className={`whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
+        >
           {BASELINE}
         </span>
       ) : (
@@ -201,7 +206,9 @@ export function BrandLockup({
               {BRAND_SHORT_TAGLINE}
             </span>
           )}
-          <span className="hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis">
+          <span
+            className={`hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
+          >
             {BASELINE}
           </span>
         </>
