@@ -1407,6 +1407,11 @@ button.group[data-matched='true'] {
   grid-row: 2;
 }
 
+.match-intro-legend-bracket--actions {
+  grid-column: 4 / 5;
+  grid-row: 2;
+}
+
 .match-intro-legend-bracket-line {
   position: absolute;
   left: 0.2rem;
@@ -1493,7 +1498,6 @@ button.group[data-matched='true'] {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid #ce93d8;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -1522,46 +1526,35 @@ button.group[data-matched='true'] {
   overflow: hidden;
 }
 
-/* Mauve : rejet — fond .match-chip-declined, texte/icônes inchangés */
+/* Mauve : rejet — contour fermé sur 4 côtés (.match-chip-declined) */
 .match-intro-legend-actions-declined {
   background-color: #e8d4f0;
   color: #6a1b9a;
+  border: 1px solid #ce93d8;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Rose : matcher — fond bg-rose-600 (= text-rose-600 du MatcherWord), texte/icône text-white */
+/* Rose : matcher — fond blanc, sans contour, texte/icône text-rose-600 */
 .match-intro-legend-actions-match {
-  @apply bg-rose-600 text-white;
+  @apply bg-white text-rose-600;
   justify-content: center;
+  padding-inline: 0.08rem;
+  padding-block: 0.25rem;
 }
 
-/* « À [couronne] » centré ; « ou » ancré à gauche avec écart = 2× (À → couronne) */
+/* « Couronne » centrée dans sa moitié */
 .match-intro-legend-match-group {
-  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   --match-intro-legend-icon-gap: 0.08rem;
-  --match-intro-legend-a-trail: 0.1rem;
 }
 
 .match-intro-legend-match-icons {
   flex-shrink: 0;
   gap: var(--match-intro-legend-icon-gap);
-}
-
-.match-intro-legend-match-icons .match-intro-legend-a {
-  margin-inline-end: var(--match-intro-legend-a-trail);
-}
-
-.match-intro-legend-match-ou {
-  position: absolute;
-  right: 100%;
-  margin-right: calc(
-    2 * (var(--match-intro-legend-a-trail) + var(--match-intro-legend-icon-gap))
-  );
-  top: 50%;
-  transform: translateY(-50%);
-  flex-shrink: 0;
-  color: #6a1b9a;
 }
 
 .match-intro-legend-icons {
@@ -1574,12 +1567,6 @@ button.group[data-matched='true'] {
   color: inherit;
   white-space: nowrap;
   overflow: hidden;
-}
-
-/* Même air que l’espace autour des virgules (le texte brut collait au SVG). */
-.match-intro-legend-a {
-  flex-shrink: 0;
-  margin-inline-end: 0.1rem;
 }
 
 /* Pastilles légende dans l’intro Mes Matchs */

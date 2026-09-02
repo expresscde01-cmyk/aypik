@@ -267,7 +267,7 @@ function IntroLegendBracket({
   span,
 }: {
   label: string;
-  span: 'full' | 'mid';
+  span: 'full' | 'mid' | 'actions';
 }) {
   return (
     <div
@@ -304,6 +304,7 @@ function IntroLegendAvant() {
       <div className="match-intro-legend-brackets">
         <IntroLegendBracket label="Like ou Flash" span="full" />
         <IntroLegendBracket label="Mis de côté" span="mid" />
+        <IntroLegendBracket label="À" span="actions" />
       </div>
       <IntroLegendBar columns={4}>
         <span className="match-intro-legend-seg match-chip-new">Nouveaux</span>
@@ -313,12 +314,11 @@ function IntroLegendAvant() {
         </span>
         <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--split">
           <span className="sr-only">
-            À supprimer, archiver ou À matcher
+            Supprimer, archiver ou matcher
           </span>
           <span className="match-intro-legend-actions-split" aria-hidden>
             <span className="match-intro-legend-actions-declined">
               <span className="match-intro-legend-icons">
-                <span className="match-intro-legend-a">À</span>
                 <RefuseTrashGlyph className="refuse-trash h-3 w-3" />
                 <span>,</span>
                 <Folder className="h-3 w-3" strokeWidth={2.4} />
@@ -326,10 +326,8 @@ function IntroLegendAvant() {
             </span>
             <span className="match-intro-legend-actions-match">
               <span className="match-intro-legend-match-group">
-                <span className="match-intro-legend-match-ou">ou</span>
                 <span className="match-intro-legend-icons match-intro-legend-match-icons">
-                  <span className="match-intro-legend-a">À</span>
-                  <CrownIcon size="0.75rem" />
+                  <CrownIcon size="0.9rem" />
                 </span>
               </span>
             </span>
