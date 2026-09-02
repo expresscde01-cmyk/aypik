@@ -3344,7 +3344,7 @@ export default function MatchesPage({
             décliné un de tes likes ou de tes flashs. Tu pourras choisir
             ensuite entre{' '}
             <span className="match-intro-chip match-chip-declined">
-              les archiver ou les supprimer
+              les supprimer ou les archiver
             </span>
             .
           </p>
