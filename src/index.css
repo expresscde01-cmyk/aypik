@@ -1383,6 +1383,18 @@ button.group[data-matched='true'] {
   margin-top: 0.55rem;
 }
 
+/* Avant : 1re rangée de repère — même écart titre → contenu que Pendant/Après (0.55rem = 8.8px @ 16px) */
+.match-intro-legend--avant .match-intro-legend-bracket--full {
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.match-intro-legend--avant
+  .match-intro-legend-bracket--full
+  .match-intro-legend-bracket-line {
+  top: 0;
+}
+
 .match-intro-legend-brackets {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

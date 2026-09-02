@@ -300,7 +300,7 @@ function IntroLegendBar({
 
 function IntroLegendAvant() {
   return (
-    <div className="match-intro-legend">
+    <div className="match-intro-legend match-intro-legend--avant">
       <div className="match-intro-legend-brackets">
         <IntroLegendBracket label="Like ou Flash" span="full" />
         <IntroLegendBracket label="Mis de côté" span="mid" />
