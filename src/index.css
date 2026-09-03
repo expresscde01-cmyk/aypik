@@ -535,6 +535,10 @@ body {
 }
 
 /* Mobile only : bulle « Nouveaux profils » ancrée à gauche, une ligne, pas de coupe à gauche. */
+.match-intro-legend-broken-label > span:not(:last-child)::after {
+  content: ' ';
+}
+
 @media (max-width: 639px) {
   .discovery-sort-pill:first-child .discovery-sort-hint {
     left: 0;
@@ -544,6 +548,17 @@ body {
 
   .discovery-sort-pill:first-child .discovery-sort-hint-panel {
     transform-origin: 0% 100%;
+  }
+
+  .match-intro-legend-broken-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+  }
+
+  .match-intro-legend-broken-label > span:not(:last-child)::after {
+    content: none;
   }
 }
 
@@ -1555,6 +1570,15 @@ button.group[data-matched='true'] {
   grid-template-columns: 3px 3px 3px;
   grid-template-rows: 1fr;
   align-items: stretch;
+  box-sizing: content-box;
+  padding-left: 4px;
+  background:
+    linear-gradient(
+      to right,
+      #c4a482 0 1px,
+      var(--match-stage-new-bg) 1px 4px
+    )
+    no-repeat left / 4px 100%;
   background-color: #ffffff;
   pointer-events: none;
 }
@@ -1591,6 +1615,43 @@ button.group[data-matched='true'] {
   display: block;
   transform: rotate(18deg);
   transform-origin: 50% 85%;
+}
+
+@media (max-width: 639px) {
+  /* 4e colonne = zone couronne (12,5 %) : le damier commence
+     juste après le bord droit de la case mauve Avant. */
+  .match-intro-legend-bar--apres {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 0.58fr)
+      12.5%;
+  }
+
+  .match-intro-legend-bar--apres > .match-intro-legend-seg:not(.match-intro-legend-seg--bouquet) {
+    padding-inline: 0.12rem;
+  }
+
+  .match-intro-legend-bar--apres > .match-intro-legend-seg--bouquet {
+    min-width: 0;
+  }
+
+  .match-intro-legend-bar--apres .match-intro-legend-actions-match--solo {
+    min-width: 0;
+    padding-left: 1.05rem;
+    padding-right: 0.12rem;
+    overflow: visible;
+  }
+
+  .match-intro-legend-bar--apres .match-intro-legend-icons {
+    overflow: visible;
+  }
+
+  .match-intro-legend-bouquet-icon {
+    width: 2.15rem !important;
+    height: 2.15rem !important;
+    flex-shrink: 0;
+  }
 }
 
 .match-intro-legend-seg {

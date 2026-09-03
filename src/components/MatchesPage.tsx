@@ -486,10 +486,16 @@ function IntroLegendApres() {
     <div className="match-intro-legend">
       <IntroLegendBar columns="apres">
         <span className="match-intro-legend-seg match-chip-broken">
-          Match rompu par toi
+          <span className="match-intro-legend-broken-label">
+            <span>Match rompu</span>
+            <span>par toi</span>
+          </span>
         </span>
         <span className="match-intro-legend-seg match-chip-broken-theirs">
-          Match rompu par l&apos;autre
+          <span className="match-intro-legend-broken-label">
+            <span>Match rompu</span>
+            <span>par l&apos;autre</span>
+          </span>
         </span>
         <span className="match-intro-legend-seg match-chip-souris">
           Nouveau cycle
@@ -3527,7 +3533,10 @@ export default function MatchesPage({
               <RestoreChainGlyph className="w-3.5 h-3.5" />
               <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
               <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
-              <Flower2 className="ml-1 w-3.5 h-3.5" strokeWidth={2.4} />
+              <span className="mx-0.5 text-[0.65rem] font-medium leading-none">
+                ou
+              </span>
+              <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
             </>
           }
           legend={<IntroLegendApres />}
