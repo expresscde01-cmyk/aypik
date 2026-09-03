@@ -1756,8 +1756,8 @@ button.group[data-matched='true'] {
 
 @media (max-width: 639px) {
   .match-intro-legend-match-icons > .matcher-crown-mark {
-    width: 0.78rem !important;
-    height: 0.78rem !important;
+    width: 0.86rem !important;
+    height: 0.86rem !important;
   }
 }
 

@@ -3563,7 +3563,7 @@ export default function MatchesPage({
             <span className="match-intro-chip match-chip-souris">
               nouvelles rencontres
             </span>{' '}
-            pleines de succès sont déjà en chemin
+            pleines de bonheur sont déjà en chemin
             <span className="match-intro-dot-cluster" aria-hidden>
               <span className="match-intro-dot match-intro-dot--stage-new" />
               <span className="match-intro-dot match-intro-dot--stage-match" />
