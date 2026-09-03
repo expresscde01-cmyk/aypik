@@ -1541,6 +1541,41 @@ button.group[data-matched='true'] {
   max-width: none;
   min-width: 2.85rem;
   padding: 0;
+  position: relative;
+}
+
+.match-intro-legend-finish-flag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 3px 3px 3px;
+  grid-template-rows: 1fr;
+  align-items: stretch;
+  background-color: #ffffff;
+  pointer-events: none;
+}
+
+.match-intro-legend-finish-flag > span {
+  min-height: 0;
+  height: 100%;
+}
+
+.match-intro-legend-finish-flag > span:nth-child(odd) {
+  background-image: repeating-linear-gradient(
+    #000000 0 3px,
+    #ffffff 3px 6px
+  );
+}
+
+.match-intro-legend-finish-flag > span:nth-child(even) {
+  background-image: repeating-linear-gradient(
+    #ffffff 0 3px,
+    #000000 3px 6px
+  );
 }
 
 .match-intro-legend-bar--apres .match-intro-legend-actions-match--solo {
@@ -1656,6 +1691,13 @@ button.group[data-matched='true'] {
 .match-intro-legend-match-icons {
   flex-shrink: 0;
   gap: var(--match-intro-legend-icon-gap);
+}
+
+@media (max-width: 639px) {
+  .match-intro-legend-match-icons > .matcher-crown-mark {
+    width: 0.78rem !important;
+    height: 0.78rem !important;
+  }
 }
 
 

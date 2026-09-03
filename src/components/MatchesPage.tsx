@@ -496,6 +496,11 @@ function IntroLegendApres() {
         </span>
         <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--bouquet">
           <span className="sr-only">Bouquet — nouvelles rencontres</span>
+          <span className="match-intro-legend-finish-flag" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </span>
           <span
             className="match-intro-legend-actions-match match-intro-legend-actions-match--solo"
             aria-hidden
@@ -3522,7 +3527,7 @@ export default function MatchesPage({
               <RestoreChainGlyph className="w-3.5 h-3.5" />
               <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
               <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
-              <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
+              <Flower2 className="ml-1 w-3.5 h-3.5" strokeWidth={2.4} />
             </>
           }
           legend={<IntroLegendApres />}
