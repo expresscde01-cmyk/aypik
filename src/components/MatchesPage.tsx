@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Folder, Heart, MapPin, AlertCircle, MessageCircle, Zap, X } from 'lucide-react';
+import {
+  ChevronDown,
+  Folder,
+  Flower2,
+  Heart,
+  MapPin,
+  AlertCircle,
+  MessageCircle,
+  RefreshCw,
+  Zap,
+  X,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import ChatScreen from '@/components/ChatScreen';
@@ -262,6 +273,123 @@ function RestoreChainGlyph({ className }: { className?: string }) {
   );
 }
 
+/** Bouquet — SVG statique (légende Après, case blanche). */
+function BouquetIcon({
+  className = '',
+  size = '0.95rem',
+}: {
+  className?: string;
+  size?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <path d="M12.0,22.5 L12.0,16.6" stroke="#5FA05F" strokeWidth="1.1" strokeLinecap="round" fill="none" />
+      <path d="M12.0,16.6 Q12.0,11.5 12.0,7.4" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q13.6,12.3 15.2,9.1" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q13.8,14.3 15.5,13.0" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q12.3,15.4 12.7,15.2" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q10.6,14.8 9.2,14.1" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q10.1,13.1 8.1,10.7" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <path d="M12.0,16.6 Q10.9,11.9 9.8,8.1" stroke="#5FA05F" strokeWidth="0.65" strokeLinecap="round" fill="none" opacity="0.75" />
+      <circle cx="12.97" cy="7.45" r="1.03" fill="#E11D48" opacity="0.88" />
+      <circle cx="12.47" cy="7.97" r="1.13" fill="#E11D48" opacity="0.89" />
+      <circle cx="11.08" cy="5.77" r="0.65" fill="#E11D48" opacity="0.86" />
+      <circle cx="11.59" cy="5.56" r="1.13" fill="#E11D48" opacity="0.84" />
+      <circle cx="12.04" cy="6.17" r="1.25" fill="#E11D48" opacity="0.93" />
+      <circle cx="13.22" cy="4.58" r="0.67" fill="#E11D48" opacity="0.86" />
+      <circle cx="11.38" cy="5.81" r="1.22" fill="#E11D48" opacity="0.86" />
+      <circle cx="13.30" cy="7.71" r="0.72" fill="#E11D48" opacity="0.96" />
+      <circle cx="10.48" cy="6.26" r="0.86" fill="#E11D48" opacity="0.88" />
+      <circle cx="12.13" cy="6.12" r="1.17" fill="#E11D48" opacity="0.84" />
+      <circle cx="12.16" cy="4.96" r="1.23" fill="#E11D48" opacity="0.95" />
+      <circle cx="12.06" cy="3.68" r="1.00" fill="#E11D48" opacity="0.92" />
+      <circle cx="13.02" cy="6.79" r="1.15" fill="#E11D48" opacity="0.83" />
+      <circle cx="14.31" cy="4.59" r="0.90" fill="#E11D48" opacity="0.86" />
+      <circle cx="14.59" cy="8.13" r="1.25" fill="#FFE082" opacity="0.87" />
+      <circle cx="16.31" cy="7.85" r="1.08" fill="#FFE082" opacity="0.97" />
+      <circle cx="14.31" cy="7.80" r="0.98" fill="#FFE082" opacity="0.93" />
+      <circle cx="16.07" cy="9.45" r="0.98" fill="#FFE082" opacity="0.91" />
+      <circle cx="16.09" cy="8.45" r="0.86" fill="#FFE082" opacity="0.96" />
+      <circle cx="14.81" cy="9.15" r="0.83" fill="#FFE082" opacity="0.82" />
+      <circle cx="17.87" cy="8.68" r="1.12" fill="#FFE082" opacity="0.86" />
+      <circle cx="15.01" cy="6.05" r="1.19" fill="#FFE082" opacity="0.96" />
+      <circle cx="12.63" cy="9.83" r="1.23" fill="#FFE082" opacity="0.90" />
+      <circle cx="16.85" cy="6.79" r="0.88" fill="#FFE082" opacity="0.84" />
+      <circle cx="16.30" cy="7.24" r="0.69" fill="#FFE082" opacity="0.94" />
+      <circle cx="16.38" cy="10.92" r="1.15" fill="#A978C5" opacity="0.81" />
+      <circle cx="16.12" cy="13.38" r="0.90" fill="#A978C5" opacity="0.83" />
+      <circle cx="17.20" cy="12.82" r="1.19" fill="#A978C5" opacity="0.97" />
+      <circle cx="16.13" cy="10.92" r="0.80" fill="#A978C5" opacity="0.96" />
+      <circle cx="14.18" cy="12.02" r="0.67" fill="#A978C5" opacity="0.84" />
+      <circle cx="17.34" cy="10.45" r="1.18" fill="#A978C5" opacity="0.90" />
+      <circle cx="14.69" cy="13.08" r="1.16" fill="#A978C5" opacity="0.85" />
+      <circle cx="15.19" cy="12.13" r="1.11" fill="#A978C5" opacity="0.80" />
+      <circle cx="14.94" cy="9.50" r="0.66" fill="#A978C5" opacity="0.90" />
+      <circle cx="14.66" cy="10.43" r="1.00" fill="#A978C5" opacity="0.84" />
+      <circle cx="13.55" cy="14.11" r="1.19" fill="#A978C5" opacity="0.82" />
+      <circle cx="13.26" cy="15.24" r="0.67" fill="#FFCC80" opacity="0.88" />
+      <circle cx="14.39" cy="16.87" r="1.04" fill="#FFCC80" opacity="0.82" />
+      <circle cx="11.72" cy="14.66" r="0.95" fill="#FFCC80" opacity="0.84" />
+      <circle cx="13.20" cy="15.62" r="0.88" fill="#FFCC80" opacity="0.92" />
+      <circle cx="12.43" cy="14.81" r="1.08" fill="#FFCC80" opacity="0.95" />
+      <circle cx="13.13" cy="12.74" r="0.65" fill="#FFCC80" opacity="0.88" />
+      <circle cx="14.76" cy="15.76" r="0.76" fill="#FFCC80" opacity="0.92" />
+      <circle cx="12.76" cy="16.86" r="0.84" fill="#FFCC80" opacity="0.81" />
+      <circle cx="11.97" cy="15.62" r="1.19" fill="#FFCC80" opacity="0.85" />
+      <circle cx="11.22" cy="14.90" r="1.22" fill="#FFCC80" opacity="0.82" />
+      <circle cx="7.55" cy="12.77" r="1.09" fill="#CFD8DC" opacity="0.96" />
+      <circle cx="8.03" cy="15.45" r="0.97" fill="#CFD8DC" opacity="0.90" />
+      <circle cx="10.86" cy="14.55" r="1.24" fill="#CFD8DC" opacity="0.86" />
+      <circle cx="7.11" cy="17.25" r="0.71" fill="#CFD8DC" opacity="0.81" />
+      <circle cx="10.80" cy="14.67" r="1.11" fill="#CFD8DC" opacity="0.88" />
+      <circle cx="8.57" cy="13.48" r="1.04" fill="#CFD8DC" opacity="0.88" />
+      <circle cx="7.51" cy="13.52" r="0.89" fill="#CFD8DC" opacity="0.84" />
+      <circle cx="10.02" cy="14.06" r="0.80" fill="#CFD8DC" opacity="0.92" />
+      <circle cx="8.29" cy="7.77" r="0.92" fill="#E8C4A8" opacity="0.84" />
+      <circle cx="6.38" cy="10.55" r="1.03" fill="#E8C4A8" opacity="0.96" />
+      <circle cx="8.70" cy="10.33" r="0.95" fill="#E8C4A8" opacity="0.92" />
+      <circle cx="9.15" cy="8.22" r="1.03" fill="#E8C4A8" opacity="0.93" />
+      <circle cx="6.25" cy="7.45" r="1.07" fill="#E8C4A8" opacity="0.92" />
+      <circle cx="7.55" cy="12.39" r="0.88" fill="#E8C4A8" opacity="0.90" />
+      <circle cx="8.93" cy="6.73" r="1.24" fill="#E8C4A8" opacity="0.80" />
+      <circle cx="7.06" cy="10.60" r="0.88" fill="#E8C4A8" opacity="0.82" />
+      <circle cx="6.99" cy="9.43" r="0.83" fill="#E8C4A8" opacity="0.96" />
+      <circle cx="7.40" cy="8.21" r="0.71" fill="#E8C4A8" opacity="0.96" />
+      <circle cx="9.12" cy="5.82" r="0.85" fill="#ECEFF1" opacity="0.91" />
+      <circle cx="8.96" cy="5.75" r="1.22" fill="#ECEFF1" opacity="0.85" />
+      <circle cx="9.30" cy="9.05" r="0.74" fill="#ECEFF1" opacity="0.92" />
+      <circle cx="9.88" cy="8.24" r="0.82" fill="#ECEFF1" opacity="0.86" />
+      <circle cx="10.67" cy="6.12" r="0.91" fill="#ECEFF1" opacity="0.90" />
+      <circle cx="9.21" cy="7.39" r="0.88" fill="#ECEFF1" opacity="0.85" />
+      <circle cx="10.56" cy="9.58" r="0.67" fill="#ECEFF1" opacity="0.94" />
+      <circle cx="11.15" cy="5.85" r="0.66" fill="#ECEFF1" opacity="0.89" />
+      <circle cx="12.93" cy="10.63" r="0.75" fill="#E8C4A8" opacity="0.85" />
+      <circle cx="12.01" cy="10.49" r="0.69" fill="#E8C4A8" opacity="0.85" />
+      <circle cx="12.50" cy="10.74" r="0.66" fill="#E8C4A8" opacity="0.85" />
+      <circle cx="12.53" cy="9.99" r="0.55" fill="#E8C4A8" opacity="0.85" />
+      {/* Points blancs — touches de lumière */}
+      <circle cx="11.40" cy="4.30" r="0.58" fill="#ffffff" opacity="0.92" />
+      <circle cx="13.55" cy="5.90" r="0.52" fill="#ffffff" opacity="0.88" />
+      <circle cx="10.15" cy="7.05" r="0.48" fill="#ffffff" opacity="0.90" />
+      <circle cx="15.60" cy="7.50" r="0.55" fill="#ffffff" opacity="0.86" />
+      <circle cx="17.10" cy="9.70" r="0.50" fill="#ffffff" opacity="0.88" />
+      <circle cx="16.50" cy="11.80" r="0.52" fill="#ffffff" opacity="0.85" />
+      <circle cx="14.00" cy="13.60" r="0.48" fill="#ffffff" opacity="0.90" />
+      <circle cx="12.10" cy="15.90" r="0.55" fill="#ffffff" opacity="0.87" />
+      <circle cx="9.50" cy="13.90" r="0.50" fill="#ffffff" opacity="0.89" />
+      <circle cx="7.80" cy="11.10" r="0.52" fill="#ffffff" opacity="0.86" />
+      <circle cx="7.30" cy="8.60" r="0.48" fill="#ffffff" opacity="0.91" />
+      <circle cx="9.70" cy="5.90" r="0.45" fill="#ffffff" opacity="0.87" />
+    </svg>
+  );
+}
+
 function IntroLegendBracket({
   label,
   span,
@@ -286,7 +414,7 @@ function IntroLegendBar({
   columns,
   children,
 }: {
-  columns: 2 | 4;
+  columns: 2 | 4 | 'fit' | 'apres';
   children: React.ReactNode;
 }) {
   return (
@@ -356,12 +484,31 @@ function IntroLegendPendant() {
 function IntroLegendApres() {
   return (
     <div className="match-intro-legend">
-      <IntroLegendBar columns={2}>
+      <IntroLegendBar columns="apres">
         <span className="match-intro-legend-seg match-chip-broken">
           Match rompu par toi
         </span>
         <span className="match-intro-legend-seg match-chip-broken-theirs">
           Match rompu par l&apos;autre
+        </span>
+        <span className="match-intro-legend-seg match-chip-souris">
+          Nouveau cycle
+        </span>
+        <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--bouquet">
+          <span className="sr-only">Bouquet — nouvelles rencontres</span>
+          <span
+            className="match-intro-legend-actions-match match-intro-legend-actions-match--solo"
+            aria-hidden
+          >
+            <span className="match-intro-legend-match-group">
+              <span className="match-intro-legend-icons match-intro-legend-match-icons">
+                <BouquetIcon
+                  className="match-intro-legend-bouquet-icon"
+                  size="1.9rem"
+                />
+              </span>
+            </span>
+          </span>
         </span>
       </IntroLegendBar>
     </div>
@@ -3374,6 +3521,8 @@ export default function MatchesPage({
             <>
               <RestoreChainGlyph className="w-3.5 h-3.5" />
               <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
+              <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
+              <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
             </>
           }
           legend={<IntroLegendApres />}
@@ -3396,7 +3545,17 @@ export default function MatchesPage({
           </p>
           <p>
             Tes autres matchs, eux, restent bien actifs et continuent
-            normalement — et de nouvelles rencontres sont déjà en chemin.
+            normalement — et de{' '}
+            <span className="match-intro-chip match-chip-souris">
+              nouvelles rencontres
+            </span>{' '}
+            pleines de succès sont déjà en chemin
+            <span className="match-intro-dot-cluster" aria-hidden>
+              <span className="match-intro-dot match-intro-dot--stage-new" />
+              <span className="match-intro-dot match-intro-dot--stage-match" />
+              <span className="match-intro-dot match-intro-dot--stage-quiet" />
+              <span className="match-intro-dot match-intro-dot--stage-chat" />
+            </span>
           </p>
         </IntroAccordionSection>
       </div>
