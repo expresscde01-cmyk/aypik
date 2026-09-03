@@ -455,7 +455,7 @@ function IntroLegendAvant() {
             <span className="match-intro-legend-actions-match">
               <span className="match-intro-legend-match-group">
                 <span className="match-intro-legend-icons match-intro-legend-match-icons">
-                  <CrownIcon size="0.9rem" />
+                  <CrownIcon size="0.95rem" />
                 </span>
               </span>
             </span>

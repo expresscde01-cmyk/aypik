@@ -1528,7 +1528,7 @@ button.group[data-matched='true'] {
 .match-intro-legend-bar--apres {
   display: grid;
   width: 100%;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.35fr) minmax(0, 0.85fr) auto;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 0.75fr) minmax(0, 0.48fr);
 }
 
 .match-intro-legend-bar--apres > .match-intro-legend-seg {
@@ -1657,6 +1657,7 @@ button.group[data-matched='true'] {
   flex-shrink: 0;
   gap: var(--match-intro-legend-icon-gap);
 }
+
 
 .match-intro-legend-icons {
   display: inline-flex;
