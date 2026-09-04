@@ -38,3 +38,13 @@ aypik-deploy.zip
 *.patch.txt
 *.patch
 
+# Brouillons / previews brand (hors public/)
+/aypik-*.png
+/Copie*.png
+/Version*.png
+/*avant-apres*.png
+/*preview*.png
+scripts/preview-*.cjs
+public/*-preview.png
+src/assets/
+
