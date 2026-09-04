@@ -11,7 +11,7 @@ import {
 import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
-import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
+import { BrandHeaderBrand, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
@@ -319,9 +319,8 @@ export default function HomeDashboard({
               ref={rowRef}
               className="relative flex w-full items-center justify-between gap-3 h-14"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <BrandMark size="sm" />
-                <BrandLockup compact={taglineCompact} />
+              <div className="inline-flex flex-nowrap items-center min-w-0 max-w-full">
+                <BrandHeaderBrand compact={taglineCompact} />
               </div>
               <div
                 ref={rightRef}
@@ -364,9 +363,8 @@ export default function HomeDashboard({
             ref={mobileTaglineRowRef}
             className="relative flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <BrandMark size="sm" />
-              <BrandLockup hideTagline={!mobileTaglineFits} />
+            <div className="inline-flex flex-nowrap items-center min-w-0 max-w-full">
+              <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
             </div>
             <div
               ref={mobileTaglineRightRef}

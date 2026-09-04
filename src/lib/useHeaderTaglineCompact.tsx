@@ -79,11 +79,11 @@ export function HeaderTaglineWidthProbe({
   return (
     <div
       ref={probeRef}
-      className="absolute left-0 top-0 invisible pointer-events-none flex items-center gap-2 w-max"
+      className="absolute left-0 top-0 invisible pointer-events-none inline-flex flex-nowrap items-center gap-2 w-max"
       aria-hidden
     >
-      <span className="w-8 h-8 shrink-0" />
-      <span className="flex items-baseline gap-1">
+      <span className="w-5 h-5 shrink-0" />
+      <span className="inline-flex flex-nowrap items-baseline gap-1">
         <span className="shrink-0 text-lg font-extrabold uppercase tracking-[0.28em] leading-none">
           {BRAND_NAME}
         </span>
@@ -171,17 +171,17 @@ export function MobileTaglineWidthProbe({
   return (
     <div
       ref={probeRef}
-      className="absolute left-0 top-0 invisible pointer-events-none flex items-center gap-2 w-max"
+      className="absolute left-0 top-0 invisible pointer-events-none inline-flex flex-col gap-0.5 w-max"
       aria-hidden
     >
-      <span className="w-8 h-8 shrink-0" />
-      <span className="flex flex-col gap-0.5">
+      <span className="inline-flex flex-nowrap items-center gap-2">
+        <span className="w-[18px] h-[18px] shrink-0" />
         <span className="text-base font-extrabold uppercase tracking-[0.28em] leading-none">
           {BRAND_NAME}
         </span>
-        <span className="text-[10.5px] font-light tracking-normal leading-none whitespace-nowrap">
-          {BRAND_SHORT_TAGLINE_TEXT}
-        </span>
+      </span>
+      <span className="pl-[calc(18px+0.5rem)] text-[10.5px] font-light tracking-normal leading-none whitespace-nowrap">
+        {BRAND_SHORT_TAGLINE_TEXT}
       </span>
     </div>
   );

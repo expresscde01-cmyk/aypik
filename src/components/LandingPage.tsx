@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type PointerEvent } from 'react';
 import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
-import { BrandLockup, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
+import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalTerms';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
@@ -216,11 +216,10 @@ export function SiteHeader({
                 window.history.pushState({}, '', '/');
               }
             }}
-            className="flex items-center gap-2 min-w-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+            className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
             aria-label="Accueil Aypik"
           >
-            <BrandMark size="sm" />
-            <BrandLockup compact={taglineCompact} />
+            <BrandHeaderBrand compact={taglineCompact} />
           </a>
 
           <div ref={rightRef} className="shrink-0">

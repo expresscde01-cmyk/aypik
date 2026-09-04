@@ -5,7 +5,7 @@ import NotificationsBell from '@/components/NotificationsBell';
 import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
-import { BrandLockup, BrandMark } from '@/components/BrandLockup';
+import { BrandHeaderBrand } from '@/components/BrandLockup';
 import { useAuth } from '@/lib/auth';
 import {
   HeaderTaglineWidthProbe,
@@ -133,11 +133,10 @@ export default function AppTabHeader({
       <button
         type="button"
         onClick={onHome}
-        className="flex items-center gap-2 min-w-0 shrink-0"
+        className="inline-flex flex-nowrap items-center min-w-0 max-w-full"
         aria-label="Retour à l’accueil"
       >
-        <BrandMark size="sm" />
-        <BrandLockup compact={taglineCompact} />
+        <BrandHeaderBrand compact={taglineCompact} />
       </button>
       <div ref={rightRef} className="flex items-center gap-1 shrink-0 ml-auto">
         <NotificationsBell

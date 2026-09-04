@@ -99,30 +99,135 @@ export function BrandHeart({ className = 'w-6 h-6' }: BrandHeartProps) {
 }
 
 type BrandMarkProps = {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'nav' | 'sm' | 'md' | 'lg';
   className?: string;
 };
 
 const MARK_BOX = {
-  sm: 'w-8 h-8 rounded-lg shadow-sm',
-  md: 'w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-lg shadow-rose-200/70',
-  lg: 'w-16 h-16 rounded-2xl shadow-lg shadow-rose-200',
+  /**
+   * Header uniquement — px figés (pas d’em) :
+   * AYPIK = text-base 16px → cœur 18px (+12,5 %) ;
+   * sm+ = text-lg 18px → cœur 20px (+11 %).
+   */
+  nav: 'w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]',
+  sm: 'w-11 h-11',
+  /**
+   * Hero landing uniquement.
+   * Mobile (&lt;640px) : 4.25rem (−~23 % vs 5.5rem) ; sm+ inchangé 6.5rem.
+   */
+  md: 'w-[4.25rem] h-[4.25rem] sm:w-[6.5rem] sm:h-[6.5rem]',
+  lg: 'w-32 h-32 sm:w-36 sm:h-36',
 } as const;
 
-const MARK_HEART = {
-  sm: 'w-4 h-4',
-  md: 'w-6 h-6 sm:w-7 sm:h-7',
-  lg: 'w-8 h-8',
-} as const;
+const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
+  nav: 20,
+  sm: 44,
+  md: 104,
+  lg: 144,
+};
 
-/** Logo tile: light plate + gradient heart aligned with AYPIK text. */
+/** Asset UI (header, landing, auth) — indépendant du favicon SVG/ICO. */
+const BRAND_MARK_SRC = `${import.meta.env.BASE_URL}brand-mark-transparent.png`;
+
+/**
+ * Logo cœur détouré (PNG alpha) — header, landing, auth.
+ * Favicon onglet : pipeline SVG (build-favicons). PWA / apple-touch :
+ * `public/app-icon-source.png` via scripts/build-app-icons.cjs.
+ * Ne pas confondre avec ce PNG transparent (header / hero / auth)
+ * ni avec brand-mark.png (tuile carte).
+ */
 export function BrandMark({ size = 'md', className = '' }: BrandMarkProps) {
+  const px = MARK_INTRINSIC[size];
   return (
-    <div
-      className={`relative shrink-0 bg-white border border-rose-100 flex items-center justify-center ${MARK_BOX[size]} ${className}`}
+    <img
+      src={BRAND_MARK_SRC}
+      alt=""
+      width={px}
+      height={px}
+      decoding="async"
+      className={`relative shrink-0 object-contain select-none ${MARK_BOX[size]} ${className}`}
+      aria-hidden
+      draggable={false}
+    />
+  );
+}
+
+/** Wrapper header : centrage vertical avec le lockup AYPIK + sous-titre. */
+export function BrandMarkNav({ className = '' }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center justify-center leading-none ${className}`}
     >
-      <BrandHeart className={MARK_HEART[size]} />
-    </div>
+      <BrandMark size="nav" />
+    </span>
+  );
+}
+
+type BrandHeaderBrandProps = {
+  compact?: boolean;
+  hideTagline?: boolean;
+  className?: string;
+};
+
+/**
+ * Cluster header : cœur + « AYPIK » toujours côte à côte (nowrap).
+ * Le sous-titre passe sous AYPIK (indenté), hors de la rangée du cœur —
+ * pour que le centrage vertical du cœur ne se fasse que sur la ligne AYPIK.
+ */
+export function BrandHeaderBrand({
+  compact,
+  hideTagline = false,
+  className = '',
+}: BrandHeaderBrandProps) {
+  const stacked =
+    compact === true ? true : compact === false ? false : null;
+
+  const brandClass = `shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none ${BRAND_LOCKUP_NO_COPY_CLASS}`;
+  const shortTagClass = `min-w-0 text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
+  const longTagClass = `min-w-0 whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
+  /** Décalage = largeur cœur nav (18 / sm:20) + gap-2 (0.5rem). */
+  const tagIndent = 'pl-[calc(18px+0.5rem)] sm:pl-[calc(20px+0.5rem)]';
+
+  if (stacked === false) {
+    return (
+      <span
+        className={`inline-flex flex-nowrap items-center gap-2 min-w-0 max-w-full ${className}`}
+      >
+        <BrandMarkNav />
+        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
+          <span className={brandClass}>{BRAND}</span>
+          <span className={longTagClass}>{BASELINE}</span>
+        </span>
+      </span>
+    );
+  }
+
+  const showShortTag =
+    stacked === true || (!hideTagline && stacked === null);
+
+  return (
+    <span
+      className={`inline-flex flex-col items-stretch gap-0.5 min-w-0 max-w-full ${className}`}
+    >
+      <span className="inline-flex flex-nowrap items-center gap-2 min-w-0">
+        <BrandMark size="nav" />
+        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
+          <span className={brandClass}>{BRAND}</span>
+          {stacked === null && (
+            <span className={`hidden sm:inline ${longTagClass}`}>{BASELINE}</span>
+          )}
+        </span>
+      </span>
+      {stacked === true ? (
+        <span className={`${tagIndent} ${shortTagClass}`}>{BRAND_SHORT_TAGLINE}</span>
+      ) : (
+        showShortTag && (
+          <span className={`sm:hidden ${tagIndent} ${shortTagClass}`}>
+            {BRAND_SHORT_TAGLINE}
+          </span>
+        )
+      )}
+    </span>
   );
 }
 
