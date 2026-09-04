@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import bcrypt from "npm:bcryptjs";
 import {
   buildPasswordRecoveryPageUrl,
   buildPasswordResetEmailHtml,
@@ -18,9 +19,15 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+/** bcrypt cost 10 (défaut GoTrue). Résultat de compare ignoré — égalise le timing. */
+const DUMMY_PASSWORD_HASH =
+  "$2a$10$D5grTTzcsqyvAeIAnY/mYOIqliCoG7eAMX0/oFcuD.iErkksEbcAa";
+
 type Payload = {
   action?: string;
   email?: string;
+  password?: string;
+  captchaToken?: string;
   redirectTo?: string;
 };
 
@@ -41,6 +48,14 @@ Deno.serve(async (req) => {
     const email = (body.email || "").trim().toLowerCase();
     if (!email || !email.includes("@")) {
       return json({ error: "E-mail invalide" }, 400);
+    }
+
+    if (action === "sign_in") {
+      return await handleSignIn(
+        email,
+        body.password || "",
+        body.captchaToken,
+      );
     }
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -231,6 +246,79 @@ async function handleNotifyLock(
     id: sent.id,
   });
 
+}
+
+function invalidCredentialsResponse() {
+  return json(
+    { code: "invalid_credentials", message: "Invalid login credentials" },
+    400,
+  );
+}
+
+function dummyPasswordCheck(password: string): Promise<void> {
+  return new Promise((resolve) => {
+    bcrypt.compare(password, DUMMY_PASSWORD_HASH, () => {
+      resolve();
+    });
+  });
+}
+
+function isGoTrueInvalidCredentials(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  const code = (error.code || "").toLowerCase();
+  const msg = (error.message || "").toLowerCase();
+  return (
+    code === "invalid_credentials" ||
+    code === "invalid_grant" ||
+    code === "invalid_login_credentials" ||
+    msg.includes("invalid login credentials")
+  );
+}
+
+async function handleSignIn(
+  email: string,
+  password: string,
+  captchaToken?: string,
+) {
+  const anon = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+  );
+
+  const dummyPromise = dummyPasswordCheck(password).catch(() => {});
+  const authPromise = anon.auth.signInWithPassword({
+    email,
+    password,
+    options: { captchaToken: captchaToken || undefined },
+  });
+  const [{ data, error }] = await Promise.all([authPromise, dummyPromise]);
+
+  if (error) {
+    if (isGoTrueInvalidCredentials(error)) {
+      return invalidCredentialsResponse();
+    }
+    return json(
+      {
+        code: error.code || "auth_error",
+        message: error.message,
+        error: error.message,
+      },
+      error.status || 400,
+    );
+  }
+
+  const session = data.session;
+  if (!session?.access_token || !session?.refresh_token) {
+    return invalidCredentialsResponse();
+  }
+
+  return json({
+    ok: true,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
 }
 
 function json(body: Record<string, unknown>, status = 200) {

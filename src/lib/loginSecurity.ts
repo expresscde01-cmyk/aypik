@@ -331,6 +331,100 @@ export async function sendPasswordResetEmail(
   );
 }
 
+type AuthFnError = Error & { code?: string; status?: number };
+
+async function parseFunctionPayload(
+  error: unknown,
+  data: unknown
+): Promise<Record<string, unknown>> {
+  const fromData =
+    data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+  if (Object.keys(fromData).length > 0) return fromData;
+
+  const ctx =
+    error && typeof error === 'object' && 'context' in error
+      ? (error as { context?: Response }).context
+      : undefined;
+  if (ctx && typeof ctx.clone === 'function') {
+    try {
+      const body = (await ctx.clone().json()) as unknown;
+      if (body && typeof body === 'object') return body as Record<string, unknown>;
+    } catch {
+      /* corps non JSON */
+    }
+  }
+  return fromData;
+}
+
+/**
+ * Connexion via l’Edge Function (dummy bcrypt si l’e-mail n’existe pas).
+ * Remplace signInWithPassword sur l’écran de login pour égaliser le timing.
+ */
+export async function signInWithPasswordSecure(
+  email: string,
+  password: string,
+  captchaToken?: string
+): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('login-security', {
+    body: {
+      action: 'sign_in',
+      email: email.trim(),
+      password,
+      captchaToken,
+    },
+  });
+
+  const payload = await parseFunctionPayload(error, data);
+
+  if (
+    payload.ok === true &&
+    typeof payload.access_token === 'string' &&
+    typeof payload.refresh_token === 'string'
+  ) {
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: payload.access_token,
+      refresh_token: payload.refresh_token,
+    });
+    if (sessionError) throw sessionError;
+    return;
+  }
+
+  const code =
+    typeof payload.code === 'string' && payload.code.trim()
+      ? payload.code.trim()
+      : '';
+  const message =
+    (typeof payload.message === 'string' && payload.message.trim()) ||
+    (typeof payload.error === 'string' && payload.error.trim()) ||
+    '';
+
+  if (
+    code === 'invalid_credentials' ||
+    code === 'invalid_grant' ||
+    code === 'invalid_login_credentials' ||
+    /invalid login credentials/i.test(message)
+  ) {
+    const err: AuthFnError = new Error('Invalid login credentials');
+    err.code = 'invalid_credentials';
+    err.status = 400;
+    throw err;
+  }
+
+  if (code) {
+    const err: AuthFnError = new Error(message || code);
+    err.code = code;
+    throw err;
+  }
+
+  if (message) {
+    throw new Error(message);
+  }
+
+  throw new Error(
+    'Impossible de se connecter pour le moment. Réessaie dans un instant.'
+  );
+}
+
 /** E-mail d’alerte + lien de déblocage. true si l’Edge Function a envoyé. */
 export async function notifyAccountLocked(email: string): Promise<boolean> {
   try {
