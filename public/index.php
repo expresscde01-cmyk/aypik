@@ -61,6 +61,17 @@ if ($html === false) {
 
 $nonceAttr = htmlspecialchars($nonce, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
+// Racine de l’app (pas l’URL /contact) : les assets relatifs ./assets/…
+// doivent rester à la racine du site, y compris en sous-dossier.
+$html = preg_replace('/<base\b[^>]*>/i', '', $html) ?? $html;
+$scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+$scriptDir = dirname($scriptName);
+$basePath = ($scriptDir === '/' || $scriptDir === '\\' || $scriptDir === '.')
+    ? '/'
+    : rtrim($scriptDir, '/') . '/';
+$baseTag = '<base href="' . htmlspecialchars($basePath, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">';
+$html = preg_replace('/<head([^>]*)>/i', '<head$1>' . $baseTag, $html, 1) ?? $html;
+
 // Meta lisible par le front (Turnstile.tsx pose le même nonce sur api.js).
 $meta = '<meta name="csp-nonce" content="' . $nonceAttr . '">';
 if (stripos($html, 'name="csp-nonce"') === false) {

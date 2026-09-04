@@ -11,6 +11,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import {
   EMAIL_ALREADY_REGISTERED_MESSAGE,
+  EMAIL_OR_PASSWORD_INCORRECT_MESSAGE,
   isEmailAlreadyRegisteredError,
   isInvalidLoginCredentials,
   isObfuscatedDuplicateSignup,
@@ -29,6 +30,7 @@ import {
   recordLoginFailure,
   isValidResetEmail,
   sendPasswordResetEmail,
+  signInWithPasswordSecure,
 } from '@/lib/loginSecurity';
 import {
   ADULTS_ONLY_MESSAGE,
@@ -150,7 +152,7 @@ export default function AuthScreen({
 
     setAccountLocked(false);
     setOfferPasswordReset(true);
-    setError('Mot de passe incorrect.');
+    setError(EMAIL_OR_PASSWORD_INCORRECT_MESSAGE);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,16 +231,11 @@ export default function AuthScreen({
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      await signInWithPasswordSecure(
         email,
         password,
-        options: { captchaToken: captchaToken || undefined },
-      });
-      if (error) throw error;
-      if (!data.session) {
-        await handlePasswordFailure(email);
-        return;
-      }
+        captchaToken || undefined
+      );
 
       const stillLocked = await clearLoginFailuresIfAllowed();
       if (stillLocked) {
@@ -256,7 +253,7 @@ export default function AuthScreen({
       }
       if (mode === 'signin' && isInvalidLoginCredentials(err)) {
         setOfferPasswordReset(true);
-        setError('Mot de passe incorrect.');
+        setError(EMAIL_OR_PASSWORD_INCORRECT_MESSAGE);
         return;
       }
       setError(translateAuthError(err));

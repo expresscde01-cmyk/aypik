@@ -92,12 +92,16 @@ export function matchedNoDialogueLabel(
   return `${matchedHistoryLabel(iso, role)} — pas encore de dialogue`;
 }
 
-/** Carte Mes Matchs — match avec au moins un échange de messages. */
+/** Carte Mes Matchs — match avec au moins un message de chaque côté. */
 export function matchedWithDialogueLabel(
   iso: string,
   role: MatchRole = 'accepted'
 ): string {
   return `${matchedHistoryLabel(iso, role)} — Discussion en cours`;
+}
+
+export function matchDialogueChipLabel(hasTwoWay: boolean): string {
+  return hasTwoWay ? 'Discussion en cours' : '1er mot';
 }
 
 function senderNameFromBody(body: string): string {
@@ -201,6 +205,16 @@ export function matchWaitReminderNotification(
   };
 }
 
+export function matchWaitExpiryNotification(): {
+  title: string;
+  body: string;
+} {
+  return {
+    title: 'Attente bientôt expirée',
+    body: 'Tu as des profils en attente qui vont bientôt expirer, pense à les consulter.',
+  };
+}
+
 export function matchDeclinedNotification(
   name: string,
   origin: InteractionOrigin = 'like',
@@ -276,7 +290,7 @@ export function brokenMatchStatusLabel(
   return when ? `Match rompu le ${when}` : 'Match rompu';
 }
 
-/** Origine d’une fiche « Matchs rompus » (avant rupture). */
+/** Origine d’une fiche « Matchs rompus » (avant rupture) : échange des deux côtés. */
 export function brokenMatchOriginLabel(hadDialogue: boolean): string {
   return hadDialogue
     ? "Provenait d'une discussion en cours"
@@ -457,6 +471,10 @@ export function displaySocialNotification(n: SocialCopyInput): {
 
   if (n.kind === 'match_wait_reminder') {
     return withPeriod(matchWaitReminderNotification(name));
+  }
+
+  if (n.kind === 'match_wait_expiry') {
+    return withPeriod(matchWaitExpiryNotification());
   }
 
   if (n.kind === 'match_declined') {

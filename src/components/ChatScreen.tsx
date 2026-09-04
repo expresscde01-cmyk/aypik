@@ -12,6 +12,7 @@ import {
   fetchMessages,
   fetchMessagesForPeer,
   formatMessageTime,
+  hasTwoWayDialogue,
   markConversationRead,
   sendMessage,
 } from '@/lib/messaging';
@@ -20,6 +21,7 @@ import {
   purgeActiveMatch,
 } from '@/lib/matchBreaks';
 import { userErrorMessage } from '@/lib/userError';
+import { matchDialogueChipLabel } from '@/lib/interactionCopy';
 import MatchManageModal from '@/components/MatchManageModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 
@@ -289,7 +291,14 @@ export default function ChatScreen({
               </h2>
               <p className="text-[11px] text-rose-500 font-medium flex items-center gap-1">
                 <Heart className="w-3 h-3" fill="currentColor" />
-                Conversation
+                {loading
+                  ? 'Conversation'
+                  : matchDialogueChipLabel(
+                      Boolean(
+                        user &&
+                          hasTwoWayDialogue(messages, user.id, peer.id)
+                      )
+                    )}
               </p>
             </div>
           </div>

@@ -3,12 +3,16 @@ import { isAuthWeakPasswordError } from '@supabase/supabase-js';
 export const EMAIL_ALREADY_REGISTERED_MESSAGE =
   'Un compte existe déjà avec cette adresse e-mail. Connecte-toi plutôt.';
 
+export const EMAIL_OR_PASSWORD_INCORRECT_MESSAGE =
+  'Email ou mot de passe incorrect.';
+
 const CODE_MESSAGES: Record<string, string> = {
   weak_password: 'Le mot de passe est trop faible.',
   email_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
   user_already_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
   already_registered: EMAIL_ALREADY_REGISTERED_MESSAGE,
-  invalid_credentials: 'Mot de passe incorrect.',
+  invalid_credentials: EMAIL_OR_PASSWORD_INCORRECT_MESSAGE,
+  captcha_failed: 'CAPTCHA invalide ou expiré. Réessaie.',
   email_not_confirmed:
     'Confirme ton adresse e-mail avant de te connecter.',
   email_address_invalid: 'Adresse e-mail invalide.',
@@ -32,7 +36,9 @@ const MESSAGE_PATTERNS: [RegExp, string][] = [
   [/user_already_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
   [/email_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
   [/users_normalized_email/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
-  [/invalid login credentials/i, 'Mot de passe incorrect.'],
+  [/invalid login credentials/i, EMAIL_OR_PASSWORD_INCORRECT_MESSAGE],
+  [/captcha protection/i, 'CAPTCHA invalide ou expiré. Réessaie.'],
+  [/captcha_failed/i, 'CAPTCHA invalide ou expiré. Réessaie.'],
   [/email.*confirm/i, 'Confirme ton adresse e-mail.'],
   [/unable to validate email/i, 'Adresse e-mail invalide.'],
   [/signup requires a valid password/i, 'Saisis un mot de passe valide.'],
@@ -143,6 +149,7 @@ export function isInvalidLoginCredentials(err: unknown): boolean {
     /invalid login credentials/i.test(message) ||
     /invalid_credentials/i.test(message) ||
     /email or password/i.test(message) ||
+    /email ou mot de passe incorrect/i.test(message) ||
     /mot de passe incorrect/i.test(message)
   );
 }
@@ -156,11 +163,13 @@ export function shouldCountLoginFailure(err: unknown): boolean {
   if (
     code === 'email_not_confirmed' ||
     code === 'over_request_rate_limit' ||
-    code === 'over_email_send_rate_limit'
+    code === 'over_email_send_rate_limit' ||
+    code === 'captcha_failed'
   ) {
     return false;
   }
   const message = err instanceof Error ? err.message : String(err ?? '');
   if (/failed to fetch|networkerror|load failed/i.test(message)) return false;
+  if (/captcha protection|captcha_failed/i.test(message)) return false;
   return isInvalidLoginCredentials(err) || code !== '';
 }

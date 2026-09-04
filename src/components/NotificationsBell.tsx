@@ -50,7 +50,8 @@ function isInboxNotification(n: SocialNotification): boolean {
     n.kind === 'message_received' ||
     n.kind === 'match_waiting' ||
     n.kind === 'match_declined' ||
-    n.kind === 'match_wait_reminder'
+    n.kind === 'match_wait_reminder' ||
+    n.kind === 'match_wait_expiry'
   );
 }
 
@@ -81,6 +82,7 @@ function toneFromKind(
     case 'category_new':
       return 'new';
     case 'match_wait_reminder':
+    case 'match_wait_expiry':
     case 'category_wait':
       return 'wait';
     case 'match_waiting':
@@ -449,7 +451,8 @@ export default function NotificationsBell({
 
   const socialItems = items.filter(isVisibleSocial);
   const hasWaitReminder = socialItems.some(
-    (n) => n.kind === 'match_wait_reminder'
+    (n) =>
+      n.kind === 'match_wait_reminder' || n.kind === 'match_wait_expiry'
   );
   const socialOnlyUnread = items.filter(
     (n) => !n.read_at && isVisibleSocial(n)
@@ -1040,6 +1043,7 @@ export default function NotificationsBell({
         (n.actor_id && actorNames[n.actor_id]?.trim()) || null;
       const reminderName = actorLabel;
       const isWaitReminder = n.kind === 'match_wait_reminder';
+      const isWaitExpiry = n.kind === 'match_wait_expiry';
 
       if (n.kind === 'message_received') {
         onOpenInbox?.(n.actor_id, true);
@@ -1054,6 +1058,12 @@ export default function NotificationsBell({
         onOpenInbox?.(n.actor_id, {
           highlight: true,
           hintName: reminderName,
+        });
+      } else if (isWaitExpiry) {
+        onOpenInbox?.(n.actor_id, {
+          highlight: Boolean(n.actor_id),
+          hintName: actorLabel,
+          pulseCategory: 'wait',
         });
       } else if (n.kind === 'match_waiting') {
         onOpenInbox?.(n.actor_id, {

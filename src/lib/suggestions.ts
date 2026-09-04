@@ -22,7 +22,8 @@ export type SocialNotificationKind =
   | 'message_received'
   | 'match_waiting'
   | 'match_declined'
-  | 'match_wait_reminder';
+  | 'match_wait_reminder'
+  | 'match_wait_expiry';
 
 export type SocialNotification = {
   id: string;
@@ -41,7 +42,7 @@ export type SocialNotification = {
   created_at: string;
 };
 
-/** Interlocuteurs avec au moins un message échangé (pour masquer les matchs obsolètes). */
+/** Interlocuteurs avec au moins un message (tous sens). Statut « discussion » : fetchPeersWithTwoWayDialogue. */
 export async function fetchPeersWithMessages(): Promise<Set<string>> {
   const { data: auth } = await supabase.auth.getUser();
   const me = auth.user?.id;

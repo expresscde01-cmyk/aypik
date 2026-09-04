@@ -439,3 +439,7 @@ verify_jwt = false
 # Alerte blocage compte (4 échecs mot de passe). Appelée sans session.
 [functions.login-security]
 verify_jwt = false
+
+# Formulaire de contact public (Turnstile + Resend).
+[functions.contact]
+verify_jwt = false

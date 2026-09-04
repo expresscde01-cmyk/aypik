@@ -13,8 +13,10 @@ import { queryClient } from '@/lib/queryClient';
 import { fetchMaintenanceStatus } from '@/lib/maintenance';
 import LegalTermsPage, {
   closeLegalTerms,
+  isContactPage,
   isLegalTermsOpen,
 } from '@/components/LegalTerms';
+import ContactPage from '@/components/ContactPage';
 import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 
 const UNSUBSCRIBED_SUCCESS_MESSAGE =
@@ -100,6 +102,31 @@ function UnsubscribeBanner({
   );
 }
 
+/**
+ * Identifiant d’écran pour le scroll. Pas de React Router : les vues
+ * s’échangent ici. Un changement d’écran (CGU, contact, auth, etc.)
+ * remet toujours la fenêtre en haut — y compris si on rouvre les CGU
+ * après les avoir déjà lues plus bas.
+ */
+function activeAppRoute(opts: {
+  maintenanceGate: 'checking' | 'on' | 'off';
+  showLegal: boolean;
+  loading: boolean;
+  hasSession: boolean;
+  passwordRecovery: boolean;
+  showAuth: boolean;
+}): string {
+  if (opts.maintenanceGate === 'on') return 'maintenance';
+  if (opts.maintenanceGate === 'checking') return 'checking';
+  if (opts.showLegal) return 'legal';
+  if (isContactPage()) return 'contact';
+  if (opts.loading) return 'loading';
+  if (opts.hasSession && opts.passwordRecovery) return 'recovery';
+  if (opts.hasSession) return 'app';
+  if (opts.showAuth) return 'auth';
+  return 'landing';
+}
+
 function AppContent() {
   const { session, loading, passwordRecovery, finishPasswordRecovery } = useAuth();
   /**
@@ -145,18 +172,37 @@ function AppContent() {
     if (session) setShowAuth(false);
   }, [session]);
 
+  const route = activeAppRoute({
+    maintenanceGate,
+    showLegal,
+    loading,
+    hasSession: Boolean(session),
+    passwordRecovery,
+    showAuth,
+  });
+
+  useEffect(() => {
+    history.scrollRestoration = 'manual';
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [route]);
+
   let page: ReactNode;
-  if (maintenanceGate === 'on') {
+  if (route === 'maintenance') {
     page = <MaintenanceScreen message={maintenanceMessage} />;
-  } else if (maintenanceGate === 'checking' || loading) {
+  } else if (route === 'checking' || route === 'loading') {
     page = <RouteFallback />;
-  } else if (showLegal) {
+  } else if (route === 'legal') {
     page = <LegalTermsPage onClose={closeLegalTerms} />;
-  } else if (session && passwordRecovery) {
+  } else if (route === 'contact') {
+    page = <ContactPage />;
+  } else if (route === 'recovery') {
     page = <ResetPasswordScreen onDone={finishPasswordRecovery} />;
-  } else if (session) {
+  } else if (route === 'app') {
     page = <AppShell />;
-  } else if (showAuth) {
+  } else if (route === 'auth') {
     page = (
       <AuthScreen
         initialMode={authMode}

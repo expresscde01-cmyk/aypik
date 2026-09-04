@@ -27,9 +27,9 @@ import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
 import { userErrorMessage } from '@/lib/userError';
 import {
-  fetchPeersWithMessages,
   fetchSocialNotifications,
 } from '@/lib/suggestions';
+import { fetchPeersWithTwoWayDialogue } from '@/lib/messaging';
 import {
   formatInteractionDate,
   matchRoleFromDates,
@@ -913,7 +913,6 @@ export default function MatchesPage({
   /** Modale compacte après « sens interdit » sur une fiche Mis en attente. */
   const [openWaitingManage, setOpenWaitingManage] = useState<Match | null>(null);
   const [brokenBusyId, setBrokenBusyId] = useState<string | null>(null);
-  const restoredChatPeersRef = useRef<Set<string>>(new Set());
   const matchesLoadGen = useRef(0);
   const waitArchivesLoadGen = useRef(0);
   const restoredWaitActorsRef = useRef<Set<string>>(new Set());
@@ -1171,11 +1170,10 @@ export default function MatchesPage({
 
       let peersChat = new Set<string>();
       try {
-        peersChat = await fetchPeersWithMessages();
+        peersChat = await fetchPeersWithTwoWayDialogue();
       } catch {
         peersChat = new Set();
       }
-      for (const id of restoredChatPeersRef.current) peersChat.add(id);
       setPeersWithChat(peersChat);
 
       const list: Match[] = [...byId.values()].map((p) => {
@@ -1799,9 +1797,7 @@ export default function MatchesPage({
               ? matches.find((m) => {
                   const isPending = m.kind !== 'match';
                   const isMatched = !isPending || m.alreadyLiked;
-                  const hasDialogue =
-                    peersWithChat.has(m.profile.id) ||
-                    (unread.bySender[m.profile.id] || 0) > 0;
+                  const hasDialogue = peersWithChat.has(m.profile.id);
                   return isMatched && !m.waiting && !hasDialogue;
                 })
               : matches.find(
@@ -2350,17 +2346,11 @@ export default function MatchesPage({
       setError(null);
       try {
         await restoreBrokenMatch(card.profile.id);
-        restoredChatPeersRef.current.add(card.profile.id);
         setOpenBroken(null);
         setBrokenMatches((prev) =>
           prev.filter((c) => c.archiveId !== card.archiveId)
         );
         await Promise.all([loadMatches(), loadBrokenMatches()]);
-        setPeersWithChat((prev) => {
-          const next = new Set(prev);
-          next.add(card.profile.id);
-          return next;
-        });
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible de rétablir ce match.'));
         await loadBrokenMatches();
@@ -2378,7 +2368,6 @@ export default function MatchesPage({
       setError(null);
       try {
         await purgeBrokenMatch(card.profile.id);
-        restoredChatPeersRef.current.delete(card.profile.id);
         setOpenBroken(null);
         setBrokenMatches((prev) =>
           prev.filter((c) => c.archiveId !== card.archiveId)
@@ -2417,9 +2406,7 @@ export default function MatchesPage({
       if (brokenPeerIds.has(match.profile.id)) continue;
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
-      const hasDialogue =
-        peersWithChat.has(match.profile.id) ||
-        (unread.bySender[match.profile.id] || 0) > 0;
+      const hasDialogue = peersWithChat.has(match.profile.id);
       let floor: MatchFloor;
       if (match.waiting) floor = 'wait';
       else if (isMatched) floor = hasDialogue ? 'matched-chat' : 'matched-quiet';
@@ -2439,7 +2426,6 @@ export default function MatchesPage({
   }, [
     matches,
     peersWithChat,
-    unread.bySender,
     user,
     waitArchives,
     brokenPeerIds,
@@ -2496,9 +2482,7 @@ export default function MatchesPage({
       .map((match) => {
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
-      const hasDialogue =
-        peersWithChat.has(match.profile.id) ||
-        (unread.bySender[match.profile.id] || 0) > 0;
+      const hasDialogue = peersWithChat.has(match.profile.id);
       let status: MatchesInboxStatus;
       if (match.waiting) status = 'wait';
       else if (isMatched) status = hasDialogue ? 'matched-chat' : 'matched';
@@ -2511,15 +2495,14 @@ export default function MatchesPage({
       };
     });
     publish(next);
-  }, [matches, peersWithChat, unread.bySender, publish, brokenPeerIds]);
+  }, [matches, peersWithChat, publish, brokenPeerIds]);
 
   const renderMatchCard = (match: Match) => {
     const isPending = match.kind !== 'match';
     const isFlash = match.origin === 'flash';
     const isMatched = !isPending || match.alreadyLiked;
     const unreadCount = unread.bySender[match.profile.id] || 0;
-    const hasDialogue =
-      peersWithChat.has(match.profile.id) || unreadCount > 0;
+    const hasDialogue = peersWithChat.has(match.profile.id);
     const matchDateIso =
       match.matchRole === 'initiated'
         ? match.matched_at
@@ -3439,6 +3422,7 @@ export default function MatchesPage({
           peer={chatPeer}
           onClose={() => {
             setChatPeer(null);
+            void loadMatches();
             void unread.refresh();
             onChatClosed?.();
           }}
@@ -3496,6 +3480,9 @@ export default function MatchesPage({
               Mis en attente par l&apos;autre
             </span>{' '}
             : tu pourras consulter le profil, la décision lui appartenant.
+            Sans décision au bout de 3 mois, l&apos;attente expire et le
+            profil est traité comme un refus. Un rappel t&apos;est envoyé
+            7 jours avant.
           </p>
           <p>
             Tu trouveras également sur cette page tous les profils qui ont
@@ -3521,7 +3508,7 @@ export default function MatchesPage({
             <ColorChip label="1er mot" tone="matched-quiet" /> dès qu&apos;un
             like ou un flash devient réciproque, soit{' '}
             <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
-            lorsqu&apos;il y aura eu au moins un échange.
+            lorsqu&apos;il y aura eu au moins un message de chaque côté.
           </p>
         </IntroAccordionSection>
 

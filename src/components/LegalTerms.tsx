@@ -46,6 +46,13 @@ export function LegalLink({
 
 export const SUPPORT_EMAIL = 'aypik.contact@gmail.com';
 
+export const CONTACT_PATH = '/contact';
+
+export function isContactPage() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  return path === CONTACT_PATH;
+}
+
 export function ContactLink({
   className = '',
 }: {
@@ -53,7 +60,9 @@ export function ContactLink({
 }) {
   return (
     <a
-      href={`mailto:${SUPPORT_EMAIL}`}
+      href={CONTACT_PATH}
+      target="_blank"
+      rel="noopener noreferrer"
       className={
         className ||
         'underline underline-offset-2 hover:text-rose-600 transition-colors'
@@ -207,6 +216,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 personne physique, joignable à l&apos;adresse{' '}
                 <a
                   href={`mailto:${SUPPORT_EMAIL}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-rose-600"
                 >
                   {SUPPORT_EMAIL}
@@ -994,6 +1005,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 pour l&apos;utilisateur dans « Mis en attente par l&apos;autre
                 », en consultation uniquement : la décision d&apos;attendre,
                 de matcher ou de refuser appartient à l&apos;autre membre.
+                Sans décision au bout de trois mois, l&apos;attente expire
+                automatiquement et le profil est traité comme un refus
+                (même clôture qu&apos;un refus manuel, dans les deux sens).
+                Un rappel in-app est envoyé sept jours avant cette expiration.
               </p>
             </div>
             <div>
