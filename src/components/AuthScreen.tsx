@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Mail,
   Lock,
@@ -42,6 +42,11 @@ import { LegalLink, SiteFooter } from '@/components/LegalTerms';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+import {
+  authNoticeMessage,
+  consumeAuthNotice,
+  writeRememberSession,
+} from '@/lib/sessionIdle';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
@@ -67,9 +72,15 @@ export default function AuthScreen({
   const [offerPasswordReset, setOfferPasswordReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [rememberSession, setRememberSession] = useState(false);
   const turnstileRef = useRef<TurnstileHandle>(null);
   const notifiedLockEmails = useRef<Set<string>>(new Set());
   const maxAdultBirthDate = latestBirthDateForAge(MIN_USER_AGE);
+
+  useEffect(() => {
+    const notice = authNoticeMessage(consumeAuthNotice());
+    if (notice) setInfo(notice);
+  }, []);
 
   const emailKey = (value: string) => value.trim().toLowerCase();
 
@@ -241,7 +252,10 @@ export default function AuthScreen({
       if (stillLocked) {
         await supabase.auth.signOut();
         await applyServerLock(email, false);
+        return;
       }
+
+      writeRememberSession(rememberSession);
     } catch (err) {
       if (mode === 'signup' && isEmailAlreadyRegisteredError(err)) {
         setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
@@ -421,6 +435,26 @@ export default function AuthScreen({
                 </p>
               )}
             </div>
+
+            {mode === 'signin' && (
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberSession}
+                  onChange={(e) => setRememberSession(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-300"
+                />
+                <span className="text-sm text-gray-600 leading-snug">
+                  <span className="font-semibold text-gray-800">
+                    Rester connecté
+                  </span>
+                  <span className="block text-xs text-gray-500 mt-0.5">
+                    Sur cet appareil. Sinon, déconnexion après 30&nbsp;min
+                    d&apos;inactivité.
+                  </span>
+                </span>
+              </label>
+            )}
 
             {TURNSTILE_SITE_KEY && (
               <Turnstile

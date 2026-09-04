@@ -18,6 +18,8 @@ import LegalTermsPage, {
 } from '@/components/LegalTerms';
 import ContactPage from '@/components/ContactPage';
 import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
+import SessionIdleGuard from '@/components/SessionIdleGuard';
+import { peekAuthNotice } from '@/lib/sessionIdle';
 
 const UNSUBSCRIBED_SUCCESS_MESSAGE =
   "Vous êtes désabonné·e. Vous ne recevrez plus d'e-mails de notification de la part d'Aypik. Les e-mails strictement nécessaires au fonctionnement du compte (sécurité, facturation) peuvent encore vous être envoyés.";
@@ -172,6 +174,14 @@ function AppContent() {
     if (session) setShowAuth(false);
   }, [session]);
 
+  useEffect(() => {
+    if (session) return;
+    if (peekAuthNotice() === 'idle') {
+      setAuthMode('signin');
+      setShowAuth(true);
+    }
+  }, [session]);
+
   const route = activeAppRoute({
     maintenanceGate,
     showLegal,
@@ -274,6 +284,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrandLockupCopyGuard />
+          <SessionIdleGuard />
           <AppContent />
         </AuthProvider>
       </QueryClientProvider>

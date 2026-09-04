@@ -3505,10 +3505,11 @@ export default function MatchesPage({
         >
           <p>
             Tous tes matchs sont classés soit{' '}
-            <ColorChip label="1er mot" tone="matched-quiet" /> dès qu&apos;un
-            like ou un flash devient réciproque, soit{' '}
-            <ColorChip label="discussion en cours" tone="matched-chat" />{' '}
-            lorsqu&apos;il y aura eu au moins un message de chaque côté.
+            <ColorChip label="1er mot" tone="matched-quiet" /> tant qu&apos;il
+            n&apos;y a pas encore eu un message de chaque côté (y compris
+            lorsqu&apos;un seul a écrit), soit{' '}
+            <ColorChip label="discussion en cours" tone="matched-chat" /> dès
+            que chacun a envoyé au moins un message.
           </p>
         </IntroAccordionSection>
 

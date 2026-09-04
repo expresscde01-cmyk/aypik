@@ -163,7 +163,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 31 août 2026. Version applicable au
+              Dernière mise à jour : 4 septembre 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -461,7 +461,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 La messagerie n&apos;est ouverte qu&apos;après Match, afin de
                 limiter les contacts non sollicités. Le Like demeure discret
-                jusqu&apos;à réciprocité.
+                jusqu&apos;à réciprocité. Les délais et libellés liés aux
+                profils mis en attente, ainsi qu&apos;aux statuts « 1er mot »
+                et « Discussion en cours », sont précisés à l&apos;Annexe A
+                (Glossaire), dans un souci de transparence et afin
+                d&apos;éviter toute ambiguïté sur la clôture des interactions.
               </p>
               <p>
                 L&apos;éditeur, dans le cadre d&apos;une obligation de
@@ -1005,10 +1009,17 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 pour l&apos;utilisateur dans « Mis en attente par l&apos;autre
                 », en consultation uniquement : la décision d&apos;attendre,
                 de matcher ou de refuser appartient à l&apos;autre membre.
-                Sans décision au bout de trois mois, l&apos;attente expire
-                automatiquement et le profil est traité comme un refus
-                (même clôture qu&apos;un refus manuel, dans les deux sens).
-                Un rappel in-app est envoyé sept jours avant cette expiration.
+              </p>
+              <p>
+                Un profil placé en statut « mis en attente » (que ce soit par
+                vous ou par l&apos;autre membre) sans décision explicite
+                (acceptation ou refus) est automatiquement considéré comme
+                refusé au terme d&apos;un délai de 3 mois d&apos;inaction. Un
+                rappel est adressé 7 jours avant l&apos;expiration afin de
+                permettre de statuer sur les demandes en attente. Cette
+                clôture automatique produit les mêmes effets qu&apos;un refus
+                manuel, dans les deux sens, afin qu&apos;aucune interaction
+                ne demeure indéfiniment en suspens.
               </p>
             </div>
             <div>
@@ -1038,9 +1049,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <div>
               <p className="font-semibold text-gray-900">1er mot</p>
               <p>
-                Statut d&apos;un Match lorsqu&apos;aucun message n&apos;a
-                encore été échangé. La messagerie est ouverte ; le premier
-                échange reste à écrire.
+                Une conversation reste au statut « 1er mot » tant qu&apos;un
+                seul des deux membres a engagé l&apos;échange sans réponse de
+                l&apos;autre partie, ou tant qu&apos;aucun message n&apos;a
+                encore été envoyé. La messagerie est ouverte ; l&apos;échange
+                n&apos;est pas encore réciproque.
               </p>
             </div>
             <div>
@@ -1048,8 +1061,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Discussion en cours
               </p>
               <p>
-                Statut d&apos;un Match dès qu&apos;au moins un message a été
-                échangé entre les deux membres.
+                Une conversation passe au statut « Discussion en cours »
+                uniquement lorsque chacun des deux membres a envoyé au moins
+                un message, marquant ainsi un échange réciproque.
               </p>
             </div>
             <div>
