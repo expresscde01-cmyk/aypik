@@ -1,0 +1,62 @@
+---
+description: Cloud agent never runs deploy/zip; only the user builds aypik-deploy.zip on their PC
+alwaysApply: true
+---
+
+# Cloud : pas de deploy, pas de zip (règle absolue)
+
+Le fichier uploadé sur o2switch/cPanel est **uniquement** celui du PC Windows :
+
+`C:\Users\expre\Videos\Site\project\aypik-deploy.zip`
+
+`aypik-deploy.zip` est dans `.gitignore`. Git ne le transporte **jamais**.
+
+## Interdit dans le cloud (`/workspace`, Cloud Agent, VM distante)
+
+**Ne jamais exécuter**, même « pour vérifier » ou « tester » :
+
+- `npm run deploy`
+- `node scripts/deploy-cpanel.mjs`
+- toute commande qui génère ou remplace `aypik-deploy.zip`
+
+**Ne jamais créer** `aypik-deploy.zip` nulle part dans le cloud, sauf demande **explicite** de l’utilisateur avec les mots exacts **« génère le zip »** ou **« lance le déploiement »**.
+
+## Rôle de l’agent cloud
+
+1. Modifier le code (périmètre demandé).
+2. Committer et pousser sur une branche dédiée (`cursor/…-4f3f`).
+3. Indiquer à l’utilisateur qu’il doit **lui-même**, sur son PC, après `git pull` / checkout de branche :
+
+```powershell
+cd C:\Users\expre\Videos\Site\project
+git fetch origin
+git pull origin main
+npm run deploy
+```
+
+(Remplacer `main` par la branche de PR si non fusionnée.)
+
+## Vérification build (optionnel)
+
+Si un contrôle de compilation est utile : **`npm run build` uniquement** (pas de zip, pas de `deploy-cpanel.mjs`). Jamais la commande deploy complète.
+
+## Interdit dans les réponses (cloud)
+
+Sans que l’utilisateur ait lancé `npm run deploy` **sur son PC** :
+
+- « le déploiement est prêt »
+- « aypik-deploy.zip a été régénéré » (sauf si l’utilisateur vient de le faire localement)
+- « tu peux uploader le zip sur cPanel »
+- une date de modification du zip présentée comme celle du PC local
+
+## Workspace local Windows
+
+Seulement si le workspace est clairement `C:\Users\expre\Videos\Site\project` (Cursor Desktop sur le PC) : `npm run deploy` y est autorisé **sans** cette restriction cloud.
+
+En cas de doute sur l’environnement : traiter comme **cloud** → pas de deploy, pas de zip.
+
+## Repo GitHub
+
+Remote : `https://github.com/expresscde01-cmyk/aypik`
+
+`git pull` synchronise le **code**. Le zip cPanel = **`npm run deploy` sur le PC uniquement**.
