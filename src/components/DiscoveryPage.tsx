@@ -58,6 +58,7 @@ import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
+import { LIKE_NOTIFICATION_EMOJI } from '@/lib/interactionCopy';
 
 const SORT_OPTIONS = [
   {
@@ -1312,8 +1313,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 }
               >
                 <Zap className="w-4 h-4 text-white" fill="white" />
-                <span className="flash-tooltip-text pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
-                  {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash'}
+                <span className="profile-action-tooltip pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                  {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash ⚡'}
                 </span>
               </button>
             )}
@@ -1332,12 +1333,12 @@ const DiscoveryCard = memo(function DiscoveryCard({
               }
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
-              <span className="pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-amber-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-700 shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+              <span className="profile-action-tooltip pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
                 {alreadyLiked
                   ? 'Déjà liké'
                   : likesExhausted
                     ? 'Limite de likes atteinte'
-                    : 'Liker ce profil'}
+                    : `Liker ${LIKE_NOTIFICATION_EMOJI} ce profil`}
               </span>
             </button>
           </div>

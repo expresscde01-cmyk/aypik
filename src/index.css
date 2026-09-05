@@ -420,11 +420,11 @@ body {
   color: #10b981;
 }
 
-/* Tooltip flash — jaune-200, texte noir. Ne pas éclaircir sous #FEF08A (trop proche du crème Hors découverte). */
-.flash-tooltip-text {
-  color: #000000;
-  background-color: #FEF08A;
-  border: none;
+/* Tooltips like/flash — mêmes tons que le chip « Nouveaux » / « like ou flash — à étudier ». */
+.profile-action-tooltip {
+  color: #5d4037;
+  background-color: var(--match-stage-new-bg);
+  border: 1px solid #c4a482;
   -webkit-text-stroke: 0;
   paint-order: normal;
   text-shadow: none;

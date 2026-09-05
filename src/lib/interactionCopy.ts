@@ -142,6 +142,10 @@ export function messageReceivedNotification(name: string): {
   };
 }
 
+function likeReceivedBody(actor: string): string {
+  return `${actor} t'a envoyé un Like ❤️.`;
+}
+
 export function likeReceivedNotification(name: string): {
   title: string;
   body: string;
@@ -149,9 +153,16 @@ export function likeReceivedNotification(name: string): {
   const actor = name.trim() || 'Quelqu’un';
   return {
     title: 'Nouveau Like',
-    body: `${actor} t'a envoyé un Like ❤️.`,
+    body: likeReceivedBody(actor),
   };
 }
+
+/** Marque du body « Nouveau Like », extraite du texte canonique (pas un autre cœur). */
+export const LIKE_NOTIFICATION_EMOJI = (() => {
+  const body = likeReceivedBody('OK5');
+  const afterLike = body.lastIndexOf('Like ') + 'Like '.length;
+  return body.slice(afterLike, -1);
+})();
 
 export function flashReceivedNotification(name: string): {
   title: string;
