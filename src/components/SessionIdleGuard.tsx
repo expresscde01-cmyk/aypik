@@ -4,10 +4,19 @@ import { Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import {
-  IDLE_TIMEOUT_MS,
   IDLE_WARN_BEFORE_MS,
+  clearIdleCountdown,
+  clearIdleForceLogout,
+  initIdleWatchIfAbsent,
+  isIdleStorageKey,
+  isIdleWarningDue,
+  markIdleForceLogout,
+  readIdleForceLogout,
+  readIdleWatch,
   readRememberSession,
+  remainingIdleSeconds,
   setAuthNotice,
+  writeIdleActivity,
 } from '@/lib/sessionIdle';
 
 const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
@@ -21,24 +30,37 @@ const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
 ];
 
 /**
- * Suit l’activité uniquement si connecté et sans « Rester connecté ».
- * À 28 min : modale. À 30 min : signOut + notice pour l’écran de connexion.
+ * Suit l’activité uniquement si connecté et sans « Rester connecté » (login).
+ * lastActive / logoutAt sont en localStorage (tous les onglets).
+ * Seule une activité réelle ou le bouton de la modale étend logoutAt.
  */
 export default function SessionIdleGuard() {
-  const { session, signOut } = useAuth();
-  const [warningOpen, setWarningOpen] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(
-    Math.ceil(IDLE_WARN_BEFORE_MS / 1000)
-  );
+  const { session, signOut, loading } = useAuth();
+  const userId = session?.user?.id ?? null;
 
-  const lastActiveRef = useRef(Date.now());
+  const [warningOpen, setWarningOpen] = useState(() => {
+    const state = readIdleWatch();
+    return state != null && isIdleWarningDue(state.logoutAt);
+  });
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    const state = readIdleWatch();
+    return state != null
+      ? remainingIdleSeconds(state.logoutAt)
+      : Math.ceil(IDLE_WARN_BEFORE_MS / 1000);
+  });
+
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const signingOutRef = useRef(false);
-  const warningOpenRef = useRef(false);
+  const warningOpenRef = useRef(warningOpen);
+  const idleSignOutRef = useRef<() => void>(() => {});
+  const applySharedWatchRef = useRef<(allowInit: boolean) => void>(() => {});
+  const watchUserRef = useRef<string | null>(null);
+  const accessTokenRef = useRef<string | null>(session?.access_token ?? null);
+  accessTokenRef.current = session?.access_token ?? null;
 
-  const clearTimers = useCallback(() => {
+  const clearClockTimers = useCallback(() => {
     if (warnTimerRef.current) {
       clearTimeout(warnTimerRef.current);
       warnTimerRef.current = null;
@@ -56,7 +78,9 @@ export default function SessionIdleGuard() {
   const idleSignOut = useCallback(async () => {
     if (signingOutRef.current) return;
     signingOutRef.current = true;
-    clearTimers();
+    clearClockTimers();
+    clearIdleCountdown();
+    markIdleForceLogout(accessTokenRef.current);
     setWarningOpen(false);
     warningOpenRef.current = false;
     setAuthNotice('idle');
@@ -72,85 +96,168 @@ export default function SessionIdleGuard() {
     } finally {
       signingOutRef.current = false;
     }
-  }, [clearTimers, signOut]);
+  }, [clearClockTimers, signOut]);
 
-  const armTimers = useCallback(() => {
-    clearTimers();
-    const warnAt = Math.max(0, IDLE_TIMEOUT_MS - IDLE_WARN_BEFORE_MS);
+  idleSignOutRef.current = () => {
+    void idleSignOut();
+  };
 
-    warnTimerRef.current = setTimeout(() => {
-      warningOpenRef.current = true;
-      setWarningOpen(true);
-      setSecondsLeft(Math.ceil(IDLE_WARN_BEFORE_MS / 1000));
-      void supabase.auth.stopAutoRefresh().catch(() => {});
-
-      const deadline = Date.now() + IDLE_WARN_BEFORE_MS;
-      countdownRef.current = setInterval(() => {
-        const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  const syncWarningClock = useCallback(
+    (logoutAt: number) => {
+      clearClockTimers();
+      const tick = () => {
+        const left = remainingIdleSeconds(logoutAt);
         setSecondsLeft(left);
-        if (left <= 0 && countdownRef.current) {
-          clearInterval(countdownRef.current);
-          countdownRef.current = null;
-        }
-      }, 250);
-
+        if (left <= 0) idleSignOutRef.current();
+      };
+      tick();
+      countdownRef.current = setInterval(tick, 250);
       logoutTimerRef.current = setTimeout(() => {
-        void idleSignOut();
-      }, IDLE_WARN_BEFORE_MS);
-    }, warnAt);
-  }, [clearTimers, idleSignOut]);
+        idleSignOutRef.current();
+      }, Math.max(0, logoutAt - Date.now()));
+    },
+    [clearClockTimers]
+  );
+
+  const applySharedWatch = useCallback(
+    (allowInit: boolean) => {
+      if (signingOutRef.current) return;
+
+      if (readRememberSession()) {
+        warningOpenRef.current = false;
+        setWarningOpen(false);
+        clearClockTimers();
+        return;
+      }
+
+      if (readIdleForceLogout(accessTokenRef.current)) {
+        idleSignOutRef.current();
+        return;
+      }
+
+      let state = readIdleWatch();
+      if (!state) {
+        if (!allowInit) {
+          // Clé absente ≠ déconnexion : seul le marqueur force-logout (déjà
+          // testé plus haut) signale un idle sign-out inter-onglets.
+          warningOpenRef.current = false;
+          setWarningOpen(false);
+          clearClockTimers();
+          return;
+        }
+        state = initIdleWatchIfAbsent();
+      }
+
+      const now = Date.now();
+      if (now >= state.logoutAt) {
+        idleSignOutRef.current();
+        return;
+      }
+
+      if (isIdleWarningDue(state.logoutAt, now)) {
+        warningOpenRef.current = true;
+        setWarningOpen(true);
+        void supabase.auth.stopAutoRefresh().catch(() => {});
+        syncWarningClock(state.logoutAt);
+        return;
+      }
+
+      warningOpenRef.current = false;
+      setWarningOpen(false);
+      void supabase.auth.startAutoRefresh().catch(() => {});
+      clearClockTimers();
+      warnTimerRef.current = setTimeout(() => {
+        applySharedWatchRef.current(false);
+      }, Math.max(0, state.logoutAt - IDLE_WARN_BEFORE_MS - now));
+    },
+    [clearClockTimers, syncWarningClock]
+  );
+
+  applySharedWatchRef.current = applySharedWatch;
 
   const bumpActivity = useCallback(() => {
-    if (!session || readRememberSession() || signingOutRef.current) return;
-    // Pendant la modale, seule une action explicite (bouton) réarme.
-    if (warningOpenRef.current) return;
+    if (!userId || readRememberSession() || signingOutRef.current) return;
+    const state = readIdleWatch();
+    if (warningOpenRef.current || (state != null && isIdleWarningDue(state.logoutAt))) {
+      return;
+    }
 
     const now = Date.now();
-    if (now - lastActiveRef.current < 1000) return;
-    lastActiveRef.current = now;
-    armTimers();
-  }, [armTimers, session]);
+    if (state != null && now - state.lastActiveAt < 1000) return;
+    writeIdleActivity(now);
+    applySharedWatch(false);
+  }, [applySharedWatch, userId]);
 
   const staySignedIn = useCallback(() => {
     warningOpenRef.current = false;
     setWarningOpen(false);
-    lastActiveRef.current = Date.now();
+    writeIdleActivity(Date.now());
     void supabase.auth.startAutoRefresh().catch(() => {});
     void supabase.auth.refreshSession().catch(() => {});
-    armTimers();
-  }, [armTimers]);
+    applySharedWatch(false);
+  }, [applySharedWatch]);
 
   useEffect(() => {
-    if (!session) {
-      clearTimers();
+    if (loading) return;
+
+    const prevUser = watchUserRef.current;
+
+    if (prevUser && userId && prevUser !== userId) {
+      clearIdleCountdown();
+      clearIdleForceLogout();
+    }
+
+    if (!userId) {
+      clearClockTimers();
       setWarningOpen(false);
       warningOpenRef.current = false;
+      if (prevUser) {
+        clearIdleCountdown();
+      }
+      watchUserRef.current = null;
       return;
     }
 
+    watchUserRef.current = userId;
+
     if (readRememberSession()) {
-      clearTimers();
+      clearClockTimers();
+      clearIdleCountdown();
+      clearIdleForceLogout();
       setWarningOpen(false);
       warningOpenRef.current = false;
       void supabase.auth.startAutoRefresh().catch(() => {});
       return;
     }
 
-    lastActiveRef.current = Date.now();
-    armTimers();
-    void supabase.auth.startAutoRefresh().catch(() => {});
+    applySharedWatch(true);
 
     const onActivity = () => bumpActivity();
+    const onResume = () => applySharedWatchRef.current(false);
+    const onStorage = (event: StorageEvent) => {
+      if (!isIdleStorageKey(event.key)) return;
+      applySharedWatchRef.current(false);
+    };
+
     for (const evt of ACTIVITY_EVENTS) {
       window.addEventListener(evt, onActivity, { passive: true, capture: true });
     }
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('focus', onResume);
+    window.addEventListener('pageshow', onResume);
+    window.addEventListener('storage', onStorage);
+
     return () => {
-      clearTimers();
+      clearClockTimers();
       for (const evt of ACTIVITY_EVENTS) {
         window.removeEventListener(evt, onActivity, true);
       }
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('focus', onResume);
+      window.removeEventListener('pageshow', onResume);
+      window.removeEventListener('storage', onStorage);
     };
-  }, [session, armTimers, bumpActivity, clearTimers]);
+  }, [loading, userId, applySharedWatch, bumpActivity, clearClockTimers]);
 
   if (!warningOpen) return null;
 

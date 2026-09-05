@@ -361,7 +361,7 @@ export default function HomeDashboard({
         <div className="max-w-2xl mx-auto px-4">
           <div
             ref={mobileTaglineRowRef}
-            className="relative flex items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+            className="relative flex items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
           >
             <div className="inline-flex flex-nowrap items-center min-w-0 max-w-full">
               <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
