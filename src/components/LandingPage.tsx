@@ -413,7 +413,10 @@ export default function LandingPage({
 
           {/* Signature de marque sous l’accroche */}
           <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">
-            <BrandMark size="md" />
+            <BrandMark
+              size="md"
+              className="h-[67px] w-[75px] md:h-[6.5rem] md:w-[6.5rem]"
+            />
             <p
               className="w-fit mx-auto text-xl sm:text-2xl font-extrabold uppercase tracking-[0.32em] bg-clip-text text-transparent"
               style={{ backgroundImage: BRAND_GRADIENT_CSS }}

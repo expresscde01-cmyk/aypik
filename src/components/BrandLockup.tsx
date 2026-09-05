@@ -112,18 +112,18 @@ const MARK_BOX = {
   nav: 'w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]',
   sm: 'w-11 h-11',
   /**
-   * Hero landing uniquement.
-   * Mobile (&lt;640px) : 4.25rem (−~23 % vs 5.5rem) ; sm+ inchangé 6.5rem.
+   * Hero landing uniquement — mobile-first :
+   * base 67px de haut (~75px de large, ratio PNG 512×458) ; `md` (768px) restaure 6.5rem.
    */
-  md: 'w-[4.25rem] h-[4.25rem] sm:w-[6.5rem] sm:h-[6.5rem]',
-  lg: 'w-32 h-32 sm:w-36 sm:h-36',
+  md: 'h-[67px] w-[75px] md:h-[6.5rem] md:w-[6.5rem]',
+  lg: 'w-[65px] h-[58px]',
 } as const;
 
 const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
   nav: 20,
   sm: 44,
   md: 104,
-  lg: 144,
+  lg: 65,
 };
 
 /** Asset UI (header, landing, auth) — indépendant du favicon SVG/ICO. */

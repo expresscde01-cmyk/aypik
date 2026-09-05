@@ -420,6 +420,16 @@ body {
   color: #10b981;
 }
 
+/* Tooltip flash — jaune-200, texte noir. Ne pas éclaircir sous #FEF08A (trop proche du crème Hors découverte). */
+.flash-tooltip-text {
+  color: #000000;
+  background-color: #FEF08A;
+  border: none;
+  -webkit-text-stroke: 0;
+  paint-order: normal;
+  text-shadow: none;
+}
+
 .discovery-sort-pills {
   overflow: visible;
 }
@@ -1922,7 +1932,8 @@ button.group[data-matched='true'] {
 }
 
 .match-broken-origin-badge-quiet {
-  background-color: #8bc990;
+  background-color: #d8f0da;
+  color: #1b5e20;
   border: 1px solid #8bc990;
 }
 

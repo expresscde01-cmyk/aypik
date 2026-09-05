@@ -3274,7 +3274,7 @@ export default function MatchesPage({
             className={`match-broken-origin-badge text-xs ${
               hadDialogue
                 ? 'match-broken-origin-badge-chat text-gray-600'
-                : 'match-broken-origin-badge-quiet text-emerald-800'
+                : 'match-broken-origin-badge-quiet'
             }`}
           >
             {brokenMatchOriginLabel(hadDialogue)}
