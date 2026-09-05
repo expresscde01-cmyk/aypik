@@ -55,6 +55,7 @@ type HomeSuggestion = SuggestedProfile & {
 
 export default function HomeDashboard({
   displayName,
+  onHome,
   onSignOut,
   onOpenDiscover,
   onOpenMatches,
@@ -74,6 +75,7 @@ export default function HomeDashboard({
   onAccountStatusClick,
 }: {
   displayName: string;
+  onHome: () => void;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
   onOpenMatches: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
@@ -319,9 +321,14 @@ export default function HomeDashboard({
               ref={rowRef}
               className="relative flex w-full items-center justify-between gap-3 h-14"
             >
-              <div className="inline-flex flex-nowrap items-center min-w-0 max-w-full">
+              <button
+                type="button"
+                onClick={onHome}
+                className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+                aria-label="Haut de la page d’accueil"
+              >
                 <BrandHeaderBrand compact={taglineCompact} />
-              </div>
+              </button>
               <div
                 ref={rightRef}
                 className="flex items-center gap-1 shrink-0 ml-auto"
@@ -363,9 +370,14 @@ export default function HomeDashboard({
             ref={mobileTaglineRowRef}
             className="relative flex items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
           >
-            <div className="inline-flex flex-nowrap items-center min-w-0 max-w-full">
+            <button
+              type="button"
+              onClick={onHome}
+              className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+              aria-label="Haut de la page d’accueil"
+            >
               <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
-            </div>
+            </button>
             <div
               ref={mobileTaglineRightRef}
               className="flex items-center gap-1 shrink-0"

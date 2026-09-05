@@ -198,7 +198,12 @@ function AppShellView() {
 
   const openTab = useCallback(
     (next: Tab) => {
-      if (next === tab) return;
+      if (next === tab) {
+        if (next === 'home') {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }
+        return;
+      }
       if (tab === 'discover' && next !== 'discover') {
         persistDiscoverPrefs();
       }
@@ -207,6 +212,15 @@ function AppShellView() {
     },
     [mountTab, persistDiscoverPrefs, tab]
   );
+
+  const prevTabRef = useRef(tab);
+  useEffect(() => {
+    const prev = prevTabRef.current;
+    prevTabRef.current = tab;
+    if (tab === 'home' && prev !== 'home') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, [tab]);
 
   useEffect(() => {
     if (!user) return;
@@ -418,6 +432,7 @@ function AppShellView() {
           <div className={tab === 'home' ? undefined : 'hidden'}>
             <HomeDashboard
               displayName={displayName}
+              onHome={() => openTab('home')}
               onSignOut={signOut}
               onOpenDiscover={() => openTab('discover')}
               onOpenMatches={openMatches}
