@@ -572,6 +572,7 @@ BEGIN
 END;
 $$;
 
+-- Horloge 3 mois : conservée si déjà wait (désarchivage) ; reset si refuse → wait.
 CREATE OR REPLACE FUNCTION public.restore_inbox_wait(
   p_actor uuid,
   p_origin text DEFAULT NULL
@@ -630,8 +631,16 @@ BEGIN
     decision = 'wait',
     origin = EXCLUDED.origin,
     updated_at = now(),
-    wait_started_at = now(),
-    wait_expiry_notified_at = NULL
+    wait_started_at = CASE
+      WHEN public.inbox_responses.decision = 'wait'
+        THEN COALESCE(public.inbox_responses.wait_started_at, now())
+      ELSE now()
+    END,
+    wait_expiry_notified_at = CASE
+      WHEN public.inbox_responses.decision = 'wait'
+        THEN public.inbox_responses.wait_expiry_notified_at
+      ELSE NULL
+    END
   WHERE public.inbox_responses.decision IS DISTINCT FROM 'match';
 
   RETURN jsonb_build_object(

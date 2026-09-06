@@ -66,6 +66,7 @@ import {
   restoreWaitFromArchive,
   type InboxDecision,
 } from '@/lib/inboxResponses';
+import { waitingManageServerMutation } from '@/lib/waitingManageFlow';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
 import {
   fetchDeclinedArchives,
@@ -80,6 +81,7 @@ import {
   fetchPendingWaitingNotices,
   forgetClearedWait,
   forgetWaitArchive,
+  retainMineWaitArchives,
   isMineWaitArchived,
   isWaitCleared,
   listAllWaitArchives,
@@ -1046,8 +1048,10 @@ export default function MatchesPage({
       }
 
       let inboxRes: Awaited<ReturnType<typeof fetchInboxResponses>> = [];
+      let inboxOk = false;
       try {
         inboxRes = await fetchInboxResponses();
+        inboxOk = true;
       } catch {
         inboxRes = [];
       }
@@ -1166,6 +1170,14 @@ export default function MatchesPage({
           .map((r) => [r.actor_id, r.updated_at] as const)
       );
       const waitingActors = new Set(waitingAtMap.keys());
+      if (inboxOk) {
+        retainMineWaitArchives(user.id, waitingActors);
+        setWaitArchives((prev) =>
+          prev.filter(
+            (c) => c.source !== 'mine' || waitingActors.has(c.profile.id)
+          )
+        );
+      }
       const forceWait = restoredWaitActorsRef.current;
 
       let peersChat = new Set<string>();
@@ -1356,6 +1368,16 @@ export default function MatchesPage({
     }
     const gen = ++waitArchivesLoadGen.current;
     try {
+      try {
+        const inboxRes = await fetchInboxResponses();
+        if (gen !== waitArchivesLoadGen.current) return;
+        retainMineWaitArchives(
+          user.id,
+          inboxRes.filter((r) => r.decision === 'wait').map((r) => r.actor_id)
+        );
+      } catch {
+        /* conserve le store local si l’inbox ne répond pas */
+      }
       const { byId, founderMap, boostSet } = await fetchProfileBundle(
         [...new Set(listAllWaitArchives(user.id).map((r) => r.actorId))]
       );
@@ -1395,7 +1417,9 @@ export default function MatchesPage({
       setOpenWaitArchive((open) => {
         if (!open) return open;
         const next = list.find((c) => c.archiveId === open.archiveId);
-        return next ?? open;
+        if (next) return next;
+        if (open.source === 'mine') return null;
+        return open;
       });
     } catch {
       if (gen !== waitArchivesLoadGen.current) return;
@@ -1988,18 +2012,24 @@ export default function MatchesPage({
     [user, actingId, likesExhausted, handleMatchBack, markResolved]
   );
 
-  const handleRefuseWaiting = useCallback(
+  const handleRefuseWaiting = useCallback((item: Match) => {
+    if (!user || actingId) return;
+    if (item.kind === 'match' || item.alreadyLiked) return;
+    if (waitingManageServerMutation('open-manage') !== 'none') return;
+    setOpenWaitingManage(item);
+    setOpenProfile(null);
+    setError(null);
+  }, [user, actingId]);
+
+  const handlePurgeWaiting = useCallback(
     async (item: Match) => {
       if (!user || actingId) return;
       if (item.kind === 'match' || item.alreadyLiked) return;
+      if (waitingManageServerMutation('manage-purge') !== 'refuse') {
+        return;
+      }
 
-      const refused: Match = {
-        ...item,
-        waiting: false,
-        refused: true,
-      };
-      setOpenWaitingManage(refused);
-      setOpenProfile(null);
+      setActingId(item.profile.id);
       setError(null);
       matchesLoadGen.current += 1;
       forgetClearedWait(user.id, item.profile.id);
@@ -2016,9 +2046,11 @@ export default function MatchesPage({
         markResolved(item.profile.id, 'refused');
         setPulseCategory(null);
         setPulseSingleId((id) => (id === item.profile.id ? null : id));
-      } catch (err) {
         setOpenWaitingManage(null);
+      } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
+      } finally {
+        setActingId(null);
       }
     },
     [user, actingId, markResolved]
@@ -3480,9 +3512,12 @@ export default function MatchesPage({
               Mis en attente par l&apos;autre
             </span>{' '}
             : tu pourras consulter le profil, la décision lui appartenant.
-            Sans décision au bout de 3 mois, l&apos;attente expire et le
-            profil est traité comme un refus. Un rappel t&apos;est envoyé
-            7 jours avant.
+            Matcher, refuser, ou l&apos;expiration automatique à 3 mois
+            clôturent l&apos;attente. Archiver n&apos;est pas une décision
+            définitive : c&apos;est un rangement personnel, sans effet sur
+            l&apos;interaction ni sur l&apos;autre membre ; le délai continue
+            de courir. Un rappel t&apos;est envoyé 7 jours avant
+            l&apos;expiration.
           </p>
           <p>
             Tu trouveras également sur cette page tous les profils qui ont
@@ -3556,7 +3591,6 @@ export default function MatchesPage({
               <span className="match-intro-dot match-intro-dot--stage-new" />
               <span className="match-intro-dot match-intro-dot--stage-match" />
               <span className="match-intro-dot match-intro-dot--stage-quiet" />
-              <span className="match-intro-dot match-intro-dot--stage-chat" />
             </span>
           </p>
         </IntroAccordionSection>
@@ -3936,9 +3970,14 @@ export default function MatchesPage({
           origin={openWaitingManage.origin}
           busy={actingId === openWaitingManage.profile.id}
           error={null}
-          onClose={() => setOpenWaitingManage(null)}
+          onClose={() => {
+            if (waitingManageServerMutation('manage-dismiss') !== 'none') {
+              return;
+            }
+            setOpenWaitingManage(null);
+          }}
           onArchive={() => handleArchiveWaiting(openWaitingManage)}
-          onPurge={() => setOpenWaitingManage(null)}
+          onPurge={() => void handlePurgeWaiting(openWaitingManage)}
         />
       )}
     </div>

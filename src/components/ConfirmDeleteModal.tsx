@@ -7,11 +7,14 @@ export const DELETE_LINK_CONFIRM_MESSAGE =
 export default function ConfirmDeleteModal({
   busy = false,
   message = DELETE_LINK_CONFIRM_MESSAGE,
+  emphasizeConfirm = false,
   onCancel,
   onConfirm,
 }: {
   busy?: boolean;
   message?: string;
+  /** Gras sur SUPPRIMER — uniquement après « Supprimer définitivement ». */
+  emphasizeConfirm?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -56,7 +59,9 @@ export default function ConfirmDeleteModal({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className="py-2.5 rounded-xl btn-delete-confirm text-sm font-semibold disabled:opacity-40"
+            className={`py-2.5 rounded-xl btn-delete-confirm text-sm disabled:opacity-40${
+              emphasizeConfirm ? ' btn-delete-confirm--emphasis' : ' font-semibold'
+            }`}
           >
             {busy ? '…' : 'Supprimer'}
           </button>

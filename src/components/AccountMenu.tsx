@@ -14,7 +14,6 @@ import {
 import { requestAccountDeletion } from '@/lib/deleteAccount';
 import { userErrorMessage } from '@/lib/userError';
 import { useAuth } from '@/lib/auth';
-import { clearAypikAppCache } from '@/lib/appCache';
 import { queryClient } from '@/lib/queryClient';
 import { resetSuggestionSearchPrefs } from '@/lib/suggestionPrefs';
 import {
@@ -186,7 +185,6 @@ export default function AccountMenu({
 
   const handleRefreshPage = () => {
     close();
-    clearAypikAppCache();
     window.location.reload();
   };
 

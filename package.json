@@ -10,7 +10,8 @@
     "build:app-icons": "node scripts/build-app-icon-source.cjs && node scripts/build-app-icons.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test": "node --experimental-strip-types --test src/lib/waitingManageFlow.test.ts"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.3.0",

@@ -21,11 +21,8 @@ export default function RefuseButton({
 }) {
   const blocked = Boolean(disabled || busy);
   const isBan = variant === 'ban';
-  const needsConfirm =
-    !isBan ||
-    label === 'Jeter' ||
-    label === 'Supprimer' ||
-    label.startsWith('Supprimer ');
+  /** Poubelle (à étudier) : confirm puis refus. Sens interdit (attente) : ouvre la gestion, sans confirm. */
+  const needsConfirm = !isBan;
   const tip = isBan ? (tooltip ?? 'logo-tr') : (tooltip ?? 'logo');
   const [confirmOpen, setConfirmOpen] = useState(false);
 

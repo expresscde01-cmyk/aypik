@@ -163,7 +163,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 4 septembre 2026. Version applicable au
+              Dernière mise à jour : 6 septembre 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -1003,7 +1003,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 afin de l&apos;étudier plus tard, sans le refuser ni le
                 matcher immédiatement. Le profil reste alors accessible
                 depuis Mes Matchs, dans « Mis en attente par toi », jusqu&apos;à
-                une décision définitive (Matcher, refuser ou archiver).
+                une décision définitive (Matcher, refuser, ou expiration
+                automatique). Archiver n&apos;est pas une décision définitive
+                : il s&apos;agit d&apos;un rangement personnel, sans effet sur
+                l&apos;interaction ni sur l&apos;autre membre. Le statut
+                demeure en attente, le délai d&apos;expiration continue de
+                courir, et aucune notification n&apos;est adressée à
+                l&apos;autre membre. Les profils ainsi rangés restent
+                visibles dans « Mis en attente par toi - archive ».
                 Réciproquement, lorsqu&apos;un autre membre met en attente le
                 Like ou le Flash de l&apos;utilisateur, ce profil apparaît
                 pour l&apos;utilisateur dans « Mis en attente par l&apos;autre
@@ -1014,12 +1021,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Un profil placé en statut « mis en attente » (que ce soit par
                 vous ou par l&apos;autre membre) sans décision explicite
                 (acceptation ou refus) est automatiquement considéré comme
-                refusé au terme d&apos;un délai de 3 mois d&apos;inaction. Un
-                rappel est adressé 7 jours avant l&apos;expiration afin de
-                permettre de statuer sur les demandes en attente. Cette
-                clôture automatique produit les mêmes effets qu&apos;un refus
-                manuel, dans les deux sens, afin qu&apos;aucune interaction
-                ne demeure indéfiniment en suspens.
+                refusé au terme d&apos;un délai de 3 mois d&apos;inaction.
+                Archiver un profil en attente ne constitue pas une telle
+                décision et n&apos;interrompt pas ce délai. Un rappel est
+                adressé 7 jours avant l&apos;expiration afin de permettre de
+                statuer sur les demandes en attente. Cette clôture automatique
+                produit les mêmes effets qu&apos;un refus manuel, dans les
+                deux sens, afin qu&apos;aucune interaction ne demeure
+                indéfiniment en suspens.
               </p>
             </div>
             <div>
@@ -1072,9 +1081,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Options de gestion proposées pour les profils ayant décliné
-                un Like ou un Flash. Archiver conserve le profil dans un
-                espace dédié de la page Mes Matchs ; Supprimer le retire de
-                cette liste.
+                un Like ou un Flash, ainsi que pour les profils mis en
+                attente. Archiver conserve le profil dans un espace dédié de
+                la page Mes Matchs. Pour une attente, archiver n&apos;est
+                qu&apos;un rangement personnel : cela ne clôt pas
+                l&apos;interaction, n&apos;interrompt pas le délai
+                d&apos;expiration et n&apos;est pas notifié à l&apos;autre
+                membre (voir « Mettre en attente »). Supprimer retire le
+                profil de cette liste ; pour une attente, la suppression
+                définitive équivaut à un refus.
               </p>
             </div>
             <div>

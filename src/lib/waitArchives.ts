@@ -182,6 +182,20 @@ export function forgetWaitArchive(userId: string, actorId: string) {
   writeStore(userId, store);
 }
 
+/** Après refus auto / match : l’archive locale de A suit le serveur (plus de wait). */
+export function retainMineWaitArchives(
+  userId: string,
+  stillWaitingActorIds: Iterable<string>
+): boolean {
+  const keep = new Set(stillWaitingActorIds);
+  const store = readStore(userId);
+  const next = store.archivedMine.filter((row) => keep.has(row.actorId));
+  if (next.length === store.archivedMine.length) return false;
+  store.archivedMine = next;
+  writeStore(userId, store);
+  return true;
+}
+
 /** Remise à zéro locale pour un cycle attente ↔ archive (illimité). */
 export function releaseWaitCycle(userId: string, actorId: string) {
   const store = readStore(userId);

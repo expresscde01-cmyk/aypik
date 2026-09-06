@@ -66,11 +66,13 @@ export default function MatchManageModal({
       'Rétablis ce match ou supprime définitivement ce lien.'
     ) : mode === 'waiting' ? (
       <>
-        Archive ce {kindLabel} pour le retrouver dans{' '}
+        Archive ce {kindLabel} pour le ranger dans{' '}
         <strong className="font-bold text-gray-800">
           Mis en attente par toi - archive
         </strong>
-        , ou supprime-le définitivement.
+        {' '}
+        (rangement personnel, sans effet sur l&apos;autre membre), ou
+        supprime-le définitivement.
       </>
     ) : (
       <>
@@ -191,6 +193,7 @@ export default function MatchManageModal({
       {confirmPurge ? (
         <ConfirmDeleteModal
           busy={busy}
+          emphasizeConfirm
           onCancel={() => setConfirmPurge(false)}
           onConfirm={() => {
             setConfirmPurge(false);
