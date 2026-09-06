@@ -4,12 +4,14 @@ import { Hourglass } from 'lucide-react';
 export default function WaitButton({
   disabled,
   busy,
+  locked,
   onClick,
   name,
   tooltip = 'logo-tr',
 }: {
   disabled?: boolean;
   busy?: boolean;
+  locked?: boolean;
   onClick: () => void;
   name: string;
   tooltip?: 'right' | 'top' | 'left' | 'logo' | 'logo-tr';
@@ -20,10 +22,11 @@ export default function WaitButton({
     <button
       type="button"
       onClick={() => {
-        if (blocked) return;
+        if (blocked || locked) return;
         onClick();
       }}
       disabled={blocked}
+      aria-busy={busy || undefined}
       aria-label={`Mettre ${name} en attente`}
       className="group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default disabled:opacity-40"
     >

@@ -92,6 +92,30 @@ export async function fetchPeersWithTwoWayDialogue(): Promise<Set<string>> {
   );
 }
 
+/** Membres qui m’ont déjà envoyé au moins un message (réponse à donner, pas forcément 1er mot). */
+export async function fetchPeersWhoWroteToMe(): Promise<Set<string>> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return new Set();
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('sender_id')
+    .eq('recipient_id', me)
+    .limit(2000);
+
+  if (error) {
+    logSupabaseError('fetchPeersWhoWroteToMe', error);
+    return new Set();
+  }
+  const peers = new Set<string>();
+  for (const row of data || []) {
+    const sender = (row as { sender_id?: string }).sender_id;
+    if (sender && sender !== me) peers.add(sender);
+  }
+  return peers;
+}
+
 export async function ensureConversationId(
   otherUserId: string
 ): Promise<string | null> {

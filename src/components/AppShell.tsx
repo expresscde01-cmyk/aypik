@@ -84,6 +84,8 @@ function AppShellView() {
   >(null);
   const [inboxDeclined, setInboxDeclined] = useState(false);
   const [inboxWaitingIncoming, setInboxWaitingIncoming] = useState(false);
+  const [inboxPinActorIds, setInboxPinActorIds] = useState<string[]>([]);
+  const [inboxUnreadMailbox, setInboxUnreadMailbox] = useState(false);
   /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
   const [inboxFocusKey, setInboxFocusKey] = useState(0);
   const unread = useUnreadMessages();
@@ -341,6 +343,8 @@ function AppShellView() {
       pulseCategory,
       declined,
       waitingIncoming,
+      pinActorIds,
+      unreadMailbox,
     } = normalizeOpenMatchesOpts(opts);
     setInboxActorId(actorId ?? null);
     setInboxOpenChat(openChat);
@@ -349,6 +353,8 @@ function AppShellView() {
     setInboxPulseCategory(pulseCategory);
     setInboxDeclined(declined);
     setInboxWaitingIncoming(waitingIncoming);
+    setInboxPinActorIds(pinActorIds);
+    setInboxUnreadMailbox(unreadMailbox);
     setInboxFocusKey((k) => k + 1);
     if (tab === 'discover') {
       persistDiscoverPrefs();
@@ -548,6 +554,8 @@ function AppShellView() {
                 focusPulseCategory={inboxPulseCategory}
                 focusDeclined={inboxDeclined}
                 focusWaitingIncoming={inboxWaitingIncoming}
+                focusPinActorIds={inboxPinActorIds}
+                focusUnreadMailbox={inboxUnreadMailbox}
                 focusKey={inboxFocusKey}
                 profileEpoch={profileEpoch}
                 onChatClosed={() => void unread.refresh()}
@@ -559,6 +567,8 @@ function AppShellView() {
                   setInboxPulseCategory(null);
                   setInboxDeclined(false);
                   setInboxWaitingIncoming(false);
+                  setInboxPinActorIds([]);
+                  setInboxUnreadMailbox(false);
                 }}
               />
             </Suspense>

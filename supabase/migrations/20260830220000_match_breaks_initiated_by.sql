@@ -8,14 +8,13 @@ UPDATE public.match_breaks
 SET initiated_by = user_id
 WHERE initiated_by IS NULL;
 
-DROP FUNCTION IF EXISTS public.upsert_match_break(uuid, uuid, text, text);
+DROP FUNCTION IF EXISTS public.upsert_match_break(uuid, uuid, text, text, uuid);
 
 CREATE OR REPLACE FUNCTION public.upsert_match_break(
   p_user uuid,
   p_peer uuid,
   p_origin text,
-  p_action text,
-  p_initiated_by uuid
+  p_action text
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -23,8 +22,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  IF auth.uid() IS DISTINCT FROM p_user THEN
+    RAISE EXCEPTION 'not_authorized';
+  END IF;
+
   INSERT INTO public.match_breaks (user_id, peer_id, origin, action, initiated_by)
-  VALUES (p_user, p_peer, p_origin, p_action, p_initiated_by)
+  VALUES (p_user, p_peer, p_origin, p_action, p_user)
   ON CONFLICT (user_id, peer_id) DO UPDATE
   SET
     origin = EXCLUDED.origin,
@@ -34,7 +37,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.upsert_match_break(uuid, uuid, text, text, uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.upsert_match_break(uuid, uuid, text, text) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION public.manage_active_match(
   p_peer uuid,
@@ -63,7 +66,7 @@ BEGIN
   v_origin := public.match_pair_origin(me, p_peer);
   v_action := CASE WHEN p_break THEN 'break' ELSE 'archive' END;
 
-  PERFORM public.upsert_match_break(me, p_peer, v_origin, v_action, me);
+  PERFORM public.upsert_match_break(me, p_peer, v_origin, v_action);
 
   UPDATE public.messages
   SET read_at = COALESCE(read_at, now())
@@ -72,7 +75,16 @@ BEGIN
     AND read_at IS NULL;
 
   IF p_break THEN
-    PERFORM public.upsert_match_break(p_peer, me, v_origin, 'break', me);
+    INSERT INTO public.match_breaks (
+      user_id, peer_id, origin, action, initiated_by
+    )
+    VALUES (p_peer, me, v_origin, 'break', me)
+    ON CONFLICT (user_id, peer_id) DO UPDATE
+    SET
+      origin = EXCLUDED.origin,
+      action = 'break',
+      initiated_by = EXCLUDED.initiated_by,
+      created_at = now();
 
     DELETE FROM public.match_bonds
     WHERE user_a = LEAST(me, p_peer)

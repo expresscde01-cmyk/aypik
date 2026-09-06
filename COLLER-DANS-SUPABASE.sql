@@ -1,15 +1,6 @@
 -- Coller TOUT ce fichier dans Supabase → SQL Editor, puis Run.
 -- Corrige l’erreur 42501 (RLS trop stricte sur conversations / messages).
-
-CREATE OR REPLACE FUNCTION public.users_are_matched(u1 uuid, u2 uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT u1 IS DISTINCT FROM u2;
-$$;
+-- Ne redéfinit plus users_are_matched (source : match_breaks).
 
 DROP POLICY IF EXISTS "conversations_insert_participants" ON public.conversations;
 CREATE POLICY "conversations_insert_participants"
@@ -53,6 +44,13 @@ BEGIN
   END IF;
   IF cleaned = '' THEN
     RAISE EXCEPTION 'empty_message';
+  END IF;
+  IF public.profile_is_deactivated(p_recipient)
+    OR public.profile_is_deactivated(me) THEN
+    RAISE EXCEPTION 'member_unavailable';
+  END IF;
+  IF NOT public.users_are_matched(me, p_recipient) THEN
+    RAISE EXCEPTION 'not_matched';
   END IF;
 
   a := LEAST(me, p_recipient);

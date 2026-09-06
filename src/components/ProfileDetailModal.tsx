@@ -13,7 +13,7 @@ import {
   refusedInboxFollowup,
   waitingMatchReminder,
 } from '@/lib/interactionCopy';
-import MatcherWord from '@/components/MatcherWord';
+import MatcherWord, { CrownIcon } from '@/components/MatcherWord';
 import type { InboxDecision } from '@/lib/inboxResponses';
 import type { ProfileGender } from '@/components/ProfileSetup';
 
@@ -40,6 +40,8 @@ export type InboxHistory = {
   origin: 'flash' | 'like';
   originLabel: string;
   matchedLabel?: string | null;
+  /** Match conclu après un wait : première ligne = couronne, sans texte d’attente. */
+  matchedViaWait?: boolean;
   waiting?: boolean;
   waitingIncoming?: boolean;
   refused?: boolean;
@@ -70,12 +72,14 @@ export default function ProfileDetailModal({
   onWaitingDiscard,
   onRestoreLink,
   onPurgeLink,
+  pendingDecision,
 }: {
   candidate: ProfileDetailCandidate;
   geoPerimeter?: GeoPerimeterFilter | null;
   alreadyFlashed: boolean;
   alreadyLiked: boolean;
   busy: boolean;
+  pendingDecision?: InboxDecision | null;
   likesExhausted: boolean;
   showFlashCta: boolean;
   inboxHistory?: InboxHistory;
@@ -114,6 +118,22 @@ export default function ProfileDetailModal({
         (Boolean(onWaitingArchive) || Boolean(onWaitingDiscard))));
   const showArchiveLinkActions =
     Boolean(onRestoreLink) || Boolean(onPurgeLink);
+  const perInboxDecision = pendingDecision !== undefined;
+  const matchPending = perInboxDecision
+    ? pendingDecision === 'match'
+    : busy;
+  const waitPending = perInboxDecision ? pendingDecision === 'wait' : busy;
+  const refusePending = perInboxDecision
+    ? pendingDecision === 'refuse'
+    : busy;
+  const inboxChoiceLocked = perInboxDecision
+    ? pendingDecision != null
+    : busy;
+
+  const requestInboxDecision = (decision: InboxDecision) => {
+    if (inboxChoiceLocked) return;
+    onInboxDecision?.(decision);
+  };
 
   const [confirmDelete, setConfirmDelete] = useState<(() => void) | null>(
     null
@@ -267,20 +287,29 @@ export default function ProfileDetailModal({
                   : 'bg-rose-50/80 border border-rose-100'
               }`}
             >
-              <p
-                className={`text-sm font-medium flex items-center gap-2 ${
-                  inboxHistory.origin === 'flash'
-                    ? 'text-amber-800'
-                    : 'text-rose-700'
-                }`}
-              >
-                {inboxHistory.origin === 'flash' ? (
-                  <Zap className="w-4 h-4 shrink-0" fill="currentColor" />
-                ) : (
-                  <Heart className="w-4 h-4 shrink-0" fill="currentColor" />
-                )}
-                {inboxHistory.originLabel}
-              </p>
+              {inboxHistory.matchedViaWait && inboxHistory.matchedLabel ? (
+                <p
+                  className="flex items-center text-rose-500"
+                  aria-label="Match"
+                >
+                  <CrownIcon size="1.15rem" />
+                </p>
+              ) : (
+                <p
+                  className={`text-sm font-medium flex items-center gap-2 ${
+                    inboxHistory.origin === 'flash'
+                      ? 'text-amber-800'
+                      : 'text-rose-700'
+                  }`}
+                >
+                  {inboxHistory.origin === 'flash' ? (
+                    <Zap className="w-4 h-4 shrink-0" fill="currentColor" />
+                  ) : (
+                    <Heart className="w-4 h-4 shrink-0" fill="currentColor" />
+                  )}
+                  {inboxHistory.originLabel}
+                </p>
+              )}
               {inboxHistory.matchedLabel ? (
                 <p className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                   <Check className="w-4 h-4 shrink-0" strokeWidth={2.5} />
@@ -427,24 +456,27 @@ export default function ProfileDetailModal({
                 <div className="flex flex-col gap-2 pt-1">
                   <button
                     type="button"
-                    disabled={busy || likesExhausted}
-                    onClick={() => onInboxDecision?.('match')}
+                    disabled={likesExhausted || matchPending}
+                    aria-busy={matchPending || undefined}
+                    onClick={() => requestInboxDecision('match')}
                     className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 disabled:opacity-40"
                   >
                     <MatcherWord />
                   </button>
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => onInboxDecision?.('wait')}
+                    disabled={waitPending}
+                    aria-busy={waitPending || undefined}
+                    onClick={() => requestInboxDecision('wait')}
                     className="btn-wait w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
                   >
                     Attendre
                   </button>
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => onInboxDecision?.('refuse')}
+                    disabled={refusePending}
+                    aria-busy={refusePending || undefined}
+                    onClick={() => requestInboxDecision('refuse')}
                     className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-[#dc2626] hover:bg-gray-50 disabled:opacity-40"
                   >
                     Refuser

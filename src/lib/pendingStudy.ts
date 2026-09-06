@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { fetchInboxResponses } from '@/lib/inboxResponses';
 
+export {
+  firstExchangeNotificationCopy,
+  newProfilesNotificationCopy,
+  waitingProfilesNotificationCopy,
+} from '@/lib/digestCopy';
+
 export type MatchPulseCategory = 'new' | 'wait' | 'first';
 export type InteractionOriginLabel = 'like' | 'flash';
 
@@ -15,6 +21,10 @@ export type InboxCategoryCounts = {
   newCount: number;
   /** Catégorie B — mis en attente manuellement. */
   waitCount: number;
+  /** Identifiants correspondant à newCount (ordre d’affichage). */
+  newIds: string[];
+  /** Identifiants correspondant à waitCount. */
+  waitIds: string[];
   /** Renseigné uniquement si newCount === 1. */
   soleNew?: SoleNewProfile | null;
   /** Renseigné uniquement si waitCount === 1. */
@@ -118,6 +128,8 @@ export async function countInboxCategories(
   return {
     newCount,
     waitCount,
+    newIds,
+    waitIds,
     soleNew,
     soleWait,
     resolvedActorIds: [...resolved],
@@ -130,37 +142,6 @@ export async function countPendingStudyProfiles(
 ): Promise<number> {
   const { newCount } = await countInboxCategories(userId);
   return newCount;
-}
-
-function firstNameOf(name?: string | null): string | null {
-  const token = (name || '').trim().split(/\s+/)[0];
-  return token ? token : null;
-}
-
-function studyRecapBody(count: number, soleName?: string | null): string {
-  const n = Math.max(0, count);
-  const prenom = n === 1 ? firstNameOf(soleName) : null;
-  if (prenom) {
-    return `Tu as le profil de ${prenom} ci-dessus à étudier. Prends un moment pour le découvrir.`;
-  }
-  if (n <= 1) {
-    return `Tu as le profil ci-dessus à étudier. Prends un moment pour le découvrir.`;
-  }
-  return `Tu as ces ${n} profils ci-dessus à étudier. Prends un moment pour les découvrir.`;
-}
-
-export function newProfilesNotificationCopy(
-  count: number,
-  soleName?: string | null,
-  _viewerGender?: 'homme' | 'femme' | null
-): {
-  title: string;
-  body: string;
-} {
-  return {
-    title: 'À découvrir',
-    body: studyRecapBody(count, soleName),
-  };
 }
 
 /** Flash/Like reçu + digest « À découvrir » fusionnés (même profil). */
@@ -176,61 +157,6 @@ export function mergedNewProfileNotificationCopy(
   return {
     title: 'À découvrir',
     body: `${prenom} t'a envoyé un ${label} et attend que tu le valides : prends le temps de le découvrir.`,
-  };
-}
-
-export function waitingProfilesNotificationCopy(
-  count: number,
-  _viewerGender?: 'homme' | 'femme' | null,
-  soleName?: string | null
-): {
-  title: string;
-  body: string;
-} {
-  const n = Math.max(0, count);
-  const prenom = n === 1 ? firstNameOf(soleName) : null;
-  if (prenom) {
-    return {
-      title: 'En attente',
-      body: `Ne laisse pas ${prenom} dans l'attente.`,
-    };
-  }
-  if (n <= 1) {
-    return {
-      title: 'En attente',
-      body: `Ne laisse pas ce membre dans l'attente.`,
-    };
-  }
-  return {
-    title: 'En attente',
-    body: `Ne laisse pas ces membres dans l'attente.`,
-  };
-}
-
-export function firstExchangeNotificationCopy(
-  count: number,
-  soleName?: string | null
-): {
-  title: string;
-  body: string;
-} {
-  const n = Math.max(0, count);
-  const prenom = n === 1 ? firstNameOf(soleName) : null;
-  if (prenom) {
-    return {
-      title: '1er mot',
-      body: `Pense à écrire le 1er mot à ${prenom} pour lancer la conversation.`,
-    };
-  }
-  if (n <= 1) {
-    return {
-      title: '1er mot',
-      body: `Pense à écrire le 1er mot pour lancer la conversation.`,
-    };
-  }
-  return {
-    title: '1er mot',
-    body: `Pense à écrire les 1ers mots à ces ${n} personnes pour lancer les conversations.`,
   };
 }
 

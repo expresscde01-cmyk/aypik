@@ -1,5 +1,7 @@
 -- Test rejouable : une attente restée « wait » (archivage local, decision
 -- inchangée) expire toujours à 3 mois ; le rappel J-7 part toujours.
+-- Un wait expiré sur une paire déjà matchée (bond / likes croisés) n’est
+-- pas refusé et n’envoie pas match_declined.
 -- Exécuter le fichier entier d’un coup. Rien n’est persisté (ROLLBACK).
 -- Si une assertion échoue : exécuter ROLLBACK puis relire le message.
 
@@ -11,6 +13,7 @@ DECLARE
   v_a uuid := gen_random_uuid();
   v_b_expire uuid := gen_random_uuid();
   v_b_warn uuid := gen_random_uuid();
+  v_b_matched uuid := gen_random_uuid();
   v_started_expire timestamptz;
   v_started_after timestamptz;
   v_decision text;
@@ -65,13 +68,22 @@ BEGIN
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{}'::jsonb, now(), now(), '', '', '', ''
+    ),
+    (
+      v_instance, v_b_matched, 'authenticated', 'authenticated',
+      'wait-exp-m-' || v_b_matched::text || '@aypik.test',
+      'wait-exp-test',
+      now(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{}'::jsonb, now(), now(), '', '', '', ''
     );
 
   INSERT INTO public.profiles (id, display_name, birth_date)
   VALUES
     (v_a, 'Attente A', DATE '1990-01-01'),
     (v_b_expire, 'Attente B expire', DATE '1990-01-01'),
-    (v_b_warn, 'Attente B j7', DATE '1990-01-01');
+    (v_b_warn, 'Attente B j7', DATE '1990-01-01'),
+    (v_b_matched, 'Attente B déjà match', DATE '1990-01-01');
 
   -- Cas 1 : mis en attente il y a 3 mois, decision reste wait
   -- (l’archivage local ne change pas la ligne serveur).
@@ -138,6 +150,24 @@ BEGIN
     wait_expiry_notified_at = NULL
   WHERE user_id = v_a AND actor_id = v_b_warn;
 
+  -- Cas 3 : wait expiré mais Match réel (bond + likes croisés).
+  INSERT INTO public.inbox_responses (user_id, actor_id, decision, origin)
+  VALUES (v_a, v_b_matched, 'wait', 'like');
+
+  UPDATE public.inbox_responses
+  SET
+    wait_started_at = now() - interval '3 months',
+    wait_expiry_notified_at = NULL
+  WHERE user_id = v_a AND actor_id = v_b_matched;
+
+  INSERT INTO public.likes (from_user, to_user)
+  VALUES (v_a, v_b_matched), (v_b_matched, v_a)
+  ON CONFLICT (from_user, to_user) DO NOTHING;
+
+  INSERT INTO public.match_bonds (user_a, user_b, origin)
+  VALUES (LEAST(v_a, v_b_matched), GREATEST(v_a, v_b_matched), 'like')
+  ON CONFLICT (user_a, user_b) DO NOTHING;
+
   v_job := public.process_inbox_wait_expirations();
 
   SELECT ir.decision INTO v_decision
@@ -156,6 +186,28 @@ BEGIN
 
   IF v_declined < 1 THEN
     RAISE EXCEPTION 'expire_missing_match_declined job=%', v_job;
+  END IF;
+
+  SELECT ir.decision INTO v_decision
+  FROM public.inbox_responses ir
+  WHERE ir.user_id = v_a AND ir.actor_id = v_b_matched;
+
+  IF v_decision IS DISTINCT FROM 'match' THEN
+    RAISE EXCEPTION 'matched_wait_was_refused: decision=% job=%', v_decision, v_job;
+  END IF;
+
+  IF COALESCE((v_job->>'cleared_matched')::int, 0) < 1 THEN
+    RAISE EXCEPTION 'matched_wait_not_counted_cleared job=%', v_job;
+  END IF;
+
+  SELECT count(*) INTO v_declined
+  FROM public.social_notifications
+  WHERE user_id = v_b_matched
+    AND actor_id = v_a
+    AND kind = 'match_declined';
+
+  IF v_declined <> 0 THEN
+    RAISE EXCEPTION 'matched_wait_sent_match_declined count=% job=%', v_declined, v_job;
   END IF;
 
   SELECT ir.decision, ir.wait_expiry_notified_at

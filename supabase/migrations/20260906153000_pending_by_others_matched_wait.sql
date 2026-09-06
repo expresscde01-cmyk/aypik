@@ -1,8 +1,5 @@
--- Mis en attente par l’autre + signal wait→match (wait_started_at conservé).
--- Coller dans l’éditeur SQL Supabase, puis Run.
--- RPC uniquement : ne modifie pas les politiques RLS de inbox_responses.
--- « Mis en attente par l’autre » côté client : uniquement decision = 'wait'.
--- Les lignes match + wait_started_at servent à l’historique de fiche (couronne).
+-- Élargit get_pending_by_others : wait en cours + match ayant wait_started_at.
+-- Le client filtre toujours « Mis en attente par l’autre » sur decision = 'wait'.
 
 CREATE INDEX IF NOT EXISTS inbox_responses_actor_wait_idx
   ON public.inbox_responses (actor_id, created_at DESC)

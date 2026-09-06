@@ -29,12 +29,15 @@ type ChatScreenProps = {
   peer: Profile;
   onClose: () => void;
   onMatchHidden?: () => void;
+  /** Premier message envoyé : sort la fiche du digest « 1er mot ». */
+  onDialogueStarted?: (peerId: string) => void;
 };
 
 export default function ChatScreen({
   peer,
   onClose,
   onMatchHidden,
+  onDialogueStarted,
 }: ChatScreenProps) {
   const { user } = useAuth();
   const { status } = useMembership();
@@ -202,6 +205,7 @@ export default function ChatScreen({
         if (withoutLocal.some((m) => m.id === message.id)) return withoutLocal;
         return [...withoutLocal, message];
       });
+      onDialogueStarted?.(peer.id);
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);

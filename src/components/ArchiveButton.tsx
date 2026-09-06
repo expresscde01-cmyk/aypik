@@ -4,12 +4,14 @@ import { Folder, FolderOpen } from 'lucide-react';
 export default function ArchiveButton({
   disabled,
   busy,
+  locked,
   onClick,
   name,
   tooltip = 'logo-tr',
 }: {
   disabled?: boolean;
   busy?: boolean;
+  locked?: boolean;
   onClick: () => void;
   name: string;
   tooltip?: 'left' | 'top' | 'right' | 'logo' | 'logo-tr';
@@ -20,7 +22,7 @@ export default function ArchiveButton({
     <button
       type="button"
       onClick={() => {
-        if (blocked) return;
+        if (blocked || locked) return;
         onClick();
       }}
       disabled={blocked}

@@ -6,11 +6,22 @@ import { rememberClearedWait } from '@/lib/waitArchives';
 export type InboxDecision = 'wait' | 'refuse' | 'match';
 export type InboxOrigin = 'flash' | 'like';
 
+/** True only for the in-flight inbox button of that profile. */
+export function isInboxDecisionPending(
+  actingId: string | null,
+  actingDecision: InboxDecision | null,
+  profileId: string,
+  decision: InboxDecision
+): boolean {
+  return actingId === profileId && actingDecision === decision;
+}
+
 export type InboxResponseRow = {
   actor_id: string;
   decision: InboxDecision;
   origin: InboxOrigin;
   updated_at: string;
+  wait_started_at: string | null;
 };
 
 function rpcMessage(err: unknown): string {
@@ -183,18 +194,23 @@ export async function restoreWaitFromArchive(
 export async function fetchInboxResponses(): Promise<InboxResponseRow[]> {
   const { data, error } = await supabase
     .from('inbox_responses')
-    .select('actor_id, decision, origin, updated_at');
+    .select('actor_id, decision, origin, updated_at, wait_started_at');
   if (error) throw error;
-  return (data || []) as InboxResponseRow[];
+  return ((data || []) as InboxResponseRow[]).map((row) => ({
+    ...row,
+    wait_started_at: row.wait_started_at || null,
+  }));
 }
 
 export type PendingByOtherRow = {
   peer_id: string;
   origin: InboxOrigin;
   created_at: string;
+  wait_started_at: string | null;
+  decision: InboxDecision | null;
 };
 
-/** Likes/flashs que l’autre a mis en attente (RPC, hors RLS). */
+/** Likes/flashs que l’autre a mis en attente, et matchs passés par wait (RPC, hors RLS). */
 export async function fetchPendingByOthers(): Promise<PendingByOtherRow[]> {
   const { data, error } = await supabase.rpc('get_pending_by_others');
   if (error) throw error;
@@ -205,12 +221,24 @@ export async function fetchPendingByOthers(): Promise<PendingByOtherRow[]> {
         user_id?: unknown;
         origin?: unknown;
         created_at?: unknown;
+        wait_started_at?: unknown;
+        decision?: unknown;
       };
       const peerId = String(row.peer_id || row.user_id || '');
+      const decision: InboxDecision | null =
+        row.decision === 'wait' ||
+        row.decision === 'match' ||
+        row.decision === 'refuse'
+          ? row.decision
+          : null;
       return {
         peer_id: peerId,
         origin: (row.origin === 'flash' ? 'flash' : 'like') as InboxOrigin,
         created_at: String(row.created_at || ''),
+        wait_started_at: row.wait_started_at
+          ? String(row.wait_started_at)
+          : null,
+        decision,
       };
     })
     .filter((row) => row.peer_id);

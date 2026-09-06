@@ -105,6 +105,9 @@ BEGIN
     OR public.profile_is_deactivated(me) THEN
     RAISE EXCEPTION 'member_unavailable';
   END IF;
+  IF NOT public.users_are_matched(me, p_recipient) THEN
+    RAISE EXCEPTION 'not_matched';
+  END IF;
 
   a := LEAST(me, p_recipient);
   b := GREATEST(me, p_recipient);

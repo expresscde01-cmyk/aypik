@@ -184,8 +184,22 @@ export default function AccountMenu({
   const cancelPauseConfirm = () => setConfirmPause(false);
 
   const handleRefreshPage = () => {
-    close();
-    window.location.reload();
+    // Ne pas fermer le menu avant : sur iOS, unmount du bouton pendant le
+    // clic peut annuler la navigation et laisser #root vide.
+    // location.reload(true) est ignoré par les navigateurs modernes.
+    window.setTimeout(() => {
+      const go = () => {
+        window.location.replace(window.location.href);
+      };
+      if (!('serviceWorker' in navigator)) {
+        go();
+        return;
+      }
+      void navigator.serviceWorker
+        .getRegistration()
+        .then((reg) => (reg ? reg.update() : undefined))
+        .then(go, go);
+    }, 0);
   };
 
   const handleResetFilters = () => {

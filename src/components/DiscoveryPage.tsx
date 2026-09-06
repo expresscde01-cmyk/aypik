@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo, type ButtonHTMLAttributes } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Heart,
@@ -59,6 +59,7 @@ import { userErrorMessage } from '@/lib/userError';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
 import { LIKE_NOTIFICATION_EMOJI } from '@/lib/interactionCopy';
+import PortaledActionTooltip from '@/components/PortaledActionTooltip';
 
 const SORT_OPTIONS = [
   {
@@ -1173,6 +1174,42 @@ export default function DiscoveryPage({
   );
 }
 
+function DiscoveryActionButton({
+  tooltip,
+  className,
+  children,
+  onClick,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { tooltip: string }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [tipOpen, setTipOpen] = useState(false);
+
+  return (
+    <>
+      <span
+        className="inline-flex"
+        onPointerEnter={() => setTipOpen(true)}
+        onPointerLeave={() => setTipOpen(false)}
+      >
+        <button
+          {...props}
+          ref={ref}
+          type="button"
+          className={className}
+          onClick={onClick}
+          onFocus={() => setTipOpen(true)}
+          onBlur={() => setTipOpen(false)}
+        >
+          {children}
+        </button>
+      </span>
+      <PortaledActionTooltip open={tipOpen} anchorRef={ref}>
+        {tooltip}
+      </PortaledActionTooltip>
+    </>
+  );
+}
+
 const DiscoveryCard = memo(function DiscoveryCard({
   candidate: c,
   geoPerimeter,
@@ -1298,14 +1335,14 @@ const DiscoveryCard = memo(function DiscoveryCard({
             onKeyDown={(e) => e.stopPropagation()}
           >
             {showFlashCta && (
-              <button
-                type="button"
+              <DiscoveryActionButton
+                tooltip={alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash ⚡'}
                 onClick={(e) => {
                   e.stopPropagation();
                   onFlash(c);
                 }}
                 disabled={busy || alreadyFlashed}
-                className="group relative w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer overflow-visible"
+                className="relative w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
                 aria-label={
                   alreadyFlashed
                     ? `Déjà flashé ${c.display_name}`
@@ -1313,19 +1350,22 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 }
               >
                 <Zap className="w-4 h-4 text-white" fill="white" />
-                <span className="profile-action-tooltip pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
-                  {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash ⚡'}
-                </span>
-              </button>
+              </DiscoveryActionButton>
             )}
-            <button
-              type="button"
+            <DiscoveryActionButton
+              tooltip={
+                alreadyLiked
+                  ? 'Déjà liké'
+                  : likesExhausted
+                    ? 'Limite de likes atteinte'
+                    : `Liker ${LIKE_NOTIFICATION_EMOJI} ce profil`
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 onLike(c);
               }}
               disabled={busy || likesExhausted || alreadyLiked}
-              className="group relative w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer overflow-visible"
+              className="relative w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
               aria-label={
                 alreadyLiked
                   ? `Déjà liké ${c.display_name}`
@@ -1333,14 +1373,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
               }
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
-              <span className="profile-action-tooltip pointer-events-none absolute z-[1] top-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
-                {alreadyLiked
-                  ? 'Déjà liké'
-                  : likesExhausted
-                    ? 'Limite de likes atteinte'
-                    : `Liker ${LIKE_NOTIFICATION_EMOJI} ce profil`}
-              </span>
-            </button>
+            </DiscoveryActionButton>
           </div>
         </div>
       </article>

@@ -73,5 +73,14 @@ if (process.platform === 'win32') {
 if (!existsSync(zipPath)) fail('aypik-deploy.zip n’a pas été créé.');
 
 const kb = (statSync(zipPath).size / 1024).toFixed(0);
+const assetsDir = join(dist, 'assets');
+const entryAssets = existsSync(assetsDir)
+  ? readdirSync(assetsDir).filter((name) => /^index-.*\.(js|css)$/.test(name))
+  : [];
 console.log(`✓ Prêt : aypik-deploy.zip (${kb} Ko)`);
-console.log('  → Extraire dans public_html sur o2switch/cPanel, puis Ctrl+F5.');
+if (entryAssets.length) {
+  console.log(`  Entrée JS/CSS : ${entryAssets.join(', ')}`);
+}
+console.log(
+  '  → Extraire TOUT le zip dans public_html (index.php + dossier assets/), sans vider assets/ avant.'
+);

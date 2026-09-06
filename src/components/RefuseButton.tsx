@@ -5,6 +5,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 export default function RefuseButton({
   disabled,
   busy,
+  locked,
   onClick,
   name,
   label = 'Supprimer',
@@ -13,6 +14,7 @@ export default function RefuseButton({
 }: {
   disabled?: boolean;
   busy?: boolean;
+  locked?: boolean;
   onClick: () => void;
   name: string;
   tooltip?: 'right' | 'top' | 'left' | 'logo' | 'logo-tr';
@@ -31,7 +33,7 @@ export default function RefuseButton({
       <button
         type="button"
         onClick={() => {
-          if (blocked) return;
+          if (blocked || locked) return;
           if (!needsConfirm) {
             onClick();
             return;
@@ -39,6 +41,7 @@ export default function RefuseButton({
           setConfirmOpen(true);
         }}
         disabled={blocked}
+        aria-busy={busy || undefined}
         aria-label={`${label} ${name}`}
         className="group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default disabled:opacity-40"
       >

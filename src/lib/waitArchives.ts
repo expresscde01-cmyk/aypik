@@ -196,6 +196,20 @@ export function retainMineWaitArchives(
   return true;
 }
 
+/** Archive « mis en attente par l’autre » : ne garder que les wait encore vrais. */
+export function retainTheirsWaitArchives(
+  userId: string,
+  stillWaitingPeerIds: Iterable<string>
+): boolean {
+  const keep = new Set(stillWaitingPeerIds);
+  const store = readStore(userId);
+  const next = store.archivedTheirs.filter((row) => keep.has(row.actorId));
+  if (next.length === store.archivedTheirs.length) return false;
+  store.archivedTheirs = next;
+  writeStore(userId, store);
+  return true;
+}
+
 /** Remise à zéro locale pour un cycle attente ↔ archive (illimité). */
 export function releaseWaitCycle(userId: string, actorId: string) {
   const store = readStore(userId);

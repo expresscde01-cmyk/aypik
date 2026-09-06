@@ -1,13 +1,5 @@
--- Matchs rompus : auteur de la rupture (initiated_by).
--- À coller dans l’éditeur SQL Supabase si COLLER-MATCH-BREAKS.sql a déjà été exécuté
--- sans cette colonne. Sinon, recoller COLLER-MATCH-BREAKS.sql (version à jour) suffit.
---
--- Signature upsert_match_break : 4 paramètres (comme en prod). initiated_by = p_user.
--- La ligne symétrique de rupture n’emprunte pas upsert_match_break.
---
--- « Matchs rompus par toi » : archive, ou rupture dont tu es l’auteur (rétablir + supprimer).
--- « Matchs rompus par l’autre » : rupture initiée par l’interlocuteur (supprimer uniquement).
--- Les anciennes ruptures n’ont pas d’auteur connu : initiated_by = user_id (chacun voit « par toi »).
+-- Rupture : 4 paramètres upsert_match_break, ligne symétrique par INSERT,
+-- nettoyage inbox_responses. Source collable : COLLER-BREAK-CLEAR-INBOX.sql
 
 ALTER TABLE public.match_breaks
   ADD COLUMN IF NOT EXISTS initiated_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL;
@@ -127,59 +119,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.manage_active_match(uuid, boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.manage_active_match(uuid, boolean) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.restore_broken_match(p_peer uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  me uuid := auth.uid();
-  br public.match_breaks%ROWTYPE;
-BEGIN
-  IF me IS NULL THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'not_authenticated');
-  END IF;
-  IF p_peer IS NULL OR p_peer = me THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'invalid_peer');
-  END IF;
-
-  SELECT * INTO br
-  FROM public.match_breaks
-  WHERE user_id = me AND peer_id = p_peer;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'not_found');
-  END IF;
-
-  IF br.action = 'break'
-     AND br.initiated_by IS NOT NULL
-     AND br.initiated_by IS DISTINCT FROM me THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'not_initiator');
-  END IF;
-
-  IF br.action = 'break' THEN
-    INSERT INTO public.likes (from_user, to_user)
-    VALUES (me, p_peer)
-    ON CONFLICT (from_user, to_user) DO NOTHING;
-    INSERT INTO public.likes (from_user, to_user)
-    VALUES (p_peer, me)
-    ON CONFLICT (from_user, to_user) DO NOTHING;
-    PERFORM public.ensure_match_bond(me, p_peer, br.origin);
-    DELETE FROM public.match_breaks
-    WHERE (user_id = me AND peer_id = p_peer)
-       OR (user_id = p_peer AND peer_id = me);
-  ELSE
-    DELETE FROM public.match_breaks
-    WHERE user_id = me AND peer_id = p_peer;
-  END IF;
-
-  RETURN jsonb_build_object('ok', true, 'action', 'restore');
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.restore_broken_match(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.restore_broken_match(uuid) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';

@@ -313,7 +313,7 @@ export default function HomeDashboard({
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
-      <header className="sticky top-0 z-40 isolate bg-white/85 backdrop-blur-md border-b border-rose-100/80">
+      <header className="sticky top-0 z-40 isolate overflow-x-clip bg-white/85 backdrop-blur-md border-b border-rose-100/80">
         {pcHeader ? (
         <div className="w-full px-8">
           <div className="max-w-7xl mx-auto">
@@ -368,7 +368,7 @@ export default function HomeDashboard({
         <div className="max-w-2xl mx-auto px-4">
           <div
             ref={mobileTaglineRowRef}
-            className="relative flex items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+            className="relative flex items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0 overflow-x-clip"
           >
             <button
               type="button"

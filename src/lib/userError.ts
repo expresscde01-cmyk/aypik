@@ -22,6 +22,9 @@ export const MEMBER_UNAVAILABLE_MESSAGE =
 
 function friendlyDbMessage(msg: string, fallback: string): string {
   if (msg.includes('member_unavailable')) return MEMBER_UNAVAILABLE_MESSAGE;
+  if (msg.includes('not_matched')) {
+    return 'Tu ne peux écrire qu’à un membre avec qui tu as matché.';
+  }
   if (msg.includes('minors_not_allowed')) return ADULTS_ONLY_MESSAGE;
   if (msg.includes('decision_locked_refuse')) {
     return 'Tu as déjà refusé ce profil.';

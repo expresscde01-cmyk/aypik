@@ -16,6 +16,9 @@ createRoot(document.getElementById('root')!).render(
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    void navigator.serviceWorker.register('/sw.js?v=20260906-reload', {
+      scope: '/',
+      updateViaCache: 'none',
+    });
   });
 }

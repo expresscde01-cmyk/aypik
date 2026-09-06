@@ -62,11 +62,25 @@ import { useInboxReload, useUnreadMessages } from '@/lib/messaging';
 import {
   fetchInboxResponses,
   fetchPendingByOthers,
+  isInboxDecisionPending,
   respondToInboxInterest,
   restoreWaitFromArchive,
   type InboxDecision,
 } from '@/lib/inboxResponses';
+import {
+  isMatchedViaWait,
+  matchSheetUsesCrown,
+  dropPinnedId,
+  originHistoryIso,
+  pinIdsFirst,
+  splitPendingByOthers,
+} from '@/lib/matchHistoryDisplay';
 import { waitingManageServerMutation } from '@/lib/waitingManageFlow';
+import {
+  measureStickyHeaderHeight,
+  queryStickyHeader,
+  scrollYUnderStickyHeader,
+} from '@/lib/scrollUnderSticky';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
 import {
   fetchDeclinedArchives,
@@ -82,6 +96,7 @@ import {
   forgetClearedWait,
   forgetWaitArchive,
   retainMineWaitArchives,
+  retainTheirsWaitArchives,
   isMineWaitArchived,
   isWaitCleared,
   listAllWaitArchives,
@@ -120,6 +135,8 @@ interface Match {
   waiting: boolean;
   waitingAt: string | null;
   refused: boolean;
+  /** Passé par wait avant match (wait_started_at conservé). */
+  matchedViaWait: boolean;
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
@@ -706,11 +723,23 @@ async function fetchProfileBundle(ids: string[]): Promise<{
   return { byId, founderMap, boostSet };
 }
 
-function scrollMatchCardIntoView(elementId: string) {
+function scrollMatchCardIntoView(
+  elementId: string,
+  block: ScrollLogicalPosition = 'center'
+) {
   const run = () => {
-    document
-      .getElementById(elementId)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (block !== 'start') {
+      el.scrollIntoView({ behavior: 'smooth', block });
+      return;
+    }
+    const top = scrollYUnderStickyHeader(
+      el.getBoundingClientRect().top,
+      window.scrollY,
+      measureStickyHeaderHeight(queryStickyHeader())
+    );
+    window.scrollTo({ top, behavior: 'smooth' });
   };
   window.setTimeout(run, 80);
   window.setTimeout(run, 320);
@@ -848,6 +877,8 @@ export default function MatchesPage({
   focusPulseCategory = null,
   focusDeclined = false,
   focusWaitingIncoming = false,
+  focusPinActorIds = [],
+  focusUnreadMailbox = false,
   focusKey = 0,
   onChatClosed,
   onFocusActorConsumed,
@@ -865,6 +896,10 @@ export default function MatchesPage({
   focusDeclined?: boolean;
   /** Notif « X a mis ton Like/Flash en attente ». */
   focusWaitingIncoming?: boolean;
+  /** Profils du digest cloche à placer en tête de rubrique. */
+  focusPinActorIds?: string[];
+  /** Récap messages non lus → conversations en tête. */
+  focusUnreadMailbox?: boolean;
   /** Change à chaque navigation cloche → rejoue scroll / ouverture fiche. */
   focusKey?: number;
   onChatClosed?: () => void;
@@ -922,6 +957,27 @@ export default function MatchesPage({
   const [declinedBusyId, setDeclinedBusyId] = useState<string | null>(null);
   const declinedBusyRef = useRef(false);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [actingDecision, setActingDecision] = useState<InboxDecision | null>(
+    null
+  );
+  const actingLockRef = useRef<{
+    id: string;
+    decision: InboxDecision;
+  } | null>(null);
+
+  const beginActing = useCallback((id: string, decision: InboxDecision) => {
+    if (actingLockRef.current) return false;
+    actingLockRef.current = { id, decision };
+    setActingId(id);
+    setActingDecision(decision);
+    return true;
+  }, []);
+
+  const endActing = useCallback(() => {
+    actingLockRef.current = null;
+    setActingId(null);
+    setActingDecision(null);
+  }, []);
   /** Clignotement ponctuel (notif / focus) — retiré dès la 1re interaction. */
   const [pulseSingleId, setPulseSingleId] = useState<string | null>(null);
   /** Infobulle « Pas cette fois » au-dessus de la fiche ciblée par la notif. */
@@ -932,12 +988,25 @@ export default function MatchesPage({
   const [pulseCategory, setPulseCategory] = useState<MatchPulseCategory | null>(
     null
   );
+  const [pinActorIds, setPinActorIds] = useState<string[]>([]);
+  const [unreadMailbox, setUnreadMailbox] = useState(false);
+  const releasePinnedActor = useCallback((profileId: string) => {
+    if (!profileId) return;
+    setPulseSingleId((current) => (current === profileId ? null : current));
+    setPinActorIds((prev) => dropPinnedId(prev, profileId));
+  }, []);
   const consumeAttentionPulse = useCallback((profileId?: string | null) => {
     setPulseSingleId((current) => {
       if (!profileId || current === profileId) return null;
       return current;
     });
-    setPulseCategory(null);
+    if (profileId) {
+      setPinActorIds((prev) => dropPinnedId(prev, profileId));
+    } else {
+      setPulseCategory(null);
+      setUnreadMailbox(false);
+      setPinActorIds([]);
+    }
     setDeclinedActionHintId((current) => {
       if (!profileId || current === profileId) return null;
       return current;
@@ -946,6 +1015,7 @@ export default function MatchesPage({
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
   );
+  const wroteFirstRef = useRef<Set<string>>(new Set());
   const [myGender, setMyGender] = useState<ProfileGender | null>(null);
   const pendingFocusRef = useRef<{
     actorId: string;
@@ -953,8 +1023,10 @@ export default function MatchesPage({
     highlight: boolean;
     hintName: string | null;
     pulseCategory: MatchPulseCategory | null;
+    pinActorIds: string[];
     declined: boolean;
     waitingIncoming: boolean;
+    unreadMailbox: boolean;
     attempts?: number;
   } | null>(null);
   const unread = useUnreadMessages({
@@ -1170,12 +1242,42 @@ export default function MatchesPage({
           .map((r) => [r.actor_id, r.updated_at] as const)
       );
       const waitingActors = new Set(waitingAtMap.keys());
+      let matchedViaWaitPeerIds = new Set<string>();
+      let liveWaitPeerIds = new Set<string>();
+      let pendingOthersOk = false;
+      try {
+        const pendingOthers = await fetchPendingByOthers();
+        const split = splitPendingByOthers(pendingOthers);
+        matchedViaWaitPeerIds = split.matchedViaWaitPeerIds;
+        liveWaitPeerIds = new Set(split.liveWaits.map((row) => row.peer_id));
+        pendingOthersOk = true;
+      } catch {
+        matchedViaWaitPeerIds = new Set();
+      }
+      const viaWaitOwn = new Set(
+        inboxRes
+          .filter(
+            (r) => r.decision === 'match' && isMatchedViaWait(r.wait_started_at)
+          )
+          .map((r) => r.actor_id)
+      );
       if (inboxOk) {
         retainMineWaitArchives(user.id, waitingActors);
+      }
+      if (pendingOthersOk) {
+        retainTheirsWaitArchives(user.id, liveWaitPeerIds);
+      }
+      if (inboxOk || pendingOthersOk) {
         setWaitArchives((prev) =>
-          prev.filter(
-            (c) => c.source !== 'mine' || waitingActors.has(c.profile.id)
-          )
+          prev.filter((c) => {
+            if (c.source === 'mine') {
+              return !inboxOk || waitingActors.has(c.profile.id);
+            }
+            if (c.source === 'theirs') {
+              return !pendingOthersOk || liveWaitPeerIds.has(c.profile.id);
+            }
+            return true;
+          })
         );
       }
       const forceWait = restoredWaitActorsRef.current;
@@ -1186,7 +1288,11 @@ export default function MatchesPage({
       } catch {
         peersChat = new Set();
       }
-      setPeersWithChat(peersChat);
+      setPeersWithChat(() => {
+        const next = new Set(peersChat);
+        for (const id of wroteFirstRef.current) next.add(id);
+        return next;
+      });
 
       const list: Match[] = [...byId.values()].map((p) => {
           const kind: MatchKind = matchIdSet.has(p.id)
@@ -1227,6 +1333,9 @@ export default function MatchesPage({
             waiting,
             waitingAt: waiting ? waitingAtMap.get(p.id) ?? null : null,
             refused: false,
+            matchedViaWait:
+              isMatched &&
+              (viaWaitOwn.has(p.id) || matchedViaWaitPeerIds.has(p.id)),
             is_founder: founderMap.has(p.id),
             founder_number: founderMap.get(p.id) ?? null,
             is_boosted: boostSet.has(p.id),
@@ -1378,6 +1487,16 @@ export default function MatchesPage({
       } catch {
         /* conserve le store local si l’inbox ne répond pas */
       }
+      try {
+        const pendingOthers = await fetchPendingByOthers();
+        if (gen !== waitArchivesLoadGen.current) return;
+        retainTheirsWaitArchives(
+          user.id,
+          splitPendingByOthers(pendingOthers).liveWaits.map((row) => row.peer_id)
+        );
+      } catch {
+        /* conserve les archives « par l’autre » si le RPC ne répond pas */
+      }
       const { byId, founderMap, boostSet } = await fetchProfileBundle(
         [...new Set(listAllWaitArchives(user.id).map((r) => r.actorId))]
       );
@@ -1416,10 +1535,7 @@ export default function MatchesPage({
       setWaitArchives(list);
       setOpenWaitArchive((open) => {
         if (!open) return open;
-        const next = list.find((c) => c.archiveId === open.archiveId);
-        if (next) return next;
-        if (open.source === 'mine') return null;
-        return open;
+        return list.find((c) => c.archiveId === open.archiveId) ?? null;
       });
     } catch {
       if (gen !== waitArchivesLoadGen.current) return;
@@ -1475,7 +1591,25 @@ export default function MatchesPage({
     }
     try {
       const rows = await fetchPendingByOthers();
-      if (rows.length === 0) {
+      const { liveWaits } = splitPendingByOthers(rows);
+      retainTheirsWaitArchives(
+        user.id,
+        liveWaits.map((row) => row.peer_id)
+      );
+      setWaitArchives((prev) =>
+        prev.filter(
+          (c) =>
+            c.source !== 'theirs' ||
+            liveWaits.some((row) => row.peer_id === c.profile.id)
+        )
+      );
+      setOpenWaitArchive((open) => {
+        if (!open || open.source !== 'theirs') return open;
+        return liveWaits.some((row) => row.peer_id === open.profile.id)
+          ? open
+          : null;
+      });
+      if (liveWaits.length === 0) {
         setWaitingByOthers([]);
         setOpenWaitingByOther(null);
         setError((prev) =>
@@ -1484,10 +1618,10 @@ export default function MatchesPage({
         return;
       }
       const { byId, founderMap, boostSet } = await fetchProfileBundle(
-        [...new Set(rows.map((r) => r.peer_id))]
+        [...new Set(liveWaits.map((r) => r.peer_id))]
       );
       const list: WaitingByOtherCard[] = [];
-      for (const row of rows) {
+      for (const row of liveWaits) {
         const profile = byId.get(row.peer_id);
         if (!profile) continue;
         list.push({
@@ -1666,7 +1800,9 @@ export default function MatchesPage({
       !resolvedCategory &&
       !focusHighlight &&
       !focusDeclined &&
-      !focusWaitingIncoming
+      !focusWaitingIncoming &&
+      !focusUnreadMailbox &&
+      focusPinActorIds.length === 0
     ) {
       return;
     }
@@ -1676,8 +1812,10 @@ export default function MatchesPage({
       highlight: focusHighlight,
       hintName: focusHintName,
       pulseCategory: resolvedCategory,
+      pinActorIds: focusPinActorIds,
       declined: focusDeclined,
       waitingIncoming: focusWaitingIncoming,
+      unreadMailbox: focusUnreadMailbox,
     };
   }, [
     focusActorId,
@@ -1686,8 +1824,10 @@ export default function MatchesPage({
     focusHintName,
     focusPulseCategory,
     focusPulsePendingAll,
+    focusPinActorIds,
     focusDeclined,
     focusWaitingIncoming,
+    focusUnreadMailbox,
     focusKey,
   ]);
 
@@ -1806,32 +1946,53 @@ export default function MatchesPage({
       }
     }
 
-    if (pending.pulseCategory && !pending.highlight) {
+    if (pending.unreadMailbox) {
       pendingFocusRef.current = null;
       onFocusActorConsumed?.();
-      // Exclusif : A remplace B et inversement
-      setPulseCategory(pending.pulseCategory);
+      setUnreadMailbox(true);
+      setPulseCategory(null);
+      setPinActorIds(pending.pinActorIds || []);
       setPulseSingleId(null);
       setOpenProfile(null);
-      window.setTimeout(() => {
-        const target =
-          pending.pulseCategory === 'wait'
-            ? matches.find((m) => m.waiting)
-            : pending.pulseCategory === 'first'
-              ? matches.find((m) => {
-                  const isPending = m.kind !== 'match';
-                  const isMatched = !isPending || m.alreadyLiked;
-                  const hasDialogue = peersWithChat.has(m.profile.id);
-                  return isMatched && !m.waiting && !hasDialogue;
-                })
-              : matches.find(
-                  (m) =>
-                    m.kind !== 'match' && !m.alreadyLiked && !m.waiting
-                );
-        if (target) {
-          scrollMatchCardIntoView(`match-card-${target.profile.id}`);
+      const firstPin = (pending.pinActorIds || [])[0];
+      if (firstPin) {
+        scrollMatchCardIntoView(`match-card-${firstPin}`, 'start');
+      } else {
+        scrollMatchCardIntoView('match-floor-matched-chat', 'start');
+      }
+      return;
+    }
+
+    if (pending.pulseCategory && !pending.highlight) {
+      // Exclusif : A remplace B et inversement
+      setPulseCategory(pending.pulseCategory);
+      setUnreadMailbox(false);
+      setPinActorIds(pending.pinActorIds || []);
+      setPulseSingleId(pending.actorId || null);
+      const floorId =
+        pending.pulseCategory === 'wait'
+          ? 'match-floor-wait'
+          : pending.pulseCategory === 'first'
+            ? 'match-floor-matched-quiet'
+            : 'match-floor-new';
+      const firstPin = pending.actorId || (pending.pinActorIds || [])[0];
+      scrollMatchCardIntoView(
+        firstPin ? `match-card-${firstPin}` : floorId,
+        'start'
+      );
+      if (pending.actorId) {
+        const foundCard = matches.find((m) => m.profile.id === pending.actorId);
+        if (!foundCard) {
+          return;
         }
-      }, 60);
+        pendingFocusRef.current = null;
+        onFocusActorConsumed?.();
+        setOpenProfile(foundCard);
+        return;
+      }
+      pendingFocusRef.current = null;
+      onFocusActorConsumed?.();
+      setOpenProfile(null);
       return;
     }
 
@@ -1901,6 +2062,7 @@ export default function MatchesPage({
     focusHintName,
     focusPulseCategory,
     focusPulsePendingAll,
+    focusPinActorIds,
     focusKey,
     onFocusActorConsumed,
     peersWithChat,
@@ -1918,14 +2080,13 @@ export default function MatchesPage({
     async (item: Match) => {
       if (
         !user ||
-        actingId ||
         likesExhausted ||
         item.alreadyLiked ||
         item.kind === 'match'
       ) {
         return;
       }
-      setActingId(item.profile.id);
+      if (!beginActing(item.profile.id, 'match')) return;
       setError(null);
       try {
         forgetClearedWait(user.id, item.profile.id);
@@ -1939,27 +2100,27 @@ export default function MatchesPage({
           refused: false,
           matchRole: 'accepted',
           matchedBackAt: new Date().toISOString(),
+          matchedViaWait: Boolean(item.waiting),
         };
         setMatches((prev) =>
           prev.map((m) => (m.profile.id === item.profile.id ? confirmed : m))
         );
         markResolved(item.profile.id, 'matched');
-        setPulseCategory(null);
-        setPulseSingleId(null);
+        releasePinnedActor(item.profile.id);
         setOpenProfile(null);
         await Promise.all([loadMatches(), refreshMembership()]);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible de valider le match'));
       } finally {
-        setActingId(null);
+        endActing();
       }
     },
-    [user, actingId, likesExhausted, loadMatches, refreshMembership, markResolved]
+    [user, likesExhausted, loadMatches, refreshMembership, markResolved, releasePinnedActor, beginActing, endActing]
   );
 
   const handleInboxDecision = useCallback(
     async (item: Match, decision: InboxDecision) => {
-      if (!user || actingId) return;
+      if (!user) return;
       if (decision === 'match' && likesExhausted) return;
       if (item.kind === 'match' || item.alreadyLiked) return;
       if (item.waiting && decision === 'wait') return;
@@ -1969,7 +2130,7 @@ export default function MatchesPage({
         return;
       }
 
-      setActingId(item.profile.id);
+      if (!beginActing(item.profile.id, decision)) return;
       setError(null);
       try {
         forgetClearedWait(user.id, item.profile.id);
@@ -1983,10 +2144,7 @@ export default function MatchesPage({
             prev.filter((m) => m.profile.id !== item.profile.id)
           );
           markResolved(item.profile.id, 'refused');
-          setPulseCategory(null);
-          setPulseSingleId((id) =>
-            id === item.profile.id ? null : id
-          );
+          releasePinnedActor(item.profile.id);
         } else {
           const waiting: Match = {
             ...item,
@@ -1998,38 +2156,37 @@ export default function MatchesPage({
             prev.map((m) => (m.profile.id === item.profile.id ? waiting : m))
           );
           markResolved(item.profile.id, 'wait');
-          // Clignotement ponctuel exclusif de ce profil (catégorie B)
-          setPulseCategory(null);
+          releasePinnedActor(item.profile.id);
           setPulseSingleId(item.profile.id);
         }
         setOpenProfile(null);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
-        setActingId(null);
+        endActing();
       }
     },
-    [user, actingId, likesExhausted, handleMatchBack, markResolved]
+    [user, likesExhausted, handleMatchBack, markResolved, releasePinnedActor, beginActing, endActing]
   );
 
   const handleRefuseWaiting = useCallback((item: Match) => {
-    if (!user || actingId) return;
+    if (!user || actingLockRef.current) return;
     if (item.kind === 'match' || item.alreadyLiked) return;
     if (waitingManageServerMutation('open-manage') !== 'none') return;
     setOpenWaitingManage(item);
     setOpenProfile(null);
     setError(null);
-  }, [user, actingId]);
+  }, [user]);
 
   const handlePurgeWaiting = useCallback(
     async (item: Match) => {
-      if (!user || actingId) return;
+      if (!user) return;
       if (item.kind === 'match' || item.alreadyLiked) return;
       if (waitingManageServerMutation('manage-purge') !== 'refuse') {
         return;
       }
 
-      setActingId(item.profile.id);
+      if (!beginActing(item.profile.id, 'refuse')) return;
       setError(null);
       matchesLoadGen.current += 1;
       forgetClearedWait(user.id, item.profile.id);
@@ -2044,16 +2201,15 @@ export default function MatchesPage({
           prev.filter((m) => m.profile.id !== item.profile.id)
         );
         markResolved(item.profile.id, 'refused');
-        setPulseCategory(null);
-        setPulseSingleId((id) => (id === item.profile.id ? null : id));
+        releasePinnedActor(item.profile.id);
         setOpenWaitingManage(null);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
-        setActingId(null);
+        endActing();
       }
     },
-    [user, actingId, markResolved]
+    [user, markResolved, releasePinnedActor, beginActing, endActing]
   );
 
   const handlePendingDeclined = useCallback(
@@ -2143,8 +2299,7 @@ export default function MatchesPage({
       setError(null);
       setOpenProfile(null);
       setOpenWaitingManage(null);
-      setPulseCategory(null);
-      setPulseSingleId((id) => (id === actorId ? null : id));
+      releasePinnedActor(actorId);
       setWaitArchives((prev) => [
         {
           archiveId: `mine-${actorId}`,
@@ -2169,7 +2324,7 @@ export default function MatchesPage({
         kinds: ['match_wait_reminder'],
       }).catch(() => undefined);
     },
-    [user]
+    [user, releasePinnedActor]
   );
 
   const handlePendingWaiting = useCallback(
@@ -2327,6 +2482,7 @@ export default function MatchesPage({
           waiting: true,
           waitingAt: restoredAt,
           refused: false,
+          matchedViaWait: false,
           is_founder: card.is_founder,
           founder_number: card.founder_number,
           is_boosted: card.is_boosted,
@@ -2446,14 +2602,30 @@ export default function MatchesPage({
       buckets[floor].push(match);
     }
     return {
-      new: buckets.new.sort(sortByDateReceivedDesc),
-      wait: buckets.wait
-        .filter(
-          (m) => !user || !isMineWaitArchived(user.id, m.profile.id)
-        )
-        .sort(sortByDateReceivedDesc),
-      matchedQuiet: buckets['matched-quiet'].sort(sortByDateReceivedDesc),
-      matchedChat: buckets['matched-chat'].sort(sortByDateReceivedDesc),
+      new: pinIdsFirst(
+        buckets.new.sort(sortByDateReceivedDesc),
+        pulseCategory === 'new' ? pinActorIds : [],
+        (m) => m.profile.id
+      ),
+      wait: pinIdsFirst(
+        buckets.wait
+          .filter(
+            (m) => !user || !isMineWaitArchived(user.id, m.profile.id)
+          )
+          .sort(sortByDateReceivedDesc),
+        pulseCategory === 'wait' ? pinActorIds : [],
+        (m) => m.profile.id
+      ),
+      matchedQuiet: pinIdsFirst(
+        buckets['matched-quiet'].sort(sortByDateReceivedDesc),
+        pulseCategory === 'first' || unreadMailbox ? pinActorIds : [],
+        (m) => m.profile.id
+      ),
+      matchedChat: pinIdsFirst(
+        buckets['matched-chat'].sort(sortByDateReceivedDesc),
+        unreadMailbox ? pinActorIds : [],
+        (m) => m.profile.id
+      ),
     };
   }, [
     matches,
@@ -2461,12 +2633,53 @@ export default function MatchesPage({
     user,
     waitArchives,
     brokenPeerIds,
+    pulseCategory,
+    pinActorIds,
+    unreadMailbox,
+  ]);
+
+  useEffect(() => {
+    if (pinActorIds.length === 0 && unreadMailbox) {
+      setUnreadMailbox(false);
+    }
+  }, [unreadMailbox, pinActorIds.length]);
+
+  useEffect(() => {
+    if (loading || pinActorIds.length === 0) return;
+    if (!pulseCategory && !unreadMailbox) return;
+    const live =
+      pulseCategory === 'new'
+        ? floors.new
+        : pulseCategory === 'wait'
+          ? floors.wait
+          : pulseCategory === 'first'
+            ? floors.matchedQuiet
+            : unreadMailbox
+              ? [...floors.matchedQuiet, ...floors.matchedChat]
+              : [];
+    const liveIds = new Set(live.map((m) => m.profile.id));
+    setPinActorIds((prev) => {
+      const next = prev.filter((id) => liveIds.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [
+    loading,
+    pulseCategory,
+    unreadMailbox,
+    pinActorIds,
+    floors.new,
+    floors.wait,
+    floors.matchedQuiet,
+    floors.matchedChat,
   ]);
 
   const visibleWaitArchives = useMemo(() => {
     const matchedIds = new Set(
       matches
-        .filter((m) => m.kind === 'match' || m.alreadyLiked)
+        .filter(
+          (m) =>
+            m.kind === 'match' || m.alreadyLiked || m.matchedViaWait
+        )
         .map((m) => m.profile.id)
     );
     return waitArchives
@@ -2510,7 +2723,17 @@ export default function MatchesPage({
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
     const next: MatchesInboxEntry[] = matches
-      .filter((match) => !brokenPeerIds.has(match.profile.id))
+      .filter((match) => {
+        if (brokenPeerIds.has(match.profile.id)) return false;
+        if (
+          match.waiting &&
+          user &&
+          isMineWaitArchived(user.id, match.profile.id)
+        ) {
+          return false;
+        }
+        return true;
+      })
       .map((match) => {
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
@@ -2527,7 +2750,7 @@ export default function MatchesPage({
       };
     });
     publish(next);
-  }, [matches, peersWithChat, publish, brokenPeerIds]);
+  }, [matches, peersWithChat, publish, brokenPeerIds, user, waitArchives]);
 
   const renderMatchCard = (match: Match) => {
     const isPending = match.kind !== 'match';
@@ -2549,14 +2772,21 @@ export default function MatchesPage({
 
     const receivedLabel = formatInteractionDate(match.date_received);
     const isToStudy = isPending && !match.waiting && !match.alreadyLiked;
+    const cardActing = actingId === match.profile.id;
     const isQuietMatch = isMatched && !hasDialogue && !match.waiting;
+    const pinSet =
+      pinActorIds.length > 0 ? new Set(pinActorIds) : null;
+    const inPin = (id: string) => !pinSet || pinSet.has(id);
     const shouldPulse = match.waiting
-      ? pulseCategory === 'wait' || pulseSingleId === match.profile.id
+      ? (pulseCategory === 'wait' && inPin(match.profile.id)) ||
+        pulseSingleId === match.profile.id
       : isToStudy &&
-        (pulseCategory === 'new' || pulseSingleId === match.profile.id)
+          ((pulseCategory === 'new' && inPin(match.profile.id)) ||
+            pulseSingleId === match.profile.id)
         ? true
         : isQuietMatch &&
-          (pulseCategory === 'first' || pulseSingleId === match.profile.id);
+          ((pulseCategory === 'first' && inPin(match.profile.id)) ||
+            pulseSingleId === match.profile.id);
 
     const cardTone = (() => {
       if (match.waiting) {
@@ -2668,7 +2898,13 @@ export default function MatchesPage({
           <MatchCardActions>
             <MatcherButton
               name={match.profile.display_name}
-              busy={actingId === match.profile.id}
+              busy={isInboxDecisionPending(
+                actingId,
+                actingDecision,
+                match.profile.id,
+                'match'
+              )}
+              locked={cardActing && actingDecision !== 'match'}
               disabled={likesExhausted}
               matched={match.alreadyLiked}
               tooltip={cardActionTooltip(0, isToStudy || match.waiting ? 3 : 2)}
@@ -2677,21 +2913,33 @@ export default function MatchesPage({
             {match.waiting ? (
               <ArchiveButton
                 name={match.profile.display_name}
-                busy={actingId === match.profile.id}
+                locked={cardActing}
                 tooltip={cardActionTooltip(1, 3)}
                 onClick={() => handleArchiveWaiting(match)}
               />
             ) : isToStudy ? (
               <WaitButton
                 name={match.profile.display_name}
-                busy={actingId === match.profile.id}
+                busy={isInboxDecisionPending(
+                  actingId,
+                  actingDecision,
+                  match.profile.id,
+                  'wait'
+                )}
+                locked={cardActing && actingDecision !== 'wait'}
                 tooltip={cardActionTooltip(1, 3)}
                 onClick={() => void handleInboxDecision(match, 'wait')}
               />
             ) : null}
             <RefuseButton
               name={match.profile.display_name}
-              busy={actingId === match.profile.id}
+              busy={isInboxDecisionPending(
+                actingId,
+                actingDecision,
+                match.profile.id,
+                'refuse'
+              )}
+              locked={cardActing && actingDecision !== 'refuse'}
               tooltip={cardActionTooltip(
                 isToStudy || match.waiting ? 2 : 1,
                 isToStudy || match.waiting ? 3 : 2
@@ -2730,7 +2978,11 @@ export default function MatchesPage({
   ) => {
     if (items.length === 0) return null;
     return (
-      <section className="space-y-2" aria-label={title}>
+      <section
+        id={`match-floor-${floor}`}
+        className="space-y-2"
+        aria-label={title}
+      >
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
           <ColorChip label={title} tone={floor} />
           <span className="text-gray-400 font-normal">({items.length})</span>
@@ -2945,7 +3197,7 @@ export default function MatchesPage({
       return null;
     }
     return (
-      <section className="space-y-6" aria-label="Mis en attente">
+      <section id="match-floor-wait" className="space-y-6" aria-label="Mis en attente">
         {mineActive.length > 0 ? (
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
@@ -3452,6 +3704,16 @@ export default function MatchesPage({
       {chatPeer && (
         <ChatScreen
           peer={chatPeer}
+          onDialogueStarted={(peerId) => {
+            wroteFirstRef.current.add(peerId);
+            setPeersWithChat((prev) => {
+              if (prev.has(peerId)) return prev;
+              const next = new Set(prev);
+              next.add(peerId);
+              return next;
+            });
+            releasePinnedActor(peerId);
+          }}
           onClose={() => {
             setChatPeer(null);
             void loadMatches();
@@ -3653,13 +3915,21 @@ export default function MatchesPage({
             openProfile.kind === 'match' || openProfile.alreadyLiked
           }
           busy={actingId === openProfile.profile.id}
+          pendingDecision={
+            actingId === openProfile.profile.id ? actingDecision : null
+          }
           likesExhausted={likesExhausted}
           showFlashCta={false}
           inboxHistory={{
             origin: openProfile.origin,
             originLabel: originHistoryLabel(
               openProfile.origin,
-              openProfile.matched_at
+              originHistoryIso({
+                matchRole: openProfile.matchRole,
+                dateReceived: openProfile.date_received,
+                matchedAt: openProfile.matched_at,
+                matchedBackAt: openProfile.matchedBackAt,
+              })
             ),
             matchedLabel:
               openProfile.kind === 'match' || openProfile.alreadyLiked
@@ -3670,6 +3940,10 @@ export default function MatchesPage({
                     openProfile.matchRole
                   )
                 : null,
+            matchedViaWait: matchSheetUsesCrown(
+              openProfile.kind === 'match' || openProfile.alreadyLiked,
+              openProfile.matchedViaWait
+            ),
             waiting: openProfile.waiting,
             refused: openProfile.refused,
             viewerGender: myGender,

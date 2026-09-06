@@ -90,4 +90,71 @@ $html = preg_replace(
     $html
 ) ?? $html;
 
+$bootJs = <<<'JS'
+(function () {
+  var root = document.getElementById('root');
+  if (!root) return;
+  var fallback = null;
+  function onBooted() {
+    if (!root.childNodes.length) return;
+    clearTimeout(timer);
+    obs.disconnect();
+    if (fallback) {
+      fallback.remove();
+      fallback = null;
+    }
+  }
+  var obs = new MutationObserver(onBooted);
+  obs.observe(root, { childList: true });
+  var timer = setTimeout(function () {
+    if (root.childNodes.length) {
+      onBooted();
+      return;
+    }
+    fallback = document.createElement('div');
+    fallback.id = 'aypik-boot-fallback';
+    fallback.setAttribute('role', 'alert');
+    fallback.style.cssText =
+      'min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;background:linear-gradient(to bottom right,#fff1f2,#ffffff,#fffbeb);font-family:system-ui,sans-serif;text-align:center;';
+    var box = document.createElement('div');
+    box.style.maxWidth = '24rem';
+    var title = document.createElement('p');
+    title.style.cssText =
+      'margin:0 0 0.5rem;font-size:1.125rem;font-weight:700;color:#111827;';
+    title.textContent = "La page n’a pas pu s’afficher.";
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Réessayer';
+    btn.style.cssText =
+      'padding:0.625rem 1.5rem;border:0;border-radius:0.75rem;background:#f43f5e;color:#fff;font-weight:600;cursor:pointer;';
+    btn.addEventListener('click', function () {
+      function go() {
+        location.replace(location.href);
+      }
+      if (!('serviceWorker' in navigator)) {
+        go();
+        return;
+      }
+      navigator.serviceWorker
+        .getRegistrations()
+        .then(function (regs) {
+          return Promise.all(
+            regs.map(function (r) {
+              return r.unregister();
+            })
+          );
+        })
+        .then(go, go);
+    });
+    box.appendChild(title);
+    box.appendChild(btn);
+    fallback.appendChild(box);
+    document.body.appendChild(fallback);
+  }, 4000);
+})();
+JS;
+$bootFallback =
+    '<script nonce="' . $nonceAttr . '">' . $bootJs . '</script>';
+$html = preg_replace('/<\/body>/i', $bootFallback . '</body>', $html, 1) ?? $html;
+
 echo $html;

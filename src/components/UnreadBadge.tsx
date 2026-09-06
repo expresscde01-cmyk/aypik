@@ -23,7 +23,7 @@ export function unreadMessagesRecapCopy(count: number): {
         : `${n} messages non lus`;
   return {
     title: `Tu as ${qty}`,
-    body: 'Ouvre tes matchs pour répondre.',
+    body: 'Ouvre ta boîte de dialogue pour répondre.',
   };
 }
 

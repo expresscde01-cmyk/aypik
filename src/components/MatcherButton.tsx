@@ -19,6 +19,7 @@ export default function MatcherButton({
   disabled,
   matched,
   busy,
+  locked,
   onClick,
   name,
   tooltip = 'logo-tr',
@@ -26,26 +27,30 @@ export default function MatcherButton({
   disabled?: boolean;
   matched?: boolean;
   busy?: boolean;
+  locked?: boolean;
   onClick: () => void;
   name: string;
   tooltip?: 'right' | 'top' | 'left' | 'logo' | 'logo-tr';
 }) {
   const done = Boolean(matched);
   const blocked = Boolean(disabled) && !done;
+  const pending = Boolean(busy) && !done;
+  const dimmed = blocked || pending;
 
   return (
     <button
       type="button"
       onClick={() => {
-        if (done || blocked || busy) return;
+        if (done || blocked || pending || locked) return;
         onClick();
       }}
-      disabled={(blocked || busy) && !done}
-      aria-disabled={done || blocked || busy || undefined}
+      disabled={dimmed}
+      aria-disabled={done || dimmed || undefined}
+      aria-busy={pending || undefined}
       data-matched={done ? 'true' : undefined}
       aria-label={done ? `Matché avec ${name}` : `Matcher avec ${name}`}
       className={`matcher-btn group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default ${
-        blocked ? 'opacity-40' : done ? 'opacity-80' : ''
+        dimmed ? 'opacity-40' : done ? 'opacity-80' : ''
       }`}
     >
       <span className="matcher-crown-wrap pointer-events-none relative flex h-8 w-8 items-center justify-center">
