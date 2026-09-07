@@ -286,6 +286,10 @@ async function handleSignIn(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
   );
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   const dummyPromise = dummyPasswordCheck(password).catch(() => {});
   const authPromise = anon.auth.signInWithPassword({
@@ -293,7 +297,12 @@ async function handleSignIn(
     password,
     options: { captchaToken: captchaToken || undefined },
   });
-  const [{ data, error }] = await Promise.all([authPromise, dummyPromise]);
+  const lockPromise = admin.rpc("login_security_status", { p_email: email });
+  const [{ data, error }, , lockResult] = await Promise.all([
+    authPromise,
+    dummyPromise,
+    lockPromise,
+  ]);
 
   if (error) {
     if (isGoTrueInvalidCredentials(error)) {
@@ -310,7 +319,14 @@ async function handleSignIn(
   }
 
   const session = data.session;
-  if (!session?.access_token || !session?.refresh_token) {
+  const locked = readLockedFlag(lockResult.data);
+  const lockUnknown = Boolean(lockResult.error) || locked === null;
+  if (
+    !session?.access_token ||
+    !session?.refresh_token ||
+    lockUnknown ||
+    locked === true
+  ) {
     return invalidCredentialsResponse();
   }
 
@@ -319,6 +335,20 @@ async function handleSignIn(
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
+}
+
+function readLockedFlag(data: unknown): boolean | null {
+  let row = data;
+  if (typeof row === "string") {
+    try {
+      row = JSON.parse(row) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  if (!row || typeof row !== "object") return null;
+  if (!("locked" in row)) return null;
+  return (row as { locked: unknown }).locked === true;
 }
 
 function json(body: Record<string, unknown>, status = 200) {
