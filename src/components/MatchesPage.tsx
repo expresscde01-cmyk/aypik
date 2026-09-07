@@ -77,6 +77,8 @@ import {
   pinIdsFirst,
   splitPendingByOthers,
 } from '@/lib/matchHistoryDisplay';
+import { matchCardDepartClass } from '@/lib/matchCardDepart';
+import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
 import {
   waitingDeleteUi,
   waitingManageServerMutation,
@@ -1003,6 +1005,7 @@ export default function MatchesPage({
       return next;
     });
   }, []);
+  const { playDepart, isDeparting } = useMatchCardDepart();
   const consumeAttentionPulse = useCallback((profileId?: string | null) => {
     setPulseSingleId((current) => {
       if (!profileId || current === profileId) return null;
@@ -2126,12 +2129,14 @@ export default function MatchesPage({
           matchedBackAt: new Date().toISOString(),
           matchedViaWait: Boolean(item.waiting),
         };
-        setMatches((prev) =>
-          prev.map((m) => (m.profile.id === item.profile.id ? confirmed : m))
-        );
-        markResolved(item.profile.id, 'matched');
-        releasePinnedActor(item.profile.id);
         setOpenProfile(null);
+        await playDepart(item.profile.id, () => {
+          setMatches((prev) =>
+            prev.map((m) => (m.profile.id === item.profile.id ? confirmed : m))
+          );
+          markResolved(item.profile.id, 'matched');
+          releasePinnedActor(item.profile.id);
+        });
         await Promise.all([loadMatches(), refreshMembership()]);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible de valider le match'));
@@ -2139,7 +2144,7 @@ export default function MatchesPage({
         endActing();
       }
     },
-    [user, likesExhausted, loadMatches, refreshMembership, markResolved, releasePinnedActor, beginActing, endActing]
+    [user, likesExhausted, loadMatches, refreshMembership, markResolved, releasePinnedActor, beginActing, endActing, playDepart]
   );
 
   const handleInboxDecision = useCallback(
@@ -2159,38 +2164,40 @@ export default function MatchesPage({
       try {
         forgetClearedWait(user.id, item.profile.id);
         await respondToInboxInterest(item.profile.id, decision, item.origin);
-        if (decision === 'refuse') {
-          forgetWaitArchive(user.id, item.profile.id);
-          setWaitArchives((prev) =>
-            prev.filter((c) => c.profile.id !== item.profile.id)
-          );
-          setMatches((prev) =>
-            prev.filter((m) => m.profile.id !== item.profile.id)
-          );
-          markResolved(item.profile.id, 'refused');
-          releasePinnedActor(item.profile.id);
-        } else {
-          const waiting: Match = {
-            ...item,
-            waiting: true,
-            waitingAt: new Date().toISOString(),
-            refused: false,
-          };
-          setMatches((prev) =>
-            prev.map((m) => (m.profile.id === item.profile.id ? waiting : m))
-          );
-          markResolved(item.profile.id, 'wait');
-          releasePinnedActor(item.profile.id);
-          setPulseSingleId(item.profile.id);
-        }
         setOpenProfile(null);
+        await playDepart(item.profile.id, () => {
+          if (decision === 'refuse') {
+            forgetWaitArchive(user.id, item.profile.id);
+            setWaitArchives((prev) =>
+              prev.filter((c) => c.profile.id !== item.profile.id)
+            );
+            setMatches((prev) =>
+              prev.filter((m) => m.profile.id !== item.profile.id)
+            );
+            markResolved(item.profile.id, 'refused');
+            releasePinnedActor(item.profile.id);
+          } else {
+            const waiting: Match = {
+              ...item,
+              waiting: true,
+              waitingAt: new Date().toISOString(),
+              refused: false,
+            };
+            setMatches((prev) =>
+              prev.map((m) => (m.profile.id === item.profile.id ? waiting : m))
+            );
+            markResolved(item.profile.id, 'wait');
+            releasePinnedActor(item.profile.id);
+            setPulseSingleId(item.profile.id);
+          }
+        });
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
         endActing();
       }
     },
-    [user, likesExhausted, handleMatchBack, markResolved, releasePinnedActor, beginActing, endActing]
+    [user, likesExhausted, handleMatchBack, markResolved, releasePinnedActor, beginActing, endActing, playDepart]
   );
 
   const handleRefuseWaiting = useCallback((item: Match) => {
@@ -2217,24 +2224,26 @@ export default function MatchesPage({
       restoredWaitActorsRef.current.delete(item.profile.id);
       try {
         await respondToInboxInterest(item.profile.id, 'refuse', item.origin);
-        forgetWaitArchive(user.id, item.profile.id);
-        setWaitArchives((prev) =>
-          prev.filter((c) => c.profile.id !== item.profile.id)
-        );
-        setMatches((prev) =>
-          prev.filter((m) => m.profile.id !== item.profile.id)
-        );
-        markResolved(item.profile.id, 'refused');
-        releasePinnedActor(item.profile.id);
         setOpenWaitingManage(null);
         setOpenProfile(null);
+        await playDepart(item.profile.id, () => {
+          forgetWaitArchive(user.id, item.profile.id);
+          setWaitArchives((prev) =>
+            prev.filter((c) => c.profile.id !== item.profile.id)
+          );
+          setMatches((prev) =>
+            prev.filter((m) => m.profile.id !== item.profile.id)
+          );
+          markResolved(item.profile.id, 'refused');
+          releasePinnedActor(item.profile.id);
+        });
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
         endActing();
       }
     },
-    [user, markResolved, releasePinnedActor, beginActing, endActing]
+    [user, markResolved, releasePinnedActor, beginActing, endActing, playDepart]
   );
 
   const handlePendingDeclined = useCallback(
@@ -2254,31 +2263,33 @@ export default function MatchesPage({
         });
       }
       setOpenPendingDeclined(null);
-      setPendingDeclined((prev) =>
-        prev.filter(
-          (c) =>
-            c.notificationId !== card.notificationId &&
-            c.profile.id !== card.profile.id
-        )
-      );
-      const tempArchiveId = `tmp-${card.notificationId}`;
-      if (archive) {
-        setDeclinedArchives((prev) => [
-          {
-            archiveId: tempArchiveId,
-            archivedAt: new Date().toISOString(),
-            declinedAt: card.declinedAt,
-            origin: card.origin,
-            profile: card.profile,
-            age: card.age,
-            is_founder: card.is_founder,
-            founder_number: card.founder_number,
-            is_boosted: card.is_boosted,
-            source: 'theirs' as const,
-          },
-          ...prev.filter((c) => c.profile.id !== card.profile.id),
-        ]);
-      }
+      await playDepart(card.profile.id, () => {
+        setPendingDeclined((prev) =>
+          prev.filter(
+            (c) =>
+              c.notificationId !== card.notificationId &&
+              c.profile.id !== card.profile.id
+          )
+        );
+        const tempArchiveId = `tmp-${card.notificationId}`;
+        if (archive) {
+          setDeclinedArchives((prev) => [
+            {
+              archiveId: tempArchiveId,
+              archivedAt: new Date().toISOString(),
+              declinedAt: card.declinedAt,
+              origin: card.origin,
+              profile: card.profile,
+              age: card.age,
+              is_founder: card.is_founder,
+              founder_number: card.founder_number,
+              is_boosted: card.is_boosted,
+              source: 'theirs' as const,
+            },
+            ...prev.filter((c) => c.profile.id !== card.profile.id),
+          ]);
+        }
+      });
       try {
         await dismissDeclinedNotification(
           card.notificationId,
@@ -2303,43 +2314,45 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    [user, loadDeclinedArchives, consumeAttentionPulse]
+    [user, loadDeclinedArchives, consumeAttentionPulse, playDepart]
   );
 
   const handleArchiveWaiting = useCallback(
-    (item: Match) => {
+    async (item: Match) => {
       if (!user) return;
       if (item.kind === 'match' || item.alreadyLiked) return;
       const actorId = item.profile.id;
       if (waitCycleLockRef.current.has(actorId)) return;
       waitCycleLockRef.current.add(actorId);
-      waitArchivesLoadGen.current += 1;
-      matchesLoadGen.current += 1;
-      restoredWaitActorsRef.current.delete(actorId);
-      rememberMineWaitArchive(user.id, {
-        actorId,
-        origin: item.origin,
-        receivedAt: item.date_received,
-      });
       setError(null);
       setOpenProfile(null);
       setOpenWaitingManage(null);
-      releasePinnedActor(actorId);
-      setWaitArchives((prev) => [
-        {
-          archiveId: `mine-${actorId}`,
-          archivedAt: new Date().toISOString(),
-          receivedAt: item.date_received,
+      await playDepart(actorId, () => {
+        waitArchivesLoadGen.current += 1;
+        matchesLoadGen.current += 1;
+        restoredWaitActorsRef.current.delete(actorId);
+        rememberMineWaitArchive(user.id, {
+          actorId,
           origin: item.origin,
-          profile: item.profile,
-          age: item.age,
-          is_founder: item.is_founder,
-          founder_number: item.founder_number,
-          is_boosted: item.is_boosted,
-          source: 'mine',
-        },
-        ...prev.filter((c) => c.profile.id !== actorId),
-      ]);
+          receivedAt: item.date_received,
+        });
+        releasePinnedActor(actorId);
+        setWaitArchives((prev) => [
+          {
+            archiveId: `mine-${actorId}`,
+            archivedAt: new Date().toISOString(),
+            receivedAt: item.date_received,
+            origin: item.origin,
+            profile: item.profile,
+            age: item.age,
+            is_founder: item.is_founder,
+            founder_number: item.founder_number,
+            is_boosted: item.is_boosted,
+            source: 'mine',
+          },
+          ...prev.filter((c) => c.profile.id !== actorId),
+        ]);
+      });
       waitCycleLockRef.current.delete(actorId);
       if (item.refused) {
         void restoreWaitFromArchive(actorId, item.origin, { silent: true });
@@ -2349,7 +2362,7 @@ export default function MatchesPage({
         kinds: ['match_wait_reminder'],
       }).catch(() => undefined);
     },
-    [user, releasePinnedActor]
+    [user, releasePinnedActor, playDepart]
   );
 
   const handlePendingWaiting = useCallback(
@@ -2359,37 +2372,39 @@ export default function MatchesPage({
       setDeclinedBusyId(card.notificationId);
       setError(null);
       setOpenPendingWaiting(null);
-      setPendingWaiting((prev) =>
-        prev.filter(
-          (c) =>
-            c.notificationId !== card.notificationId &&
-            c.profile.id !== card.profile.id
-        )
-      );
-      if (archive) {
-        rememberTheirsWaitArchive(user.id, {
-          actorId: card.profile.id,
-          origin: card.origin,
-          receivedAt: card.receivedAt,
-          notificationId: card.notificationId,
-        });
-        setWaitArchives((prev) => [
-          {
-            archiveId: `theirs-${card.profile.id}`,
-            archivedAt: new Date().toISOString(),
-            receivedAt: card.receivedAt,
+      await playDepart(card.profile.id, () => {
+        setPendingWaiting((prev) =>
+          prev.filter(
+            (c) =>
+              c.notificationId !== card.notificationId &&
+              c.profile.id !== card.profile.id
+          )
+        );
+        if (archive) {
+          rememberTheirsWaitArchive(user.id, {
+            actorId: card.profile.id,
             origin: card.origin,
-            profile: card.profile,
-            age: card.age,
-            is_founder: card.is_founder,
-            founder_number: card.founder_number,
-            is_boosted: card.is_boosted,
-            source: 'theirs',
+            receivedAt: card.receivedAt,
             notificationId: card.notificationId,
-          },
-          ...prev.filter((c) => c.profile.id !== card.profile.id),
-        ]);
-      }
+          });
+          setWaitArchives((prev) => [
+            {
+              archiveId: `theirs-${card.profile.id}`,
+              archivedAt: new Date().toISOString(),
+              receivedAt: card.receivedAt,
+              origin: card.origin,
+              profile: card.profile,
+              age: card.age,
+              is_founder: card.is_founder,
+              founder_number: card.founder_number,
+              is_boosted: card.is_boosted,
+              source: 'theirs',
+              notificationId: card.notificationId,
+            },
+            ...prev.filter((c) => c.profile.id !== card.profile.id),
+          ]);
+        }
+      });
       try {
         await dismissWaitingNotification({
           notificationId: card.notificationId,
@@ -2412,7 +2427,7 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    [user, loadPendingWaiting, loadWaitArchives]
+    [user, loadPendingWaiting, loadWaitArchives, playDepart]
   );
 
   const handleDeleteWaitArchive = useCallback(
@@ -2424,20 +2439,24 @@ export default function MatchesPage({
       setOpenWaitArchive((open) =>
         open?.archiveId === card.archiveId ? null : open
       );
-      setWaitArchives((prev) =>
-        prev.filter(
-          (c) =>
-            c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
-        )
-      );
-      forgetWaitArchive(user.id, card.profile.id);
-      try {
+      await playDepart(card.profile.id, () => {
+        setWaitArchives((prev) =>
+          prev.filter(
+            (c) =>
+              c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
+          )
+        );
+        forgetWaitArchive(user.id, card.profile.id);
         if (card.source === 'mine') {
           forgetClearedWait(user.id, card.profile.id);
           setMatches((prev) =>
             prev.filter((m) => m.profile.id !== card.profile.id)
           );
           markResolved(card.profile.id, 'refused');
+        }
+      });
+      try {
+        if (card.source === 'mine') {
           await respondToInboxInterest(
             card.profile.id,
             'refuse',
@@ -2455,11 +2474,11 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    [user, markResolved, loadWaitArchives, loadMatches]
+    [user, markResolved, loadWaitArchives, loadMatches, playDepart]
   );
 
   const handleRestoreWaitArchive = useCallback(
-    (card: WaitArchiveCard) => {
+    async (card: WaitArchiveCard) => {
       if (!user) return;
       if (card.source !== 'mine') return;
       const actorId = card.profile.id;
@@ -2469,56 +2488,58 @@ export default function MatchesPage({
       setOpenWaitArchive((open) =>
         open?.archiveId === card.archiveId ? null : open
       );
-      matchesLoadGen.current += 1;
-      waitArchivesLoadGen.current += 1;
-      restoredWaitActorsRef.current.add(actorId);
-      releaseWaitCycle(user.id, actorId);
-      setWaitArchives((prev) =>
-        prev.filter(
-          (c) =>
-            c.archiveId !== card.archiveId && c.profile.id !== actorId
-        )
-      );
-      const restoredAt = new Date().toISOString();
-      setMatches((prev) => {
-        const exists = prev.some((m) => m.profile.id === actorId);
-        if (exists) {
-          return prev.map((m) =>
-            m.profile.id === actorId
-              ? {
-                  ...m,
-                  waiting: true,
-                  waitingAt: m.waitingAt || restoredAt,
-                  refused: false,
-                }
-              : m
-          );
-        }
-        const incoming: Match = {
-          profile: card.profile,
-          age: card.age,
-          date_received: card.receivedAt,
-          matched_at: card.receivedAt,
-          kind: card.origin === 'flash' ? 'flash' : 'like',
-          origin: card.origin,
-          matchedBackAt: null,
-          alreadyLiked: false,
-          matchRole: 'accepted',
-          waiting: true,
-          waitingAt: restoredAt,
-          refused: false,
-          matchedViaWait: false,
-          is_founder: card.is_founder,
-          founder_number: card.founder_number,
-          is_boosted: card.is_boosted,
-        };
-        return [incoming, ...prev];
+      await playDepart(actorId, () => {
+        matchesLoadGen.current += 1;
+        waitArchivesLoadGen.current += 1;
+        restoredWaitActorsRef.current.add(actorId);
+        releaseWaitCycle(user.id, actorId);
+        setWaitArchives((prev) =>
+          prev.filter(
+            (c) =>
+              c.archiveId !== card.archiveId && c.profile.id !== actorId
+          )
+        );
+        const restoredAt = new Date().toISOString();
+        setMatches((prev) => {
+          const exists = prev.some((m) => m.profile.id === actorId);
+          if (exists) {
+            return prev.map((m) =>
+              m.profile.id === actorId
+                ? {
+                    ...m,
+                    waiting: true,
+                    waitingAt: m.waitingAt || restoredAt,
+                    refused: false,
+                  }
+                : m
+            );
+          }
+          const incoming: Match = {
+            profile: card.profile,
+            age: card.age,
+            date_received: card.receivedAt,
+            matched_at: card.receivedAt,
+            kind: card.origin === 'flash' ? 'flash' : 'like',
+            origin: card.origin,
+            matchedBackAt: null,
+            alreadyLiked: false,
+            matchRole: 'accepted',
+            waiting: true,
+            waitingAt: restoredAt,
+            refused: false,
+            matchedViaWait: false,
+            is_founder: card.is_founder,
+            founder_number: card.founder_number,
+            is_boosted: card.is_boosted,
+          };
+          return [incoming, ...prev];
+        });
+        markResolved(actorId, 'wait');
       });
-      markResolved(actorId, 'wait');
       waitCycleLockRef.current.delete(actorId);
       void restoreWaitFromArchive(actorId, card.origin, { silent: true });
     },
-    [user, markResolved]
+    [user, markResolved, playDepart]
   );
 
   const handleDeleteArchived = useCallback(
@@ -2531,12 +2552,14 @@ export default function MatchesPage({
       setOpenArchive((open) =>
         open?.archiveId === card.archiveId ? null : open
       );
-      setDeclinedArchives((prev) =>
-        prev.filter(
-          (c) =>
-            c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
-        )
-      );
+      await playDepart(card.profile.id, () => {
+        setDeclinedArchives((prev) =>
+          prev.filter(
+            (c) =>
+              c.archiveId !== card.archiveId && c.profile.id !== card.profile.id
+          )
+        );
+      });
       try {
         await deleteDeclinedArchive(card.archiveId, card.profile.id);
       } catch (err) {
@@ -2548,7 +2571,7 @@ export default function MatchesPage({
         setDeclinedBusyId(null);
       }
     },
-    [consumeAttentionPulse]
+    [consumeAttentionPulse, playDepart]
   );
 
   const handleBrokenRestore = useCallback(
@@ -2560,9 +2583,11 @@ export default function MatchesPage({
       try {
         await restoreBrokenMatch(card.profile.id);
         setOpenBroken(null);
-        setBrokenMatches((prev) =>
-          prev.filter((c) => c.archiveId !== card.archiveId)
-        );
+        await playDepart(card.profile.id, () => {
+          setBrokenMatches((prev) =>
+            prev.filter((c) => c.archiveId !== card.archiveId)
+          );
+        });
         await Promise.all([loadMatches(), loadBrokenMatches()]);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible de rétablir ce match.'));
@@ -2571,7 +2596,7 @@ export default function MatchesPage({
         setBrokenBusyId(null);
       }
     },
-    [brokenBusyId, loadMatches, loadBrokenMatches]
+    [brokenBusyId, loadMatches, loadBrokenMatches, playDepart]
   );
 
   const handleBrokenPurge = useCallback(
@@ -2582,14 +2607,16 @@ export default function MatchesPage({
       try {
         await purgeBrokenMatch(card.profile.id);
         setOpenBroken(null);
-        setBrokenMatches((prev) =>
-          prev.filter((c) => c.archiveId !== card.archiveId)
-        );
-        setPeersWithChat((prev) => {
-          if (!prev.has(card.profile.id)) return prev;
-          const next = new Set(prev);
-          next.delete(card.profile.id);
-          return next;
+        await playDepart(card.profile.id, () => {
+          setBrokenMatches((prev) =>
+            prev.filter((c) => c.archiveId !== card.archiveId)
+          );
+          setPeersWithChat((prev) => {
+            if (!prev.has(card.profile.id)) return prev;
+            const next = new Set(prev);
+            next.delete(card.profile.id);
+            return next;
+          });
         });
       } catch (err) {
         setError(
@@ -2600,7 +2627,7 @@ export default function MatchesPage({
         setBrokenBusyId(null);
       }
     },
-    [brokenBusyId, loadBrokenMatches]
+    [brokenBusyId, loadBrokenMatches, playDepart]
   );
 
   const brokenPeerIds = useMemo(
@@ -2843,7 +2870,10 @@ export default function MatchesPage({
                 : 'matched-quiet'
               : 'new'
         }
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${cardTone}`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${cardTone}`,
+          isDeparting(match.profile.id)
+        )}
         onClick={() => {
           interactWithMatchCard(match.profile.id);
           setOpenProfile(match);
@@ -2944,7 +2974,7 @@ export default function MatchesPage({
                 name={match.profile.display_name}
                 locked={cardActing}
                 tooltip={cardActionTooltip(1, 3)}
-                onClick={() => handleArchiveWaiting(match)}
+                onClick={() => void handleArchiveWaiting(match)}
               />
             ) : isToStudy ? (
               <WaitButton
@@ -3036,11 +3066,14 @@ export default function MatchesPage({
         id={`match-card-wait-archive-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="wait-archive"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
-          theirs ? 'match-card-wait-theirs' : 'match-card-wait-archive'
-        }${
-          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
-        }`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
+            theirs ? 'match-card-wait-theirs' : 'match-card-wait-archive'
+          }${
+            pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+          }`,
+          isDeparting(card.profile.id)
+        )}
         onClick={() => {
           consumeAttentionPulse(card.profile.id);
           setOpenWaitArchive(card);
@@ -3151,9 +3184,12 @@ export default function MatchesPage({
         id={`match-card-wait-by-other-${card.peerId}`}
         key={card.peerId}
         data-match-state="wait-by-other"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-wait-by-other${
-          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
-        }`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-wait-by-other${
+            pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+          }`,
+          isDeparting(card.profile.id)
+        )}
         onClick={() => {
           consumeAttentionPulse(card.profile.id);
           setOpenWaitingByOther(card);
@@ -3311,9 +3347,12 @@ export default function MatchesPage({
       <div
         id={`match-card-declined-${card.notificationId}`}
         data-match-state="declined-pending"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined${
-          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
-        }`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined${
+            pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+          }`,
+          isDeparting(card.profile.id)
+        )}
         onClick={() => {
           consumeAttentionPulse(card.profile.id);
           setOpenPendingDeclined(card);
@@ -3427,9 +3466,12 @@ export default function MatchesPage({
       <div
         id={`match-card-archive-${card.archiveId}`}
         data-match-state="declined-archive"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined-archive${
-          pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
-        }`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer match-card-declined-archive${
+            pulseSingleId === card.profile.id ? ' match-card-attention-pulse' : ''
+          }`,
+          isDeparting(card.profile.id)
+        )}
         onClick={() => {
           consumeAttentionPulse(card.profile.id);
           setOpenArchive(card);
@@ -3534,9 +3576,12 @@ export default function MatchesPage({
         id={`match-card-broken-${card.archiveId}`}
         key={card.archiveId}
         data-match-state="broken"
-        className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
-          hadDialogue ? 'match-card-broken-chat' : 'match-card-broken-quiet'
-        }`}
+        className={matchCardDepartClass(
+          `rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${
+            hadDialogue ? 'match-card-broken-chat' : 'match-card-broken-quiet'
+          }`,
+          isDeparting(card.profile.id)
+        )}
         onClick={() => setOpenBroken(card)}
       >
         <button
@@ -4295,7 +4340,7 @@ export default function MatchesPage({
             }
             setOpenWaitingManage(null);
           }}
-          onArchive={() => handleArchiveWaiting(openWaitingManage)}
+          onArchive={() => void handleArchiveWaiting(openWaitingManage)}
           onPurge={() => void handlePurgeWaiting(openWaitingManage)}
         />
       )}

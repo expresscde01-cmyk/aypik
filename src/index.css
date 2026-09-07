@@ -1372,6 +1372,26 @@ button.group[data-matched='true'] {
     infinite;
 }
 
+@keyframes match-card-depart {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: brightness(1.05);
+  }
+}
+
+.match-card-departing {
+  pointer-events: none;
+  z-index: 2;
+  /* Gagne sur animate-fadeIn (même propriété animation). */
+  animation: match-card-depart 0.42s ease-in forwards !important;
+}
+
 /* État 3 — Matché sans dialogue (1er mot) */
 .match-card-matched-quiet {
   background-color: #d8f0da;
@@ -2285,7 +2305,8 @@ button.group[data-matched='true'] {
   .bell-badge-pop,
   .unread-badge-pulse,
   .match-card-wait-pulse,
-  .match-card-attention-pulse {
+  .match-card-attention-pulse,
+  .match-card-departing {
     animation: none;
   }
 
