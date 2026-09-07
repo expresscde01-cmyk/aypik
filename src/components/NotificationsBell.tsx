@@ -4,8 +4,7 @@ import { Bell, CheckCheck, ChevronDown, Heart, MessageCircle, Sparkles } from 'l
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import {
-  fetchPeersWithTwoWayDialogue,
-  fetchPeersWhoWroteToMe,
+  fetchPeerDialogueFlags,
   useInboxReload,
   useUnreadMessages,
 } from '@/lib/messaging';
@@ -1038,13 +1037,12 @@ export default function NotificationsBell({
   const refresh = useCallback(async () => {
     try {
       await sweepStaleSocialNotifications();
-      const [list, twoWay, inbound] = await Promise.all([
+      const [list, dialogue] = await Promise.all([
         fetchSocialNotifications(25),
-        fetchPeersWithTwoWayDialogue(),
-        fetchPeersWhoWroteToMe(),
+        fetchPeerDialogueFlags(),
       ]);
-      setPeersWithTwoWay(twoWay);
-      setPeersWhoWroteToMe(inbound);
+      setPeersWithTwoWay(dialogue.twoWay);
+      setPeersWhoWroteToMe(dialogue.wroteToMe);
       setSocialListReady(true);
       setItems(
         list.filter((n) => {

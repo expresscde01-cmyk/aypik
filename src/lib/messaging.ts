@@ -11,9 +11,7 @@ import {
 } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import {
-  peersWithTwoWayDialogueFromRows,
-} from '@/lib/twoWayDialogue';
+import { peerSetsFromDialogueFlagRows } from '@/lib/twoWayDialogue';
 
 export type ChatMessage = {
   id: string;
@@ -33,50 +31,44 @@ function logSupabaseError(context: string, error: unknown) {
   }
 }
 
+export type PeerDialogueFlags = {
+  twoWay: Set<string>;
+  wroteToMe: Set<string>;
+};
+
+function emptyDialogueFlags(): PeerDialogueFlags {
+  return { twoWay: new Set(), wroteToMe: new Set() };
+}
+
+/** Un aller-retour : 2 booléens par pair (échange réel / l’autre m’a écrit). */
+export async function fetchPeerDialogueFlags(): Promise<PeerDialogueFlags> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user?.id) return emptyDialogueFlags();
+
+  const { data, error } = await supabase.rpc('peer_dialogue_flags');
+  if (error) {
+    logSupabaseError('fetchPeerDialogueFlags', error);
+    return emptyDialogueFlags();
+  }
+  return peerSetsFromDialogueFlagRows(
+    (data || []) as {
+      peer_id?: string | null;
+      two_way?: boolean | null;
+      wrote_to_me?: boolean | null;
+    }[]
+  );
+}
+
 /** Interlocuteurs avec un échange réel (un message de chaque côté). */
 export async function fetchPeersWithTwoWayDialogue(): Promise<Set<string>> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
-  if (!me) return new Set();
-
-  const { data, error } = await supabase
-    .from('messages')
-    .select('sender_id, recipient_id')
-    .or(`sender_id.eq.${me},recipient_id.eq.${me}`)
-    .limit(2000);
-
-  if (error) {
-    logSupabaseError('fetchPeersWithTwoWayDialogue', error);
-    return new Set();
-  }
-  return peersWithTwoWayDialogueFromRows(
-    (data || []) as { sender_id?: string; recipient_id?: string }[],
-    me
-  );
+  const { twoWay } = await fetchPeerDialogueFlags();
+  return twoWay;
 }
 
 /** Membres qui m’ont déjà envoyé au moins un message (réponse à donner, pas forcément 1er mot). */
 export async function fetchPeersWhoWroteToMe(): Promise<Set<string>> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
-  if (!me) return new Set();
-
-  const { data, error } = await supabase
-    .from('messages')
-    .select('sender_id')
-    .eq('recipient_id', me)
-    .limit(2000);
-
-  if (error) {
-    logSupabaseError('fetchPeersWhoWroteToMe', error);
-    return new Set();
-  }
-  const peers = new Set<string>();
-  for (const row of data || []) {
-    const sender = (row as { sender_id?: string }).sender_id;
-    if (sender && sender !== me) peers.add(sender);
-  }
-  return peers;
+  const { wroteToMe } = await fetchPeerDialogueFlags();
+  return wroteToMe;
 }
 
 export async function ensureConversationId(

@@ -15,6 +15,26 @@ export function hasTwoWayDialogue(
   return false;
 }
 
+export type PeerDialogueFlagRow = {
+  peer_id?: string | null;
+  two_way?: boolean | null;
+  wrote_to_me?: boolean | null;
+};
+
+export function peerSetsFromDialogueFlagRows(
+  rows: PeerDialogueFlagRow[]
+): { twoWay: Set<string>; wroteToMe: Set<string> } {
+  const twoWay = new Set<string>();
+  const wroteToMe = new Set<string>();
+  for (const row of rows) {
+    const peer = row.peer_id;
+    if (!peer) continue;
+    if (row.two_way) twoWay.add(peer);
+    if (row.wrote_to_me) wroteToMe.add(peer);
+  }
+  return { twoWay, wroteToMe };
+}
+
 export function peersWithTwoWayDialogueFromRows(
   rows: { sender_id?: string; recipient_id?: string }[],
   me: string

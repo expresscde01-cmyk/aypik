@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   hasTwoWayDialogue,
+  peerSetsFromDialogueFlagRows,
   peersWithTwoWayDialogueFromRows,
 } from './twoWayDialogue.ts';
 
@@ -70,4 +71,16 @@ test('recalcul type chargement : un de chaque côté ajoute le pair', () => {
     me
   );
   assert.equal(twoWay.has(valentine), true);
+});
+
+test('RPC flags : two_way et wrote_to_me remplissent les bons ensembles', () => {
+  const { twoWay, wroteToMe } = peerSetsFromDialogueFlagRows([
+    { peer_id: valentine, two_way: true, wrote_to_me: true },
+    { peer_id: 'other', two_way: false, wrote_to_me: true },
+    { peer_id: null, two_way: true, wrote_to_me: true },
+  ]);
+  assert.equal(twoWay.has(valentine), true);
+  assert.equal(twoWay.has('other'), false);
+  assert.equal(wroteToMe.has(valentine), true);
+  assert.equal(wroteToMe.has('other'), true);
 });
