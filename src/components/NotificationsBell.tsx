@@ -49,6 +49,7 @@ import {
   digestRecapSort,
   filterServerDigestIds,
   likeFloorForActor,
+  omitUnreadMessageSenders,
   omitVisitedDigestIds,
   openDigestOpts,
   openLikeOpts,
@@ -453,20 +454,23 @@ export default function NotificationsBell({
   );
   const liveWaitIds = useMemo(
     () =>
-      omitVisitedDigestIds(
-        selectLiveDigestIds({
-          snapshotIds: digestPinIdsFromEntries(
-            inboxEntries,
-            'wait',
-            archivedWaitIds
-          ),
-          serverIds: catWait?.ids ?? [],
-          sticky: inboxSticky,
-          as: 'wait',
-          snapshotReady,
-          serverReady: categoryServerReady,
-        }),
-        clearedDigestIds
+      omitUnreadMessageSenders(
+        omitVisitedDigestIds(
+          selectLiveDigestIds({
+            snapshotIds: digestPinIdsFromEntries(
+              inboxEntries,
+              'wait',
+              archivedWaitIds
+            ),
+            serverIds: catWait?.ids ?? [],
+            sticky: inboxSticky,
+            as: 'wait',
+            snapshotReady,
+            serverReady: categoryServerReady,
+          }),
+          clearedDigestIds
+        ),
+        unreadMessages.bySender
       ),
     [
       inboxEntries,
@@ -476,6 +480,7 @@ export default function NotificationsBell({
       snapshotReady,
       categoryServerReady,
       clearedDigestIds,
+      unreadMessages.bySender,
     ]
   );
 
@@ -552,9 +557,12 @@ export default function NotificationsBell({
           return [...seen.values()];
         })();
     const kept = new Set(
-      omitVisitedDigestIds(
-        listed.map((m) => m.id),
-        clearedDigestIds
+      omitUnreadMessageSenders(
+        omitVisitedDigestIds(
+          listed.map((m) => m.id),
+          clearedDigestIds
+        ),
+        unreadMessages.bySender
       )
     );
     return listed.filter((m) => kept.has(m.id));
@@ -565,6 +573,7 @@ export default function NotificationsBell({
     twoWayPeers,
     actorNames,
     clearedDigestIds,
+    unreadMessages.bySender,
   ]);
 
   const hasFirstAlert = quietMatches.length > 0 && !firstDismissed;

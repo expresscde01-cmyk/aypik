@@ -153,6 +153,28 @@ export function omitVisitedDigestIds(
   return ids.filter((id) => Boolean(id) && !skip.has(id));
 }
 
+/** Expéditeurs avec au moins un message non lu (case « Tu as X messages non lus »). */
+export function unreadMessageSenderIds(
+  unreadBySender: Record<string, number>
+): string[] {
+  return uniqueNonEmptyIds(
+    Object.entries(unreadBySender)
+      .filter(([, n]) => n > 0)
+      .map(([id]) => id)
+  );
+}
+
+/**
+ * Priorité à la rubrique messages : un profil déjà dans les non lus
+ * ne reste pas dans « 1er mot » ni « En attente ».
+ */
+export function omitUnreadMessageSenders(
+  ids: readonly string[],
+  unreadBySender: Record<string, number>
+): string[] {
+  return omitVisitedDigestIds(ids, unreadMessageSenderIds(unreadBySender));
+}
+
 /** Récap « ces X ci-dessus » en bas du bloc, comme À découvrir. */
 export function digestRecapSort(aIsRecap: boolean, bIsRecap: boolean): number {
   return Number(aIsRecap) - Number(bIsRecap);

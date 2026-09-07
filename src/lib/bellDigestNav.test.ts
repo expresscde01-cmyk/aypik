@@ -24,6 +24,7 @@ import {
   filterServerDigestIds,
   likeFloorForActor,
   mergeInboxPublish,
+  omitUnreadMessageSenders,
   omitVisitedDigestIds,
   selectLiveDigestIds,
   normalizeOpenMatchesOpts,
@@ -369,6 +370,19 @@ test('clic d’un nom : pin 1 fiche + étage du digest', () => {
   const opts = normalizeOpenMatchesOpts(openDigestOpts('first', ['e']));
   assert.equal(opts.pulseCategory, 'first');
   assert.deepEqual(opts.pinActorIds, ['e']);
+});
+
+test('message non lu : le profil sort de 1er mot et En attente', () => {
+  const unread = { test2: 2, lucy: 0 };
+  assert.deepEqual(
+    omitUnreadMessageSenders(['test2', 'lucy', 'sabine'], unread),
+    ['lucy', 'sabine']
+  );
+  assert.deepEqual(
+    omitUnreadMessageSenders(['test2', 'c'], unread),
+    ['c']
+  );
+  assert.deepEqual(omitUnreadMessageSenders(['lucy'], {}), ['lucy']);
 });
 
 test('1er mot : match one-way (message reçu) reste dans le digest, comme Mes Matchs', () => {
