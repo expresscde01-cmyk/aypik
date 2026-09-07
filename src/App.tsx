@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { AlertCircle, ShieldCheck, X } from 'lucide-react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -11,15 +11,17 @@ import RouteFallback from '@/components/RouteFallback';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { queryClient } from '@/lib/queryClient';
 import { fetchMaintenanceStatus } from '@/lib/maintenance';
-import LegalTermsPage, {
+import {
   closeLegalTerms,
   isContactPage,
   isLegalTermsOpen,
-} from '@/components/LegalTerms';
+} from '@/components/LegalChrome';
 import ContactPage from '@/components/ContactPage';
 import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 import SessionIdleGuard from '@/components/SessionIdleGuard';
 import { peekAuthNotice } from '@/lib/sessionIdle';
+
+const LegalTermsPage = lazy(() => import('@/components/LegalTerms'));
 
 const UNSUBSCRIBED_SUCCESS_MESSAGE =
   "Vous êtes désabonné·e. Vous ne recevrez plus d'e-mails de notification de la part d'Aypik. Les e-mails strictement nécessaires au fonctionnement du compte (sécurité, facturation) peuvent encore vous être envoyés.";
@@ -205,7 +207,11 @@ function AppContent() {
   } else if (route === 'checking' || route === 'loading') {
     page = <RouteFallback />;
   } else if (route === 'legal') {
-    page = <LegalTermsPage onClose={closeLegalTerms} />;
+    page = (
+      <Suspense fallback={<RouteFallback />}>
+        <LegalTermsPage onClose={closeLegalTerms} />
+      </Suspense>
+    );
   } else if (route === 'contact') {
     page = <ContactPage />;
   } else if (route === 'recovery') {

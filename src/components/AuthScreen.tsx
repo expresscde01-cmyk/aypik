@@ -38,7 +38,7 @@ import {
   isAdult,
   latestBirthDateForAge,
 } from '@/lib/dating';
-import { LegalLink, SiteFooter } from '@/components/LegalTerms';
+import { LegalLink, SiteFooter } from '@/components/LegalChrome';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';

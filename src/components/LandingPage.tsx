@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type PointerEvent } from 'react';
 import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
-import { SiteFooter } from '@/components/LegalTerms';
+import { SiteFooter } from '@/components/LegalChrome';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
   HeaderTaglineWidthProbe,

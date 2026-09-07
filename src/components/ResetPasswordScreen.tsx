@@ -5,7 +5,7 @@ import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import { consumeRecoveryParamsFromUrl, unlockLoginSecurity } from '@/lib/loginSecurity';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
-import { SiteFooter } from '@/components/LegalTerms';
+import { SiteFooter } from '@/components/LegalChrome';
 
 export default function ResetPasswordScreen({
   onDone,

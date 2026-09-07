@@ -6,7 +6,7 @@ import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
 import UnreadBadge from '@/components/UnreadBadge';
-import { SiteFooter } from '@/components/LegalTerms';
+import { SiteFooter } from '@/components/LegalChrome';
 import ProfileSetup, {
   PROFILE_CARD_COLUMNS,
   type Profile,

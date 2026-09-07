@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { AlertCircle, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
-import { LegalLink, SiteFooter } from '@/components/LegalTerms';
+import { LegalLink, SiteFooter } from '@/components/LegalChrome';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import {
   CONTACT_CATEGORIES,
