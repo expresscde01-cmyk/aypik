@@ -3854,12 +3854,6 @@ export default function MatchesPage({
               Mis en attente par l&apos;autre
             </span>{' '}
             : tu pourras consulter le profil, la décision lui appartenant.
-            Matcher, refuser, ou l&apos;expiration automatique à 3 mois
-            clôturent l&apos;attente. Archiver n&apos;est pas une décision
-            définitive : c&apos;est un rangement personnel, sans effet sur
-            l&apos;interaction ni sur l&apos;autre membre ; le délai continue
-            de courir. Un rappel t&apos;est envoyé 7 jours avant
-            l&apos;expiration.
           </p>
           <p>
             Tu trouveras également sur cette page tous les profils qui ont

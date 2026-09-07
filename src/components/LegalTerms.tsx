@@ -60,7 +60,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 6 septembre 2026. Version applicable au
+              Dernière mise à jour : 7 septembre 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -425,6 +425,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 supprime pas l&apos;interaction déjà enregistrée : le
                 profil demeure gérable depuis Mes Matchs, selon son statut
                 (À étudier, Match, archive, etc.).
+              </p>
+              <p>
+                Lorsqu&apos;un Like ou un Flash a été refusé — par
+                l&apos;utilisateur, par l&apos;autre membre, ou du fait de
+                l&apos;expiration automatique d&apos;une mise en attente —,
+                le profil concerné n&apos;est plus proposé à l&apos;autre
+                partie dans Découvrir ni dans les suggestions de
+                l&apos;Accueil pendant un délai de 3 mois à compter de ce
+                refus. Ce masquage s&apos;applique dans les deux sens. À
+                l&apos;issue de ce délai, le profil peut à nouveau être
+                présenté, sous réserve des autres filtres du présent article
+                et des critères de mise en relation (article 3.5).
               </p>
               <p className="font-semibold text-gray-900">
                 3.7.2 Modes de visibilité
@@ -900,9 +912,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 afin de l&apos;étudier plus tard, sans le refuser ni le
                 matcher immédiatement. Le profil reste alors accessible
                 depuis Mes Matchs, dans « Mis en attente par toi », jusqu&apos;à
-                une décision définitive (Matcher, refuser, ou expiration
-                automatique). Archiver n&apos;est pas une décision définitive
-                : il s&apos;agit d&apos;un rangement personnel, sans effet sur
+                ce que l&apos;attente soit close : par Matcher, par un refus,
+                ou par l&apos;expiration automatique au terme de 3 mois
+                d&apos;inaction. Archiver n&apos;est pas une clôture : il
+                s&apos;agit d&apos;un rangement personnel, sans effet sur
                 l&apos;interaction ni sur l&apos;autre membre. Le statut
                 demeure en attente, le délai d&apos;expiration continue de
                 courir, et aucune notification n&apos;est adressée à
@@ -925,7 +938,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 statuer sur les demandes en attente. Cette clôture automatique
                 produit les mêmes effets qu&apos;un refus manuel, dans les
                 deux sens, afin qu&apos;aucune interaction ne demeure
-                indéfiniment en suspens.
+                indéfiniment en suspens. Le refus ainsi constitué, qu&apos;il
+                soit manuel ou automatique, emporte également le masquage
+                temporaire dans Découvrir et les suggestions de
+                l&apos;Accueil décrit à l&apos;article 3.7.1.
               </p>
             </div>
             <div>
@@ -1112,6 +1128,20 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Non. Il n&apos;est plus proposé dans Découvrir ni dans les
                 suggestions de l&apos;Accueil (article 3.7.1). L&apos;interaction
                 reste gérable depuis Mes Matchs.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Un profil dont le Like ou le Flash a été refusé peut-il
+                réapparaître dans Découvrir&nbsp;?
+              </p>
+              <p>
+                Oui, mais seulement après un délai de 3 mois à compter du
+                refus (article 3.7.1), et sous réserve des autres filtres de
+                suggestions. Ce délai s&apos;applique que le refus ait été
+                exprimé par l&apos;utilisateur, par l&apos;autre membre, ou
+                qu&apos;il résulte de l&apos;expiration automatique d&apos;une
+                mise en attente.
               </p>
             </div>
             <div>
