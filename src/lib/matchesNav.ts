@@ -141,6 +141,18 @@ export function digestPinIdsFromEntries(
   return entries.filter((e) => e.status === 'matched').map((e) => e.id);
 }
 
+/** Retire les profils déjà visités (fiche / conversation) d’un digest nommé. */
+export function omitVisitedDigestIds(
+  ids: readonly string[],
+  visited: Iterable<string>
+): string[] {
+  const skip = new Set(
+    [...visited].filter((id): id is string => Boolean(id))
+  );
+  if (skip.size === 0) return [...ids];
+  return ids.filter((id) => Boolean(id) && !skip.has(id));
+}
+
 /** Récap « ces X ci-dessus » en bas du bloc, comme À découvrir. */
 export function digestRecapSort(aIsRecap: boolean, bIsRecap: boolean): number {
   return Number(aIsRecap) - Number(bIsRecap);
@@ -323,8 +335,20 @@ export function observeRubricMembers(
 }
 
 /**
- * Chiffre de la cloche : somme des rubriques + 1 si au moins un message
- * non lu (jamais un point par message).
+ * Chiffre de la cloche : une case du panneau = 1, même si le texte
+ * mentionne une quantité (« 6 messages non lus »).
+ */
+export function bellPanelCardCount(
+  blocks: readonly { rows: readonly unknown[] }[]
+): number {
+  let total = 0;
+  for (const block of blocks) total += block.rows.length;
+  return total;
+}
+
+/**
+ * Ancien tally par rubrique (stock + nouveautés). Le badge UI utilise
+ * `bellPanelCardCount` (1 par case affichée).
  */
 export function bellHeaderBadgeCount(input: {
   rubrics: readonly BellRubricTally[];

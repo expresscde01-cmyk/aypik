@@ -39,6 +39,8 @@ type MatchesInboxSyncValue = {
   enteredNewIds: Set<string>;
   enteredWaitIds: Set<string>;
   enteredFirstIds: Set<string>;
+  /** Profils dont la fiche / conversation a été ouverte : sortent des digests nommés. */
+  clearedDigestIds: Set<string>;
   /** Publie l’état courant des cartes Mes Matchs. */
   publish: (entries: MatchesInboxEntry[]) => void;
   /** Marque un profil comme résolu (match / refus) sans attendre le rechargement. */
@@ -46,11 +48,39 @@ type MatchesInboxSyncValue = {
     profileId: string,
     as: 'matched' | 'refused' | 'wait' | 'new'
   ) => void;
+  /** Visite d’une fiche ou d’une conversation : retire le prénom des notifs digest. */
+  clearDigestActor: (profileId: string) => void;
 };
 
 const MatchesInboxSyncContext = createContext<MatchesInboxSyncValue | null>(
   null
 );
+
+const DIGEST_VISITED_KEY = 'aypik-digest-visited';
+
+function readClearedDigestIds(): Set<string> {
+  if (typeof sessionStorage === 'undefined') return new Set();
+  try {
+    const raw = sessionStorage.getItem(DIGEST_VISITED_KEY);
+    if (!raw) return new Set();
+    const ids = JSON.parse(raw) as unknown;
+    if (!Array.isArray(ids)) return new Set();
+    return new Set(
+      ids.filter((id): id is string => typeof id === 'string' && Boolean(id))
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function persistClearedDigestIds(ids: Set<string>) {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(DIGEST_VISITED_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* quota / mode privé */
+  }
+}
 
 export function MatchesInboxSyncProvider({
   children,
@@ -59,6 +89,9 @@ export function MatchesInboxSyncProvider({
 }) {
   const [entries, setEntries] = useState<MatchesInboxEntry[]>([]);
   const [hasSnapshot, setHasSnapshot] = useState(false);
+  const [clearedDigestIds, setClearedDigestIds] = useState<Set<string>>(
+    () => readClearedDigestIds()
+  );
   const matchedRef = useRef<Set<string>>(new Set());
   const refusedRef = useRef<Set<string>>(new Set());
   const waitRef = useRef<Set<string>>(new Set());
@@ -143,6 +176,17 @@ export function MatchesInboxSyncProvider({
     []
   );
 
+  const clearDigestActor = useCallback((profileId: string) => {
+    if (!profileId) return;
+    setClearedDigestIds((prev) => {
+      if (prev.has(profileId)) return prev;
+      const next = new Set(prev);
+      next.add(profileId);
+      persistClearedDigestIds(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo<MatchesInboxSyncValue>(() => {
     const pendingNewIds = new Set<string>();
     const waitingIds = new Set<string>();
@@ -171,10 +215,12 @@ export function MatchesInboxSyncProvider({
       enteredNewIds: new Set(enteredNewRef.current),
       enteredWaitIds: new Set(enteredWaitRef.current),
       enteredFirstIds: new Set(enteredFirstRef.current),
+      clearedDigestIds,
       publish,
       markResolved,
+      clearDigestActor,
     };
-  }, [entries, hasSnapshot, publish, markResolved]);
+  }, [entries, hasSnapshot, clearedDigestIds, publish, markResolved, clearDigestActor]);
 
   return (
     <MatchesInboxSyncContext.Provider value={value}>
@@ -198,8 +244,10 @@ export function useMatchesInboxSync(): MatchesInboxSyncValue {
       enteredNewIds: new Set(),
       enteredWaitIds: new Set(),
       enteredFirstIds: new Set(),
+      clearedDigestIds: new Set(),
       publish: () => undefined,
       markResolved: () => undefined,
+      clearDigestActor: () => undefined,
     };
   }
   return ctx;

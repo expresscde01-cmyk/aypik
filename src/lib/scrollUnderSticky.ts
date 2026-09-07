@@ -27,3 +27,26 @@ export function queryStickyHeader(): HTMLElement | null {
   if (typeof document === 'undefined') return null;
   return document.querySelector('header.sticky');
 }
+
+/**
+ * Remonte au bloc d’étage (Pendant / Avant / Après) quand la catégorie
+ * visée est la première du bloc — pour garder titre + badge + cartes.
+ * Sinon, la section de catégorie (badge + cartes).
+ */
+export function resolveMatchFocusScrollTarget(
+  el: {
+    closest: (selector: string) => unknown;
+  } | null
+): unknown {
+  if (!el) return null;
+  const stage = el.closest('[data-match-stage]') as {
+    querySelector?: (selector: string) => { firstElementChild?: unknown } | null;
+  } | null;
+  const floor =
+    el.closest('section[id^="match-floor-"]') || el.closest('section');
+  if (stage && floor && typeof stage.querySelector === 'function') {
+    const inner = stage.querySelector(':scope > div');
+    if (inner?.firstElementChild === floor) return stage;
+  }
+  return floor || stage || el;
+}

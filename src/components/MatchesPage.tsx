@@ -75,10 +75,14 @@ import {
   pinIdsFirst,
   splitPendingByOthers,
 } from '@/lib/matchHistoryDisplay';
-import { waitingManageServerMutation } from '@/lib/waitingManageFlow';
+import {
+  waitingDeleteUi,
+  waitingManageServerMutation,
+} from '@/lib/waitingManageFlow';
 import {
   measureStickyHeaderHeight,
   queryStickyHeader,
+  resolveMatchFocusScrollTarget,
   scrollYUnderStickyHeader,
 } from '@/lib/scrollUnderSticky';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
@@ -612,7 +616,7 @@ function MatchStageBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div data-match-stage={label}>
       <p className="text-xs font-semibold tracking-wide text-gray-400 mb-1.5">
         {label}
       </p>
@@ -723,19 +727,14 @@ async function fetchProfileBundle(ids: string[]): Promise<{
   return { byId, founderMap, boostSet };
 }
 
-function scrollMatchCardIntoView(
-  elementId: string,
-  block: ScrollLogicalPosition = 'center'
-) {
+function scrollMatchCardIntoView(elementId: string) {
   const run = () => {
     const el = document.getElementById(elementId);
     if (!el) return;
-    if (block !== 'start') {
-      el.scrollIntoView({ behavior: 'smooth', block });
-      return;
-    }
+    const target = resolveMatchFocusScrollTarget(el) as HTMLElement | null;
+    if (!target) return;
     const top = scrollYUnderStickyHeader(
-      el.getBoundingClientRect().top,
+      target.getBoundingClientRect().top,
       window.scrollY,
       measureStickyHeaderHeight(queryStickyHeader())
     );
@@ -910,7 +909,7 @@ export default function MatchesPage({
 } = {}) {
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
-  const { publish, markResolved } = useMatchesInboxSync();
+  const { publish, markResolved, clearDigestActor } = useMatchesInboxSync();
   const [matches, setMatches] = useState<Match[]>([]);
   const [declinedArchives, setDeclinedArchives] = useState<
     DeclinedArchiveCard[]
@@ -1015,7 +1014,8 @@ export default function MatchesPage({
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
   );
-  const wroteFirstRef = useRef<Set<string>>(new Set());
+  /** Échanges déjà confirmés deux sens (évite un refetch légèrement en retard). */
+  const twoWayDialogueRef = useRef<Set<string>>(new Set());
   const [myGender, setMyGender] = useState<ProfileGender | null>(null);
   const pendingFocusRef = useRef<{
     actorId: string;
@@ -1032,6 +1032,14 @@ export default function MatchesPage({
   const unread = useUnreadMessages({
     ignoreSenderId: chatPeer?.id ?? null,
   });
+
+  const visitDigestActor = useCallback(
+    (profileId?: string | null) => {
+      if (!profileId) return;
+      clearDigestActor(profileId);
+    },
+    [clearDigestActor]
+  );
 
   const founderActive = isFounderPeriodActive(status);
   const likesUnlimited = status.unlimited_likes || founderActive;
@@ -1290,7 +1298,7 @@ export default function MatchesPage({
       }
       setPeersWithChat(() => {
         const next = new Set(peersChat);
-        for (const id of wroteFirstRef.current) next.add(id);
+        for (const id of twoWayDialogueRef.current) next.add(id);
         return next;
       });
 
@@ -1956,9 +1964,9 @@ export default function MatchesPage({
       setOpenProfile(null);
       const firstPin = (pending.pinActorIds || [])[0];
       if (firstPin) {
-        scrollMatchCardIntoView(`match-card-${firstPin}`, 'start');
+        scrollMatchCardIntoView(`match-card-${firstPin}`);
       } else {
-        scrollMatchCardIntoView('match-floor-matched-chat', 'start');
+        scrollMatchCardIntoView('match-floor-matched-chat');
       }
       return;
     }
@@ -1977,8 +1985,7 @@ export default function MatchesPage({
             : 'match-floor-new';
       const firstPin = pending.actorId || (pending.pinActorIds || [])[0];
       scrollMatchCardIntoView(
-        firstPin ? `match-card-${firstPin}` : floorId,
-        'start'
+        firstPin ? `match-card-${firstPin}` : floorId
       );
       if (pending.actorId) {
         const foundCard = matches.find((m) => m.profile.id === pending.actorId);
@@ -1987,6 +1994,7 @@ export default function MatchesPage({
         }
         pendingFocusRef.current = null;
         onFocusActorConsumed?.();
+        visitDigestActor(foundCard.profile.id);
         setOpenProfile(foundCard);
         return;
       }
@@ -2037,6 +2045,7 @@ export default function MatchesPage({
       pending.openChat &&
       (found.kind === 'match' || found.alreadyLiked)
     ) {
+      visitDigestActor(found.profile.id);
       setChatPeer(found.profile);
       return;
     }
@@ -2045,6 +2054,7 @@ export default function MatchesPage({
       setPulseCategory(null);
       setPulseSingleId(found.profile.id);
       scrollMatchCardIntoView(`match-card-${found.profile.id}`);
+      visitDigestActor(found.profile.id);
       setOpenProfile(found);
       return;
     }
@@ -2052,6 +2062,7 @@ export default function MatchesPage({
     setPulseCategory(null);
     setPulseSingleId(found.profile.id);
     scrollMatchCardIntoView(`match-card-${found.profile.id}`);
+    visitDigestActor(found.profile.id);
     setOpenProfile(found);
   }, [
     loading,
@@ -2074,6 +2085,7 @@ export default function MatchesPage({
     waitingByOthers,
     loadPendingDeclined,
     loadDeclinedArchives,
+    visitDigestActor,
   ]);
 
   const handleMatchBack = useCallback(
@@ -2203,6 +2215,7 @@ export default function MatchesPage({
         markResolved(item.profile.id, 'refused');
         releasePinnedActor(item.profile.id);
         setOpenWaitingManage(null);
+        setOpenProfile(null);
       } catch (err) {
         setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
       } finally {
@@ -2819,12 +2832,16 @@ export default function MatchesPage({
               : 'new'
         }
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${cardTone}`}
-        onClick={() => setOpenProfile(match)}
+        onClick={() => {
+          visitDigestActor(match.profile.id);
+          setOpenProfile(match);
+        }}
       >
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
+            visitDigestActor(match.profile.id);
             setOpenProfile(match);
           }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
@@ -2948,7 +2965,9 @@ export default function MatchesPage({
               label={match.waiting ? 'Jeter' : 'Supprimer'}
               onClick={() => {
                 if (match.waiting) {
-                  void handleRefuseWaiting(match);
+                  if (waitingDeleteUi('card-ban') === 'open-manage') {
+                    void handleRefuseWaiting(match);
+                  }
                   return;
                 }
                 void handleInboxDecision(match, 'refuse');
@@ -2963,7 +2982,10 @@ export default function MatchesPage({
             <ChatBubbleButton
               name={match.profile.display_name}
               unreadCount={unreadCount}
-              onClick={() => setChatPeer(match.profile)}
+              onClick={() => {
+                visitDigestActor(match.profile.id);
+                setChatPeer(match.profile);
+              }}
             />
           </div>
         )}
@@ -3705,7 +3727,7 @@ export default function MatchesPage({
         <ChatScreen
           peer={chatPeer}
           onDialogueStarted={(peerId) => {
-            wroteFirstRef.current.add(peerId);
+            twoWayDialogueRef.current.add(peerId);
             setPeersWithChat((prev) => {
               if (prev.has(peerId)) return prev;
               const next = new Set(prev);
@@ -3969,7 +3991,10 @@ export default function MatchesPage({
             openProfile.refused
               ? () => setOpenProfile(null)
               : openProfile.waiting
-                ? () => void handleRefuseWaiting(openProfile)
+                ? () => {
+                    if (waitingDeleteUi('profile-sheet') !== 'purge') return;
+                    void handlePurgeWaiting(openProfile);
+                  }
                 : undefined
           }
           onOpenChat={
@@ -3977,6 +4002,7 @@ export default function MatchesPage({
             openProfile.alreadyLiked ||
             (unread.bySender[openProfile.profile.id] || 0) > 0
               ? () => {
+                  visitDigestActor(openProfile.profile.id);
                   setChatPeer(openProfile.profile);
                   setOpenProfile(null);
                 }

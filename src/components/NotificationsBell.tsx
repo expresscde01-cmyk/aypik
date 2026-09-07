@@ -41,7 +41,7 @@ import {
 } from '@/lib/digestCopy';
 import {
   absorbRubricConsultation,
-  bellHeaderBadgeCount,
+  bellPanelCardCount,
   BELL_RUBRIC_UNREAD_KINDS,
   collectUnreadActorIds,
   emptyRubricBaseline,
@@ -50,6 +50,7 @@ import {
   digestRecapSort,
   filterServerDigestIds,
   likeFloorForActor,
+  omitVisitedDigestIds,
   openDigestOpts,
   openLikeOpts,
   readRubricBaseline,
@@ -338,6 +339,8 @@ export default function NotificationsBell({
     entries: inboxEntries,
     hasSnapshot: syncHasSnapshot,
     markResolved,
+    clearedDigestIds,
+    clearDigestActor,
   } = useMatchesInboxSync();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<SocialNotification[]>([]);
@@ -428,36 +431,43 @@ export default function NotificationsBell({
 
   const liveNewIds = useMemo(
     () =>
-      selectLiveDigestIds({
-        snapshotIds: digestPinIdsFromEntries(inboxEntries, 'new'),
-        serverIds: catNew?.ids ?? [],
-        sticky: inboxSticky,
-        as: 'new',
-        snapshotReady,
-        serverReady: categoryServerReady,
-      }),
+      omitVisitedDigestIds(
+        selectLiveDigestIds({
+          snapshotIds: digestPinIdsFromEntries(inboxEntries, 'new'),
+          serverIds: catNew?.ids ?? [],
+          sticky: inboxSticky,
+          as: 'new',
+          snapshotReady,
+          serverReady: categoryServerReady,
+        }),
+        clearedDigestIds
+      ),
     [
       inboxEntries,
       catNew?.ids,
       inboxSticky,
       snapshotReady,
       categoryServerReady,
+      clearedDigestIds,
     ]
   );
   const liveWaitIds = useMemo(
     () =>
-      selectLiveDigestIds({
-        snapshotIds: digestPinIdsFromEntries(
-          inboxEntries,
-          'wait',
-          archivedWaitIds
-        ),
-        serverIds: catWait?.ids ?? [],
-        sticky: inboxSticky,
-        as: 'wait',
-        snapshotReady,
-        serverReady: categoryServerReady,
-      }),
+      omitVisitedDigestIds(
+        selectLiveDigestIds({
+          snapshotIds: digestPinIdsFromEntries(
+            inboxEntries,
+            'wait',
+            archivedWaitIds
+          ),
+          serverIds: catWait?.ids ?? [],
+          sticky: inboxSticky,
+          as: 'wait',
+          snapshotReady,
+          serverReady: categoryServerReady,
+        }),
+        clearedDigestIds
+      ),
     [
       inboxEntries,
       archivedWaitIds,
@@ -465,6 +475,7 @@ export default function NotificationsBell({
       inboxSticky,
       snapshotReady,
       categoryServerReady,
+      clearedDigestIds,
     ]
   );
 
@@ -517,29 +528,44 @@ export default function NotificationsBell({
   }, [peersWithTwoWay, inboxEntries]);
 
   const quietMatches = useMemo(() => {
-    if (snapshotReady) {
-      return digestPinIdsFromEntries(inboxEntries, 'first').map((id) => ({
-        id,
-        displayName:
-          (inboxEntries.find((e) => e.id === id)?.displayName ||
-            actorNames[id] ||
-            ''
-          ).trim() || 'Quelqu’un',
-      }));
-    }
-    const seen = new Map<string, { id: string; displayName: string }>();
-    for (const n of items) {
-      if (n.kind !== 'match_created' || !n.actor_id) continue;
-      if (twoWayPeers.has(n.actor_id)) continue;
-      if (seen.has(n.actor_id)) continue;
-      const named = (actorNames[n.actor_id] || '').trim();
-      seen.set(n.actor_id, {
-        id: n.actor_id,
-        displayName: named || 'Quelqu’un',
-      });
-    }
-    return [...seen.values()];
-  }, [snapshotReady, inboxEntries, items, twoWayPeers, actorNames]);
+    const listed = snapshotReady
+      ? digestPinIdsFromEntries(inboxEntries, 'first').map((id) => ({
+          id,
+          displayName:
+            (inboxEntries.find((e) => e.id === id)?.displayName ||
+              actorNames[id] ||
+              ''
+            ).trim() || 'Quelqu’un',
+        }))
+      : (() => {
+          const seen = new Map<string, { id: string; displayName: string }>();
+          for (const n of items) {
+            if (n.kind !== 'match_created' || !n.actor_id) continue;
+            if (twoWayPeers.has(n.actor_id)) continue;
+            if (seen.has(n.actor_id)) continue;
+            const named = (actorNames[n.actor_id] || '').trim();
+            seen.set(n.actor_id, {
+              id: n.actor_id,
+              displayName: named || 'Quelqu’un',
+            });
+          }
+          return [...seen.values()];
+        })();
+    const kept = new Set(
+      omitVisitedDigestIds(
+        listed.map((m) => m.id),
+        clearedDigestIds
+      )
+    );
+    return listed.filter((m) => kept.has(m.id));
+  }, [
+    snapshotReady,
+    inboxEntries,
+    items,
+    twoWayPeers,
+    actorNames,
+    clearedDigestIds,
+  ]);
 
   const hasFirstAlert = quietMatches.length > 0 && !firstDismissed;
   const firstSole = quietMatches.length === 1 ? quietMatches[0] : null;
@@ -776,28 +802,6 @@ export default function NotificationsBell({
     (hasNewAlert && !mergeNewWithSocial ? 1 : 0) +
     (hasWaitAlert ? 1 : 0) +
     (hasFirstAlert ? 1 : 0);
-  const badgeCount = bellHeaderBadgeCount({
-    rubrics: [
-      {
-        memberIds: discoverPinIds,
-        freshIds: discoverSplit.freshIds,
-      },
-      { memberIds: waitPinIds, freshIds: waitSplit.freshIds },
-      {
-        memberIds: firstMemberIds,
-        freshIds: firstSplit.freshIds,
-      },
-      {
-        memberIds: declinedMemberIds,
-        freshIds: declinedSplit.freshIds,
-      },
-      {
-        memberIds: waitOtherMemberIds,
-        freshIds: waitOtherSplit.freshIds,
-      },
-    ],
-    unreadMessageCount: unreadMessages.total,
-  });
   const hasMessageAlert = unreadMessages.total > 0;
   const showMarkAll = socialOnlyUnread > 0 || categoryUnread > 0;
 
@@ -926,6 +930,8 @@ export default function NotificationsBell({
     resolvedActorIds,
     matchedIds,
   ]);
+
+  const badgeCount = bellPanelCardCount(orderedBlocks.blocks);
 
   const refreshCategoryNotifs = useCallback(async () => {
     if (!user) {
@@ -1417,6 +1423,7 @@ export default function NotificationsBell({
 
   const openDigestPerson = (category: MatchPulseCategory, actorId: string) => {
     if (!actorId) return;
+    clearDigestActor(actorId);
     closePanel();
     onOpenInbox?.(actorId, openDigestOpts(category, [actorId]));
   };
@@ -1424,6 +1431,7 @@ export default function NotificationsBell({
   const openMergedNew = (row: Extract<PanelRow, { kind: 'merged_new' }>) => {
     closePanel();
     dismissCategory('new');
+    clearDigestActor(row.actorId);
     setItems((prev) => prev.filter((x) => x.id !== row.socialId));
     onOpenInbox?.(row.actorId, openLikeOpts(row.actorId, 'new'));
     void markSocialNotificationRead(row.socialId)
@@ -1486,6 +1494,7 @@ export default function NotificationsBell({
 
   const handleItemClick = (n: SocialNotification) => {
     setItems((prev) => prev.filter((x) => x.id !== n.id));
+    if (n.actor_id) clearDigestActor(n.actor_id);
     closePanel();
     if (isInboxNotification(n)) {
       const actorLabel =

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { emitInboxUpdated } from '@/lib/messaging';
+import { matchManageRpcErrorCode } from '@/lib/matchManageError';
 
 export type MatchBreakAction = 'archive' | 'break';
 export type MatchBreakOrigin = 'like' | 'flash';
@@ -75,7 +76,9 @@ async function callMatchRpc(
   if (error) throw error;
   const row = (data || {}) as { ok?: boolean; error?: string };
   if (row.ok === false) {
-    throw new Error(row.error || 'match_break_failed');
+    throw new Error(
+      matchManageRpcErrorCode(row.error || 'match_break_failed')
+    );
   }
 }
 

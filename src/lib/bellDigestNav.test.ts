@@ -13,6 +13,7 @@ import { removeActorFromCategoryDigest } from './matchHistoryDisplay.ts';
 import {
   absorbRubricConsultation,
   bellHeaderBadgeCount,
+  bellPanelCardCount,
   bellRubricFreshIds,
   bellRubricPoints,
   BELL_RUBRIC_UNREAD_KINDS,
@@ -23,6 +24,7 @@ import {
   filterServerDigestIds,
   likeFloorForActor,
   mergeInboxPublish,
+  omitVisitedDigestIds,
   selectLiveDigestIds,
   normalizeOpenMatchesOpts,
   openDigestOpts,
@@ -54,6 +56,25 @@ test('digest En attente exclut les archives locales', () => {
 test('digest 1er mot = matchs silencieux', () => {
   const firstIds = digestPinIdsFromEntries(entries, 'first');
   assert.deepEqual(firstIds, ['e']);
+});
+
+test('visite d’un prénom : il sort du digest ; le dernier vide la notif', () => {
+  const firstIds = ['valentine', 'lucy'];
+  assert.deepEqual(omitVisitedDigestIds(firstIds, ['valentine']), ['lucy']);
+  assert.deepEqual(omitVisitedDigestIds(['lucy'], ['lucy']), []);
+  assert.deepEqual(omitVisitedDigestIds(firstIds, []), firstIds);
+  const remaining = omitVisitedDigestIds(firstIds, ['valentine']);
+  const copy = firstExchangeNotificationCopy(
+    remaining.map((id) => (id === 'lucy' ? 'Lucy' : id))
+  );
+  assert.match(copy.body, /Lucy/);
+  assert.equal(/Valentine/.test(copy.body), false);
+  assert.equal(omitVisitedDigestIds(['lucy'], ['lucy']).length === 0, true);
+});
+
+test('visite : même règle pour À découvrir et En attente', () => {
+  assert.deepEqual(omitVisitedDigestIds(['a', 'b'], ['a']), ['b']);
+  assert.deepEqual(omitVisitedDigestIds(['c', 'd'], ['c', 'd']), []);
 });
 
 test('clic digest new/wait/first : pulse + pinIds = texte', () => {
@@ -514,4 +535,17 @@ test('observeRubricMembers : liste vide ne prime pas (évite 4 « nouveaux » au
   );
   assert.deepEqual(loaded.freshIds, []);
   assert.equal(loaded.stockIds.length, 4);
+});
+
+test('badge cloche = 1 par case du panneau (Flash + À découvrir + Pas cette fois = 3)', () => {
+  const panel = [
+    { rows: [{ kind: 'social' }] },
+    { rows: [{ kind: 'cat_new' }] },
+    { rows: [{ kind: 'declined' }] },
+  ];
+  assert.equal(bellPanelCardCount(panel), 3);
+});
+
+test('badge cloche : « 6 messages non lus » = 1 case, pas 6', () => {
+  assert.equal(bellPanelCardCount([{ rows: [{ kind: 'messages' }] }]), 1);
 });

@@ -1,5 +1,6 @@
 /** Extrait un message lisible (Error, PostgREST `{ message }`, string). */
 import { ADULTS_ONLY_MESSAGE } from '@/lib/dating';
+import { CHAT_NOT_MATCHED_MESSAGE } from '@/lib/matchManageError';
 
 export function userErrorMessage(
   err: unknown,
@@ -22,8 +23,9 @@ export const MEMBER_UNAVAILABLE_MESSAGE =
 
 function friendlyDbMessage(msg: string, fallback: string): string {
   if (msg.includes('member_unavailable')) return MEMBER_UNAVAILABLE_MESSAGE;
-  if (msg.includes('not_matched')) {
-    return 'Tu ne peux écrire qu’à un membre avec qui tu as matché.';
+  if (msg.includes('active_match_required')) return fallback;
+  if (/\bnot_matched\b/.test(msg)) {
+    return CHAT_NOT_MATCHED_MESSAGE;
   }
   if (msg.includes('minors_not_allowed')) return ADULTS_ONLY_MESSAGE;
   if (msg.includes('decision_locked_refuse')) {

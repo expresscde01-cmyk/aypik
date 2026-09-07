@@ -4,6 +4,7 @@ import { Trash2, X } from 'lucide-react';
 import type { Profile } from '@/components/ProfileSetup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
+import { matchManageDisplayError } from '@/lib/matchManageError';
 
 function firstName(name: string): string {
   const trimmed = name.trim();
@@ -42,6 +43,7 @@ export default function MatchManageModal({
   const name = firstName(peer.display_name);
   const kindLabel = origin === 'flash' ? 'flash' : 'like';
   const showArchivePurge = mode === 'manage' || mode === 'waiting';
+  const displayError = matchManageDisplayError(error);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -132,9 +134,9 @@ export default function MatchManageModal({
           </button>
         </header>
 
-        {error ? (
+        {displayError ? (
           <p className="mx-5 mt-3 text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">
-            {error}
+            {displayError}
           </p>
         ) : null}
 

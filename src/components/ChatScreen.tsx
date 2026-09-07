@@ -22,6 +22,7 @@ import {
 } from '@/lib/matchBreaks';
 import { userErrorMessage } from '@/lib/userError';
 import { matchDialogueChipLabel } from '@/lib/interactionCopy';
+import { matchManageDisplayError } from '@/lib/matchManageError';
 import MatchManageModal from '@/components/MatchManageModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 
@@ -29,7 +30,7 @@ type ChatScreenProps = {
   peer: Profile;
   onClose: () => void;
   onMatchHidden?: () => void;
-  /** Premier message envoyé : sort la fiche du digest « 1er mot ». */
+  /** Échange dans les deux sens : passe la fiche en « Discussion en cours ». */
   onDialogueStarted?: (peerId: string) => void;
 };
 
@@ -52,6 +53,14 @@ export default function ChatScreen({
   const [manageError, setManageError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const onDialogueStartedRef = useRef(onDialogueStarted);
+  onDialogueStartedRef.current = onDialogueStarted;
+
+  const promoteIfTwoWay = (rows: ChatMessage[]) => {
+    if (!user) return;
+    if (!hasTwoWayDialogue(rows, user.id, peer.id)) return;
+    onDialogueStartedRef.current?.(peer.id);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -105,7 +114,9 @@ export default function ChatScreen({
           if (incoming.sender_id !== peer.id) return;
           setMessages((prev) => {
             if (prev.some((m) => m.id === incoming.id)) return prev;
-            return [...prev, incoming];
+            const next = [...prev, incoming];
+            promoteIfTwoWay(next);
+            return next;
           });
           if (incoming.conversation_id) {
             setConversationId(incoming.conversation_id);
@@ -130,7 +141,9 @@ export default function ChatScreen({
           if (incoming.recipient_id !== user.id) return;
           setMessages((prev) => {
             if (prev.some((m) => m.id === incoming.id)) return prev;
-            return [...prev, incoming];
+            const next = [...prev, incoming];
+            promoteIfTwoWay(next);
+            return next;
           });
           if (incoming.conversation_id) {
             setConversationId(incoming.conversation_id);
@@ -200,12 +213,15 @@ export default function ChatScreen({
       if (message.conversation_id) {
         setConversationId(message.conversation_id);
       }
+      let nextMessages: ChatMessage[] = [];
       setMessages((prev) => {
         const withoutLocal = prev.filter((m) => m.id !== optimisticId);
-        if (withoutLocal.some((m) => m.id === message.id)) return withoutLocal;
-        return [...withoutLocal, message];
+        nextMessages = withoutLocal.some((m) => m.id === message.id)
+          ? withoutLocal
+          : [...withoutLocal, message];
+        return nextMessages;
       });
-      onDialogueStarted?.(peer.id);
+      promoteIfTwoWay(nextMessages);
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);
@@ -235,13 +251,12 @@ export default function ChatScreen({
       onMatchHidden?.();
       onClose();
     } catch (err) {
+      const fallback =
+        action === 'purge'
+          ? 'Impossible de supprimer définitivement ce lien.'
+          : 'Impossible d’archiver ce match.';
       setManageError(
-        userErrorMessage(
-          err,
-          action === 'purge'
-            ? 'Impossible de supprimer définitivement ce lien.'
-            : 'Impossible d’archiver ce match.'
-        )
+        matchManageDisplayError(userErrorMessage(err, fallback)) || fallback
       );
     } finally {
       setManageBusy(false);
