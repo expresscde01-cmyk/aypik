@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { fetchInboxResponses } from '@/lib/inboxResponses';
+import { queryLikeFlashEdges } from '@/lib/likeFlashEdges';
 
 export {
   firstExchangeNotificationCopy,
@@ -43,20 +44,14 @@ export type InboxCategoryCounts = {
 export async function countInboxCategories(
   userId: string
 ): Promise<InboxCategoryCounts> {
-  const [sentRes, receivedRes, flashRes, inboxRes] = await Promise.all([
-    supabase.from('likes').select('to_user').eq('from_user', userId),
-    supabase.from('likes').select('from_user').eq('to_user', userId),
-    supabase.from('flashes').select('from_user').eq('to_user', userId),
+  const [edges, inboxRes] = await Promise.all([
+    queryLikeFlashEdges(userId),
     fetchInboxResponses().catch(() => []),
   ]);
 
-  if (sentRes.error) throw sentRes.error;
-  if (receivedRes.error) throw receivedRes.error;
-  if (flashRes.error) throw flashRes.error;
-
-  const sentSet = new Set((sentRes.data || []).map((l) => l.to_user));
-  const flashSet = new Set((flashRes.data || []).map((f) => f.from_user));
-  const likeSet = new Set((receivedRes.data || []).map((l) => l.from_user));
+  const sentSet = new Set(edges.sentLikes.map((l) => l.to_user));
+  const flashSet = new Set(edges.receivedFlashes.map((f) => f.from_user));
+  const likeSet = new Set(edges.receivedLikes.map((l) => l.from_user));
   const waiting = new Set(
     (inboxRes || [])
       .filter((r) => r.decision === 'wait')

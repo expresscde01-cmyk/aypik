@@ -26,6 +26,7 @@ import { FounderBadge } from '@/components/membership/Badges';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
 import { userErrorMessage } from '@/lib/userError';
+import { queryLikeFlashEdges } from '@/lib/likeFlashEdges';
 import {
   fetchSocialNotifications,
 } from '@/lib/suggestions';
@@ -1064,24 +1065,11 @@ export default function MatchesPage({
         genderRaw === 'homme' || genderRaw === 'femme' ? genderRaw : null
       );
 
-      const [sentRes, receivedRes, flashRes, sentFlashRes] = await Promise.all([
-        supabase
-          .from('likes')
-          .select('to_user, created_at')
-          .eq('from_user', user.id),
-        supabase
-          .from('likes')
-          .select('from_user, created_at')
-          .eq('to_user', user.id),
-        supabase
-          .from('flashes')
-          .select('from_user, created_at')
-          .eq('to_user', user.id),
-        supabase
-          .from('flashes')
-          .select('to_user, created_at')
-          .eq('from_user', user.id),
-      ]);
+      const edges = await queryLikeFlashEdges(user.id);
+      const sentRes = { data: edges.sentLikes, error: null };
+      const receivedRes = { data: edges.receivedLikes, error: null };
+      const flashRes = { data: edges.receivedFlashes, error: null };
+      const sentFlashRes = { data: edges.sentFlashes, error: null };
 
       if (sentRes.error) throw sentRes.error;
       if (receivedRes.error) throw receivedRes.error;

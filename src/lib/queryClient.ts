@@ -48,4 +48,6 @@ export const queryKeys = {
     profileEpoch: number
   ) =>
     ['suggest-profiles', 'home', userId, prefsEpoch, profileEpoch] as const,
+  likeFlashEdges: (userId: string) =>
+    ['like-flash-edges', userId] as const,
 };

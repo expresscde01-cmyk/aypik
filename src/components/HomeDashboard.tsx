@@ -36,6 +36,10 @@ import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
 import { ageFromBirthDate } from '@/lib/dating';
 import { queryKeys } from '@/lib/queryClient';
+import {
+  fetchLikeFlashEdges,
+  invalidateLikeFlashEdges,
+} from '@/lib/likeFlashEdges';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
@@ -167,31 +171,28 @@ export default function HomeDashboard({
         prefs,
       });
 
-      const [{ data: likes }, { data: flashes }] = await Promise.all([
-        supabase.from('likes').select('to_user').eq('from_user', user!.id),
-        supabase.from('flashes').select('to_user').eq('from_user', user!.id),
-      ]);
-
-      return {
-        list: list as HomeSuggestion[],
-        likedIds: new Set((likes || []).map((l) => l.to_user as string)),
-        flashedIds: new Set((flashes || []).map((f) => f.to_user as string)),
-      };
+      return { list: list as HomeSuggestion[] };
     },
   });
 
+  const edgesQuery = useQuery({
+    queryKey: queryKeys.likeFlashEdges(user?.id || ''),
+    enabled: Boolean(user?.id),
+    queryFn: () => fetchLikeFlashEdges(user!.id),
+  });
+
   useEffect(() => {
-    if (!homeQuery.data) return;
-    setLikedIds(homeQuery.data.likedIds);
-    setFlashedIds(homeQuery.data.flashedIds);
-  }, [homeQuery.data]);
+    if (!edgesQuery.data) return;
+    setLikedIds(new Set(edgesQuery.data.sentLikes.map((l) => l.to_user)));
+    setFlashedIds(new Set(edgesQuery.data.sentFlashes.map((f) => f.to_user)));
+  }, [edgesQuery.data]);
 
   const suggestions = useMemo(
     () =>
       (homeQuery.data?.list || []).filter((p) => !hiddenIds.has(p.id)),
     [homeQuery.data, hiddenIds]
   );
-  const loading = homeQuery.isLoading;
+  const loading = homeQuery.isLoading || edgesQuery.isLoading;
   const error =
     actionError ||
     (homeQuery.error
@@ -239,6 +240,7 @@ export default function HomeDashboard({
           window.setTimeout(() => setToast(null), 2800);
         }
 
+        invalidateLikeFlashEdges(user.id);
         await refresh();
       } catch (err) {
         setActionError(userErrorMessage(err, 'Une erreur est survenue'));
@@ -280,6 +282,7 @@ export default function HomeDashboard({
         );
 
         window.setTimeout(() => setToast(null), 2800);
+        invalidateLikeFlashEdges(user.id);
       } catch {
         setActionError('Impossible d’envoyer le flash');
       } finally {

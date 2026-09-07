@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { emitInboxUpdated } from '@/lib/messaging';
 import { sweepStaleSocialNotifications } from '@/lib/suggestions';
 import { rememberClearedWait } from '@/lib/waitArchives';
+import { invalidateLikeFlashEdges } from '@/lib/likeFlashEdges';
 
 export type InboxDecision = 'wait' | 'refuse' | 'match';
 export type InboxOrigin = 'flash' | 'like';
@@ -70,6 +71,7 @@ async function afterInboxReset(actorId: string) {
     /* non bloquant */
   }
   emitInboxUpdated({ actorId, decision: 'reset' });
+  invalidateLikeFlashEdges();
 }
 
 async function currentInboxDecision(
@@ -262,6 +264,7 @@ export async function respondToInboxInterest(
         /* non bloquant */
       }
       emitInboxUpdated({ actorId, decision: 'wait' });
+      invalidateLikeFlashEdges();
       return { ok: true, decision: 'wait', origin: origin || 'like' };
     }
     throw error;
@@ -279,6 +282,7 @@ export async function respondToInboxInterest(
     /* non bloquant */
   }
   emitInboxUpdated({ actorId, decision: row.decision || decision });
+  invalidateLikeFlashEdges();
 
   return {
     ok: row.ok !== false,

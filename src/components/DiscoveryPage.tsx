@@ -57,6 +57,10 @@ import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
+import {
+  fetchLikeFlashEdges,
+  invalidateLikeFlashEdges,
+} from '@/lib/likeFlashEdges';
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
 import { LIKE_NOTIFICATION_EMOJI } from '@/lib/interactionCopy';
 import PortaledActionTooltip from '@/components/PortaledActionTooltip';
@@ -541,25 +545,23 @@ export default function DiscoveryPage({
       }
       const loaded = profile as Profile;
       void ensureProfileCoordinates(loaded);
-      const [{ data: likes }, { data: flashes }] = await Promise.all([
-        supabase.from('likes').select('to_user').eq('from_user', userId!),
-        supabase.from('flashes').select('to_user').eq('from_user', userId!),
-      ]);
-      return {
-        profile: loaded,
-        likedIds: new Set((likes || []).map((l) => l.to_user as string)),
-        flashedIds: new Set((flashes || []).map((f) => f.to_user as string)),
-      };
+      return { profile: loaded };
     },
+  });
+
+  const edgesQuery = useQuery({
+    queryKey: queryKeys.likeFlashEdges(userId || ''),
+    enabled: Boolean(userId),
+    queryFn: () => fetchLikeFlashEdges(userId!),
   });
 
   const myProfile = viewerQuery.data?.profile ?? null;
 
   useEffect(() => {
-    if (!viewerQuery.data) return;
-    setLikedIds(viewerQuery.data.likedIds);
-    setFlashedIds(viewerQuery.data.flashedIds);
-  }, [viewerQuery.data]);
+    if (!edgesQuery.data) return;
+    setLikedIds(new Set(edgesQuery.data.sentLikes.map((l) => l.to_user)));
+    setFlashedIds(new Set(edgesQuery.data.sentFlashes.map((f) => f.to_user)));
+  }, [edgesQuery.data]);
 
   const { data: signupCount = 0 } = useQuery({
     queryKey: queryKeys.signupCount(),
@@ -659,7 +661,7 @@ export default function DiscoveryPage({
       myProfile?.location,
     ]
   );
-  const loading = viewerQuery.isLoading;
+  const loading = viewerQuery.isLoading || edgesQuery.isLoading;
   const searching = catalogQuery.isLoading;
   const catalogError = catalogQuery.error
     ? userErrorMessage(catalogQuery.error, 'Impossible de charger les profils')
@@ -737,6 +739,7 @@ export default function DiscoveryPage({
           window.setTimeout(() => setToast(null), 2800);
         }
 
+        invalidateLikeFlashEdges(user.id);
         await refresh();
       } catch (err) {
         setError(userErrorMessage(err, 'Une erreur est survenue'));
@@ -798,6 +801,7 @@ export default function DiscoveryPage({
         );
 
         window.setTimeout(() => setToast(null), 2800);
+        invalidateLikeFlashEdges(user.id);
       } catch {
         setError('Impossible d’envoyer le flash');
       } finally {
