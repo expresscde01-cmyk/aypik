@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Download, Share } from 'lucide-react';
-import { pwaManualGuide } from '@/lib/pwaInstall';
+import { pwaManualGuide, pwaNativeButtonLabel } from '@/lib/pwaInstall';
 import { usePwaInstall } from '@/lib/usePwaInstall';
 
 export default function PwaInstallCard() {
   const { kind, promptInstall } = usePwaInstall();
   const [manualOpen, setManualOpen] = useState(false);
   const guide = pwaManualGuide(kind);
+  const nativeLabel = pwaNativeButtonLabel(
+    typeof navigator === 'undefined' ? '' : navigator.userAgent
+  );
 
   if (kind === 'hidden') return null;
 
@@ -53,7 +56,7 @@ export default function PwaInstallCard() {
             className="w-full py-3 rounded-xl border border-rose-200 bg-white text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
-            Installer l&apos;application
+            {nativeLabel}
           </button>
           {pending ? (
             <p className="mt-3 text-xs text-gray-400">

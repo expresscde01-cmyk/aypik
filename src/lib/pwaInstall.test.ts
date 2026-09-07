@@ -7,11 +7,14 @@ import {
   isSafariMacos,
   isStandaloneDisplay,
   pwaManualGuide,
+  pwaNativeButtonLabel,
   resolvePwaInstallKind,
 } from './pwaInstall.ts';
 
 const CHROME_ANDROID =
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/128.0.0.0 Mobile Safari/537.36';
+const CHROME_DESKTOP =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36';
 const FIREFOX_ANDROID =
   'Mozilla/5.0 (Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0';
 const FIREFOX_DESKTOP =
@@ -75,6 +78,23 @@ test('Chrome / Firefox / Edge iOS : pas d’ajout à l’écran d’accueil, car
       canPrompt: false,
     }),
     'hidden'
+  );
+});
+
+test('Chrome / Edge : libellé natif selon Android ou ordinateur', () => {
+  assert.equal(
+    pwaNativeButtonLabel(CHROME_ANDROID),
+    'Ajouter Aypik à l’écran d’accueil'
+  );
+  assert.equal(
+    pwaNativeButtonLabel(CHROME_DESKTOP),
+    'Ajouter Aypik au bureau'
+  );
+  assert.equal(
+    pwaNativeButtonLabel(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Edg/128.0.0.0'
+    ),
+    'Ajouter Aypik au bureau'
   );
 });
 

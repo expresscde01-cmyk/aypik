@@ -105,6 +105,12 @@ export function pwaManualGuide(kind: PwaInstallKind): PwaManualGuide | null {
   return null;
 }
 
+/** Bouton natif Chromium : même test Android que le reste du module. */
+export function pwaNativeButtonLabel(ua: string): string {
+  if (/android/i.test(ua)) return 'Ajouter Aypik à l’écran d’accueil';
+  return 'Ajouter Aypik au bureau';
+}
+
 export type BeforeInstallPromptEventLike = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
