@@ -52,10 +52,9 @@ export function queryLikeFlashEdges(userId: string) {
 
 export function invalidateLikeFlashEdges(userId?: string | null) {
   if (userId) {
-    void queryClient.invalidateQueries({
+    return queryClient.invalidateQueries({
       queryKey: queryKeys.likeFlashEdges(userId),
     });
-    return;
   }
-  void queryClient.invalidateQueries({ queryKey: ['like-flash-edges'] });
+  return queryClient.invalidateQueries({ queryKey: ['like-flash-edges'] });
 }

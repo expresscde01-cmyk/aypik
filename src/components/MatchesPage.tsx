@@ -72,6 +72,7 @@ import {
   isMatchedViaWait,
   matchSheetUsesCrown,
   dropPinnedId,
+  matchIdsIncludingInboxDecisions,
   originHistoryIso,
   pinIdsFirst,
   splitPendingByOthers,
@@ -1217,11 +1218,16 @@ export default function MatchesPage({
         )
         .map((rl) => ({ id: rl.from_user, at: rl.created_at }));
 
+      for (const id of matchIdsIncludingInboxDecisions([], inboxRes)) {
+        matchIdSet.add(id);
+      }
+
       const allIds = [
         ...new Set([
           ...matchEntries.map((m) => m.id),
           ...flashEntries.map((f) => f.id),
           ...likeEntries.map((l) => l.id),
+          ...matchIdSet,
         ]),
       ];
 
@@ -1341,7 +1347,10 @@ export default function MatchesPage({
             kind,
             origin,
             matchedBackAt: matchBackAt.get(p.id) || mine || null,
-            alreadyLiked: sentSet.has(p.id),
+            alreadyLiked:
+              sentSet.has(p.id) ||
+              outgoingFlashMap.has(p.id) ||
+              matchIdSet.has(p.id),
             matchRole,
             waiting,
             waitingAt: waiting ? waitingAtMap.get(p.id) ?? null : null,

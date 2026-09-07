@@ -7,6 +7,7 @@ import {
   originHistoryIso,
   dropPinnedId,
   pinIdsFirst,
+  matchIdsIncludingInboxDecisions,
   removeActorFromCategoryDigest,
   splitPendingByOthers,
 } from './matchHistoryDisplay.ts';
@@ -108,6 +109,23 @@ test('ouvrir une fiche du digest 1er mot : elle sort des pins, les autres cligno
   const afterOpen = dropPinnedId(['test2', 'lucy', 'sabine'], 'test2');
   assert.deepEqual(afterOpen, ['lucy', 'sabine']);
   assert.equal(dropPinnedId(['test2'], 'test2').length, 0);
+});
+
+test('Matcher (couronne) : décision inbox match sort la fiche vers 1er mot, même sans like renvoyé en cache', () => {
+  const ids = matchIdsIncludingInboxDecisions([], [
+    { actor_id: 'luck', decision: 'match' },
+    { actor_id: 'still-new', decision: 'wait' },
+  ]);
+  assert.equal(ids.has('luck'), true);
+  assert.equal(ids.has('still-new'), false);
+});
+
+test('Matcher : un match déjà vu via likes croisés reste un match', () => {
+  const ids = matchIdsIncludingInboxDecisions(['mutual'], [
+    { actor_id: 'luck', decision: 'match' },
+  ]);
+  assert.equal(ids.has('mutual'), true);
+  assert.equal(ids.has('luck'), true);
 });
 
 test('removeActorFromCategoryDigest : 3 → 2 → 1 → plus de digest', () => {

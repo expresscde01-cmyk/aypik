@@ -93,6 +93,18 @@ export function dropPinnedId(ids: string[], actorId: string): string[] {
   return next.length === ids.length ? ids : next;
 }
 
+/** Décision inbox `match` (couronne) : le profil n’est plus « à étudier ». */
+export function matchIdsIncludingInboxDecisions(
+  edgeMatchIds: Iterable<string>,
+  inboxRows: { actor_id: string; decision: string }[]
+): Set<string> {
+  const next = new Set(edgeMatchIds);
+  for (const row of inboxRows) {
+    if (row.decision === 'match' && row.actor_id) next.add(row.actor_id);
+  }
+  return next;
+}
+
 type CategoryDigestState = {
   count: number;
   visible: boolean;

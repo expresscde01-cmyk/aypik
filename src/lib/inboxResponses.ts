@@ -71,7 +71,7 @@ async function afterInboxReset(actorId: string) {
     /* non bloquant */
   }
   emitInboxUpdated({ actorId, decision: 'reset' });
-  invalidateLikeFlashEdges();
+  await invalidateLikeFlashEdges();
 }
 
 async function currentInboxDecision(
@@ -264,7 +264,7 @@ export async function respondToInboxInterest(
         /* non bloquant */
       }
       emitInboxUpdated({ actorId, decision: 'wait' });
-      invalidateLikeFlashEdges();
+      await invalidateLikeFlashEdges();
       return { ok: true, decision: 'wait', origin: origin || 'like' };
     }
     throw error;
@@ -281,8 +281,8 @@ export async function respondToInboxInterest(
   } catch {
     /* non bloquant */
   }
+  await invalidateLikeFlashEdges();
   emitInboxUpdated({ actorId, decision: row.decision || decision });
-  invalidateLikeFlashEdges();
 
   return {
     ok: row.ok !== false,
