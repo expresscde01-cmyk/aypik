@@ -1279,6 +1279,15 @@ button.group[data-matched='true'] {
   flex-shrink: 0;
 }
 
+/* Mobile : badges à gauche du bouton (la colonne d’actions est collée au bord droit). */
+@media (max-width: 639px) {
+  .match-card-actions .match-action-tip-end {
+    left: auto;
+    right: calc(100% - 4px);
+    margin-left: 0;
+  }
+}
+
 .match-card-photo {
   cursor: pointer;
   transform: scale(1);

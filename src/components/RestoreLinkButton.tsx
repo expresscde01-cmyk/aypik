@@ -46,7 +46,9 @@ export default function RestoreLinkButton({
         </svg>
       </span>
       <span
-        className={`pointer-events-none absolute z-30 whitespace-nowrap rounded-full border border-slate-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-slate-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 ${
+        className={`match-action-tip${
+          tooltip === 'left' || tooltip === 'top' ? '' : ' match-action-tip-end'
+        } pointer-events-none absolute z-30 whitespace-nowrap rounded-full border border-slate-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-slate-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 ${
           tooltip === 'top'
             ? 'bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 group-hover:translate-y-0 group-focus-visible:translate-y-0'
             : tooltip === 'right'

@@ -77,7 +77,9 @@ export default function MatcherButton({
         </span>
       </span>
       <span
-        className={`pointer-events-none absolute z-30 whitespace-nowrap rounded-full border bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 ${
+        className={`match-action-tip${
+          tooltip === 'left' || tooltip === 'top' ? '' : ' match-action-tip-end'
+        } pointer-events-none absolute z-30 whitespace-nowrap rounded-full border bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 ${
           done
             ? 'border-emerald-100 text-emerald-700'
             : 'border-rose-100 text-rose-600'
