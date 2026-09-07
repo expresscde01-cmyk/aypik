@@ -60,6 +60,10 @@ import {
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
 import { placeNotifPanel, notifPanelViewport } from '@/lib/portaledActionTooltip';
+import {
+  ghostClickIgnoreUntil,
+  shouldIgnoreBellClick,
+} from '@/lib/bellGhostClick';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -376,8 +380,8 @@ export default function NotificationsBell({
   );
   const [canScrollMore, setCanScrollMore] = useState(false);
   const bellRef = useRef<HTMLButtonElement>(null);
-  /** Overlay pointerdown closes, then the same click hits the bell — swallow that ghost click. */
-  const ignoreBellClickRef = useRef(false);
+  /** Overlay pointerdown closes, then the delayed mobile click hits the bell. */
+  const ignoreBellClickUntilRef = useRef(0);
   const socialRefreshTimerRef = useRef<number | null>(null);
   const listScrollRef = useRef<HTMLDivElement>(null);
   const prevMessageTotalRef = useRef(0);
@@ -1338,12 +1342,13 @@ export default function NotificationsBell({
   };
 
   const closeFromOutside = (e: { clientX: number; clientY: number; preventDefault: () => void }) => {
-    if (pointerHitsBell(e.clientX, e.clientY)) {
+    const until = ghostClickIgnoreUntil(
+      Date.now(),
+      pointerHitsBell(e.clientX, e.clientY)
+    );
+    if (until != null) {
       e.preventDefault();
-      ignoreBellClickRef.current = true;
-      window.setTimeout(() => {
-        ignoreBellClickRef.current = false;
-      }, 0);
+      ignoreBellClickUntilRef.current = until;
     }
     closePanel();
   };
@@ -1891,8 +1896,10 @@ export default function NotificationsBell({
         ref={bellRef}
         type="button"
         onClick={() => {
-          if (ignoreBellClickRef.current) {
-            ignoreBellClickRef.current = false;
+          if (
+            shouldIgnoreBellClick(ignoreBellClickUntilRef.current, Date.now())
+          ) {
+            ignoreBellClickUntilRef.current = 0;
             return;
           }
           void handleOpen();
