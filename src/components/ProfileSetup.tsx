@@ -24,6 +24,7 @@ import { FounderBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import ChangePasswordSection from '@/components/ChangePasswordSection';
+import PwaInstallCard from '@/components/PwaInstallCard';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { isPaidPremiumActive } from '@/lib/membership';
 import { formatBoostUntil } from '@/components/membership/OwnerBoostIndicator';
@@ -1005,6 +1006,8 @@ export default function ProfileSetup({
         )}
 
         {allowAccountDeletion && <ChangePasswordSection />}
+
+        {allowAccountDeletion && <PwaInstallCard />}
 
         {allowAccountDeletion && (
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
