@@ -104,6 +104,12 @@ test('dropPinnedId : une fiche traitée sort du lot, les autres restent', () => 
   assert.equal(dropPinnedId(same, 'z'), same);
 });
 
+test('ouvrir une fiche du digest 1er mot : elle sort des pins, les autres clignotent encore', () => {
+  const afterOpen = dropPinnedId(['test2', 'lucy', 'sabine'], 'test2');
+  assert.deepEqual(afterOpen, ['lucy', 'sabine']);
+  assert.equal(dropPinnedId(['test2'], 'test2').length, 0);
+});
+
 test('removeActorFromCategoryDigest : 3 → 2 → 1 → plus de digest', () => {
   const three = {
     count: 3,

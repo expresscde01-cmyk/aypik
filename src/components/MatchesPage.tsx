@@ -993,7 +993,14 @@ export default function MatchesPage({
   const releasePinnedActor = useCallback((profileId: string) => {
     if (!profileId) return;
     setPulseSingleId((current) => (current === profileId ? null : current));
-    setPinActorIds((prev) => dropPinnedId(prev, profileId));
+    setPinActorIds((prev) => {
+      const next = dropPinnedId(prev, profileId);
+      if (next.length === 0) {
+        setPulseCategory(null);
+        setUnreadMailbox(false);
+      }
+      return next;
+    });
   }, []);
   const consumeAttentionPulse = useCallback((profileId?: string | null) => {
     setPulseSingleId((current) => {
@@ -1040,6 +1047,16 @@ export default function MatchesPage({
       clearDigestActor(profileId);
     },
     [clearDigestActor]
+  );
+
+  /** Toute interaction avec la fiche (ouvrir le profil, le chat, etc.) arrête le clignotement. */
+  const interactWithMatchCard = useCallback(
+    (profileId?: string | null) => {
+      if (!profileId) return;
+      visitDigestActor(profileId);
+      releasePinnedActor(profileId);
+    },
+    [visitDigestActor, releasePinnedActor]
   );
 
   const founderActive = isFounderPeriodActive(status);
@@ -1982,7 +1999,7 @@ export default function MatchesPage({
         }
         pendingFocusRef.current = null;
         onFocusActorConsumed?.();
-        visitDigestActor(foundCard.profile.id);
+        interactWithMatchCard(foundCard.profile.id);
         setOpenProfile(foundCard);
         return;
       }
@@ -2033,24 +2050,22 @@ export default function MatchesPage({
       pending.openChat &&
       (found.kind === 'match' || found.alreadyLiked)
     ) {
-      visitDigestActor(found.profile.id);
+      interactWithMatchCard(found.profile.id);
       setChatPeer(found.profile);
       return;
     }
 
     if (pending.highlight) {
       setPulseCategory(null);
-      setPulseSingleId(found.profile.id);
       scrollMatchCardIntoView(`match-card-${found.profile.id}`);
-      visitDigestActor(found.profile.id);
+      interactWithMatchCard(found.profile.id);
       setOpenProfile(found);
       return;
     }
 
     setPulseCategory(null);
-    setPulseSingleId(found.profile.id);
     scrollMatchCardIntoView(`match-card-${found.profile.id}`);
-    visitDigestActor(found.profile.id);
+    interactWithMatchCard(found.profile.id);
     setOpenProfile(found);
   }, [
     loading,
@@ -2073,7 +2088,7 @@ export default function MatchesPage({
     waitingByOthers,
     loadPendingDeclined,
     loadDeclinedArchives,
-    visitDigestActor,
+    interactWithMatchCard,
   ]);
 
   const handleMatchBack = useCallback(
@@ -2777,7 +2792,7 @@ export default function MatchesPage({
     const isQuietMatch = isMatched && !hasDialogue && !match.waiting;
     const pinSet =
       pinActorIds.length > 0 ? new Set(pinActorIds) : null;
-    const inPin = (id: string) => !pinSet || pinSet.has(id);
+    const inPin = (id: string) => Boolean(pinSet?.has(id));
     const shouldPulse = match.waiting
       ? (pulseCategory === 'wait' && inPin(match.profile.id)) ||
         pulseSingleId === match.profile.id
@@ -2821,7 +2836,7 @@ export default function MatchesPage({
         }
         className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow animate-fadeIn cursor-pointer ${cardTone}`}
         onClick={() => {
-          visitDigestActor(match.profile.id);
+          interactWithMatchCard(match.profile.id);
           setOpenProfile(match);
         }}
       >
@@ -2829,7 +2844,7 @@ export default function MatchesPage({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            visitDigestActor(match.profile.id);
+            interactWithMatchCard(match.profile.id);
             setOpenProfile(match);
           }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
@@ -2971,7 +2986,7 @@ export default function MatchesPage({
               name={match.profile.display_name}
               unreadCount={unreadCount}
               onClick={() => {
-                visitDigestActor(match.profile.id);
+                interactWithMatchCard(match.profile.id);
                 setChatPeer(match.profile);
               }}
             />
@@ -3722,9 +3737,10 @@ export default function MatchesPage({
               next.add(peerId);
               return next;
             });
-            releasePinnedActor(peerId);
+            interactWithMatchCard(peerId);
           }}
           onClose={() => {
+            interactWithMatchCard(chatPeer.id);
             setChatPeer(null);
             void loadMatches();
             void unread.refresh();
@@ -3959,10 +3975,16 @@ export default function MatchesPage({
             viewerGender: myGender,
           }}
           unreadCount={unread.bySender[openProfile.profile.id] || 0}
-          onClose={() => setOpenProfile(null)}
+          onClose={() => {
+            interactWithMatchCard(openProfile.profile.id);
+            setOpenProfile(null);
+          }}
           onLike={() => void handleMatchBack(openProfile)}
           onFlash={() => undefined}
-          onSkip={() => setOpenProfile(null)}
+          onSkip={() => {
+            interactWithMatchCard(openProfile.profile.id);
+            setOpenProfile(null);
+          }}
           onInboxDecision={
             openProfile.kind !== 'match' &&
             !openProfile.alreadyLiked &&
@@ -3990,7 +4012,7 @@ export default function MatchesPage({
             openProfile.alreadyLiked ||
             (unread.bySender[openProfile.profile.id] || 0) > 0
               ? () => {
-                  visitDigestActor(openProfile.profile.id);
+                  interactWithMatchCard(openProfile.profile.id);
                   setChatPeer(openProfile.profile);
                   setOpenProfile(null);
                 }
