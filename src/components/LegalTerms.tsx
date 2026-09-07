@@ -275,11 +275,22 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </a>{' '}
               ou installé sur un appareil (application web progressive,
               ou PWA).
-              L&apos;installation ne donne lieu à aucune collecte de
-              données supplémentaire par rapport à l&apos;usage via
-              navigateur. Le Service n&apos;étant pas distribué via
-              Google Play ou l&apos;App Store, aucune condition
-              d&apos;utilisation tierce de ces plateformes ne
+            </p>
+            <p>
+              L&apos;utilisateur peut ajouter le Service à l&apos;écran
+              d&apos;accueil d&apos;un téléphone ou d&apos;une tablette
+              (installation proposée par le navigateur sous Android ; sur
+              iPhone, selon les instructions affichées dans Safari) ainsi
+              qu&apos;au bureau d&apos;un ordinateur (installation proposée
+              par Chrome ou Edge ; sur Safari pour macOS, selon les
+              instructions affichées). Cette installation constitue
+              uniquement un raccourci d&apos;accès au Service : elle n&apos;en
+              modifie ni le fonctionnement, ni les données associées au
+              compte, ni les présentes conditions. L&apos;installation ne
+              donne lieu à aucune collecte de données supplémentaire par
+              rapport à l&apos;usage via navigateur. Le Service n&apos;étant
+              pas distribué via Google Play ou l&apos;App Store, aucune
+              condition d&apos;utilisation tierce de ces plateformes ne
               s&apos;applique.
             </p>
             <div>
