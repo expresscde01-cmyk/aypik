@@ -378,6 +378,7 @@ export default function NotificationsBell({
   const bellRef = useRef<HTMLButtonElement>(null);
   /** Overlay pointerdown closes, then the same click hits the bell — swallow that ghost click. */
   const ignoreBellClickRef = useRef(false);
+  const socialRefreshTimerRef = useRef<number | null>(null);
   const listScrollRef = useRef<HTMLDivElement>(null);
   const prevMessageTotalRef = useRef(0);
   const primedRef = useRef(false);
@@ -1281,6 +1282,16 @@ export default function NotificationsBell({
 
   useEffect(() => {
     if (!user || !active) return;
+    const scheduleSocialRefresh = () => {
+      if (socialRefreshTimerRef.current != null) {
+        window.clearTimeout(socialRefreshTimerRef.current);
+      }
+      socialRefreshTimerRef.current = window.setTimeout(() => {
+        socialRefreshTimerRef.current = null;
+        void refresh();
+        void refreshCategoryNotifs();
+      }, 400);
+    };
     const channel = supabase
       .channel(`social-inbox:${user.id}`)
       .on(
@@ -1291,13 +1302,14 @@ export default function NotificationsBell({
           table: 'social_notifications',
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
-          void refresh();
-          void refreshCategoryNotifs();
-        }
+        scheduleSocialRefresh
       )
       .subscribe();
     return () => {
+      if (socialRefreshTimerRef.current != null) {
+        window.clearTimeout(socialRefreshTimerRef.current);
+        socialRefreshTimerRef.current = null;
+      }
       void supabase.removeChannel(channel);
     };
   }, [user, active, refresh, refreshCategoryNotifs]);
