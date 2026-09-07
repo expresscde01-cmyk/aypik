@@ -95,6 +95,7 @@ export default function ProfileSetup({
   const {
     status,
     loading: membershipLoading,
+    error: membershipLoadError,
     purchaseBoost,
     refresh,
     claimSignupOffer,
@@ -496,6 +497,32 @@ export default function ProfileSetup({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-gray-400">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (isSignup && membershipLoadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+          <p className="text-gray-800 text-sm leading-relaxed">
+            {membershipLoadError}
+          </p>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Réessayer
+          </button>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
+          >
+            Se déconnecter
+          </button>
+        </div>
       </div>
     );
   }

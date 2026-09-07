@@ -25,6 +25,7 @@ import { setProfilePaused } from '@/lib/profilePause';
 import { setProfileIncognito } from '@/lib/profileIncognito';
 import { setProfileDeactivated } from '@/lib/profileDeactivated';
 import { usePresenceHeartbeat } from '@/lib/presence';
+import { userErrorMessage } from '@/lib/userError';
 import {
   fetchMyAccountFlags,
   loadVisibilityUiMode,
@@ -91,6 +92,8 @@ function AppShellView() {
   const unread = useUnreadMessages();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const profileLoadGenRef = useRef(0);
   /** Invalide Accueil / Découvrir / Matchs uniquement après une vraie sauvegarde de profil. */
   const [profileEpoch, setProfileEpoch] = useState(0);
   const [suggestionPrefsEpoch, setSuggestionPrefsEpoch] = useState(0);
@@ -184,17 +187,36 @@ function AppShellView() {
     [user]
   );
 
-  const reloadViewerProfile = useCallback(async () => {
+  const loadViewerProfile = useCallback(async () => {
     if (!user) return null;
-    const { data } = await supabase
+    const gen = ++profileLoadGenRef.current;
+    setProfileLoading(true);
+    setProfileLoadError(null);
+    const { data, error } = await supabase
       .from('profiles')
       .select(PROFILE_CARD_COLUMNS)
       .eq('id', user.id)
       .maybeSingle();
-    setProfile(data as Profile | null);
-    setProfileEpoch((n) => n + 1);
-    return data as Profile | null;
+    if (gen !== profileLoadGenRef.current) return null;
+    if (error) {
+      setProfile(null);
+      setProfileLoadError(
+        userErrorMessage(error, 'Impossible de charger ton profil')
+      );
+      setProfileLoading(false);
+      return null;
+    }
+    const row = (data as Profile | null) ?? null;
+    setProfile(row);
+    setProfileLoading(false);
+    return row;
   }, [user]);
+
+  const reloadViewerProfile = useCallback(async () => {
+    const row = await loadViewerProfile();
+    if (row) setProfileEpoch((n) => n + 1);
+    return row;
+  }, [loadViewerProfile]);
 
   const navHidden = useBottomNavAutoHide(tab);
 
@@ -226,22 +248,11 @@ function AppShellView() {
 
   useEffect(() => {
     if (!user) return;
-    let active = true;
-    (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select(PROFILE_CARD_COLUMNS)
-        .eq('id', user.id)
-        .maybeSingle();
-      if (active) {
-        setProfile(data as Profile | null);
-        setProfileLoading(false);
-      }
-    })();
+    void loadViewerProfile();
     return () => {
-      active = false;
+      profileLoadGenRef.current += 1;
     };
-  }, [user]);
+  }, [user, loadViewerProfile]);
 
   useEffect(() => {
     if (!user) return;
@@ -323,7 +334,7 @@ function AppShellView() {
     new Date(user!.created_at) >= new Date(PHONE_VERIFICATION_REQUIRED_SINCE);
   const needsPhoneVerification =
     Boolean(user) && !user?.phone_confirmed_at && isPostPhoneRequirementAccount;
-  const needsProfile = !profileLoading && !profile;
+  const needsProfile = !profileLoading && !profileLoadError && !profile;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
@@ -373,6 +384,32 @@ function AppShellView() {
 
   if (needsPhoneVerification) {
     return <PhoneVerification />;
+  }
+
+  if (profileLoadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+          <p className="text-gray-800 text-sm leading-relaxed">
+            {profileLoadError}
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadViewerProfile()}
+            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+          >
+            Réessayer
+          </button>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (needsProfile) {

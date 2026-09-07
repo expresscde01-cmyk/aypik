@@ -11,6 +11,7 @@ import {
   type MembershipPlan,
   type MembershipStatus,
 } from '@/lib/membership';
+import { userErrorMessage } from '@/lib/userError';
 
 export type EnsureMembershipResult = {
   ok: boolean;
@@ -120,7 +121,6 @@ export function useMembership() {
       return;
     }
 
-    setError(null);
     maybePurgeExpiredDeletions();
     const { data, error: rpcError } = await supabase.rpc(
       'get_my_membership_status'
@@ -138,10 +138,12 @@ export function useMembership() {
         });
         setError(null);
       } else {
-        setError(rpcError.message);
-        setStatus(DEFAULT_MEMBERSHIP);
+        setError(
+          userErrorMessage(rpcError, 'Impossible de charger ton offre')
+        );
       }
     } else {
+      setError(null);
       setStatus(parseMembershipStatus(data));
     }
     setLoading(false);
