@@ -111,6 +111,10 @@ export function pwaNativeButtonLabel(ua: string): string {
   return 'Ajouter Aypik au bureau';
 }
 
+export const PWA_NATIVE_WAITING_LABEL = 'En attente du navigateur';
+export const PWA_NATIVE_WAITING_HINT =
+  'Il proposera l’installation quand il sera prêt — parfois après une ou deux visites, ou s’il a déjà affiché sa bannière.';
+
 export function pwaInstallDescription(ua: string, maxTouchPoints = 0): string {
   if (/android/i.test(ua) || isIosDevice(ua, maxTouchPoints)) {
     return 'Ajoute Aypik à ton écran d’accueil pour y revenir en un tap, sans passer par le navigateur.';

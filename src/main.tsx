@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { capturePwaInstallPrompt } from '@/lib/pwaPromptBridge';
+
+capturePwaInstallPrompt();
 
 // DEV : expose `__testPaymentSubs()` dans la console navigateur
 if (import.meta.env.DEV) {

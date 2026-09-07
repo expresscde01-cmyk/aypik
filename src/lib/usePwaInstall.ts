@@ -5,6 +5,13 @@ import {
   type BeforeInstallPromptEventLike,
   type PwaInstallKind,
 } from '@/lib/pwaInstall';
+import {
+  capturePwaInstallPrompt,
+  getCapturedPwaPrompt,
+  markPwaInstalled,
+  subscribeCapturedPwaPrompt,
+  takeCapturedPwaPrompt,
+} from '@/lib/pwaPromptBridge';
 
 function readStandalone(): boolean {
   if (typeof window === 'undefined') return false;
@@ -18,43 +25,52 @@ function readStandalone(): boolean {
   });
 }
 
+function syncFromBridge(
+  deferredRef: { current: BeforeInstallPromptEventLike | null },
+  setCanPrompt: (value: boolean) => void
+) {
+  const captured = getCapturedPwaPrompt();
+  deferredRef.current = captured;
+  setCanPrompt(Boolean(captured));
+}
+
 export function usePwaInstall(): {
   kind: PwaInstallKind;
   promptInstall: () => Promise<void>;
 } {
   const deferredRef = useRef<BeforeInstallPromptEventLike | null>(null);
-  const [canPrompt, setCanPrompt] = useState(false);
+  const [canPrompt, setCanPrompt] = useState(() => Boolean(getCapturedPwaPrompt()));
   const [standalone, setStandalone] = useState(readStandalone);
 
   useEffect(() => {
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      const promptEvent = event as BeforeInstallPromptEventLike;
-      deferredRef.current = promptEvent;
-      setCanPrompt(true);
-    };
+    capturePwaInstallPrompt();
+    syncFromBridge(deferredRef, setCanPrompt);
+    const unsub = subscribeCapturedPwaPrompt(() => {
+      syncFromBridge(deferredRef, setCanPrompt);
+    });
     const onInstalled = () => {
-      deferredRef.current = null;
-      setCanPrompt(false);
+      markPwaInstalled();
       setStandalone(true);
     };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      unsub();
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
   const promptInstall = useCallback(async () => {
-    const pending = deferredRef.current;
+    const pending = takeCapturedPwaPrompt() ?? deferredRef.current;
     if (!pending) return;
     deferredRef.current = null;
     setCanPrompt(false);
     await pending.prompt();
     try {
       const choice = await pending.userChoice;
-      if (choice.outcome === 'accepted') setStandalone(true);
+      if (choice.outcome === 'accepted') {
+        markPwaInstalled();
+        setStandalone(true);
+      }
     } catch {
       /* Chromium peut fermer le flux sans userChoice */
     }

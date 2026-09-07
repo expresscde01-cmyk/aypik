@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Download, Share } from 'lucide-react';
 import {
+  PWA_NATIVE_WAITING_HINT,
+  PWA_NATIVE_WAITING_LABEL,
   pwaInstallDescription,
   pwaManualGuide,
   pwaNativeButtonLabel,
@@ -52,21 +54,27 @@ export default function PwaInstallCard() {
         </>
       ) : (
         <>
-          <button
-            type="button"
-            onClick={() => void promptInstall()}
-            disabled={pending}
-            className="w-full py-3 rounded-xl border border-rose-200 bg-white text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Download className="w-4 h-4" />
-            {nativeLabel}
-          </button>
           {pending ? (
-            <p className="mt-3 text-xs text-gray-400">
-              Disponible dès que le navigateur le propose (souvent après une
-              ou deux visites).
-            </p>
-          ) : null}
+            <>
+              <div
+                className="w-full py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 font-semibold flex items-center justify-center gap-2 cursor-default select-none"
+                aria-disabled="true"
+              >
+                <Download className="w-4 h-4" />
+                {PWA_NATIVE_WAITING_LABEL}
+              </div>
+              <p className="mt-3 text-xs text-gray-500">{PWA_NATIVE_WAITING_HINT}</p>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void promptInstall()}
+              className="w-full py-3 rounded-xl border border-rose-200 bg-white text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {nativeLabel}
+            </button>
+          )}
         </>
       )}
     </div>

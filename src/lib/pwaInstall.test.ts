@@ -9,6 +9,8 @@ import {
   pwaInstallDescription,
   pwaManualGuide,
   pwaNativeButtonLabel,
+  PWA_NATIVE_WAITING_HINT,
+  PWA_NATIVE_WAITING_LABEL,
   resolvePwaInstallKind,
 } from './pwaInstall.ts';
 
@@ -134,6 +136,8 @@ test('Chrome / Edge : bouton natif dès que beforeinstallprompt est là', () => 
     }),
     'pending'
   );
+  assert.equal(PWA_NATIVE_WAITING_LABEL, 'En attente du navigateur');
+  assert.match(PWA_NATIVE_WAITING_HINT, /bannière/);
 });
 
 test('Firefox Android : instructions menu Installer / Ajouter à l’écran d’accueil', () => {
