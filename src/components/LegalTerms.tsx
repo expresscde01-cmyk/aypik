@@ -277,21 +277,38 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               ou PWA).
             </p>
             <p>
-              L&apos;utilisateur peut ajouter le Service à l&apos;écran
-              d&apos;accueil d&apos;un téléphone ou d&apos;une tablette
-              (installation proposée par le navigateur sous Android ; sur
-              iPhone, selon les instructions affichées dans Safari) ainsi
-              qu&apos;au bureau d&apos;un ordinateur (installation proposée
-              par Chrome ou Edge ; sur Safari pour macOS, selon les
-              instructions affichées). Cette installation constitue
-              uniquement un raccourci d&apos;accès au Service : elle n&apos;en
-              modifie ni le fonctionnement, ni les données associées au
-              compte, ni les présentes conditions. L&apos;installation ne
-              donne lieu à aucune collecte de données supplémentaire par
-              rapport à l&apos;usage via navigateur. Le Service n&apos;étant
-              pas distribué via Google Play ou l&apos;App Store, aucune
-              condition d&apos;utilisation tierce de ces plateformes ne
-              s&apos;applique.
+              L&apos;utilisateur peut, lorsque le navigateur le permet,
+              ajouter le Service à l&apos;écran d&apos;accueil d&apos;un
+              téléphone ou d&apos;une tablette, ou au bureau d&apos;un
+              ordinateur. Cette installation est proposée de manière directe
+              sous Android, dans les navigateurs Chrome et Samsung Internet,
+              ainsi que sur ordinateur, dans les navigateurs Chrome et Edge.
+              Elle est également possible, en suivant les instructions
+              affichées sur le Service, sur iPhone et iPad dans le
+              navigateur Safari, sous Firefox pour Android, et sous Safari
+              pour macOS à compter de la version Sonoma. Elle n&apos;est pas
+              proposée sous Firefox pour ordinateur, ni sous les autres
+              navigateurs ne disposant pas d&apos;une option d&apos;ajout
+              équivalente.
+            </p>
+            <p>
+              Dans tous les cas, y compris lorsque cette installation
+              n&apos;est pas proposée, l&apos;accès au Service via le
+              navigateur, à l&apos;adresse{' '}
+              <a
+                href="https://aypik.fr"
+                className="underline underline-offset-2 hover:text-rose-600"
+              >
+                https://aypik.fr
+              </a>, demeure entièrement disponible et inchangé.
+              L&apos;installation n&apos;est qu&apos;un raccourci d&apos;accès
+              optionnel ; elle n&apos;est jamais une condition d&apos;accès au
+              Service, n&apos;en modifie ni le fonctionnement, ni les données
+              associées au compte, ni les présentes conditions, et ne donne
+              lieu à aucune collecte de données supplémentaire par rapport à
+              l&apos;usage via navigateur. Le Service n&apos;étant pas
+              distribué via Google Play ou l&apos;App Store, aucune condition
+              d&apos;utilisation tierce de ces plateformes ne s&apos;applique.
             </p>
             <div>
               <p className="font-semibold text-gray-900">
