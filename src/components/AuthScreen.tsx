@@ -238,24 +238,35 @@ export default function AuthScreen({
         return;
       }
 
-      const locked = await fetchLoginLockStatus(email);
-      if (locked) {
-        await applyServerLock(email, false);
-        return;
+      const lockCheck = fetchLoginLockStatus(email);
+      try {
+        await signInWithPasswordSecure(
+          email,
+          password,
+          captchaToken || undefined
+        );
+      } catch (signErr) {
+        try {
+          if (await lockCheck) {
+            await applyServerLock(email, false);
+            return;
+          }
+        } catch {
+          /* statut indisponible : on garde l’erreur de connexion */
+        }
+        throw signErr;
       }
 
-      await signInWithPasswordSecure(
-        email,
-        password,
-        captchaToken || undefined
-      );
-
-      const stillLocked = await clearLoginFailuresIfAllowed();
-      if (stillLocked) {
-        await supabase.auth.signOut();
-        await applyServerLock(email, false);
-        return;
-      }
+      void lockCheck
+        .then(async (locked) => {
+          if (locked) await supabase.auth.signOut();
+        })
+        .catch(() => {});
+      void clearLoginFailuresIfAllowed()
+        .then(async (stillLocked) => {
+          if (stillLocked) await supabase.auth.signOut();
+        })
+        .catch(() => {});
 
       writeRememberSession(rememberSession);
     } catch (err) {

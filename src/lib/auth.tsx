@@ -8,6 +8,7 @@ import {
   isPasswordRecoveryRedirect,
   takeRecoveryTokenFromUrl,
 } from '@/lib/loginSecurity';
+import { revealThenVerifyLock } from '@/lib/loginSessionGate';
 
 interface AuthContextValue {
   session: Session | null;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return isPasswordRecoveryRedirect();
   });
   const recoveryRef = useRef(passwordRecovery);
+  const lockGateRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -42,17 +44,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const applySession = async (sess: Session | null, recovery: boolean) => {
       if (!mounted) return;
       if (sess && !recovery) {
-        const locked = await fetchOwnLoginLocked();
-        if (!mounted) return;
-        if (locked) {
-          await supabase.auth.signOut();
-          setSession(null);
-          setPasswordRecovery(false);
-          recoveryRef.current = false;
-          clearCachedRecoveryToken();
-          setLoading(false);
-          return;
-        }
+        const gate = ++lockGateRef.current;
+        revealThenVerifyLock({
+          reveal: () => {
+            setSession(sess);
+            setLoading(false);
+          },
+          isLocked: fetchOwnLoginLocked,
+          onLocked: async () => {
+            if (!mounted || lockGateRef.current !== gate) return;
+            await supabase.auth.signOut();
+            if (!mounted || lockGateRef.current !== gate) return;
+            setSession(null);
+            setPasswordRecovery(false);
+            recoveryRef.current = false;
+            clearCachedRecoveryToken();
+            setLoading(false);
+          },
+        });
+        return;
       }
       setSession(sess);
       setLoading(false);
