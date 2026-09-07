@@ -2,7 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { emitInboxUpdated } from '@/lib/messaging';
 import { sweepStaleSocialNotifications } from '@/lib/suggestions';
 import { rememberClearedWait } from '@/lib/waitArchives';
-import { invalidateLikeFlashEdges } from '@/lib/likeFlashEdges';
+import { invalidateLikeFlashEdges, seedSentLikeEdge } from '@/lib/likeFlashEdges';
+import { rememberConfirmedInboxDecision } from '@/lib/inboxDecisionOverlay';
 
 export type InboxDecision = 'wait' | 'refuse' | 'match';
 export type InboxOrigin = 'flash' | 'like';
@@ -263,6 +264,7 @@ export async function respondToInboxInterest(
       } catch {
         /* non bloquant */
       }
+      rememberConfirmedInboxDecision(actorId, 'wait', origin || 'like');
       emitInboxUpdated({ actorId, decision: 'wait' });
       await invalidateLikeFlashEdges();
       return { ok: true, decision: 'wait', origin: origin || 'like' };
@@ -282,7 +284,15 @@ export async function respondToInboxInterest(
     /* non bloquant */
   }
   await invalidateLikeFlashEdges();
-  emitInboxUpdated({ actorId, decision: row.decision || decision });
+  const confirmedDecision = row.decision || decision;
+  const confirmedOrigin = row.origin || origin || 'like';
+  rememberConfirmedInboxDecision(actorId, confirmedDecision, confirmedOrigin);
+  if (confirmedDecision === 'match') {
+    const { data: auth } = await supabase.auth.getUser();
+    const me = auth.user?.id;
+    if (me) seedSentLikeEdge(me, actorId);
+  }
+  emitInboxUpdated({ actorId, decision: confirmedDecision });
 
   return {
     ok: row.ok !== false,

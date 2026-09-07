@@ -23,6 +23,26 @@ export function waitMatchCardDepart(ms: number): Promise<void> {
   });
 }
 
+/** Pendant l’anim, un reload ne doit pas déplacer la fiche vers la rubrique d’arrivée. */
+export function retainDepartingMatches<T extends { profile: { id: string } }>(
+  prev: T[],
+  next: T[],
+  departingIds: ReadonlySet<string>
+): T[] {
+  if (departingIds.size === 0) return next;
+  const nextIds = new Set(next.map((item) => item.profile.id));
+  const kept = next.map((item) => {
+    if (!departingIds.has(item.profile.id)) return item;
+    return prev.find((row) => row.profile.id === item.profile.id) ?? item;
+  });
+  for (const row of prev) {
+    if (departingIds.has(row.profile.id) && !nextIds.has(row.profile.id)) {
+      kept.push(row);
+    }
+  }
+  return kept;
+}
+
 /** Laisse l’overlay se fermer pour que la fiche soit visible pendant l’animation. */
 export function afterMatchCardOverlayClose(): Promise<void> {
   if (

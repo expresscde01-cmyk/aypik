@@ -5,6 +5,7 @@ import {
   MATCH_CARD_DEPART_MS,
   matchCardDepartClass,
   matchCardDepartDurationMs,
+  retainDepartingMatches,
 } from './matchCardDepart.ts';
 
 test('sortie de fiche : une classe partagée, pas une anim par bouton', () => {
@@ -24,4 +25,18 @@ test('durée de départ : 420 ms, 0 si reduced-motion', () => {
   assert.equal(MATCH_CARD_DEPART_MS, 420);
   assert.equal(matchCardDepartDurationMs(false), 420);
   assert.equal(matchCardDepartDurationMs(true), 0);
+});
+
+test('reload pendant l’anim : la fiche partante garde son étage d’origine', () => {
+  const prev = [
+    { profile: { id: 'lucy' }, kind: 'like' },
+    { profile: { id: 'other' }, kind: 'like' },
+  ];
+  const next = [
+    { profile: { id: 'lucy' }, kind: 'match' },
+    { profile: { id: 'other' }, kind: 'like' },
+  ];
+  const kept = retainDepartingMatches(prev, next, new Set(['lucy']));
+  assert.equal(kept.find((m) => m.profile.id === 'lucy')?.kind, 'like');
+  assert.equal(kept.find((m) => m.profile.id === 'other')?.kind, 'like');
 });

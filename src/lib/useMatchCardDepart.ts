@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   afterMatchCardOverlayClose,
   matchCardDepartDurationMs,
@@ -8,6 +8,7 @@ import {
 /** Une animation de départ, réutilisée par toutes les actions qui changent de rubrique. */
 export function useMatchCardDepart() {
   const [departingIds, setDepartingIds] = useState<Set<string>>(() => new Set());
+  const departingIdsRef = useRef<Set<string>>(departingIds);
 
   const playDepart = useCallback(
     async (profileId: string, commit?: () => void | Promise<void>) => {
@@ -19,6 +20,7 @@ export function useMatchCardDepart() {
         if (prev.has(profileId)) return prev;
         const next = new Set(prev);
         next.add(profileId);
+        departingIdsRef.current = next;
         return next;
       });
       await afterMatchCardOverlayClose();
@@ -30,6 +32,7 @@ export function useMatchCardDepart() {
           if (!prev.has(profileId)) return prev;
           const next = new Set(prev);
           next.delete(profileId);
+          departingIdsRef.current = next;
           return next;
         });
       }
@@ -42,5 +45,5 @@ export function useMatchCardDepart() {
     [departingIds]
   );
 
-  return { playDepart, isDeparting };
+  return { playDepart, isDeparting, departingIdsRef };
 }

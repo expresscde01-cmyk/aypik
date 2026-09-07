@@ -43,11 +43,32 @@ export async function fetchLikeFlashEdges(
   };
 }
 
-export function queryLikeFlashEdges(userId: string) {
+export function queryLikeFlashEdges(
+  userId: string,
+  options?: { staleTime?: number }
+) {
   return queryClient.fetchQuery({
     queryKey: queryKeys.likeFlashEdges(userId),
     queryFn: () => fetchLikeFlashEdges(userId),
+    staleTime: options?.staleTime,
   });
+}
+
+/** Le RPC Matcher a inséré le like : le cache 60 s ne doit pas rester sans cette arête. */
+export function seedSentLikeEdge(userId: string, toUser: string) {
+  if (!userId || !toUser) return;
+  const now = new Date().toISOString();
+  queryClient.setQueryData(
+    queryKeys.likeFlashEdges(userId),
+    (old: LikeFlashEdges | undefined) => {
+      if (!old) return old;
+      if (old.sentLikes.some((row) => row.to_user === toUser)) return old;
+      return {
+        ...old,
+        sentLikes: [...old.sentLikes, { to_user: toUser, created_at: now }],
+      };
+    }
+  );
 }
 
 export function invalidateLikeFlashEdges(userId?: string | null) {

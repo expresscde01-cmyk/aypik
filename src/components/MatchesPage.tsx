@@ -77,8 +77,13 @@ import {
   pinIdsFirst,
   splitPendingByOthers,
 } from '@/lib/matchHistoryDisplay';
-import { matchCardDepartClass } from '@/lib/matchCardDepart';
+import { matchCardDepartClass, retainDepartingMatches } from '@/lib/matchCardDepart';
 import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
+import {
+  dropConfirmedInboxDecisionsSeenIn,
+  hasConfirmedInboxDecisions,
+  mergeConfirmedInboxDecisions,
+} from '@/lib/inboxDecisionOverlay';
 import {
   waitingDeleteUi,
   waitingManageServerMutation,
@@ -1005,7 +1010,7 @@ export default function MatchesPage({
       return next;
     });
   }, []);
-  const { playDepart, isDeparting } = useMatchCardDepart();
+  const { playDepart, isDeparting, departingIdsRef } = useMatchCardDepart();
   const consumeAttentionPulse = useCallback((profileId?: string | null) => {
     setPulseSingleId((current) => {
       if (!profileId || current === profileId) return null;
@@ -1086,7 +1091,10 @@ export default function MatchesPage({
         genderRaw === 'homme' || genderRaw === 'femme' ? genderRaw : null
       );
 
-      const edges = await queryLikeFlashEdges(user.id);
+      const edges = await queryLikeFlashEdges(
+        user.id,
+        hasConfirmedInboxDecisions() ? { staleTime: 0 } : undefined
+      );
       const sentRes = { data: edges.sentLikes, error: null };
       const receivedRes = { data: edges.receivedLikes, error: null };
       const flashRes = { data: edges.receivedFlashes, error: null };
@@ -1143,6 +1151,14 @@ export default function MatchesPage({
         inboxOk = true;
       } catch {
         inboxRes = [];
+      }
+      const inboxSnapshot = inboxRes;
+      inboxRes = mergeConfirmedInboxDecisions(inboxRes);
+      if (inboxOk) {
+        const departing = departingIdsRef.current;
+        dropConfirmedInboxDecisionsSeenIn(
+          inboxSnapshot.filter((row) => !departing.has(row.actor_id))
+        );
       }
 
       const incomingFlashMap = new Map(
@@ -1381,7 +1397,9 @@ export default function MatchesPage({
       for (const m of list) {
         if (waitingActors.has(m.profile.id)) forceWait.delete(m.profile.id);
       }
-      setMatches(list);
+      setMatches((prev) =>
+        retainDepartingMatches(prev, list, departingIdsRef.current)
+      );
       setOpenProfile((open) => {
         if (!open) return open;
         const next = list.find((m) => m.profile.id === open.profile.id);
@@ -1503,7 +1521,9 @@ export default function MatchesPage({
     const gen = ++waitArchivesLoadGen.current;
     try {
       try {
-        const inboxRes = await fetchInboxResponses();
+        const inboxRes = mergeConfirmedInboxDecisions(
+          await fetchInboxResponses()
+        );
         if (gen !== waitArchivesLoadGen.current) return;
         retainMineWaitArchives(
           user.id,
