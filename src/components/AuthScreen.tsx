@@ -26,6 +26,8 @@ import {
   RESET_EMAIL_SENT_MESSAGE,
   clearLoginFailuresIfAllowed,
   fetchLoginLockStatus,
+  isLoginClientTimeout,
+  LOGIN_TIMEOUT_MESSAGE,
   notifyAccountLocked,
   recordLoginFailure,
   isValidResetEmail,
@@ -261,6 +263,10 @@ export default function AuthScreen({
         setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
         return;
       }
+      if (mode === 'signin' && isLoginClientTimeout(err)) {
+        setError(LOGIN_TIMEOUT_MESSAGE);
+        return;
+      }
       if (mode === 'signin' && shouldCountLoginFailure(err)) {
         await handlePasswordFailure(email);
         return;
@@ -488,6 +494,18 @@ export default function AuthScreen({
                         Se connecter
                       </button>
                     )}
+                  {mode === 'signin' && error === LOGIN_TIMEOUT_MESSAGE && (
+                    <button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
+                      }
+                      className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
+                    >
+                      Réessayer
+                    </button>
+                  )}
                   {mode === 'signin' && offerPasswordReset && (
                     <button
                       type="button"

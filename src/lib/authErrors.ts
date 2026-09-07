@@ -171,5 +171,6 @@ export function shouldCountLoginFailure(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err ?? '');
   if (/failed to fetch|networkerror|load failed/i.test(message)) return false;
   if (/captcha protection|captcha_failed/i.test(message)) return false;
+  if (err instanceof Error && err.name === 'LoginClientTimeoutError') return false;
   return isInvalidLoginCredentials(err) || code !== '';
 }

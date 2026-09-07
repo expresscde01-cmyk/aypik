@@ -1,4 +1,16 @@
 import { supabase } from '@/lib/supabase';
+import {
+  isLoginClientTimeout,
+  withClientTimeout,
+} from '@/lib/loginClientTimeout';
+
+export {
+  LOGIN_CLIENT_TIMEOUT_MS,
+  LOGIN_TIMEOUT_MESSAGE,
+  LoginClientTimeoutError,
+  isLoginClientTimeout,
+  withClientTimeout,
+} from '@/lib/loginClientTimeout';
 
 /** Seuil serveur (record_login_failure) — ne pas utiliser pour un verrouillage local. */
 export const LOGIN_FAILURE_LIMIT = 4;
@@ -13,6 +25,12 @@ export const ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE =
 
 export const RESET_EMAIL_SENT_MESSAGE =
   "Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.";
+
+const TIMED_LOGIN_RPC = new Set([
+  'login_security_status',
+  'login_security_is_locked',
+  'clear_login_failures',
+]);
 
 const PRODUCTION_RECOVERY_URL = 'https://aypik.fr/?reset=1';
 
@@ -172,7 +190,10 @@ async function rpcFlags(
   fn: string,
   args: Record<string, unknown> = {}
 ): Promise<RpcFlagRow> {
-  const { data, error } = await supabase.rpc(fn, args);
+  const pending = Promise.resolve(supabase.rpc(fn, args));
+  const { data, error } = TIMED_LOGIN_RPC.has(fn)
+    ? await withClientTimeout(pending)
+    : await pending;
   if (error) throw error;
   return asRpcFlags(data);
 }
@@ -181,7 +202,8 @@ export async function fetchLoginLockStatus(email: string): Promise<boolean> {
   try {
     const row = await rpcFlags('login_security_status', { p_email: email.trim() });
     return row.locked === true;
-  } catch {
+  } catch (err) {
+    if (isLoginClientTimeout(err)) throw err;
     return false;
   }
 }
@@ -227,7 +249,8 @@ export async function clearLoginFailuresIfAllowed(): Promise<boolean> {
   try {
     const row = await rpcFlags('clear_login_failures');
     return row.locked === true;
-  } catch {
+  } catch (err) {
+    if (isLoginClientTimeout(err)) throw err;
     return false;
   }
 }
@@ -365,14 +388,16 @@ export async function signInWithPasswordSecure(
   password: string,
   captchaToken?: string
 ): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('login-security', {
-    body: {
-      action: 'sign_in',
-      email: email.trim(),
-      password,
-      captchaToken,
-    },
-  });
+  const { data, error } = await withClientTimeout(
+    supabase.functions.invoke('login-security', {
+      body: {
+        action: 'sign_in',
+        email: email.trim(),
+        password,
+        captchaToken,
+      },
+    })
+  );
 
   const payload = await parseFunctionPayload(error, data);
 
