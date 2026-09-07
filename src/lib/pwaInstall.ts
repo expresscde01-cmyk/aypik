@@ -111,6 +111,13 @@ export function pwaNativeButtonLabel(ua: string): string {
   return 'Ajouter Aypik au bureau';
 }
 
+export function pwaInstallDescription(ua: string, maxTouchPoints = 0): string {
+  if (/android/i.test(ua) || isIosDevice(ua, maxTouchPoints)) {
+    return 'Ajoute Aypik à ton écran d’accueil pour y revenir en un tap, sans passer par le navigateur.';
+  }
+  return 'Ajoute Aypik à ton bureau pour y revenir en un clic, sans passer par le navigateur.';
+}
+
 export type BeforeInstallPromptEventLike = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;

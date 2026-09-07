@@ -1,15 +1,21 @@
 import { useState } from 'react';
 import { Download, Share } from 'lucide-react';
-import { pwaManualGuide, pwaNativeButtonLabel } from '@/lib/pwaInstall';
+import {
+  pwaInstallDescription,
+  pwaManualGuide,
+  pwaNativeButtonLabel,
+} from '@/lib/pwaInstall';
 import { usePwaInstall } from '@/lib/usePwaInstall';
 
 export default function PwaInstallCard() {
   const { kind, promptInstall } = usePwaInstall();
   const [manualOpen, setManualOpen] = useState(false);
   const guide = pwaManualGuide(kind);
-  const nativeLabel = pwaNativeButtonLabel(
-    typeof navigator === 'undefined' ? '' : navigator.userAgent
-  );
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  const touch =
+    typeof navigator === 'undefined' ? 0 : navigator.maxTouchPoints || 0;
+  const nativeLabel = pwaNativeButtonLabel(ua);
+  const description = pwaInstallDescription(ua, touch);
 
   if (kind === 'hidden') return null;
 
@@ -23,10 +29,7 @@ export default function PwaInstallCard() {
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
         INSTALLER L&apos;APPLICATION
       </h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Ajoute Aypik à l&apos;écran d&apos;accueil (mobile) ou au bureau
-        (ordinateur) pour y revenir en un tap, sans passer par le navigateur.
-      </p>
+      <p className="text-sm text-gray-500 mb-4">{description}</p>
 
       {guide ? (
         <>

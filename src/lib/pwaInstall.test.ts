@@ -6,6 +6,7 @@ import {
   isIosSafari,
   isSafariMacos,
   isStandaloneDisplay,
+  pwaInstallDescription,
   pwaManualGuide,
   pwaNativeButtonLabel,
   resolvePwaInstallKind,
@@ -79,6 +80,18 @@ test('Chrome / Firefox / Edge iOS : pas d’ajout à l’écran d’accueil, car
     }),
     'hidden'
   );
+});
+
+test('description : mobile = écran d’accueil, ordinateur = bureau', () => {
+  const mobile =
+    'Ajoute Aypik à ton écran d’accueil pour y revenir en un tap, sans passer par le navigateur.';
+  const desktop =
+    'Ajoute Aypik à ton bureau pour y revenir en un clic, sans passer par le navigateur.';
+  assert.equal(pwaInstallDescription(CHROME_ANDROID), mobile);
+  assert.equal(pwaInstallDescription(FIREFOX_ANDROID), mobile);
+  assert.equal(pwaInstallDescription(SAFARI_IOS), mobile);
+  assert.equal(pwaInstallDescription(CHROME_DESKTOP), desktop);
+  assert.equal(pwaInstallDescription(SAFARI_MAC, 0), desktop);
 });
 
 test('Chrome / Edge : libellé natif selon Android ou ordinateur', () => {
