@@ -136,14 +136,6 @@ export async function countInboxCategories(
   };
 }
 
-/** @deprecated Préférer countInboxCategories */
-export async function countPendingStudyProfiles(
-  userId: string
-): Promise<number> {
-  const { newCount } = await countInboxCategories(userId);
-  return newCount;
-}
-
 /** Flash/Like reçu + digest « À découvrir » fusionnés (même profil). */
 export function mergedNewProfileNotificationCopy(
   displayName: string,

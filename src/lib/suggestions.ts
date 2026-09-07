@@ -42,30 +42,6 @@ export type SocialNotification = {
   created_at: string;
 };
 
-/** Interlocuteurs avec au moins un message (tous sens). Statut « discussion » : fetchPeersWithTwoWayDialogue. */
-export async function fetchPeersWithMessages(): Promise<Set<string>> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
-  if (!me) return new Set();
-
-  const { data, error } = await supabase
-    .from('messages')
-    .select('sender_id, recipient_id')
-    .or(`sender_id.eq.${me},recipient_id.eq.${me}`)
-    .limit(800);
-
-  if (error) return new Set();
-
-  const peers = new Set<string>();
-  for (const row of data || []) {
-    const sender = (row as { sender_id: string }).sender_id;
-    const recipient = (row as { recipient_id: string }).recipient_id;
-    if (sender === me && recipient) peers.add(recipient);
-    else if (recipient === me && sender) peers.add(sender);
-  }
-  return peers;
-}
-
 export async function fetchSocialNotifications(
   limit = 30
 ): Promise<SocialNotification[]> {
