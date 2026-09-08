@@ -6,15 +6,23 @@ import {
   isGeoRadiusKm,
   type GeoPerimeterFilter,
   type GeoRadiusKm,
-} from '@/lib/geoProximity';
+} from './geoProximity';
+import { parseFranceWorldChoice, parseWorldZones, type FranceWorldChoice, type WorldZone } from './worldGeo';
 
 export type SuggestionPrefs = {
   geoPerimeter: GeoPerimeterFilter;
   geoRadiusKm: GeoRadiusKm;
-  /** Strate étanche dès Même département. Inactif sur Même ville, quarts, Île-de-France et PARTOUT. */
+  /** Strate étanche dès Même département. Inactif sur Même ville, quarts, Hexagone / France dans le monde / International. */
   geoExclusive: boolean;
   /** 0 = pas de minimum d’intérêts. Défaut produit : 1. */
   minOverlap: number;
+  /** Continents International. Tableau vide = PARTOUT. */
+  worldZones: WorldZone[];
+  /**
+   * Second menu LA FRANCE DANS LE MONDE (sélection unique).
+   * `all` = les deux ensembles (défaut, affichage ; le filtre RPC vient plus tard).
+   */
+  franceWorldChoice: FranceWorldChoice;
 };
 
 /** Première visite / rien de configuré : jusqu’aux régions voisines + au moins 1 intérêt. */
@@ -23,6 +31,8 @@ export const DEFAULT_SUGGESTION_PREFS: SuggestionPrefs = {
   geoRadiusKm: GEO_RADIUS_KM_DEFAULT,
   geoExclusive: false,
   minOverlap: 1,
+  worldZones: [],
+  franceWorldChoice: 'all',
 };
 
 const PREFS_EVENT = 'aypik-suggestion-prefs';
@@ -95,6 +105,11 @@ export function parseSuggestionPrefs(raw: unknown): SuggestionPrefs {
     geoExclusive:
       d.geoExclusive === true && geoExclusiveApplies(geoPerimeter),
     minOverlap: parseMinOverlap(d.minOverlap),
+    worldZones: parseWorldZones(d.worldZones, d.worldZone),
+    franceWorldChoice: parseFranceWorldChoice(
+      d.franceWorldChoice,
+      d.franceWorldCodes
+    ),
   };
 }
 

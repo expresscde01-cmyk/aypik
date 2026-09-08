@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test": "node --experimental-strip-types --test src/lib/*.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/*.test.ts",
+    "seed:geonames": "node scripts/seed-geonames.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.3.0",

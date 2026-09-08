@@ -9,13 +9,17 @@ import {
   Zap,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Map as MapIcon,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
 import { PROFILE_OWN_COLUMNS, type Profile } from '@/components/ProfileSetup';
-import { ProfileCardCornerBadges } from '@/components/membership/Badges';
-import { CardGeoFacts } from '@/components/GeoBadgeLine';
+import { ProfileCardCornerBadges, PremiumBadge } from '@/components/membership/Badges';
+import { CardGeoFacts, InternationalCardGeoFacts, FranceFlagIcon } from '@/components/GeoBadgeLine';
 import {
   AdvancedFiltersTeaser,
   LikesQuotaHint,
@@ -26,13 +30,37 @@ import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
   GEO_PERIMETER_FILTER_LABEL,
-  GEO_PERIMETER_MENU,
+  GEO_PERIMETER_SCOPE_MENU,
+  GEO_FRANCE_STRATA_MENU,
   isGeoPerimeterFilter,
   isGeoProximityStratum,
   geoExclusiveApplies,
+  geoPerimeterScope,
   shouldHideViewedOnProximityShift,
+  isInternationalPerimeter,
+  isFranceHexagonePerimeter,
+  isGeoFilterActive,
+  isWideFrancePerimeter,
   type GeoPerimeterFilter,
 } from '@/lib/geoProximity';
+import {
+  WORLD_ZONE_CONTINENTS,
+  WORLD_ZONE_LABEL,
+  FRENCH_OVERSEAS_MENU,
+  FRANCOPHONE_MENU,
+  FRANCE_WORLD_CHOICE_ALL,
+  FRANCE_WORLD_CHOICE_OVERSEAS,
+  FRANCE_WORLD_CHOICE_FRANCOPHONE,
+  FRANCE_WORLD_CHOICE_LABEL,
+  formatInternationalGeoFacts,
+  toggleWorldZoneSelection,
+  worldZonesClosedLabel,
+  franceWorldClosedLabel,
+  isFranceWorldMenuIso,
+  type FranceWorldChoice,
+  type WorldZone,
+  type WorldZoneFilter,
+} from '@/lib/worldGeo';
 import {
   fetchDiscoveryCatalog,
   fetchPlatformSignupCount,
@@ -90,6 +118,444 @@ const SORT_OPTIONS = [
 
 type SortChoice = (typeof SORT_OPTIONS)[number]['id'];
 
+function PerimeterMenuLabel({
+  id,
+  closed,
+}: {
+  id: GeoPerimeterFilter;
+  closed?: boolean;
+}) {
+  const label = GEO_PERIMETER_FILTER_LABEL[id];
+  const row = `${closed ? 'inline-flex' : 'flex'} items-center gap-1.5 min-w-0`;
+  const iconSlot =
+    'inline-flex w-3.5 h-3.5 shrink-0 items-center justify-center';
+  if (id === 'anywhere') {
+    return (
+      <span className={`${row} leading-none`}>
+        <span className="inline-flex w-3.5 h-4 shrink-0 items-center justify-center">
+          <FranceFlagIcon className="w-3.5 h-4" />
+        </span>
+        <span className="truncate leading-none">{label}</span>
+      </span>
+    );
+  }
+  if (id === 'la_france_dans_le_monde') {
+    return (
+      <span className={row}>
+        <span className={`${iconSlot} rounded-[3px] bg-[#e5e7eb]`}>
+          <MapIcon
+            className={`w-3.5 h-3.5${closed ? ' text-emerald-700' : ''}`}
+            strokeWidth={2}
+            aria-hidden
+          />
+        </span>
+        <span className="truncate">{label}</span>
+      </span>
+    );
+  }
+  if (id === 'international') {
+    return (
+      <span className={row}>
+        <span className={iconSlot}>
+          <Globe
+            className={`w-3.5 h-3.5${closed ? ' text-emerald-700' : ''}`}
+            aria-hidden
+          />
+        </span>
+        <span className="truncate">{label}</span>
+        {!closed ? <PremiumBadge size="sm" /> : null}
+      </span>
+    );
+  }
+  return <>{label}</>;
+}
+
+/** Défaut des seconds menus : PARTOUT (globe), pas le libellé du premier menu. */
+function PartoutMenuLabel({ closed }: { closed?: boolean }) {
+  return (
+    <span className={`${closed ? 'inline-flex' : 'flex'} items-center gap-1.5 min-w-0`}>
+      <Globe
+        className={`w-3.5 h-3.5 shrink-0${closed ? ' text-emerald-700' : ''}`}
+        aria-hidden
+      />
+      <span className="truncate">{WORLD_ZONE_LABEL.worldwide}</span>
+    </span>
+  );
+}
+
+/** Défaut du second menu FRANCE : PARTOUT (globe), pas le libellé FRANCE du premier menu. */
+function FranceStrataMenuLabel({
+  id,
+  closed,
+}: {
+  id: GeoPerimeterFilter;
+  closed?: boolean;
+}) {
+  if (id === 'anywhere') {
+    return <PartoutMenuLabel closed={closed} />;
+  }
+  return <PerimeterMenuLabel id={id} closed={closed} />;
+}
+
+function WorldZoneSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: WorldZone[];
+  disabled: boolean;
+  onChange: (next: WorldZone[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const worldwide = value.length === 0;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  const pick = (clicked: WorldZoneFilter) => {
+    onChange(toggleWorldZoneSelection(value, clicked));
+    if (clicked === 'worldwide') setOpen(false);
+  };
+
+  return (
+    <div ref={rootRef} className="relative overflow-visible">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span className="geo-perimeter-closed-text">
+          <span
+            className={`geo-perimeter-closed-label${
+              worldwide ? ' font-medium' : ''
+            }`}
+          >
+            {worldZonesClosedLabel(value)}
+          </span>
+        </span>
+        <ChevronDown
+          className={`geo-perimeter-closed-chevron w-4 h-4 text-emerald-600 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-multiselectable
+          aria-label="Périmètre géographique"
+          className="geo-perimeter-menu absolute z-40 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+        >
+          {WORLD_ZONE_CONTINENTS.map((zone) => {
+            const selected = value.includes(zone);
+            return (
+              <li key={zone} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                      : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                  }`}
+                  onClick={() => pick(zone)}
+                >
+                  {WORLD_ZONE_LABEL[zone]}
+                </button>
+              </li>
+            );
+          })}
+          <li
+            role="separator"
+            aria-hidden
+            className="px-2.5 py-1.5 pointer-events-none"
+          >
+            <span className="block border-t border-gray-200" />
+          </li>
+          <li role="option" aria-selected={worldwide}>
+            <button
+              type="button"
+              className={`w-full text-left px-3 py-1.5 text-sm font-medium transition-colors ${
+                worldwide
+                  ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                  : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+              }`}
+              onClick={() => pick('worldwide')}
+            >
+              {WORLD_ZONE_LABEL.worldwide}
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function FranceWorldSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: FranceWorldChoice;
+  disabled: boolean;
+  onChange: (next: FranceWorldChoice) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [countryLevel, setCountryLevel] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const isDefault = value === FRANCE_WORLD_CHOICE_ALL;
+  const isCountry = isFranceWorldMenuIso(value);
+  const isGroupEmphasis =
+    isDefault ||
+    value === FRANCE_WORLD_CHOICE_OVERSEAS ||
+    value === FRANCE_WORLD_CHOICE_FRANCOPHONE;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (countryLevel) {
+          setCountryLevel(false);
+          return;
+        }
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, countryLevel]);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setCountryLevel(false);
+    }
+  }, [disabled]);
+
+  const pickGroup = (next: FranceWorldChoice) => {
+    onChange(next);
+    setCountryLevel(false);
+    setOpen(false);
+  };
+
+  const pickCountry = (iso2: string) => {
+    onChange(iso2);
+    setCountryLevel(false);
+    setOpen(false);
+  };
+
+  const optionClass = (selected: boolean, emphasis = false) =>
+    `w-full text-left px-3 py-1.5 text-sm transition-colors ${
+      selected
+        ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+        : emphasis
+          ? 'text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-950'
+          : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+    }`;
+
+  return (
+    <div ref={rootRef} className="relative overflow-visible">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => {
+            if (!visible) setCountryLevel(isCountry);
+            return !visible;
+          });
+        }}
+      >
+        <span className="geo-perimeter-closed-text">
+          <span
+            className={`geo-perimeter-closed-label${
+              isGroupEmphasis ? ' font-medium' : ''
+            }`}
+          >
+            {isDefault ? (
+              <PartoutMenuLabel closed />
+            ) : (
+              franceWorldClosedLabel(value)
+            )}
+          </span>
+        </span>
+        <ChevronDown
+          className={`geo-perimeter-closed-chevron w-4 h-4 text-emerald-600 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label={
+            countryLevel
+              ? 'Un pays précis'
+              : 'Territoires et pays francophones'
+          }
+          className="geo-perimeter-menu geo-perimeter-menu--page mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+        >
+          {countryLevel ? (
+            <>
+              <li>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-950 flex items-center gap-1.5"
+                  onClick={() => setCountryLevel(false)}
+                >
+                  <ChevronLeft className="w-4 h-4 shrink-0" aria-hidden />
+                  Un pays précis
+                </button>
+              </li>
+              <li
+                role="separator"
+                aria-hidden
+                className="px-2.5 py-1.5 pointer-events-none"
+              >
+                <span className="block border-t border-gray-200" />
+              </li>
+              <li
+                className="geo-perimeter-section-label text-xs font-semibold text-rose-700"
+                aria-hidden
+              >
+                TERRITOIRES FRANÇAIS D’OUTRE-MER
+              </li>
+              {FRENCH_OVERSEAS_MENU.map((row) => {
+                const selected = value === row.iso2;
+                return (
+                  <li key={row.iso2} role="option" aria-selected={selected}>
+                    <button
+                      type="button"
+                      className={optionClass(selected)}
+                      onClick={() => pickCountry(row.iso2)}
+                    >
+                      {row.label}
+                    </button>
+                  </li>
+                );
+              })}
+              <li
+                role="separator"
+                aria-hidden
+                className="px-2.5 py-1.5 pointer-events-none"
+              >
+                <span className="block border-t border-gray-200" />
+              </li>
+              <li
+                className="geo-perimeter-section-label text-xs font-semibold text-rose-700"
+                aria-hidden
+              >
+                PAYS FRANCOPHONES
+              </li>
+              {FRANCOPHONE_MENU.map((row) => {
+                const selected = value === row.iso2;
+                return (
+                  <li key={row.iso2} role="option" aria-selected={selected}>
+                    <button
+                      type="button"
+                      className={optionClass(selected)}
+                      onClick={() => pickCountry(row.iso2)}
+                    >
+                      {row.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              <li role="option" aria-selected={isDefault}>
+                <button
+                  type="button"
+                  className={optionClass(isDefault, true)}
+                  onClick={() => pickGroup(FRANCE_WORLD_CHOICE_ALL)}
+                >
+                  <PartoutMenuLabel />
+                </button>
+              </li>
+              <li
+                role="option"
+                aria-selected={value === FRANCE_WORLD_CHOICE_OVERSEAS}
+              >
+                <button
+                  type="button"
+                  className={optionClass(
+                    value === FRANCE_WORLD_CHOICE_OVERSEAS,
+                    true
+                  )}
+                  onClick={() => pickGroup(FRANCE_WORLD_CHOICE_OVERSEAS)}
+                >
+                  {FRANCE_WORLD_CHOICE_LABEL.overseas}
+                </button>
+              </li>
+              <li
+                role="option"
+                aria-selected={value === FRANCE_WORLD_CHOICE_FRANCOPHONE}
+              >
+                <button
+                  type="button"
+                  className={optionClass(
+                    value === FRANCE_WORLD_CHOICE_FRANCOPHONE,
+                    true
+                  )}
+                  onClick={() => pickGroup(FRANCE_WORLD_CHOICE_FRANCOPHONE)}
+                >
+                  {FRANCE_WORLD_CHOICE_LABEL.francophone}
+                </button>
+              </li>
+              <li role="option" aria-selected={isCountry}>
+                <button
+                  type="button"
+                  className={`${optionClass(isCountry, true)} flex items-center justify-between gap-2`}
+                  onClick={() => setCountryLevel(true)}
+                >
+                  <span>Un pays précis</span>
+                  <ChevronRight className="w-4 h-4 shrink-0" aria-hidden />
+                </button>
+              </li>
+            </>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /** Palette jaune + taches franches, sans teinte rose du bouton. */
 function PaletteSortIcon() {
   return (
@@ -116,6 +582,121 @@ function PaletteSortIcon() {
 }
 
 function GeoPerimeterSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: GeoPerimeterFilter;
+  disabled: boolean;
+  onChange: (next: GeoPerimeterFilter) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const scope = geoPerimeterScope(value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  return (
+    <div ref={rootRef} className="relative overflow-visible">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span className="geo-perimeter-closed-text">
+          <span className="geo-perimeter-closed-label font-medium">
+            <PerimeterMenuLabel id={scope} closed />
+          </span>
+        </span>
+        <ChevronDown
+          className={`geo-perimeter-closed-chevron w-4 h-4 text-emerald-600 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Périmètre géographique"
+          className="geo-perimeter-menu absolute z-40 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+        >
+          {GEO_PERIMETER_SCOPE_MENU.map((item, index) => {
+            if (item.type === 'divider') {
+              return (
+                <li
+                  key={`divider-${item.style}-${index}`}
+                  role="separator"
+                  aria-hidden
+                  className="px-2.5 py-1.5 pointer-events-none"
+                >
+                  <span
+                    className={
+                      item.style === 'solid'
+                        ? 'block border-t border-gray-200'
+                        : 'block border-t-[3px] border-double border-gray-200'
+                    }
+                  />
+                </li>
+              );
+            }
+            const selected = item.id === scope;
+            return (
+              <li key={item.id} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm font-medium transition-colors ${
+                    selected
+                      ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                      : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                  }`}
+                  onClick={() => {
+                    if (item.id === 'anywhere') {
+                      if (!isFranceHexagonePerimeter(value)) {
+                        onChange('anywhere');
+                      }
+                    } else {
+                      onChange(item.id);
+                    }
+                    setOpen(false);
+                  }}
+                >
+                  <PerimeterMenuLabel id={item.id} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function FranceStrataSelect({
   value,
   exclusive,
   disabled,
@@ -167,9 +748,11 @@ function GeoPerimeterSelect({
       >
         <span className="geo-perimeter-closed-text">
           <span
-            className={`geo-perimeter-closed-label${value === 'anywhere' ? ' font-medium' : ''}`}
+            className={`geo-perimeter-closed-label${
+              isWideFrancePerimeter(value) ? ' font-medium' : ''
+            }`}
           >
-            {GEO_PERIMETER_FILTER_LABEL[value]}
+            <FranceStrataMenuLabel id={value} closed />
           </span>
           {exclusiveApplies && exclusive ? (
             <span className="geo-perimeter-closed-exclusive">
@@ -187,8 +770,8 @@ function GeoPerimeterSelect({
       {open && (
         <ul
           role="listbox"
-          aria-label="Périmètre géographique"
-          className="geo-perimeter-menu absolute z-40 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
+          aria-label="Périmètre en France"
+          className="geo-perimeter-menu geo-perimeter-menu--page mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
         >
           <li className="px-2 pt-0.5 pb-1">
             <button
@@ -228,7 +811,7 @@ function GeoPerimeterSelect({
               </span>
             </button>
           </li>
-          {GEO_PERIMETER_MENU.map((item, index) => {
+          {GEO_FRANCE_STRATA_MENU.map((item, index) => {
             if (item.type === 'divider') {
               return (
                 <li
@@ -248,7 +831,7 @@ function GeoPerimeterSelect({
               );
             }
             const selected = item.id === value;
-            const isAnywhere = item.id === 'anywhere';
+            const isEmphasis = isWideFrancePerimeter(item.id);
             return (
               <li key={item.id} role="option" aria-selected={selected}>
                 <button
@@ -256,7 +839,7 @@ function GeoPerimeterSelect({
                   className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
                     selected
                       ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
-                      : isAnywhere
+                      : isEmphasis
                         ? 'text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-950'
                         : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
                   }`}
@@ -265,7 +848,7 @@ function GeoPerimeterSelect({
                     setOpen(false);
                   }}
                 >
-                  {GEO_PERIMETER_FILTER_LABEL[item.id]}
+                  <FranceStrataMenuLabel id={item.id} />
                 </button>
               </li>
             );
@@ -441,13 +1024,14 @@ export default function DiscoveryPage({
     listen: true,
     persistOnChange: false,
   });
-  const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap } = prefs;
+  const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap, worldZones, franceWorldChoice } =
+    prefs;
   const [sortEnabled, setSortEnabled] = useState(false);
   const [sortChoice, setSortChoice] = useState<SortChoice>('nouveaux');
   const filtersActive = !sortEnabled;
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
-  const geoFilterActive = geoPerimeter !== 'anywhere';
+  const geoFilterActive = isGeoFilterActive(geoPerimeter);
   const hasActiveFilter = geoFilterActive || minOverlap > 0;
   /**
    * Masqués tout de suite dans la grille (like / flash / masquer).
@@ -579,7 +1163,7 @@ export default function DiscoveryPage({
     }
     return base;
   }, [sortEnabled, prefs]);
-  const prefsKey = `${catalogPrefs.geoPerimeter}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}`;
+  const prefsKey = `${catalogPrefs.geoPerimeter}|${(catalogPrefs.worldZones || []).join(',')}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}`;
   const newMonths = newProfilesWindowMonths(signupCount);
   const catalogSort: DiscoveryCatalogSortId = sortEnabled
     ? sortChoice
@@ -889,11 +1473,14 @@ export default function DiscoveryPage({
               <div className="flex flex-col gap-1 text-sm text-gray-700">
                 Périmètre géographique
                 <span className="text-[11px] leading-snug text-gray-500 font-normal">
-                  Option &quot;Exclusivement&quot; en haut du menu déroulant
+                  {geoPerimeter === 'international'
+                    ? 'Plusieurs continents possibles. PARTOUT retire toute restriction.'
+                    : geoPerimeter === 'la_france_dans_le_monde'
+                      ? 'PARTOUT = outre-mer et pays francophones. « Un pays précis » ouvre la liste.'
+                      : 'Option "Exclusivement" en haut du second menu'}
                 </span>
                 <GeoPerimeterSelect
                   value={geoPerimeter}
-                  exclusive={geoExclusive}
                   disabled={!filtersActive}
                   onChange={(next) => {
                     if (!filtersActive) return;
@@ -907,11 +1494,50 @@ export default function DiscoveryPage({
                       }));
                     }
                   }}
-                  onExclusiveChange={(next) => {
-                    if (!filtersActive) return;
-                    setPrefs((prev) => ({ ...prev, geoExclusive: next }));
-                  }}
                 />
+                {isFranceHexagonePerimeter(geoPerimeter) ? (
+                  <FranceStrataSelect
+                    value={geoPerimeter}
+                    exclusive={geoExclusive}
+                    disabled={!filtersActive}
+                    onChange={(next) => {
+                      if (!filtersActive) return;
+                      if (isGeoPerimeterFilter(next)) {
+                        setPrefs((prev) => ({
+                          ...prev,
+                          geoPerimeter: next,
+                          geoExclusive: geoExclusiveApplies(next)
+                            ? prev.geoExclusive
+                            : false,
+                        }));
+                      }
+                    }}
+                    onExclusiveChange={(next) => {
+                      if (!filtersActive) return;
+                      setPrefs((prev) => ({ ...prev, geoExclusive: next }));
+                    }}
+                  />
+                ) : null}
+                {geoPerimeter === 'international' ? (
+                  <WorldZoneSelect
+                    value={worldZones}
+                    disabled={!filtersActive}
+                    onChange={(next) => {
+                      if (!filtersActive) return;
+                      setPrefs((prev) => ({ ...prev, worldZones: next }));
+                    }}
+                  />
+                ) : null}
+                {geoPerimeter === 'la_france_dans_le_monde' ? (
+                  <FranceWorldSelect
+                    value={franceWorldChoice}
+                    disabled={!filtersActive}
+                    onChange={(next) => {
+                      if (!filtersActive) return;
+                      setPrefs((prev) => ({ ...prev, franceWorldChoice: next }));
+                    }}
+                  />
+                ) : null}
               </div>
               <div className="flex flex-col gap-1 text-sm text-gray-700">
                 Centres d’intérêt en commun (min.)
@@ -1313,11 +1939,31 @@ const DiscoveryCard = memo(function DiscoveryCard({
           <p className="text-sm font-bold text-gray-900 truncate">
             {c.display_name}
           </p>
-          {c.location && (
-            <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
-              <MapPin className="w-3 h-3 shrink-0" />
-              {c.location}
-            </p>
+          {isInternationalPerimeter(geoPerimeter) ? (
+            <InternationalCardGeoFacts
+              {...formatInternationalGeoFacts({
+                worldZone: c.world_zone,
+                countryCode: c.country_code,
+                cityName: c.city_name,
+                location: c.location,
+                distanceKm: c.distance_km,
+              })}
+            />
+          ) : (
+            <>
+              {c.location && (
+                <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  {c.location}
+                </p>
+              )}
+              <CardGeoFacts
+                flags={c}
+                location={c.location}
+                perimeter={geoPerimeter}
+                distanceKm={c.distance_km}
+              />
+            </>
           )}
           {c.mutual_interests.length > 0 && (
             <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
@@ -1327,12 +1973,6 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 : `${c.mutual_interests.length} centres d'intérêt en commun`}
             </p>
           )}
-          <CardGeoFacts
-            flags={c}
-            location={c.location}
-            perimeter={geoPerimeter}
-            distanceKm={c.distance_km}
-          />
           <div
             className="relative z-[2] flex items-center justify-center gap-2 pt-1.5 overflow-visible"
             onClick={(e) => e.stopPropagation()}

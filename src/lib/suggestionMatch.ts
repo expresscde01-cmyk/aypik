@@ -14,6 +14,12 @@ import {
   lookupLocationCentre,
   lookupLocationCentres,
 } from '@/lib/geoCommunes';
+import {
+  countryToWorldZone,
+  isFrenchTerritoryIso,
+  isWorldZone,
+  type WorldZone,
+} from '@/lib/worldGeo';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 
 export type DistanceProfile = {
@@ -63,7 +69,10 @@ export async function fillMissingProfileDistances<
   const missing = candidates.filter((candidate) => {
     const km = candidate.distance_km;
     if (typeof km === 'number' && Number.isFinite(km) && km >= 0) return false;
-    return Boolean(String(candidate.location || '').trim());
+    const loc = String(candidate.location || '').trim();
+    if (!loc) return false;
+    // Filet geo.api.gouv.fr : uniquement les libellés France « Ville (CP) ».
+    return /\(\d{5}/.test(loc) || /\b\d{5}\b/.test(loc);
   });
   if (missing.length === 0) return candidates;
   const map = await resolveProfileDistances(
@@ -89,7 +98,34 @@ export type SearchCandidate = {
   flags: Partial<GeoProximityFlags>;
   distanceKm: number | null;
   location?: string | null;
+  country_code?: string | null;
+  world_zone?: string | null;
 };
+
+function matchesCountryAndWorldZones(
+  candidate: {
+    country_code?: string | null;
+    world_zone?: string | null;
+  },
+  prefs: SuggestionPrefs
+): boolean {
+  const iso = String(candidate.country_code || 'FR')
+    .trim()
+    .toUpperCase();
+  if (prefs.geoPerimeter === 'la_france_dans_le_monde') {
+    return isFrenchTerritoryIso(iso);
+  }
+  if (prefs.geoPerimeter === 'international') {
+    if (isFrenchTerritoryIso(iso)) return false;
+    if (prefs.worldZones.length === 0) return true;
+    const zone: WorldZone | null =
+      candidate.world_zone && isWorldZone(candidate.world_zone)
+        ? candidate.world_zone
+        : countryToWorldZone(iso);
+    return zone != null && prefs.worldZones.includes(zone);
+  }
+  return iso === 'FR';
+}
 
 /**
  * Moteur Découvrir / Accueil : 3 conditions cumulatives (ET).
@@ -123,6 +159,10 @@ export function passesSearchCriteria(
     return false;
   }
 
+  if (!matchesCountryAndWorldZones(candidate, prefs)) {
+    return false;
+  }
+
   if (!isWithinAgeGap(myAge, candidate.age)) return false;
 
   if (prefs.minOverlap > 0 && candidate.mutualCount < prefs.minOverlap) {
@@ -141,10 +181,13 @@ export function candidatePassesGeoFilter(
     neighboring_region?: boolean;
     location?: string | null;
     distance_km?: number | null;
+    country_code?: string | null;
+    world_zone?: string | null;
   },
   prefs: SuggestionPrefs,
   viewerLocation?: string | null
 ): boolean {
+  if (!matchesCountryAndWorldZones(candidate, prefs)) return false;
   return matchesGeoPerimeter(candidate, prefs.geoPerimeter, {
     distanceKm: candidate.distance_km,
     radiusKm: prefs.geoRadiusKm,

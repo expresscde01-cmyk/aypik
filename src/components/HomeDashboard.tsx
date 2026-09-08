@@ -18,7 +18,7 @@ import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
-import { CardGeoFacts } from '@/components/GeoBadgeLine';
+import { CardGeoFacts, InternationalCardGeoFacts } from '@/components/GeoBadgeLine';
 import {
   HeaderTaglineWidthProbe,
   MobileTaglineWidthProbe,
@@ -31,6 +31,8 @@ import {
   type SuggestedProfile,
 } from '@/lib/suggestions';
 import { loadSuggestionPrefs } from '@/lib/suggestionPrefs';
+import { isInternationalPerimeter } from '@/lib/geoProximity';
+import { formatInternationalGeoFacts } from '@/lib/worldGeo';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/components/ProfileSetup';
@@ -558,11 +560,31 @@ export default function HomeDashboard({
                       <p className="text-sm font-bold text-gray-900 truncate">
                         {p.display_name}
                       </p>
-                      {p.location && (
-                        <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
-                          <MapPin className="w-3 h-3 shrink-0" />
-                          {p.location}
-                        </p>
+                      {isInternationalPerimeter(geoPerimeter) ? (
+                        <InternationalCardGeoFacts
+                          {...formatInternationalGeoFacts({
+                            worldZone: p.world_zone,
+                            countryCode: p.country_code,
+                            cityName: p.city_name,
+                            location: p.location,
+                            distanceKm: p.distance_km,
+                          })}
+                        />
+                      ) : (
+                        <>
+                          {p.location && (
+                            <p className="flex items-center gap-1 text-[11px] text-gray-500 truncate">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {p.location}
+                            </p>
+                          )}
+                          <CardGeoFacts
+                            flags={p}
+                            location={p.location}
+                            perimeter={geoPerimeter}
+                            distanceKm={p.distance_km}
+                          />
+                        </>
                       )}
                       {p.mutual_interest_count > 0 && (
                         <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
@@ -572,12 +594,6 @@ export default function HomeDashboard({
                             : `${p.mutual_interest_count} centres d'intérêt en commun`}
                         </p>
                       )}
-                      <CardGeoFacts
-                        flags={p}
-                        location={p.location}
-                        perimeter={geoPerimeter}
-                        distanceKm={p.distance_km}
-                      />
                     </div>
                   </button>
                 </li>

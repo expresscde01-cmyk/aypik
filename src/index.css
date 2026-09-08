@@ -382,14 +382,27 @@ body {
   margin-left: auto;
 }
 
-/* Liste ouverte : scroll interne pour atteindre PARTOUT (surtout desktop).
-   max-height viewport-aware — si tout tient, pas de barre de scroll (mobile OK). */
+/* Liste courte (absolute) : le scroll de page déplace le menu avec le champ. */
 .geo-perimeter-menu {
-  max-height: min(22.5rem, calc(100dvh - 9rem));
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
+}
+
+/* Liste longue : dans le flux, la page s’allonge et on peut scroller jusqu’en bas. */
+.geo-perimeter-menu--page {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 5.5rem;
+  touch-action: pan-y;
+}
+
+.geo-perimeter-menu--page button {
+  touch-action: pan-y;
+}
+
+.geo-perimeter-section-label {
+  padding: 0.4rem 0.75rem 0.15rem 0.75rem;
+  line-height: 1.25;
+  pointer-events: none;
 }
 
 /* Fiches profil — géo (règle figée). Ne pas fusionner, ne pas omettre une ligne. */
@@ -417,6 +430,37 @@ body {
   font-size: 11px;
   font-weight: 500;
   line-height: 1.25;
+  color: #10b981;
+}
+
+.profile-card-intl-geo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.profile-card-intl-continent,
+.profile-card-intl-country,
+.profile-card-intl-city,
+.profile-card-intl-km {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.profile-card-intl-continent {
+  color: #047857;
+}
+
+.profile-card-intl-country,
+.profile-card-intl-city {
+  color: #374151;
+}
+
+.profile-card-intl-km {
   color: #10b981;
 }
 

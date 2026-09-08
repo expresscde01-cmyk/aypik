@@ -29,12 +29,15 @@ import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { isPaidPremiumActive } from '@/lib/membership';
 import { formatBoostUntil } from '@/components/membership/OwnerBoostIndicator';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
+import { WorldCityAutocomplete } from '@/components/WorldCityAutocomplete';
 import {
   CITY_SELECTION_REQUIRED_ERROR,
   communeFromStoredLabel,
   type GeoCommune,
 } from '@/lib/geoCommunes';
 import { resolveCommuneCoordinates } from '@/lib/profileCoordinates';
+import { WORLD_COUNTRIES } from '@/lib/worldGeo';
+import type { WorldCityHit } from '@/lib/worldCities';
 import {
   INTEREST_CATEGORIES,
   ALL_SUGGESTED_INTERESTS,
@@ -73,14 +76,25 @@ export interface Profile {
   is_online?: boolean;
   email_notifications_enabled?: boolean;
   deletion_requested_at?: string | null;
+  country_code?: string | null;
+  city_name?: string | null;
+  geoname_id?: number | null;
+  world_zone?: string | null;
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
 export const PROFILE_CARD_COLUMNS =
-  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at';
+  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id';
 
 /** Profil du compte connecté (préférences e-mail en plus). */
 export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled`;
+
+const COUNTRY_SELECT_OPTIONS = [
+  ...WORLD_COUNTRIES.filter((row) => row.iso2 === 'FR'),
+  ...WORLD_COUNTRIES.filter((row) => row.iso2 !== 'FR').sort((a, b) =>
+    a.nameFr.localeCompare(b.nameFr, 'fr')
+  ),
+];
 
 export default function ProfileSetup({
   onDone,
@@ -115,7 +129,10 @@ export default function ProfileSetup({
   const [bio, setBio] = useState('');
   const [hasChildren, setHasChildren] = useState(false);
   const [location, setLocation] = useState('');
+  const [countryCode, setCountryCode] = useState('FR');
   const [selectedCity, setSelectedCity] = useState<GeoCommune | null>(null);
+  const [selectedWorldCity, setSelectedWorldCity] =
+    useState<WorldCityHit | null>(null);
   const [cityError, setCityError] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
@@ -157,7 +174,32 @@ export default function ProfileSetup({
         setBio(data.bio || '');
         setHasChildren(data.has_children ?? false);
         setLocation(data.location || '');
-        setSelectedCity(communeFromStoredLabel(data.location || ''));
+        const loadedCountry = String(data.country_code || 'FR')
+          .trim()
+          .toUpperCase() || 'FR';
+        setCountryCode(loadedCountry);
+        if (loadedCountry === 'FR') {
+          setSelectedCity(communeFromStoredLabel(data.location || ''));
+          setSelectedWorldCity(null);
+        } else {
+          setSelectedCity(null);
+          const cityLabel = (data.city_name || data.location || '').trim();
+          setSelectedWorldCity(
+            cityLabel
+              ? {
+                  geonameId: Number(data.geoname_id) || 0,
+                  nom: cityLabel,
+                  label: cityLabel,
+                  countryCode: loadedCountry,
+                  lat: Number(data.lat) || 0,
+                  lng: Number(data.lng) || 0,
+                  population: 0,
+                  codesPostaux: [],
+                  code: String(data.geoname_id || ''),
+                }
+              : null
+          );
+        }
         setCityError(null);
         setInterests(data.interests || []);
         setPhotoUrl(data.photo_url || '');
@@ -351,9 +393,11 @@ export default function ProfileSetup({
       return;
     }
 
-    const cityOk =
-      selectedCity !== null &&
-      selectedCity.label === location.trim();
+    const france = countryCode === 'FR';
+    const cityOk = france
+      ? selectedCity !== null && selectedCity.label === location.trim()
+      : selectedWorldCity !== null &&
+        selectedWorldCity.label === location.trim();
 
     if (!cityOk) {
       setCityError(CITY_SELECTION_REQUIRED_ERROR);
@@ -405,6 +449,9 @@ export default function ProfileSetup({
         bio: string;
         has_children: boolean;
         location: string;
+        country_code: string;
+        city_name: string;
+        geoname_id: number | null;
         interests: string[];
         photo_url: string;
         email_notifications_enabled: boolean;
@@ -417,7 +464,10 @@ export default function ProfileSetup({
         birth_date: birthDate,
         bio,
         has_children: hasChildren,
-        location: selectedCity.label,
+        location: france ? selectedCity!.label : selectedWorldCity!.label,
+        country_code: countryCode,
+        city_name: france ? selectedCity!.nom : selectedWorldCity!.nom,
+        geoname_id: france ? null : selectedWorldCity!.geonameId || null,
         interests,
         photo_url: nextPhotoUrl,
         email_notifications_enabled: emailNotificationsEnabled,
@@ -427,14 +477,19 @@ export default function ProfileSetup({
         payload.gender = gender;
       }
 
-      const coords = await resolveCommuneCoordinates({
-        lat: selectedCity.lat,
-        lng: selectedCity.lng,
-        label: selectedCity.label,
-      });
-      if (coords) {
-        payload.lat = coords.lat;
-        payload.lng = coords.lng;
+      if (france) {
+        const coords = await resolveCommuneCoordinates({
+          lat: selectedCity!.lat,
+          lng: selectedCity!.lng,
+          label: selectedCity!.label,
+        });
+        if (coords) {
+          payload.lat = coords.lat;
+          payload.lng = coords.lng;
+        }
+      } else {
+        payload.lat = selectedWorldCity!.lat;
+        payload.lng = selectedWorldCity!.lng;
       }
 
       const { error: upsertError } = await supabase
@@ -462,7 +517,7 @@ export default function ProfileSetup({
       setPhotoUrl(nextPhotoUrl);
       setPhotoFile(null);
       setPhotoFileName(null);
-      setLocation(selectedCity.label);
+      setLocation(payload.location);
       onDone();
     } catch (err) {
       setError(userErrorMessage(err));
@@ -729,42 +784,98 @@ export default function ProfileSetup({
           )}
 
           {/* Location */}
-          <div>
-            <label
-              htmlFor="profile-city"
-              className="block text-sm font-semibold text-gray-700 mb-1.5"
-            >
-              Ville <span className="text-rose-500">*</span>
-            </label>
-            <CityAutocomplete
-              id="profile-city"
-              value={location}
-              onChange={(next) => {
-                setLocation(next);
-                setCityError(null);
-                setError((prev) =>
-                  prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
-                );
-              }}
-              selected={selectedCity}
-              onSelect={(commune) => {
-                setSelectedCity(commune);
-                if (commune) {
+          <div className="space-y-3">
+            <div>
+              <label
+                htmlFor="profile-country"
+                className="block text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Pays <span className="text-rose-500">*</span>
+              </label>
+              <select
+                id="profile-country"
+                value={countryCode}
+                onChange={(e) => {
+                  const next = e.target.value.toUpperCase();
+                  setCountryCode(next);
+                  setLocation('');
+                  setSelectedCity(null);
+                  setSelectedWorldCity(null);
                   setCityError(null);
-                  setError((prev) =>
-                    prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
-                  );
-                }
-              }}
-              invalid={Boolean(cityError)}
-              placeholder="Tape puis choisis dans la liste…"
-            />
-            {cityError && (
-              <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>{cityError}</span>
-              </p>
-            )}
+                }}
+                className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              >
+                {COUNTRY_SELECT_OPTIONS.map((row) => (
+                  <option key={row.iso2} value={row.iso2}>
+                    {row.nameFr}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="profile-city"
+                className="block text-sm font-semibold text-gray-700 mb-1.5"
+              >
+                Ville <span className="text-rose-500">*</span>
+              </label>
+              {countryCode === 'FR' ? (
+                <CityAutocomplete
+                  id="profile-city"
+                  value={location}
+                  onChange={(next) => {
+                    setLocation(next);
+                    setCityError(null);
+                    setError((prev) =>
+                      prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                    );
+                  }}
+                  selected={selectedCity}
+                  onSelect={(commune) => {
+                    setSelectedCity(commune);
+                    if (commune) {
+                      setCityError(null);
+                      setError((prev) =>
+                        prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                      );
+                    }
+                  }}
+                  invalid={Boolean(cityError)}
+                  placeholder="Tape puis choisis dans la liste…"
+                />
+              ) : (
+                <WorldCityAutocomplete
+                  id="profile-city"
+                  countryCode={countryCode}
+                  value={location}
+                  onChange={(next) => {
+                    setLocation(next);
+                    setCityError(null);
+                    setError((prev) =>
+                      prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                    );
+                  }}
+                  selected={selectedWorldCity}
+                  onSelect={(city) => {
+                    setSelectedWorldCity(city);
+                    if (city) {
+                      setCityError(null);
+                      setError((prev) =>
+                        prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                      );
+                    }
+                  }}
+                  invalid={Boolean(cityError)}
+                  placeholder="Tape puis choisis dans la liste…"
+                />
+              )}
+              {cityError && (
+                <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>{cityError}</span>
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Has children */}

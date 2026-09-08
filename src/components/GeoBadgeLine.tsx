@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import {
   formatDistanceKmBadge,
   GEO_PERIMETER_FILTER_LABEL,
@@ -6,6 +7,50 @@ import {
   type GeoPerimeterFilter,
   type GeoProximityFlags,
 } from '@/lib/geoProximity';
+
+/** Menu FRANCE : drapeau centré dans un badge carré, un peu plus haut que 3:2. */
+export function FranceFlagIcon({
+  className = 'w-3.5 h-3.5',
+}: {
+  className?: string;
+}) {
+  const clipId = `aypik-fr-flag-clip-${useId().replace(/:/g, '')}`;
+  const flagW = 22;
+  const flagH = 20;
+  const flagX = 1;
+  const flagY = (24 - flagH) / 2;
+  const stripeW = flagW / 3;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      focusable="false"
+    >
+      <defs>
+        <clipPath id={clipId}>
+          <rect width="24" height="24" rx="7" />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <rect width="24" height="24" fill="#FFFFFF" />
+        <rect x={flagX} y={flagY} width={stripeW} height={flagH} fill="#0055A4" />
+        <rect x={flagX + stripeW} y={flagY} width={stripeW} height={flagH} fill="#FFFFFF" />
+        <rect x={flagX + stripeW * 2} y={flagY} width={stripeW} height={flagH} fill="#EF4135" />
+      </g>
+      <rect
+        x="0.5"
+        y="0.5"
+        width="23"
+        height="23"
+        rx="6.5"
+        fill="none"
+        stroke="rgba(0,0,0,0.12)"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
 
 /** Silhouette France métropolitaine + Corse, fill currentColor. */
 export function FranceMapIcon({ className = 'w-3 h-3' }: { className?: string }) {
@@ -57,6 +102,28 @@ export function CardGeoFacts({
       <p className="profile-card-geo-km" style={{ color: '#10b981' }}>
         {km}
       </p>
+    </div>
+  );
+}
+
+/** Fiches mode International : quatre lignes distinctes, hors contrat France. */
+export function InternationalCardGeoFacts({
+  continent,
+  country,
+  city,
+  distanceLabel,
+}: {
+  continent: string;
+  country: string;
+  city: string;
+  distanceLabel: string;
+}) {
+  return (
+    <div className="profile-card-intl-geo">
+      <p className="profile-card-intl-continent">{continent || '\u00a0'}</p>
+      <p className="profile-card-intl-country">{country || '\u00a0'}</p>
+      <p className="profile-card-intl-city">{city || '\u00a0'}</p>
+      <p className="profile-card-intl-km">{distanceLabel || '\u00a0'}</p>
     </div>
   );
 }

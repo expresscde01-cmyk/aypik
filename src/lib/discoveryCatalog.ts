@@ -65,6 +65,9 @@ export type SuggestRow = {
   is_founder: boolean | null;
   founder_number: number | null;
   is_online?: boolean | null;
+  country_code?: string | null;
+  city_name?: string | null;
+  world_zone?: string | null;
 };
 
 export function mapSuggestRow(
@@ -114,6 +117,9 @@ export function mapSuggestRow(
     last_active_at: row.last_active_at,
     activity_score: Number(row.activity_score) || 0,
     is_online: Boolean(row.is_online),
+    country_code: row.country_code || null,
+    city_name: row.city_name || null,
+    world_zone: row.world_zone || null,
   };
 }
 
@@ -132,8 +138,12 @@ export function suggestProfilesRpcArgs(options: {
   sort: string;
   createdAfter?: string | null;
   excludeIds?: string[];
+  worldZones?: SuggestionPrefs['worldZones'];
 }): Record<string, unknown> {
-  const geoReset = options.geoPerimeter === 'anywhere';
+  const geoReset =
+    options.geoPerimeter === 'anywhere' ||
+    options.geoPerimeter === 'la_france_dans_le_monde' ||
+    options.geoPerimeter === 'international';
   const args: Record<string, unknown> = {
     p_limit: options.limit,
     p_same_city_only: false,
@@ -146,6 +156,10 @@ export function suggestProfilesRpcArgs(options: {
     p_radius_km: options.radiusKm,
     p_sort: options.sort,
   };
+  const worldZones = (options.worldZones || []).filter(Boolean);
+  if (options.geoPerimeter === 'international' && worldZones.length > 0) {
+    args.p_world_zones = worldZones;
+  }
   if (options.createdAfter) {
     args.p_created_after = options.createdAfter;
   }
@@ -188,6 +202,7 @@ export async function fetchDiscoveryCatalog(options: {
     sort,
     createdAfter: options.createdAfter,
     excludeIds: options.excludeIds,
+    worldZones: prefs.worldZones,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

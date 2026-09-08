@@ -140,6 +140,7 @@ export async function fetchSuggestedProfiles(options?: {
     geoExclusive: prefs.geoExclusive,
     radiusKm: prefs.geoRadiusKm,
     sort: 'score',
+    worldZones: prefs.worldZones,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

@@ -4,8 +4,12 @@ import { createPortal } from 'react-dom';
 import { FounderBadge } from '@/components/membership/Badges';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
-import { CardGeoFacts } from '@/components/GeoBadgeLine';
-import type { GeoPerimeterFilter } from '@/lib/geoProximity';
+import { CardGeoFacts, InternationalCardGeoFacts } from '@/components/GeoBadgeLine';
+import {
+  isInternationalPerimeter,
+  type GeoPerimeterFilter,
+} from '@/lib/geoProximity';
+import { formatInternationalGeoFacts } from '@/lib/worldGeo';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import {
   LIKE_NOTIFICATION_EMOJI,
@@ -24,6 +28,9 @@ export type ProfileDetailCandidate = {
   age: number;
   bio?: string | null;
   location?: string | null;
+  country_code?: string | null;
+  city_name?: string | null;
+  world_zone?: string | null;
   interests?: string[];
   mutual_interests?: string[];
   same_city?: boolean;
@@ -219,20 +226,36 @@ export default function ProfileDetailModal({
                 </div>
               ) : null}
             </div>
-            {candidate.location && (
-              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {candidate.location}
-              </p>
+            {isInternationalPerimeter(geoPerimeter) ? (
+              <div className="mt-1">
+                <InternationalCardGeoFacts
+                  {...formatInternationalGeoFacts({
+                    worldZone: candidate.world_zone,
+                    countryCode: candidate.country_code,
+                    cityName: candidate.city_name,
+                    location: candidate.location,
+                    distanceKm: candidate.distance_km,
+                  })}
+                />
+              </div>
+            ) : (
+              <>
+                {candidate.location && (
+                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                    <MapPin className="w-3.5 h-3.5" />
+                    {candidate.location}
+                  </p>
+                )}
+                <div className="mt-1">
+                  <CardGeoFacts
+                    flags={candidate}
+                    location={candidate.location}
+                    perimeter={geoPerimeter}
+                    distanceKm={candidate.distance_km}
+                  />
+                </div>
+              </>
             )}
-            <div className="mt-1">
-              <CardGeoFacts
-                flags={candidate}
-                location={candidate.location}
-                perimeter={geoPerimeter}
-                distanceKm={candidate.distance_km}
-              />
-            </div>
           </div>
 
           {candidate.bio ? (

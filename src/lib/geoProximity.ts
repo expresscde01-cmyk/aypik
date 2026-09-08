@@ -309,7 +309,12 @@ export type GeoMacroZone =
   | 'southwest'
   | 'ile_de_france';
 
-export type GeoPerimeterFilter = 'anywhere' | GeoProximityLevel | GeoMacroZone;
+export type GeoPerimeterFilter =
+  | 'anywhere'
+  | 'la_france_dans_le_monde'
+  | 'international'
+  | GeoProximityLevel
+  | GeoMacroZone;
 
 export const GEO_MACRO_ZONES: readonly GeoMacroZone[] = [
   'northwest',
@@ -347,7 +352,9 @@ export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
   southeast: 'Sud-Est de la France',
   ile_de_france: 'Île-de-France',
   center: 'Centre de la France',
-  anywhere: 'P A R T O U T',
+  anywhere: 'FRANCE',
+  la_france_dans_le_monde: 'LA FRANCE DANS LE MONDE',
+  international: 'INTERNATIONAL (hors France et assimilés)',
 };
 
 export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
@@ -362,14 +369,29 @@ export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
   'ile_de_france',
   'center',
   'anywhere',
+  'la_france_dans_le_monde',
+  'international',
 ];
 
 export type GeoPerimeterMenuItem =
   | { type: 'option'; id: GeoPerimeterFilter }
   | { type: 'divider'; style: 'solid' | 'double' };
 
-/** Ordre du menu Découvrir, avec liserés entre les cercles locaux, les quadrants et Partout. */
-export const GEO_PERIMETER_MENU: readonly GeoPerimeterMenuItem[] = [
+export type GeoPerimeterScope =
+  | 'anywhere'
+  | 'la_france_dans_le_monde'
+  | 'international';
+
+/** Premier menu : FRANCE / LA FRANCE DANS LE MONDE / International. */
+export const GEO_PERIMETER_SCOPE_MENU: readonly GeoPerimeterMenuItem[] = [
+  { type: 'option', id: 'anywhere' },
+  { type: 'option', id: 'la_france_dans_le_monde' },
+  { type: 'divider', style: 'double' },
+  { type: 'option', id: 'international' },
+];
+
+/** Second menu sous FRANCE : strates, quarts, PARTOUT (id anywhere). */
+export const GEO_FRANCE_STRATA_MENU: readonly GeoPerimeterMenuItem[] = [
   { type: 'option', id: 'city' },
   { type: 'option', id: 'department' },
   { type: 'option', id: 'region' },
@@ -381,9 +403,23 @@ export const GEO_PERIMETER_MENU: readonly GeoPerimeterMenuItem[] = [
   { type: 'option', id: 'southeast' },
   { type: 'option', id: 'ile_de_france' },
   { type: 'option', id: 'center' },
-  { type: 'divider', style: 'double' },
+  { type: 'divider', style: 'solid' },
   { type: 'option', id: 'anywhere' },
 ];
+
+export function geoPerimeterScope(
+  value: GeoPerimeterFilter
+): GeoPerimeterScope {
+  if (value === 'international') return 'international';
+  if (value === 'la_france_dans_le_monde') return 'la_france_dans_le_monde';
+  return 'anywhere';
+}
+
+export function isFranceHexagonePerimeter(
+  value: GeoPerimeterFilter
+): boolean {
+  return geoPerimeterScope(value) === 'anywhere';
+}
 
 export function isGeoPerimeterFilter(
   value: string
@@ -415,7 +451,7 @@ export function isGeoProximityStratum(
   );
 }
 
-/** Exclusivement : à partir de Même département (pas Même ville, pas les quarts / Île-de-France / PARTOUT). */
+/** Exclusivement : à partir de Même département (pas Même ville, pas les quarts / Hexagone / France dans le monde / International). */
 export function geoExclusiveApplies(value: GeoPerimeterFilter): boolean {
   return (
     value === 'department' ||
@@ -446,14 +482,38 @@ export function geoPerimeterRpcValue(
   perimeter: GeoPerimeterFilter,
   exclusive: boolean
 ): string {
-  if (perimeter === 'anywhere') return 'anywhere';
+  if (
+    perimeter === 'anywhere' ||
+    perimeter === 'la_france_dans_le_monde' ||
+    perimeter === 'international'
+  ) {
+    return perimeter;
+  }
   // Exclusif « Régions voisines » : neighbor_match SQL est souvent faux
-  // (CP hors parenthèses, table vide). PARTOUT + filet client (REGION_NEIGHBORS).
+  // (CP hors parenthèses, table vide). Hexagone + filet client.
   if (perimeter === 'neighboring_region' && exclusive) return 'anywhere';
   if (exclusive && geoExclusiveApplies(perimeter)) {
     return `${perimeter}__x`;
   }
   return perimeter;
+}
+
+export function isGeoFilterActive(perimeter: GeoPerimeterFilter): boolean {
+  return perimeter !== 'anywhere';
+}
+
+export function isWideFrancePerimeter(value: GeoPerimeterFilter): boolean {
+  return (
+    value === 'anywhere' ||
+    value === 'la_france_dans_le_monde' ||
+    value === 'international'
+  );
+}
+
+export function isInternationalPerimeter(
+  value: GeoPerimeterFilter | null | undefined
+): boolean {
+  return value === 'international';
 }
 
 export function isGeoRadiusKm(value: number): value is GeoRadiusKm {
@@ -511,7 +571,7 @@ export function cardGeoProximityLabel(
 
 /**
  * Badge géographique des fiches — RÈGLE ABSOLUE, ne pas contourner :
- * - Filtre Même… / Régions voisines / Partout → identité réelle du profil
+ * - Filtre Même… / Régions voisines / Hexagone → identité réelle du profil
  *   (Même ville, Même département, etc.), y compris en recherche cumulative.
  * - Filtre Quart de France / Île-de-France → uniquement ce libellé (jamais « Même… »)
  */
@@ -545,7 +605,13 @@ export function matchesGeoPerimeter(
     exclusive?: boolean;
   }
 ): boolean {
-  if (perimeter === 'anywhere') return true;
+  if (
+    perimeter === 'anywhere' ||
+    perimeter === 'la_france_dans_le_monde' ||
+    perimeter === 'international'
+  ) {
+    return true;
+  }
 
   if (isGeoMacroZone(perimeter)) {
     return locationInMacroZone(opts?.location, perimeter);
