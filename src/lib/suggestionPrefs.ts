@@ -7,7 +7,7 @@ import {
   type GeoPerimeterFilter,
   type GeoRadiusKm,
 } from './geoProximity';
-import { parseFranceWorldChoice, parseWorldZones, type FranceWorldChoice, type WorldZone } from './worldGeo';
+import { parseFranceWorldChoice, parseFranceWorldCodes, parseInternationalCountries, parseWorldZones, FRANCE_WORLD_CHOICE_ALL, type FranceWorldChoice, type WorldZone } from './worldGeo';
 
 export type SuggestionPrefs = {
   geoPerimeter: GeoPerimeterFilter;
@@ -16,13 +16,20 @@ export type SuggestionPrefs = {
   geoExclusive: boolean;
   /** 0 = pas de minimum d’intérêts. Défaut produit : 1. */
   minOverlap: number;
-  /** Continents International. Tableau vide = PARTOUT. */
+  /** Continents International. Tableau vide = PARTOUT. Inactif si un pays précis est choisi. */
   worldZones: WorldZone[];
   /**
-   * Second menu LA FRANCE DANS LE MONDE (sélection unique).
-   * `all` = les deux ensembles (défaut, affichage ; le filtre RPC vient plus tard).
+   * Pays précis International (ISO2). Tableau vide = mode continents / PARTOUT.
+   * Mutuellement exclusif avec `worldZones`.
+   */
+  internationalCountries: string[];
+  /**
+   * Second menu LA FRANCE DANS LE MONDE.
+   * `all` / `overseas` / `francophone` si `franceWorldCodes` est vide.
    */
   franceWorldChoice: FranceWorldChoice;
+  /** Pays précis La France dans le monde. Tableau vide = un groupe (PARTOUT / outre-mer / francophones). */
+  franceWorldCodes: string[];
 };
 
 /** Première visite / rien de configuré : jusqu’aux régions voisines + au moins 1 intérêt. */
@@ -32,7 +39,9 @@ export const DEFAULT_SUGGESTION_PREFS: SuggestionPrefs = {
   geoExclusive: false,
   minOverlap: 1,
   worldZones: [],
+  internationalCountries: [],
   franceWorldChoice: 'all',
+  franceWorldCodes: [],
 };
 
 const PREFS_EVENT = 'aypik-suggestion-prefs';
@@ -99,17 +108,29 @@ export function parseSuggestionPrefs(raw: unknown): SuggestionPrefs {
   const geoRadiusKm = isGeoRadiusKm(radiusNum)
     ? radiusNum
     : DEFAULT_SUGGESTION_PREFS.geoRadiusKm;
+  const internationalCountries = parseInternationalCountries(
+    d.internationalCountries,
+    d.internationalCountry
+  );
+  const franceWorldCodes = parseFranceWorldCodes(
+    d.franceWorldCodes,
+    d.franceWorldChoice
+  );
+  const franceWorldChoice = franceWorldCodes.length
+    ? FRANCE_WORLD_CHOICE_ALL
+    : parseFranceWorldChoice(d.franceWorldChoice);
   return {
     geoPerimeter,
     geoRadiusKm,
     geoExclusive:
       d.geoExclusive === true && geoExclusiveApplies(geoPerimeter),
     minOverlap: parseMinOverlap(d.minOverlap),
-    worldZones: parseWorldZones(d.worldZones, d.worldZone),
-    franceWorldChoice: parseFranceWorldChoice(
-      d.franceWorldChoice,
-      d.franceWorldCodes
-    ),
+    worldZones: internationalCountries.length
+      ? []
+      : parseWorldZones(d.worldZones, d.worldZone),
+    internationalCountries,
+    franceWorldChoice,
+    franceWorldCodes,
   };
 }
 

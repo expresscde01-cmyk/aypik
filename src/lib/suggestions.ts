@@ -141,6 +141,9 @@ export async function fetchSuggestedProfiles(options?: {
     radiusKm: prefs.geoRadiusKm,
     sort: 'score',
     worldZones: prefs.worldZones,
+    internationalCountries: prefs.internationalCountries,
+    franceWorldChoice: prefs.franceWorldChoice,
+    franceWorldCodes: prefs.franceWorldCodes,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

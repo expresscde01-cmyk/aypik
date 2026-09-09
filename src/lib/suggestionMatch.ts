@@ -18,6 +18,8 @@ import {
   countryToWorldZone,
   isFrenchTerritoryIso,
   isWorldZone,
+  matchesFranceWorldChoice,
+  parseInternationalCountries,
   type WorldZone,
 } from '@/lib/worldGeo';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
@@ -113,10 +115,16 @@ function matchesCountryAndWorldZones(
     .trim()
     .toUpperCase();
   if (prefs.geoPerimeter === 'la_france_dans_le_monde') {
-    return isFrenchTerritoryIso(iso);
+    return matchesFranceWorldChoice(
+      iso,
+      prefs.franceWorldChoice,
+      prefs.franceWorldCodes
+    );
   }
   if (prefs.geoPerimeter === 'international') {
     if (isFrenchTerritoryIso(iso)) return false;
+    const precise = parseInternationalCountries(prefs.internationalCountries);
+    if (precise.length > 0) return precise.includes(iso);
     if (prefs.worldZones.length === 0) return true;
     const zone: WorldZone | null =
       candidate.world_zone && isWorldZone(candidate.world_zone)

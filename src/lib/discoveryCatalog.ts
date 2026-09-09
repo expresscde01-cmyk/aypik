@@ -8,6 +8,7 @@ import {
 } from '@/lib/geoProximity';
 import { candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
+import { franceWorldAllowedIsos, parseInternationalCountries } from '@/lib/worldGeo';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
 export const DISCOVER_CATALOG_LIMIT = 500;
@@ -139,6 +140,9 @@ export function suggestProfilesRpcArgs(options: {
   createdAfter?: string | null;
   excludeIds?: string[];
   worldZones?: SuggestionPrefs['worldZones'];
+  internationalCountries?: SuggestionPrefs['internationalCountries'];
+  franceWorldChoice?: SuggestionPrefs['franceWorldChoice'];
+  franceWorldCodes?: SuggestionPrefs['franceWorldCodes'];
 }): Record<string, unknown> {
   const geoReset =
     options.geoPerimeter === 'anywhere' ||
@@ -157,8 +161,22 @@ export function suggestProfilesRpcArgs(options: {
     p_sort: options.sort,
   };
   const worldZones = (options.worldZones || []).filter(Boolean);
-  if (options.geoPerimeter === 'international' && worldZones.length > 0) {
-    args.p_world_zones = worldZones;
+  if (options.geoPerimeter === 'international') {
+    const countries = parseInternationalCountries(options.internationalCountries);
+    if (countries.length > 0) {
+      args.p_international_countries = countries;
+    } else if (worldZones.length > 0) {
+      args.p_world_zones = worldZones;
+    }
+  }
+  if (options.geoPerimeter === 'la_france_dans_le_monde') {
+    const codes = franceWorldAllowedIsos(
+      options.franceWorldChoice ?? 'all',
+      options.franceWorldCodes
+    );
+    if (codes.length > 0) {
+      args.p_france_world_codes = [...codes];
+    }
   }
   if (options.createdAfter) {
     args.p_created_after = options.createdAfter;
@@ -203,6 +221,9 @@ export async function fetchDiscoveryCatalog(options: {
     createdAfter: options.createdAfter,
     excludeIds: options.excludeIds,
     worldZones: prefs.worldZones,
+    internationalCountries: prefs.internationalCountries,
+    franceWorldChoice: prefs.franceWorldChoice,
+    franceWorldCodes: prefs.franceWorldCodes,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

@@ -21,6 +21,17 @@ export type WorldCountry = {
   zone: WorldZone;
 };
 
+/** Ligne / section du sous-panneau « Un pays précis » (France-monde et International). */
+export type GeoCountryMenuRow = {
+  iso2: string;
+  label: string;
+};
+
+export type GeoCountryMenuSection = {
+  title: string;
+  rows: readonly GeoCountryMenuRow[];
+};
+
 export const WORLD_ZONE_LABEL: Record<WorldZoneFilter, string> = {
   europe: 'Europe',
   north_america: 'Amérique du Nord',
@@ -134,6 +145,21 @@ export type FranceWorldGroupChoice =
 
 export type FranceWorldChoice = FranceWorldGroupChoice | string;
 
+export const FRANCE_WORLD_COUNTRY_SECTIONS: readonly GeoCountryMenuSection[] = [
+  {
+    title: 'TERRITOIRES FRANÇAIS D’OUTRE-MER',
+    rows: [...FRENCH_OVERSEAS_MENU].sort((a, b) =>
+      compareFrenchCountryLabel(a.label, b.label)
+    ),
+  },
+  {
+    title: 'PAYS FRANCOPHONES',
+    rows: [...FRANCOPHONE_MENU].sort((a, b) =>
+      compareFrenchCountryLabel(a.label, b.label)
+    ),
+  },
+];
+
 const FRANCE_WORLD_ROWS = [
   ...FRENCH_OVERSEAS_MENU,
   ...FRANCOPHONE_MENU,
@@ -179,7 +205,6 @@ export function parseFranceWorldChoice(
   if (raw != null && String(raw).trim() !== '') {
     const lower = String(raw).trim().toLowerCase();
     if (isFranceWorldGroupChoice(lower)) return lower;
-    if (FRANCE_WORLD_ISO.has(value)) return value;
   }
   if (Array.isArray(legacyCodes) && legacyCodes.length === 1) {
     const iso = String(legacyCodes[0] || '')
@@ -187,7 +212,47 @@ export function parseFranceWorldChoice(
       .toUpperCase();
     if (FRANCE_WORLD_ISO.has(iso)) return iso;
   }
+  if (FRANCE_WORLD_ISO.has(value)) return value;
   return FRANCE_WORLD_CHOICE_ALL;
+}
+
+export function parseFranceWorldCodes(
+  raw: unknown,
+  legacyChoice?: unknown
+): string[] {
+  const out: string[] = [];
+  const add = (value: unknown) => {
+    const iso = String(value || '')
+      .trim()
+      .toUpperCase();
+    if (isFranceWorldMenuIso(iso) && !out.includes(iso)) out.push(iso);
+  };
+  if (Array.isArray(raw)) raw.forEach(add);
+  else add(raw);
+  if (out.length === 0) add(legacyChoice);
+  return out;
+}
+
+export function toggleIsoSelection(
+  current: readonly string[],
+  iso2: string
+): string[] {
+  const iso = iso2.trim().toUpperCase();
+  if (!iso) return [...current];
+  if (current.includes(iso)) return current.filter((code) => code !== iso);
+  return [...current, iso];
+}
+
+export function countryListClosedLabel(
+  codes: readonly string[],
+  labelOf: (iso: string) => string
+): string {
+  return [...codes]
+    .map((iso) => ({ iso, label: labelOf(iso) }))
+    .filter((row) => row.label)
+    .sort((a, b) => compareFrenchCountryLabel(a.label, b.label))
+    .map((row) => row.label)
+    .join(', ');
 }
 
 export function franceWorldClosedLabel(choice: FranceWorldChoice): string {
@@ -195,6 +260,69 @@ export function franceWorldClosedLabel(choice: FranceWorldChoice): string {
     return FRANCE_WORLD_CHOICE_LABEL[choice];
   }
   return franceWorldCountryLabel(choice) || FRANCE_WORLD_CHOICE_LABEL.all;
+}
+
+const OVERSEAS_ISOS: readonly string[] = FRENCH_OVERSEAS_MENU.map(
+  (row) => row.iso2
+);
+const FRANCOPHONE_ISOS: readonly string[] = FRANCOPHONE_MENU.map(
+  (row) => row.iso2
+);
+const ALL_FRANCE_WORLD_ISOS: readonly string[] = [
+  ...OVERSEAS_ISOS,
+  ...FRANCOPHONE_ISOS,
+];
+
+/** NFD + sans diacritiques ni apostrophes, pour la recherche « Un pays précis ». */
+export function foldFranceWorldLabel(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[''`´’]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export function franceWorldLabelMatches(label: string, query: string): boolean {
+  const foldedQuery = foldFranceWorldLabel(query);
+  if (!foldedQuery) return true;
+  return foldFranceWorldLabel(label).includes(foldedQuery);
+}
+
+/** Ordre alphabétique français (accents ignorés pour le rang). */
+export function compareFrenchCountryLabel(a: string, b: string): number {
+  return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+}
+
+/**
+ * ISO2 réellement filtrés par le second menu.
+ * PARTOUT = outre-mer ∪ francophones (sans la métropole).
+ */
+export function franceWorldAllowedIsos(
+  choice: FranceWorldChoice,
+  codes?: readonly string[]
+): readonly string[] {
+  const precise = parseFranceWorldCodes(codes);
+  if (precise.length > 0) return precise;
+  if (choice === FRANCE_WORLD_CHOICE_OVERSEAS) return OVERSEAS_ISOS;
+  if (choice === FRANCE_WORLD_CHOICE_FRANCOPHONE) return FRANCOPHONE_ISOS;
+  if (isFranceWorldMenuIso(choice)) {
+    return [choice.trim().toUpperCase()];
+  }
+  return ALL_FRANCE_WORLD_ISOS;
+}
+
+export function matchesFranceWorldChoice(
+  countryCode: string | null | undefined,
+  choice: FranceWorldChoice,
+  codes?: readonly string[]
+): boolean {
+  const iso = String(countryCode || '')
+    .trim()
+    .toUpperCase();
+  if (!iso) return false;
+  return franceWorldAllowedIsos(choice, codes).includes(iso);
 }
 
 export function isFrenchTerritoryIso(
@@ -493,6 +621,66 @@ const COUNTRY_ROWS: ReadonlyArray<readonly [string, string, WorldZone]> = [
 export const WORLD_COUNTRIES: readonly WorldCountry[] = COUNTRY_ROWS.map(
   ([iso2, nameFr, zone]) => ({ iso2, nameFr, zone })
 );
+
+const FRENCH_TERRITORY_SET: ReadonlySet<string> = new Set(FRENCH_TERRITORY_CODES);
+
+/** Pays International, groupés comme les continents du second menu (hors France et assimilés). */
+export const INTERNATIONAL_COUNTRY_SECTIONS: readonly GeoCountryMenuSection[] =
+  WORLD_ZONE_CONTINENTS.map((zone) => ({
+    title: WORLD_ZONE_LABEL[zone],
+    rows: WORLD_COUNTRIES.filter(
+      (row) => row.zone === zone && !FRENCH_TERRITORY_SET.has(row.iso2)
+    )
+      .map((row) => ({ iso2: row.iso2, label: row.nameFr }))
+      .sort((a, b) => compareFrenchCountryLabel(a.label, b.label)),
+  })).filter((section) => section.rows.length > 0);
+
+const INTERNATIONAL_ISO: ReadonlySet<string> = new Set(
+  INTERNATIONAL_COUNTRY_SECTIONS.flatMap((section) =>
+    section.rows.map((row) => row.iso2)
+  )
+);
+
+export function isInternationalMenuIso(
+  countryCode: string | null | undefined
+): boolean {
+  if (!countryCode) return false;
+  return INTERNATIONAL_ISO.has(countryCode.trim().toUpperCase());
+}
+
+export function parseInternationalCountry(raw: unknown): string | null {
+  const iso = String(raw || '')
+    .trim()
+    .toUpperCase();
+  return isInternationalMenuIso(iso) ? iso : null;
+}
+
+export function parseInternationalCountries(
+  raw: unknown,
+  legacySingle?: unknown
+): string[] {
+  const out: string[] = [];
+  const add = (value: unknown) => {
+    const iso = parseInternationalCountry(value);
+    if (iso && !out.includes(iso)) out.push(iso);
+  };
+  if (Array.isArray(raw)) raw.forEach(add);
+  else add(raw);
+  if (out.length === 0) add(legacySingle);
+  return out;
+}
+
+export function internationalCountryLabel(
+  countryCode: string | null | undefined
+): string {
+  if (!countryCode) return '';
+  const iso = countryCode.trim().toUpperCase();
+  for (const section of INTERNATIONAL_COUNTRY_SECTIONS) {
+    const row = section.rows.find((item) => item.iso2 === iso);
+    if (row) return row.label;
+  }
+  return '';
+}
 
 const COUNTRY_BY_ISO = new Map(
   WORLD_COUNTRIES.map((row) => [row.iso2, row] as const)

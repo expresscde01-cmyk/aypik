@@ -1,6 +1,7 @@
--- International : hors métropole et territoires français (is_french_territory).
--- Même signature que 20260908160000 (pas de DROP).
--- Si 160000 est déjà en base : coller ce fichier seul dans SQL Editor, puis Run.
+-- International : p_international_country (un pays précis, exclusif de p_world_zones).
+-- Ancien client : paramètre NULL = continents / PARTOUT inchangés.
+
+DROP FUNCTION IF EXISTS public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[], text[]);
 
 CREATE OR REPLACE FUNCTION public.suggest_profiles(
   p_limit integer DEFAULT 20,
@@ -12,7 +13,9 @@ CREATE OR REPLACE FUNCTION public.suggest_profiles(
   p_sort text DEFAULT NULL,
   p_created_after timestamptz DEFAULT NULL,
   p_exclude_ids uuid[] DEFAULT '{}',
-  p_world_zones text[] DEFAULT NULL
+  p_world_zones text[] DEFAULT NULL,
+  p_france_world_codes text[] DEFAULT NULL,
+  p_international_country text DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -70,6 +73,8 @@ DECLARE
   v_french_world boolean := false;
   v_worldwide boolean := true;
   v_world_zones text[] := '{}';
+  v_france_world_codes text[] := '{}';
+  v_international_country text := NULL;
   v_sort text;
   v_limit integer;
   v_radius numeric;
@@ -118,6 +123,15 @@ BEGIN
   FROM unnest(COALESCE(p_world_zones, '{}'::text[])) AS z
   WHERE length(trim(z)) > 0;
   v_world_zones := COALESCE(v_world_zones, '{}'::text[]);
+  SELECT COALESCE(array_agg(upper(trim(c))), '{}'::text[])
+    INTO v_france_world_codes
+  FROM unnest(COALESCE(p_france_world_codes, '{}'::text[])) AS c
+  WHERE length(trim(c)) > 0;
+  v_france_world_codes := COALESCE(v_france_world_codes, '{}'::text[]);
+  v_international_country := NULLIF(upper(trim(COALESCE(p_international_country, ''))), '');
+  IF v_international_country IS NOT NULL AND length(v_international_country) <> 2 THEN
+    v_international_country := NULL;
+  END IF;
   v_worldwide :=
     cardinality(v_world_zones) = 0
     OR 'worldwide' = ANY (v_world_zones)
@@ -228,11 +242,24 @@ BEGIN
           AND COALESCE(p.country_code, 'FR') NOT IN (
             SELECT iso2 FROM public.world_countries WHERE is_french_territory
           )
+          AND (
+            v_international_country IS NULL
+            OR COALESCE(p.country_code, 'FR') = v_international_country
+          )
         )
         OR (
           v_french_world
-          AND COALESCE(p.country_code, 'FR') IN (
-            SELECT iso2 FROM public.world_countries WHERE is_french_territory
+          AND (
+            (
+              cardinality(v_france_world_codes) > 0
+              AND COALESCE(p.country_code, 'FR') = ANY (v_france_world_codes)
+            )
+            OR (
+              cardinality(v_france_world_codes) = 0
+              AND COALESCE(p.country_code, 'FR') IN (
+                SELECT iso2 FROM public.world_countries WHERE is_french_territory
+              )
+            )
           )
         )
         OR (
@@ -243,6 +270,7 @@ BEGIN
       )
       AND (
         NOT v_international
+        OR v_international_country IS NOT NULL
         OR v_worldwide
         OR COALESCE(wc.world_zone, 'europe') = ANY (v_world_zones)
       )
@@ -376,12 +404,12 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[]) IS
-  'Accueil / Découvrir. Hexagone : FR. France dans le monde : territoires FR. International : continents hors is_french_territory.';
+COMMENT ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[], text[], text) IS
+  'Accueil / Découvrir. Hexagone : FR. France dans le monde : p_france_world_codes. International : p_world_zones ou p_international_country.';
 
-REVOKE ALL ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[]) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[]) TO service_role;
+REVOKE ALL ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[], text[], text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[], text[], text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.suggest_profiles(integer, boolean, integer, text, text, numeric, text, timestamptz, uuid[], text[], text[], text) TO service_role;
 
 NOTIFY pgrst, 'reload schema';
 NOTIFY pgrst, 'reload config';

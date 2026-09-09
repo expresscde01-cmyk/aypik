@@ -86,6 +86,7 @@ REVOKE ALL ON public.world_countries FROM anon;
 REVOKE ALL ON public.world_cities FROM anon;
 GRANT SELECT ON public.world_countries TO authenticated, service_role;
 GRANT SELECT ON public.world_cities TO authenticated, service_role;
+GRANT SELECT (country_code, city_name, geoname_id) ON public.profiles TO authenticated;
 GRANT ALL ON public.world_cities TO service_role;
 GRANT ALL ON public.world_countries TO service_role;
 

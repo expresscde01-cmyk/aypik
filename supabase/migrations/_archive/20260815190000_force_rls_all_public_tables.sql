@@ -1,3 +1,6 @@
+-- ARCHIVÉ le 2026-09-09 : remplacé par une migration FORCE RLS ciblée, voir 20260909220000_force_rls_targeted
+-- Ne pas rejouer tel quel.
+
 -- Migration : activer / forcer RLS sur toutes les tables public
 -- (complément défensif — les politiques existantes restent en place)
 

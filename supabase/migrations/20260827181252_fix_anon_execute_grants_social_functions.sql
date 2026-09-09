@@ -30,7 +30,13 @@ GRANT EXECUTE ON FUNCTION public.mark_flash_notification_emailed(uuid) TO servic
 REVOKE ALL ON FUNCTION public.send_flash(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.send_flash(uuid) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.send_like(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.send_like(uuid) TO authenticated;
+DO $grant$
+BEGIN
+  IF to_regprocedure('public.send_like(uuid)') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.send_like(uuid) FROM PUBLIC, anon;
+    GRANT EXECUTE ON FUNCTION public.send_like(uuid) TO authenticated;
+  END IF;
+END
+$grant$;
 
 NOTIFY pgrst, 'reload schema';
