@@ -32,6 +32,7 @@ credentials.json
 service-account*.json
 
 supabase/.temp/
+supabase/.branches/
 .supabase/
 aypik-deploy.zip
 # Patches / diffs temporaires
