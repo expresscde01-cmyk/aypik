@@ -1,0 +1,19 @@
+---
+description: Never push to main; every change goes through a dedicated branch and a PR
+alwaysApply: true
+---
+
+# Pas de push direct sur main
+
+Ne jamais pousser vers `origin/main`, même si le compte peut contourner la protection GitHub. La règle « Changes must be made through a pull request » doit servir à une vraie relecture.
+
+Pour **chaque** changement, quelle que soit sa taille :
+
+1. Partir de `main` à jour (`git fetch` puis branche depuis `origin/main`).
+2. Créer une branche dédiée au nom descriptif : `fix/…`, `feat/…`, `chore/…`.
+3. Commits sur cette branche uniquement. Pas de `--force` ni `--no-verify`, sauf justification déjà validée (ex. hook `login-security`).
+4. Pousser **la branche** : `git push -u origin <nom-de-branche>`. Jamais `git push origin main`.
+5. Ouvrir une PR vers `main` avec `gh pr create` (titre clair, résumé du quoi/pourquoi).
+6. **Ne pas merger.** Donner le lien de la PR et attendre la validation humaine (bouton Merge dans GitHub).
+
+Exemple de nom : `fix/login-throttle`, `feat/international-cities`.
