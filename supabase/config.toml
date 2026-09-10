@@ -444,3 +444,7 @@ verify_jwt = false
 # Formulaire de contact public (Turnstile + Resend).
 [functions.contact]
 verify_jwt = false
+
+# Envoi SMS OTP téléphone (Turnstile + allowlist pays + quotas). JWT obligatoire.
+[functions.send-phone-verification]
+verify_jwt = true
