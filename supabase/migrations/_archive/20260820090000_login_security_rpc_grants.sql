@@ -1,3 +1,4 @@
+-- ARCHIVÉ le 2026-09-10 : jamais tracké dans schema_migrations. GRANT ... TO anon, authenticated, postgres, service_role sur login_security_status et record_login_failure — même risque de régression. Remplacé par 20260910130233_reconcile_login_security_initial_setup.sql et 20260910120544_revoke_preauth_account_oracles.sql. Ne pas rejouer tel quel.
 -- Les RPC login_security_* renvoyaient 404 via PostgREST (droits / cache schéma).
 -- Sans elles, le compteur SQL ne s’incrémente pas et login-security plantait.
 

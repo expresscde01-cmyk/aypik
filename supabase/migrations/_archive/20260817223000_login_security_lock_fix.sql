@@ -1,3 +1,4 @@
+-- ARCHIVÉ le 2026-09-10 : jamais tracké dans schema_migrations. Re-grant explicite TO anon, authenticated, postgres, service_role sur record_login_failure/login_security_status — même risque de régression. Remplacé par 20260910130233_reconcile_login_security_initial_setup.sql et 20260910120544_revoke_preauth_account_oracles.sql. Ne pas rejouer tel quel.
 -- Correctif blocage connexion : FORCE RLS empêchait l’INSERT du compteur,
 -- et la fonction imbriquée login_security_user_id n’était pas exécutable.
 -- Lookup auth.users en ligne + 4e échec → locked_at.

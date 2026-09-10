@@ -1,3 +1,4 @@
+-- ARCHIVÉ le 2026-09-10 : horodatage fabriqué, ne correspond pas à la version réellement enregistrée côté Supabase (20260824182536). Remplacé par 20260824182536_harden_record_login_failure_throttle.sql, recréé à l'identique du contenu réel de schema_migrations, ainsi que par les deux migrations intermédiaires réelles 20260824133057_throttle_record_login_failure.sql et 20260824133750_add_password_verification_hook.sql. Ne pas rejouer tel quel.
 -- Durcit l'anti-spam de record_login_failure : un échec n'est compté au
 -- maximum qu'une fois toutes les 30 secondes par compte (au lieu de 2s).
 -- Objectif : rendre impraticable un verrouillage instantané d'un compte via

@@ -1,6 +1,14 @@
--- Sécurité connexion : 4 mots de passe faux consécutifs → blocage
--- jusqu’à réinitialisation. L’e-mail d’alerte part via l’Edge Function
--- login-security. Le déblocage se fait après changement de mot de passe.
+-- Réconciliation d'historique : la table public.login_security et ces fonctions
+-- ont été créées à l'origine via des requêtes SQL Editor jamais suivies par une
+-- migration trackée (aucune entrée schema_migrations pour cette période). Cette
+-- migration ne fait que documenter fidèlement l'état déjà en place, avec le
+-- search_path déjà durci aujourd'hui (migration harden_search_path_and_trigger_grants).
+--
+-- IMPORTANT : ne touche PAS à record_login_failure, login_security_status, ni
+-- clear_login_failures_for_email — ces trois restent uniquement définies par
+-- leurs propres migrations (throttle_record_login_failure, add_password_verification_hook,
+-- harden_..., shorten_..., revoke_preauth_account_oracles) pour ne pas régresser
+-- le correctif de sécurité du 2026-09-10.
 
 CREATE TABLE IF NOT EXISTS public.login_security (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -13,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.login_security (
 );
 
 COMMENT ON TABLE public.login_security IS
-  'Compteur d’échecs mot de passe et blocage temporaire (4 tentatives).';
+  'Compteur d''échecs mot de passe et blocage temporaire (4 tentatives).';
 
 ALTER TABLE public.login_security ENABLE ROW LEVEL SECURITY;
 
@@ -31,6 +39,7 @@ CREATE OR REPLACE FUNCTION public.normalize_login_email(p_email text)
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
+SET search_path = public
 AS $$
   SELECT lower(btrim(COALESCE(p_email, '')));
 $$;
@@ -50,103 +59,6 @@ $$;
 
 REVOKE ALL ON FUNCTION public.login_security_user_id(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.login_security_user_id(text) TO postgres, service_role;
-
-CREATE OR REPLACE FUNCTION public.login_security_status(p_email text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth
-AS $$
-DECLARE
-  uid uuid;
-  locked timestamptz;
-  normalized text := lower(btrim(COALESCE(p_email, '')));
-BEGIN
-  IF normalized = '' THEN
-    RETURN jsonb_build_object('ok', true, 'locked', false);
-  END IF;
-
-  SELECT u.id INTO uid
-  FROM auth.users u
-  WHERE lower(u.email) = normalized
-  LIMIT 1;
-
-  IF uid IS NULL THEN
-    RETURN jsonb_build_object('ok', true, 'locked', false);
-  END IF;
-
-  SELECT s.locked_at INTO locked
-  FROM public.login_security s
-  WHERE s.user_id = uid;
-
-  RETURN jsonb_build_object(
-    'ok', true,
-    'locked', locked IS NOT NULL
-  );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.record_login_failure(p_email text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth
-AS $$
-DECLARE
-  uid uuid;
-  attempts integer := 0;
-  locked timestamptz;
-  just_locked boolean := false;
-  normalized text := lower(btrim(COALESCE(p_email, '')));
-BEGIN
-  IF normalized = '' THEN
-    RETURN jsonb_build_object('ok', true, 'locked', false, 'just_locked', false, 'attempts', 0);
-  END IF;
-
-  SELECT u.id INTO uid
-  FROM auth.users u
-  WHERE lower(u.email) = normalized
-  LIMIT 1;
-
-  IF uid IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', true,
-      'locked', false,
-      'just_locked', false,
-      'attempts', 0
-    );
-  END IF;
-
-  INSERT INTO public.login_security (user_id, failed_attempts, last_failed_at, updated_at)
-  VALUES (uid, 1, now(), now())
-  ON CONFLICT (user_id) DO UPDATE
-  SET
-    failed_attempts = CASE
-      WHEN public.login_security.locked_at IS NOT NULL
-        THEN public.login_security.failed_attempts
-      ELSE LEAST(public.login_security.failed_attempts + 1, 20)
-    END,
-    last_failed_at = now(),
-    updated_at = now()
-  RETURNING failed_attempts, locked_at INTO attempts, locked;
-
-  IF locked IS NULL AND attempts >= 4 THEN
-    UPDATE public.login_security
-    SET locked_at = now(), updated_at = now()
-    WHERE user_id = uid
-      AND locked_at IS NULL
-    RETURNING locked_at INTO locked;
-    just_locked := locked IS NOT NULL;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'ok', true,
-    'locked', locked IS NOT NULL,
-    'just_locked', just_locked,
-    'attempts', attempts
-  );
-END;
-$$;
 
 CREATE OR REPLACE FUNCTION public.clear_login_failures()
 RETURNS jsonb
@@ -227,7 +139,15 @@ BEGIN
 END;
 $$;
 
--- Lecture interne pour l’Edge Function (e-mail d’alerte).
+REVOKE ALL ON FUNCTION public.clear_login_failures() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.unlock_login_security() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.login_security_is_locked() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.clear_login_failures() TO authenticated, postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.unlock_login_security() TO authenticated, postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.login_security_is_locked() TO authenticated, postgres, service_role;
+
+-- Lecture interne pour l'Edge Function (e-mail d'alerte). Grants déjà correctement
+-- restreints par revoke_preauth_account_oracles (2026-09-10) : on ne les retouche pas ici.
 CREATE OR REPLACE FUNCTION public.login_security_lock_payload(p_email text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -287,28 +207,13 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.login_security_status(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.record_login_failure(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.clear_login_failures() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.unlock_login_security() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.login_security_is_locked() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.login_security_lock_payload(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.mark_login_lock_email_sent(uuid) FROM PUBLIC;
-
-GRANT EXECUTE ON FUNCTION public.login_security_status(text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.record_login_failure(text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.clear_login_failures() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.unlock_login_security() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.login_security_is_locked() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.login_security_lock_payload(text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.mark_login_lock_email_sent(uuid) TO service_role;
-
--- Hook optionnel (Dashboard Auth > Hooks > Custom Access Token) pour
--- refuser un jeton si le compte est bloqué.
+-- Hook optionnel (Dashboard Auth > Hooks > Custom Access Token) pour refuser un
+-- jeton si le compte est bloqué. search_path déjà figé aujourd'hui, reconduit ici.
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
+SET search_path = public
 AS $$
 DECLARE
   uid uuid;
