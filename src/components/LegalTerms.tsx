@@ -413,14 +413,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 3.5 Genre et critères de mise en relation
               </p>
               <p>
-                Si l&apos;utilisateur ne renseigne pas son genre lors de
-                l&apos;inscription, son profil est présenté à l&apos;ensemble
-                des membres sans distinction de genre, et des profils de tout
-                genre lui sont réciproquement proposés, jusqu&apos;à ce que
-                cette information soit renseignée dans son profil.
-                L&apos;utilisateur peut renseigner ou modifier cette
-                information à tout moment depuis son profil ; les critères de
-                mise en relation en tiennent compte pour la suite.
+                Le genre (homme ou femme) est obligatoire pour créer et
+                enregistrer un profil. Il détermine les critères de mise en
+                relation : un homme se voit proposer des profils de femmes,
+                et réciproquement. Une fois renseigné, le genre ne peut plus
+                être modifié depuis le profil.
               </p>
             </div>
             <div>

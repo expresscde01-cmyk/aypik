@@ -60,6 +60,8 @@ import BirthDatePicker from '@/components/BirthDatePicker';
 
 export type ProfileGender = 'homme' | 'femme';
 
+const GENDER_REQUIRED_ERROR = 'Indique si tu es un homme ou une femme.';
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -420,6 +422,11 @@ export default function ProfileSetup({
       return;
     }
 
+    if (!genderLocked && gender !== 'homme' && gender !== 'femme') {
+      setError(GENDER_REQUIRED_ERROR);
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -473,8 +480,8 @@ export default function ProfileSetup({
         email_notifications_enabled: emailNotificationsEnabled,
       };
 
-      if (!genderLocked && (gender === 'homme' || gender === 'femme')) {
-        payload.gender = gender;
+      if (!genderLocked) {
+        payload.gender = gender!;
       }
 
       if (france) {
@@ -498,7 +505,7 @@ export default function ProfileSetup({
 
       if (upsertError) throw upsertError;
 
-      if (!genderLocked && (gender === 'homme' || gender === 'femme')) {
+      if (!genderLocked) {
         setGenderLocked(true);
       }
 
@@ -740,45 +747,42 @@ export default function ProfileSetup({
             />
           </div>
 
-          {/* Genre : optionnel. Une fois Homme/Femme enregistré, le bloc disparaît. */}
+          {/* Genre obligatoire. Une fois Homme/Femme enregistré, le bloc disparaît (immuable). */}
           {!genderLocked && (
             <div>
-              {gender === null && (
-                <p className="text-sm text-gray-500">Genre : Non spécifié</p>
-              )}
+              <p className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Genre <span className="text-rose-500">*</span>
+              </p>
               <div
-                className={`flex gap-2 ${gender === null ? 'mt-2' : ''}`}
+                className="flex gap-2"
                 role="group"
-                aria-label="Genre (optionnel)"
+                aria-label="Genre"
+                aria-required="true"
               >
-              <button
-                type="button"
-                aria-pressed={gender === 'homme'}
-                onClick={() =>
-                  setGender((prev) => (prev === 'homme' ? null : 'homme'))
-                }
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                  gender === 'homme'
-                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                }`}
-              >
-                Un homme
-              </button>
-              <button
-                type="button"
-                aria-pressed={gender === 'femme'}
-                onClick={() =>
-                  setGender((prev) => (prev === 'femme' ? null : 'femme'))
-                }
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                  gender === 'femme'
-                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
-                }`}
-              >
-                Une femme
-              </button>
+                <button
+                  type="button"
+                  aria-pressed={gender === 'homme'}
+                  onClick={() => setGender('homme')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    gender === 'homme'
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                  }`}
+                >
+                  Un homme
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={gender === 'femme'}
+                  onClick={() => setGender('femme')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    gender === 'femme'
+                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                  }`}
+                >
+                  Une femme
+                </button>
               </div>
             </div>
           )}
@@ -1102,7 +1106,11 @@ export default function ProfileSetup({
 
           <button
             type="submit"
-            disabled={saving || hasChildren}
+            disabled={
+              saving ||
+              hasChildren ||
+              (!genderLocked && gender !== 'homme' && gender !== 'femme')
+            }
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {saving

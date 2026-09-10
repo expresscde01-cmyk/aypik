@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { ADULTS_ONLY_MESSAGE, isAdult } from '@/lib/dating';
+import { ADULTS_ONLY_MESSAGE, isAdult, parseProfileGender } from '@/lib/dating';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
 import UnreadBadge from '@/components/UnreadBadge';
@@ -334,7 +334,10 @@ function AppShellView() {
     new Date(user!.created_at) >= new Date(PHONE_VERIFICATION_REQUIRED_SINCE);
   const needsPhoneVerification =
     Boolean(user) && !user?.phone_confirmed_at && isPostPhoneRequirementAccount;
-  const needsProfile = !profileLoading && !profileLoadError && !profile;
+  const needsProfile =
+    !profileLoading &&
+    !profileLoadError &&
+    (!profile || parseProfileGender(profile.gender) == null);
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
