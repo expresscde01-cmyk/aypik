@@ -1,27 +1,32 @@
 ---
-description: Rebuild aypik-deploy.zip after every frontend change so aypik.fr can be updated.
+description: aypik-deploy.zip is built only on the user's Windows PC — not in cloud /workspace
 alwaysApply: true
 ---
 
 # Archive de déploiement aypik.fr
 
-Après **chaque** modification du front (composants, CSS, `public/`, config Vite), reconstruire **systématiquement** `aypik-deploy.zip` à la racine du projet. Sans ça, le site .fr ne peut pas être vérifié.
+`aypik-deploy.zip` sert à cPanel/o2switch. Il vit **uniquement** sur le PC :
 
-Ne pas attendre que l’utilisateur le demande.
+`C:\Users\expre\Videos\Site\project\aypik-deploy.zip`
 
-## Procédure
+Fichier **gitignoré** : un agent cloud ne peut pas le déposer sur le PC.
 
-1. `npm run build`
-2. Remplacer `aypik-deploy.zip` par le **contenu** de `dist/` (pas le dossier `dist` lui-même) :
-   - `index.html`, `assets/`, `.htaccess`, `favicon.svg`
-3. Ne jamais y mettre `.env`, `src/`, `supabase/`, ni secrets.
+## Agent cloud
 
-Exemple PowerShell :
+- **Ne jamais** `npm run deploy`, **ne jamais** créer le zip dans `/workspace`.
+- Rôle : code → commit → push ; l’utilisateur fait `git pull` puis `npm run deploy` **en local**.
+- Voir `.cursor/rules/cloud-zip-not-local.mdc`.
+
+## PC Windows (Cursor local)
+
+Après modification front :
 
 ```powershell
-npm run build
-Remove-Item .\aypik-deploy.zip -Force -ErrorAction SilentlyContinue
-tar -a -cf aypik-deploy.zip -C dist .
+npm run deploy
 ```
 
-Confirmer brièvement la date de modification du zip une fois généré.
+(`npm run build` + copie `.htaccess` + zip — voir `scripts/deploy-cpanel.mjs`.)
+
+Contenu du zip = racine de `dist/` (`index.html`, `assets/`, `.htaccess`, `favicon.svg`). Jamais `.env`, `src/`, `supabase/`, secrets.
+
+Confirmer chemin et date du zip **sur le PC** avant de parler d’upload cPanel.
