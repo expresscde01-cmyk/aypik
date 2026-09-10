@@ -1,8 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import {
-  isLoginClientTimeout,
-  withClientTimeout,
-} from '@/lib/loginClientTimeout';
+import { withClientTimeout } from '@/lib/loginClientTimeout';
 
 export {
   LOGIN_CLIENT_TIMEOUT_MS,
@@ -26,11 +23,7 @@ export const ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE =
 export const RESET_EMAIL_SENT_MESSAGE =
   "Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.";
 
-const TIMED_LOGIN_RPC = new Set([
-  'login_security_status',
-  'login_security_is_locked',
-  'clear_login_failures',
-]);
+const TIMED_LOGIN_RPC = new Set(['login_security_is_locked']);
 
 const PRODUCTION_RECOVERY_URL = 'https://aypik.fr/?reset=1';
 
@@ -198,63 +191,6 @@ async function rpcFlags(
   return asRpcFlags(data);
 }
 
-export async function fetchLoginLockStatus(email: string): Promise<boolean> {
-  try {
-    const row = await rpcFlags('login_security_status', { p_email: email.trim() });
-    return row.locked === true;
-  } catch (err) {
-    if (isLoginClientTimeout(err)) throw err;
-    return false;
-  }
-}
-
-/**
- * NOTE SÉCURITÉ (2026-08-24) : record_login_failure est appelable avec la clé
- * anon sans qu'un vrai échec de connexion ait eu lieu (personne ne revérifie
- * le mot de passe côté serveur). Anti-spam actuel : 1 échec compté max toutes
- * les 30s par compte (migration harden_record_login_failure_throttle) — ça
- * rend un verrouillage instantané impraticable, sans éliminer la possibilité
- * théorique pour un attaquant patient.
- *
- * Option 1 en réserve si besoin de fermer complètement la faille (décision
- * utilisateur, reportée volontairement) : faire transiter toute la tentative
- * de connexion par l'Edge Function `login-security` (seule à appeler
- * signInWithPassword, captcha consommé une fois), qui déciderait alors seule
- * si un échec est réel avant d'appeler cette fonction en service_role.
- * Alternative payante : plan Supabase Team (599 $/mois) pour le hook natif
- * "Password Verification Attempt" (indisponible sur Free/Pro).
- * Reporté pour ne pas risquer de régression sur le parcours de connexion
- * tout juste stabilisé (bug Navigator LockManager + CAPTCHA Turnstile).
- * Même note laissée en commentaire sur la fonction côté base (COMMENT ON
- * FUNCTION record_login_failure).
- */
-export async function recordLoginFailure(email: string): Promise<{
-  locked: boolean;
-  justLocked: boolean;
-  attempts: number;
-}> {
-  try {
-    const row = await rpcFlags('record_login_failure', { p_email: email.trim() });
-    return {
-      locked: row.locked === true,
-      justLocked: row.just_locked === true,
-      attempts: typeof row.attempts === 'number' ? row.attempts : 0,
-    };
-  } catch {
-    return { locked: false, justLocked: false, attempts: 0 };
-  }
-}
-
-export async function clearLoginFailuresIfAllowed(): Promise<boolean> {
-  try {
-    const row = await rpcFlags('clear_login_failures');
-    return row.locked === true;
-  } catch (err) {
-    if (isLoginClientTimeout(err)) throw err;
-    return false;
-  }
-}
-
 export async function unlockLoginSecurity(): Promise<void> {
   const row = await rpcFlags('unlock_login_security');
   if (row.ok === false) {
@@ -354,7 +290,26 @@ export async function sendPasswordResetEmail(
   );
 }
 
-type AuthFnError = Error & { code?: string; status?: number };
+type AuthFnError = Error & {
+  code?: string;
+  status?: number;
+  locked?: boolean;
+  justLocked?: boolean;
+};
+
+export function loginLockFlagsFromError(err: unknown): {
+  locked: boolean;
+  justLocked: boolean;
+} {
+  if (!err || typeof err !== 'object') {
+    return { locked: false, justLocked: false };
+  }
+  const o = err as { locked?: unknown; justLocked?: unknown };
+  return {
+    locked: o.locked === true,
+    justLocked: o.justLocked === true,
+  };
+}
 
 async function parseFunctionPayload(
   error: unknown,
@@ -432,6 +387,8 @@ export async function signInWithPasswordSecure(
     const err: AuthFnError = new Error('Invalid login credentials');
     err.code = 'invalid_credentials';
     err.status = 400;
+    err.locked = payload.locked === true;
+    err.justLocked = payload.just_locked === true;
     throw err;
   }
 
@@ -450,16 +407,14 @@ export async function signInWithPasswordSecure(
   );
 }
 
-/** E-mail d’alerte + lien de déblocage. true si l’Edge Function a envoyé. */
+/** E-mail d’alerte + lien de déblocage. true si l’Edge Function a répondu ok. */
 export async function notifyAccountLocked(email: string): Promise<boolean> {
   try {
     const { data, error } = await supabase.functions.invoke('login-security', {
       body: { action: 'notify_lock', email: email.trim() },
     });
-    if (error) return false;
-    const payload =
-      data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
-    return payload.emailed === true || payload.alreadySent === true;
+    const payload = await parseFunctionPayload(error, data);
+    return payload.ok === true;
   } catch {
     return false;
   }

@@ -166,16 +166,8 @@ async function handlePasswordReset(
 ) {
   const link = await createRecoveryLink(admin, email);
   if ("error" in link) {
-    const msg = link.error.toLowerCase();
-    if (
-      msg.includes("not found") ||
-      msg.includes("unable to find") ||
-      msg.includes("user not found")
-    ) {
-      return json({ ok: true, skipped: true });
-    }
     console.error("login-security reset link", link.error);
-    return json({ error: link.error }, 502);
+    return json({ ok: true });
   }
 
   const sent = await sendResendEmail({
@@ -186,10 +178,10 @@ async function handlePasswordReset(
   });
   if (!sent.ok) {
     console.error("login-security resend", sent.error);
-    return json({ error: sent.error }, 502);
+    return json({ ok: true });
   }
 
-  return json({ ok: true, emailed: true, id: sent.id });
+  return json({ ok: true });
 }
 
 async function handleNotifyLock(
@@ -200,7 +192,10 @@ async function handleNotifyLock(
   const { data, error } = await admin.rpc("login_security_lock_payload", {
     p_email: email,
   });
-  if (error) return json({ error: error.message }, 500);
+  if (error) {
+    console.error("login-security lock_payload", error.message);
+    return json({ ok: true });
+  }
 
   const row = (data || {}) as {
     ok?: boolean;
@@ -212,23 +207,25 @@ async function handleNotifyLock(
   };
 
   if (!row.ok || !row.user_id || !row.email) {
-    return json({
-      ok: true,
-      skipped: true,
-      skippedReason: row.error || "not_locked",
-    });
+    console.error(
+      "login-security notify_lock skipped",
+      row.error || "not_locked",
+    );
+    return json({ ok: true });
   }
 
   await admin.auth.admin.signOut(row.user_id, "global");
 
   if (row.lock_email_sent_at) {
-    return json({ ok: true, alreadySent: true });
+    console.error("login-security notify_lock already sent");
+    return json({ ok: true });
   }
 
   const link = await createRecoveryLink(admin, row.email);
-  if ("error" in link) return json({ error: link.error }, 502);
-
-  
+  if ("error" in link) {
+    console.error("login-security notify_lock link", link.error);
+    return json({ ok: true });
+  }
 
   const sent = await sendResendEmail({
     resendKey,
@@ -236,23 +233,69 @@ async function handleNotifyLock(
     subject: ACCOUNT_UNLOCK_SUBJECT,
     html: buildAccountUnlockEmailHtml(link.url),
   });
-  if (!sent.ok) return json({ error: sent.error }, 502);
+  if (!sent.ok) {
+    console.error("login-security notify_lock resend", sent.error);
+    return json({ ok: true });
+  }
 
   await admin.rpc("mark_login_lock_email_sent", { p_user: row.user_id });
 
-  return json({
-    ok: true,
-    emailed: true,
-    id: sent.id,
-  });
-
+  return json({ ok: true });
 }
 
-function invalidCredentialsResponse() {
+function invalidCredentialsResponse(extra?: {
+  locked?: boolean;
+  just_locked?: boolean;
+}) {
   return json(
-    { code: "invalid_credentials", message: "Invalid login credentials" },
+    {
+      code: "invalid_credentials",
+      message: "Invalid login credentials",
+      ...(extra?.locked === true ? { locked: true } : {}),
+      ...(extra?.just_locked === true ? { just_locked: true } : {}),
+    },
     400,
   );
+}
+
+function readFailureFlags(data: unknown): {
+  locked: boolean;
+  just_locked: boolean;
+} {
+  let row = data;
+  if (typeof row === "string") {
+    try {
+      row = JSON.parse(row) as unknown;
+    } catch {
+      return { locked: false, just_locked: false };
+    }
+  }
+  if (!row || typeof row !== "object") {
+    return { locked: false, just_locked: false };
+  }
+  const o = row as { locked?: unknown; just_locked?: unknown };
+  return {
+    locked: o.locked === true,
+    just_locked: o.just_locked === true,
+  };
+}
+
+async function recordFailureAndRespond(
+  admin: SupabaseClient,
+  email: string,
+) {
+  const { data, error } = await admin.rpc("record_login_failure", {
+    p_email: email,
+  });
+  if (error) {
+    console.error("login-security record_login_failure", error.message);
+    return invalidCredentialsResponse();
+  }
+  const flags = readFailureFlags(data);
+  return invalidCredentialsResponse({
+    locked: flags.locked,
+    just_locked: flags.just_locked,
+  });
 }
 
 function dummyPasswordCheck(password: string): Promise<void> {
@@ -306,7 +349,7 @@ async function handleSignIn(
 
   if (error) {
     if (isGoTrueInvalidCredentials(error)) {
-      return invalidCredentialsResponse();
+      return await recordFailureAndRespond(admin, email);
     }
     return json(
       {
@@ -321,13 +364,22 @@ async function handleSignIn(
   const session = data.session;
   const locked = readLockedFlag(lockResult.data);
   const lockUnknown = Boolean(lockResult.error) || locked === null;
-  if (
-    !session?.access_token ||
-    !session?.refresh_token ||
-    lockUnknown ||
-    locked === true
-  ) {
+  if (!session?.access_token || !session?.refresh_token || lockUnknown) {
     return invalidCredentialsResponse();
+  }
+  if (locked === true) {
+    return invalidCredentialsResponse({ locked: true });
+  }
+
+  const { error: clearError } = await admin.rpc(
+    "clear_login_failures_for_email",
+    { p_email: email },
+  );
+  if (clearError) {
+    console.error(
+      "login-security clear_login_failures_for_email",
+      clearError.message,
+    );
   }
 
   return json({

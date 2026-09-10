@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  EMAIL_ALREADY_REGISTERED_MESSAGE,
   EMAIL_OR_PASSWORD_INCORRECT_MESSAGE,
   isEmailAlreadyRegisteredError,
   isInvalidLoginCredentials,
@@ -18,18 +17,15 @@ import {
   shouldCountLoginFailure,
   translateAuthError,
 } from '@/lib/authErrors';
-import { emailIsRegistered } from '@/lib/signupEmail';
 import { validateSignupPassword } from '@/lib/password';
 import {
   ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE,
   ACCOUNT_LOCKED_MESSAGE,
   RESET_EMAIL_SENT_MESSAGE,
-  clearLoginFailuresIfAllowed,
-  fetchLoginLockStatus,
   isLoginClientTimeout,
   LOGIN_TIMEOUT_MESSAGE,
+  loginLockFlagsFromError,
   notifyAccountLocked,
-  recordLoginFailure,
   isValidResetEmail,
   sendPasswordResetEmail,
   signInWithPasswordSecure,
@@ -156,10 +152,17 @@ export default function AuthScreen({
     setError(ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE);
   };
 
-  const handlePasswordFailure = async (currentEmail: string) => {
-    const result = await recordLoginFailure(currentEmail);
-    if (result.locked) {
-      await applyServerLock(currentEmail, result.justLocked);
+  const showSignupConfirmation = () => {
+    setSignupSuccess(true);
+    setInfo(
+      `Un email de confirmation a été envoyé à ${email}. Clique sur le lien qu'il contient pour activer ton compte.`
+    );
+  };
+
+  const handlePasswordFailure = async (currentEmail: string, err: unknown) => {
+    const flags = loginLockFlagsFromError(err);
+    if (flags.locked) {
+      await applyServerLock(currentEmail, flags.justLocked);
       return;
     }
 
@@ -213,10 +216,6 @@ export default function AuthScreen({
 
     try {
       if (mode === 'signup') {
-        if (await emailIsRegistered(email)) {
-          setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
-          return;
-        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -225,53 +224,30 @@ export default function AuthScreen({
             captchaToken: captchaToken || undefined,
           },
         });
-        if (error) throw error;
+        if (error) {
+          if (isEmailAlreadyRegisteredError(error)) {
+            showSignupConfirmation();
+            return;
+          }
+          throw error;
+        }
         if (isObfuscatedDuplicateSignup(data.user)) {
           if (data.session) await supabase.auth.signOut();
-          setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
-          return;
         }
-        setSignupSuccess(true);
-        setInfo(
-          `Un email de confirmation a été envoyé à ${email}. Clique sur le lien qu'il contient pour activer ton compte.`
-        );
+        showSignupConfirmation();
         return;
       }
 
-      const lockCheck = fetchLoginLockStatus(email);
-      try {
-        await signInWithPasswordSecure(
-          email,
-          password,
-          captchaToken || undefined
-        );
-      } catch (signErr) {
-        try {
-          if (await lockCheck) {
-            await applyServerLock(email, false);
-            return;
-          }
-        } catch {
-          /* statut indisponible : on garde l’erreur de connexion */
-        }
-        throw signErr;
-      }
-
-      void lockCheck
-        .then(async (locked) => {
-          if (locked) await supabase.auth.signOut();
-        })
-        .catch(() => {});
-      void clearLoginFailuresIfAllowed()
-        .then(async (stillLocked) => {
-          if (stillLocked) await supabase.auth.signOut();
-        })
-        .catch(() => {});
+      await signInWithPasswordSecure(
+        email,
+        password,
+        captchaToken || undefined
+      );
 
       writeRememberSession(rememberSession);
     } catch (err) {
       if (mode === 'signup' && isEmailAlreadyRegisteredError(err)) {
-        setError(EMAIL_ALREADY_REGISTERED_MESSAGE);
+        showSignupConfirmation();
         return;
       }
       if (mode === 'signin' && isLoginClientTimeout(err)) {
@@ -279,7 +255,7 @@ export default function AuthScreen({
         return;
       }
       if (mode === 'signin' && shouldCountLoginFailure(err)) {
-        await handlePasswordFailure(email);
+        await handlePasswordFailure(email, err);
         return;
       }
       if (mode === 'signin' && isInvalidLoginCredentials(err)) {
@@ -495,16 +471,6 @@ export default function AuthScreen({
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="min-w-0 space-y-2">
                   <p>{error}</p>
-                  {mode === 'signup' &&
-                    error === EMAIL_ALREADY_REGISTERED_MESSAGE && (
-                      <button
-                        type="button"
-                        onClick={() => switchMode('signin')}
-                        className="font-semibold underline underline-offset-2 hover:text-red-800"
-                      >
-                        Se connecter
-                      </button>
-                    )}
                   {mode === 'signin' && error === LOGIN_TIMEOUT_MESSAGE && (
                     <button
                       type="submit"
