@@ -3,23 +3,30 @@ import { Phone, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
 import { toE164France, formatE164ForDisplay, isValidOtpCode } from '@/lib/phone';
+import { requestPhoneVerificationSms } from '@/lib/sendPhoneVerification';
 import { useAuth } from '@/lib/auth';
 import { BrandMark } from '@/components/BrandLockup';
+import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
 /** Doit correspondre au réglage "SMS OTP Expiry" côté Supabase Dashboard. */
 const OTP_VALIDITY_SECONDS = 60;
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 type Step = 'enter-phone' | 'enter-code';
 
 /**
  * Étape obligatoire après inscription : l'utilisateur doit confirmer un
  * numéro de téléphone par SMS (OTP) avant d'accéder au reste du site.
- * Sert à limiter les faux comptes / bots, comme sur la plupart des apps de
- * rencontre. Le flux passe par les endpoints natifs Supabase (`updateUser`
- * pour envoyer le code, `verifyOtp` type `phone_change` pour le valider) —
- * pas de Turnstile ici : `/user` est un endpoint authentifié, non couvert
- * par la protection CAPTCHA côté Supabase (réservée aux endpoints publics
- * signup/signin/otp/recover).
+ *
+ * L'envoi passe par l'Edge Function send-phone-verification (JWT, Turnstile,
+ * allowlist pays, quotas 24 h). verifyOtp type phone_change reste ici : il
+ * ne déclenche pas d'SMS.
+ *
+ * Limite connue : un client avancé peut appeler PUT /auth/v1/user avec son
+ * JWT et contourner l'app. Endpoint GoTrue natif, non révocable. Les verrous
+ * restants sont les Geographic Permissions Twilio et le plafond projet
+ * 30 SMS/h — ouvrir d'autres pays progressivement.
  */
 export default function PhoneVerification() {
   const { signOut } = useAuth();
@@ -31,13 +38,22 @@ export default function PhoneVerification() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+
+  const captchaBlocking = Boolean(TURNSTILE_SITE_KEY) && !captchaToken;
 
   useEffect(() => {
     return () => {
       if (cooldownTimer.current) clearInterval(cooldownTimer.current);
     };
   }, []);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
 
   const startCooldown = () => {
     setCooldown(OTP_VALIDITY_SECONDS);
@@ -54,14 +70,15 @@ export default function PhoneVerification() {
   };
 
   const sendCode = async (target: string) => {
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Merci de valider le CAPTCHA avant de continuer.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setInfo(null);
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        phone: target,
-      });
-      if (updateError) throw updateError;
+      await requestPhoneVerificationSms(target, captchaToken);
       setE164(target);
       setStep('enter-code');
       setInfo(`Code envoyé par SMS au ${formatE164ForDisplay(target)}.`);
@@ -69,6 +86,7 @@ export default function PhoneVerification() {
     } catch (err) {
       setError(translateAuthError(err));
     } finally {
+      resetCaptcha();
       setLoading(false);
     }
   };
@@ -114,7 +132,7 @@ export default function PhoneVerification() {
   };
 
   const handleResend = async () => {
-    if (!e164 || cooldown > 0 || loading) return;
+    if (!e164 || cooldown > 0 || loading || captchaBlocking) return;
     await sendCode(e164);
   };
 
@@ -173,9 +191,19 @@ export default function PhoneVerification() {
 
               {error && <ErrorBanner message={error} />}
 
+              {TURNSTILE_SITE_KEY && (
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onVerify={setCaptchaToken}
+                  onExpire={() => setCaptchaToken(null)}
+                  className="flex justify-center"
+                />
+              )}
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || captchaBlocking}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? 'Envoi du code...' : 'Recevoir le code par SMS'}
@@ -230,10 +258,20 @@ export default function PhoneVerification() {
                 {loading ? 'Vérification...' : 'Valider le code'}
               </button>
 
+              {TURNSTILE_SITE_KEY && (
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onVerify={setCaptchaToken}
+                  onExpire={() => setCaptchaToken(null)}
+                  className="flex justify-center"
+                />
+              )}
+
               <button
                 type="button"
                 onClick={() => void handleResend()}
-                disabled={cooldown > 0 || loading}
+                disabled={cooldown > 0 || loading || captchaBlocking}
                 className="w-full text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {cooldown > 0

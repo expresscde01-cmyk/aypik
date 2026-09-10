@@ -27,7 +27,11 @@ const CODE_MESSAGES: Record<string, string> = {
   phone_exists: 'Ce numéro de téléphone est déjà utilisé par un autre compte.',
   sms_send_failed:
     "Impossible d'envoyer le SMS pour le moment. Réessaie dans un instant.",
-  over_sms_send_rate_limit: 'Trop de SMS envoyés. Réessaie dans quelques minutes.',
+  over_sms_send_rate_limit:
+    'Trop de SMS envoyés. Réessaie dans quelques heures.',
+  phone_country_not_allowed:
+    "Ce préfixe pays n'est pas encore ouvert pour la vérification par SMS.",
+  unauthorized: 'Session invalide. Reconnecte-toi pour continuer.',
 };
 
 const MESSAGE_PATTERNS: [RegExp, string][] = [
@@ -49,12 +53,13 @@ const MESSAGE_PATTERNS: [RegExp, string][] = [
   ],
   [/same_password/i, 'Le nouveau mot de passe doit être différent de l\'ancien.'],
   [/error sending recovery email/i, "Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Réessaie dans un instant."],
-  [/failed to send a request to the edge function/i, "Impossible d'envoyer l'e-mail pour le moment. Réessaie dans un instant."],
-  [/edge function/i, "Impossible d'envoyer l'e-mail pour le moment. Réessaie dans un instant."],
+  [/failed to send a request to the edge function/i, "Impossible d'envoyer la demande pour le moment. Réessaie dans un instant."],
+  [/edge function returned a non-2xx/i, "Impossible d'envoyer la demande pour le moment. Réessaie dans un instant."],
   [/token has expired or is invalid/i, 'Code invalide ou expiré. Demande un nouveau code.'],
   [/invalid.*otp/i, 'Code invalide ou expiré. Demande un nouveau code.'],
   [/invalid phone number/i, 'Numéro de téléphone invalide.'],
   [/phone_number_invalid/i, 'Numéro de téléphone invalide.'],
+  [/phone_country_not_allowed/i, "Ce préfixe pays n'est pas encore ouvert pour la vérification par SMS."],
   [/phone_provider_disabled/i, "La vérification par téléphone n'est pas disponible pour le moment."],
 ];
 
