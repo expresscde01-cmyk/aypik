@@ -60,7 +60,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 7 septembre 2026. Version applicable au
+              Dernière mise à jour : 10 septembre 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
@@ -727,7 +727,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 L&apos;éditeur est responsable du traitement des données
                 personnelles collectées pour fournir le Service (compte,
-                profil, interactions, messages, horodatage de dernière
+                profil, interactions, messages, numéro de téléphone lorsque
+                la vérification par SMS est utilisée, horodatage de dernière
                 activité last_active_at visé à l&apos;article 3.8, journaux
                 techniques nécessaires à la sécurité). Le traitement repose
                 principalement sur l&apos;exécution du contrat
@@ -739,7 +740,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Les données ne sont pas vendues. Elles peuvent être
                 transmises aux seuls prestataires strictement nécessaires
-                (hébergeur, infrastructure technique, envoi d&apos;e-mails),
+                (hébergeur, infrastructure technique, envoi d&apos;e-mails et
+                de SMS de vérification),
                 établis dans l&apos;Union européenne ou offrant des garanties
                 appropriées.
               </p>
