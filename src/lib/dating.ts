@@ -14,7 +14,7 @@ export function parseProfileGender(
   return null;
 }
 
-/** Homme → femmes, femme → hommes, non renseigné → pas de filtre (hommes et femmes). */
+/** Homme → femmes, femme → hommes, genre absent → pas de filtre (hommes et femmes). */
 export function matchingTargetGender(
   viewerGender: string | null | undefined
 ): ProfileGender | null {
