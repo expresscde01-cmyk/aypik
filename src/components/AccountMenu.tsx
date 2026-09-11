@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Eye,
   Filter,
+  Globe,
   Lock,
   LogOut,
   RefreshCw,
@@ -23,6 +24,7 @@ import {
   type VisibilityChoice,
 } from '@/lib/accountStatus';
 import { visibilityHintTextClass } from '@/components/AccountStatusBadge';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
 export default function AccountMenu({
@@ -290,6 +292,20 @@ export default function AccountMenu({
               onOpenPassword();
             }}
           />
+          <div
+            role="none"
+            className="flex items-start gap-2.5 px-3 py-2"
+          >
+            <span className="shrink-0 opacity-80 mt-0.5">
+              <Globe className="w-4 h-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-gray-800 mb-1.5">
+                {t('common.language')}
+              </p>
+              <LanguageSwitcher />
+            </div>
+          </div>
           <MenuItem
             icon={<Filter className="w-4 h-4" />}
             label={t('profile.menuResetFilters')}
