@@ -69,8 +69,8 @@ if ($locale === 'fr' && preg_match('#^/fr(/.*)?$#', $requestPath)) {
 // Miroir de src/i18n/locales.ts LOCALE_PLACEHOLDER — désactiver langue par langue après trad pro.
 $localePlaceholder = [
     'fr' => false,
-    'en' => true,
-    'es' => true,
+    'en' => false,
+    'es' => false,
 ];
 $localeIsPlaceholder = !empty($localePlaceholder[$locale]);
 
@@ -221,10 +221,13 @@ $hreflangTags = implode('', $hreflangParts);
 if ($localeIsPlaceholder) {
     $hreflangTags =
         '<meta name="robots" content="noindex, follow" data-aypik-robots="1">' . $hreflangTags;
+} else {
+    $hreflangTags =
+        '<meta name="robots" content="index, follow" data-aypik-robots="1">' . $hreflangTags;
 }
 $html = preg_replace('/<\/head>/i', $hreflangTags . '</head>', $html, 1) ?? $html;
 
-if ($locale === 'en' || $locale === 'es') {
+if ($localeIsPlaceholder && ($locale === 'en' || $locale === 'es')) {
     $prefix = $locale === 'en' ? '[EN] ' : '[ES] ';
     $html = preg_replace(
         '/<title>AYPIK<\/title>/',

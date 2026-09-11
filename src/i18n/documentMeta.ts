@@ -25,20 +25,19 @@ function hreflangHref(locale: AppLocale, rest: string): string {
 
 function syncRobotsMeta(locale: AppLocale): void {
   const existing = document.querySelector('meta[data-aypik-robots]');
-  if (isPlaceholderLocale(locale)) {
-    const el =
-      existing ??
-      (() => {
-        const meta = document.createElement('meta');
-        meta.setAttribute('name', 'robots');
-        meta.setAttribute('data-aypik-robots', '1');
-        document.head.appendChild(meta);
-        return meta;
-      })();
-    el.setAttribute('content', 'noindex, follow');
-    return;
-  }
-  existing?.remove();
+  const el =
+    existing ??
+    (() => {
+      const meta = document.createElement('meta');
+      meta.setAttribute('name', 'robots');
+      meta.setAttribute('data-aypik-robots', '1');
+      document.head.appendChild(meta);
+      return meta;
+    })();
+  el.setAttribute(
+    'content',
+    isPlaceholderLocale(locale) ? 'noindex, follow' : 'index, follow'
+  );
 }
 
 export function syncDocumentMeta(locale: AppLocale = currentLocale()): void {
