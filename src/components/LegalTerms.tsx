@@ -7,8 +7,12 @@ import {
   SUPPORT_EMAIL,
   legalDocLabel,
 } from '@/components/LegalChrome';
+import LegalMarkdown from '@/components/LegalMarkdown';
+import LegalTranslationBanner from '@/components/LegalTranslationBanner';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { currentLocale } from '@/i18n/documentMeta';
+import termsEn from '@/content/legal/terms-en.md?raw';
+import termsEs from '@/content/legal/terms-es.md?raw';
 
 export {
   CONTACT_PATH,
@@ -29,7 +33,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
   const docLabel = legalDocLabel();
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50">
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
             type="button"
@@ -46,13 +50,24 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
         </div>
       </header>
 
+      {locale !== 'fr' && <LegalTranslationBanner variant="sticky" />}
+
       <main className="max-w-2xl mx-auto px-4 py-8">
-        {locale !== 'fr' && (
-          <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {t('legal.officialNotice')}
-          </p>
-        )}
-        <article className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed">
+        {locale !== 'fr' ? (
+          <article
+            lang={locale}
+            className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
+          >
+            <LegalMarkdown
+              source={locale === 'es' ? termsEs : termsEn}
+              locale={locale}
+            />
+          </article>
+        ) : (
+        <article
+          lang="fr"
+          className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
+        >
           <header className="space-y-2 border-b border-gray-100 pb-6">
             <p className="inline-flex items-baseline gap-1.5 text-[10px]">
               <span
@@ -1222,6 +1237,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </p>
           </footer>
         </article>
+        )}
+        {locale !== 'fr' && <LegalTranslationBanner variant="end" />}
 
         <div className="mt-6 text-center">
           <button
@@ -1229,7 +1246,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="text-sm font-semibold text-rose-600 hover:text-rose-700"
           >
-            Retour
+            {t('legal.back')}
           </button>
         </div>
       </main>
