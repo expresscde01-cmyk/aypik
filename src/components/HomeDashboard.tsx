@@ -19,6 +19,7 @@ import ProfilePhoto from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { CardGeoFacts, InternationalCardGeoFacts } from '@/components/GeoBadgeLine';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import {
   HeaderTaglineWidthProbe,
   MobileTaglineWidthProbe,
@@ -340,6 +341,7 @@ export default function HomeDashboard({
                 ref={rightRef}
                 className="flex items-center gap-1 shrink-0 ml-auto"
               >
+                <LanguageSwitcher compact />
                 <NotificationsBell
                   onOpenInbox={onOpenMatches}
                   active={notificationsActive}
@@ -389,6 +391,7 @@ export default function HomeDashboard({
               ref={mobileTaglineRightRef}
               className="flex items-center gap-1 shrink-0"
             >
+              <LanguageSwitcher compact />
               <NotificationsBell
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
