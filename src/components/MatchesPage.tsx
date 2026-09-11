@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   Folder,
@@ -236,6 +236,30 @@ function sortByDateReceivedDesc(a: Match, b: Match): number {
   const ta = new Date(a.date_received).getTime() || 0;
   const tb = new Date(b.date_received).getTime() || 0;
   return tb - ta;
+}
+
+function GlossaryMatcherChip() {
+  return (
+    <span className="match-intro-chip inline-flex items-center border border-rose-100 bg-white text-rose-600">
+      <MatcherWord />
+    </span>
+  );
+}
+
+function glossaryIntroComponents() {
+  return {
+    study: <span className="match-intro-chip match-chip-new" />,
+    wait: <span className="match-intro-chip match-chip-wait" />,
+    matcher: <GlossaryMatcherChip />,
+    holdYou: <span className="match-intro-chip match-chip-wait" />,
+    holdThem: <span className="match-intro-chip match-chip-wait-by-other" />,
+    purge: <span className="match-intro-chip match-chip-declined" />,
+    quiet: <span className="match-intro-chip match-chip-matched-quiet" />,
+    chat: <span className="match-intro-chip match-chip-matched-chat" />,
+    brokenYou: <span className="match-intro-chip match-chip-broken" />,
+    brokenThem: <span className="match-intro-chip match-chip-broken-theirs" />,
+    encounters: <span className="match-intro-chip match-chip-souris" />,
+  };
 }
 
 function ColorChip({
@@ -563,6 +587,93 @@ function IntroLegendApres() {
         </span>
       </IntroLegendBar>
     </div>
+  );
+}
+
+function MatchesGlossary({
+  openIntroSection,
+  onToggle,
+}: {
+  openIntroSection: IntroSectionId | null;
+  onToggle: (id: IntroSectionId) => void;
+}) {
+  const { t } = useTranslation();
+  const introComponents = glossaryIntroComponents();
+  return (
+    <>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
+        {t('matches.glossary')}
+      </p>
+      <div className="mb-5 space-y-2">
+        <IntroAccordionSection
+          id="avant"
+          title={t('matches.glossaryAvant')}
+          titleIcons={
+            <>
+              <Heart className="w-3.5 h-3.5" fill="currentColor" />
+              <Zap className="w-3.5 h-3.5" fill="currentColor" />
+            </>
+          }
+          legend={<IntroLegendAvant />}
+          isOpen={openIntroSection === 'avant'}
+          onToggle={onToggle}
+        >
+          <p>
+            <Trans i18nKey="matches.introBefore1" components={introComponents} />
+          </p>
+          <p>
+            <Trans i18nKey="matches.introBefore2" components={introComponents} />
+          </p>
+          <p>
+            <Trans i18nKey="matches.introBefore3" components={introComponents} />
+          </p>
+        </IntroAccordionSection>
+
+        <IntroAccordionSection
+          id="pendant"
+          title={t('matches.glossaryPendant')}
+          titleIcons={<MessageCircle className="w-3.5 h-3.5" />}
+          legend={<IntroLegendPendant />}
+          isOpen={openIntroSection === 'pendant'}
+          onToggle={onToggle}
+        >
+          <p>
+            <Trans i18nKey="matches.introDuring" components={introComponents} />
+          </p>
+        </IntroAccordionSection>
+
+        <IntroAccordionSection
+          id="apres"
+          title={t('matches.glossaryApres')}
+          titleIcons={
+            <>
+              <RestoreChainGlyph className="w-3.5 h-3.5" />
+              <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
+              <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
+              <span className="mx-0.5 text-[0.65rem] font-medium leading-none">
+                {t('matches.orWord')}
+              </span>
+              <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
+            </>
+          }
+          legend={<IntroLegendApres />}
+          isOpen={openIntroSection === 'apres'}
+          onToggle={onToggle}
+        >
+          <p>
+            <Trans i18nKey="matches.introAfter1" components={introComponents} />
+          </p>
+          <p>
+            <Trans i18nKey="matches.introAfter2" components={introComponents} />
+            <span className="match-intro-dot-cluster" aria-hidden>
+              <span className="match-intro-dot match-intro-dot--stage-new" />
+              <span className="match-intro-dot match-intro-dot--stage-match" />
+              <span className="match-intro-dot match-intro-dot--stage-quiet" />
+            </span>
+          </p>
+        </IntroAccordionSection>
+      </div>
+    </>
   );
 }
 
@@ -3832,123 +3943,10 @@ export default function MatchesPage({
         {t('matches.title')} (
         {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
-        {t('matches.glossary')}
-      </p>
-      <div className="mb-5 space-y-2">
-        <IntroAccordionSection
-          id="avant"
-          title={t('matches.glossaryAvant')}
-          titleIcons={
-            <>
-              <Heart className="w-3.5 h-3.5" fill="currentColor" />
-              <Zap className="w-3.5 h-3.5" fill="currentColor" />
-            </>
-          }
-          legend={<IntroLegendAvant />}
-          isOpen={openIntroSection === 'avant'}
-          onToggle={toggleIntroSection}
-        >
-          <p>
-            Tu trouveras sur cette page tous les profils qui t&apos;ont adressé
-            un <ColorChip label={t('matches.chipToStudy')} tone="new" />. Tu
-            pourras soit les refuser (pour qu&apos;ils disparaissent de cette
-            page), soit les{' '}
-            <ColorChip label={t('matches.chipWait')} tone="wait" /> (pour les
-            étudier plus tard), soit les{' '}
-            <span className="match-intro-chip inline-flex items-center border border-rose-100 bg-white text-rose-600">
-              <MatcherWord />
-            </span>{' '}
-            pour voir ainsi ces profils passer à l&apos;étape des matchs.
-          </p>
-          <p>
-            Les profils que tu as toi-même mis en attente apparaissent dans{' '}
-            <span className="match-intro-chip match-chip-wait">
-              {t('matches.floorWaitingByYou')}
-            </span>
-            . Si c&apos;est l&apos;autre personne qui a mis ton like ou ton
-            flash en attente, tu le retrouveras dans{' '}
-            <span className="match-intro-chip match-chip-wait-by-other">
-              {t('matches.floorWaitingByOther')}
-            </span>{' '}
-            : tu pourras consulter le profil, la décision lui appartenant.
-          </p>
-          <p>
-            Tu trouveras également sur cette page tous les profils qui ont
-            décliné un de tes likes ou de tes flashs. Tu pourras choisir
-            ensuite entre{' '}
-            <span className="match-intro-chip match-chip-declined">
-              {t('matches.deleteOrArchive')}
-            </span>
-            .
-          </p>
-        </IntroAccordionSection>
-
-        <IntroAccordionSection
-          id="pendant"
-          title={t('matches.glossaryPendant')}
-          titleIcons={<MessageCircle className="w-3.5 h-3.5" />}
-          legend={<IntroLegendPendant />}
-          isOpen={openIntroSection === 'pendant'}
-          onToggle={toggleIntroSection}
-        >
-          <p>
-            Tous tes matchs sont classés soit{' '}
-            <ColorChip label={t('matches.chipFirstWord')} tone="matched-quiet" /> tant qu&apos;il
-            n&apos;y a pas encore eu un message de chaque côté (y compris
-            lorsqu&apos;un seul a écrit), soit{' '}
-            <ColorChip label={t('matches.chipDiscussion')} tone="matched-chat" /> dès
-            que chacun a envoyé au moins un message.
-          </p>
-        </IntroAccordionSection>
-
-        <IntroAccordionSection
-          id="apres"
-          title={t('matches.glossaryApres')}
-          titleIcons={
-            <>
-              <RestoreChainGlyph className="w-3.5 h-3.5" />
-              <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
-              <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
-              <span className="mx-0.5 text-[0.65rem] font-medium leading-none">
-                {t('matches.orWord')}
-              </span>
-              <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
-            </>
-          }
-          legend={<IntroLegendApres />}
-          isOpen={openIntroSection === 'apres'}
-          onToggle={toggleIntroSection}
-        >
-          <p>
-            Un match déjà validé peut être archivé ou rompu depuis la
-            conversation. Tu le retrouveras alors dans{' '}
-            <span className="match-intro-chip match-chip-broken">
-              {t('matches.floorBrokenYou')}
-            </span>{' '}
-            si c&apos;est toi qui as pris cette décision (tu pourras alors le
-            rétablir ou le supprimer), ou dans{' '}
-            <span className="match-intro-chip match-chip-broken-theirs">
-              {t('matches.floorBrokenThem')}
-            </span>{' '}
-            si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
-            pourras uniquement le supprimer).
-          </p>
-          <p>
-            Tes autres matchs, eux, restent bien actifs et continuent
-            normalement — et de{' '}
-            <span className="match-intro-chip match-chip-souris">
-              {t('matches.newEncounters')}
-            </span>{' '}
-            pleines de bonheur sont déjà en chemin
-            <span className="match-intro-dot-cluster" aria-hidden>
-              <span className="match-intro-dot match-intro-dot--stage-new" />
-              <span className="match-intro-dot match-intro-dot--stage-match" />
-              <span className="match-intro-dot match-intro-dot--stage-quiet" />
-            </span>
-          </p>
-        </IntroAccordionSection>
-      </div>
+      <MatchesGlossary
+        openIntroSection={openIntroSection}
+        onToggle={toggleIntroSection}
+      />
 
       {error && (
         <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">

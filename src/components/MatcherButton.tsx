@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import MatcherWord, { CrownIcon } from '@/components/MatcherWord';
 
 const MATCHER_SPARKLES = [
@@ -32,6 +33,7 @@ export default function MatcherButton({
   name: string;
   tooltip?: 'right' | 'top' | 'left' | 'logo' | 'logo-tr';
 }) {
+  const { t } = useTranslation();
   const done = Boolean(matched);
   const blocked = Boolean(disabled) && !done;
   const pending = Boolean(busy) && !done;
@@ -48,7 +50,11 @@ export default function MatcherButton({
       aria-disabled={done || dimmed || undefined}
       aria-busy={pending || undefined}
       data-matched={done ? 'true' : undefined}
-      aria-label={done ? `Matché avec ${name}` : `Matcher avec ${name}`}
+      aria-label={
+        done
+          ? t('matches.matchedWith', { name })
+          : t('matches.matcherWith', { name })
+      }
       className={`matcher-btn group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default ${
         dimmed ? 'opacity-40' : done ? 'opacity-80' : ''
       }`}
@@ -95,7 +101,7 @@ export default function MatcherButton({
                   : 'top-[calc(100%-6px)] left-[calc(100%-4px)]'
         }`}
       >
-        {done ? 'Matché !' : <MatcherWord />}
+        {done ? t('matches.matched') : <MatcherWord />}
       </span>
     </button>
   );

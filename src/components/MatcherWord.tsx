@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 /** Couronne rose unie — trois pointes, sans halo ni cercle. */
 export function CrownIcon({
   className = '',
@@ -23,16 +25,17 @@ export function CrownIcon({
   );
 }
 
-/** Mot Matcher avec couronne à la place du M. */
+/** Mot Matcher / Match / Matchear : couronne à la place du M. */
 export default function MatcherWord({
   className = '',
 }: {
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <span className={`matcher-word ${className}`.trim()}>
       <CrownIcon />
-      <span>atcher</span>
+      <span>{t('matches.matcherWordRest')}</span>
     </span>
   );
 }
