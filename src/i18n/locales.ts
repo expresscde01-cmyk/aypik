@@ -14,8 +14,8 @@ export const LOCALE_STORAGE_KEY = 'aypik.locale';
  */
 export const LOCALE_PLACEHOLDER: Record<AppLocale, boolean> = {
   fr: false,
-  en: true,
-  es: true,
+  en: false,
+  es: false,
 };
 
 export const LOCALE_TO_BCP47: Record<AppLocale, string> = {
