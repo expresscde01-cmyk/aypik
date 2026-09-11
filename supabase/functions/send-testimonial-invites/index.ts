@@ -5,6 +5,12 @@ import {
   getPublicSiteUrl,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import {
+  emailT,
+  localizedSiteUrl,
+  profileEmailLocale,
+  type EmailLocale,
+} from "../_shared/i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,7 +55,6 @@ Deno.serve(async (req) => {
 
     const candidates = Array.isArray(data) ? (data as InviteRow[]) : [];
     const siteUrl = getPublicSiteUrl();
-    const formUrl = `${siteUrl}/?open=temoignage`;
     const from = Deno.env.get("RESEND_FROM_EMAIL") ??
       "Aypik <onboarding@resend.dev>";
 
@@ -59,12 +64,16 @@ Deno.serve(async (req) => {
     for (const row of candidates) {
       if (!row?.email || !row?.user_id) continue;
 
+      const locale = await profileEmailLocale(admin, row.user_id);
+      const formUrl = `${localizedSiteUrl(locale, "/", siteUrl).replace(/\/$/, "")}/?open=temoignage`;
+
       const html = wrapTransactionalEmailHtml({
-        title: "Partage ton expérience sur Aypik",
+        title: emailT(locale, "testimonialTitle"),
         siteUrl,
         bodyHtml: buildInviteBody({
           displayName: row.display_name || "Membre",
           formUrl,
+          locale,
         }),
       });
 
@@ -77,7 +86,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from,
           to: [row.email],
-          subject: "Ton avis compte — partage ton expérience sur Aypik",
+          subject: emailT(locale, "testimonialSubject"),
           html,
         }),
       });
@@ -141,36 +150,33 @@ function json(payload: Record<string, unknown>, status = 200) {
   });
 }
 
-function buildInviteBody(params: { displayName: string; formUrl: string }) {
+function buildInviteBody(params: {
+  displayName: string;
+  formUrl: string;
+  locale: EmailLocale;
+}) {
   const name = escapeHtml(params.displayName);
   const formUrl = escapeHtml(params.formUrl);
+  const locale = params.locale;
 
   return `
               <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Envie de partager ton expérience&nbsp;?</h1>
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "testimonialHeading")}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Bonjour ${name},
+                ${emailT(locale, "testimonialHello", { name })}
               </p>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Tu es membre Premium depuis quelques semaines. Si tu le souhaites,
-                tu peux raconter en quelques lignes ce que Aypik t’apporte — pour
-                aider d’autres personnes sans enfants à se sentir moins seules
-                dans leur recherche.
+                ${emailT(locale, "testimonialBody1")}
               </p>
               <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Le formulaire est réservé aux abonnés Premium. Ton prénom (et,
-                si tu le choisis, ta photo) ne sera publié qu’avec ton
-                consentement explicite.
+                ${emailT(locale, "testimonialBody2")}
               </p>
               <p style="margin:0 0 24px;">
                 <a href="${formUrl}" style="display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;">
-                  Partager mon témoignage
+                  ${emailT(locale, "testimonialCta")}
                 </a>
               </p>
               <p style="margin:0;color:#9ca3af;font-size:13px;line-height:1.55;">
-                Tes données sont traitées conformément au RGPD. Aucune
-                publication sans case de consentement cochée par tes soins.
-                Tu peux retirer ton témoignage à tout moment depuis ton profil,
-                ou demander la suppression de ton compte.
+                ${emailT(locale, "testimonialFooter")}
               </p>`;
 }

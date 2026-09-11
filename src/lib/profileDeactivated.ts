@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { userErrorMessage } from '@/lib/userError';
+import { t } from '../i18n/t.ts';
 
 export async function setProfileDeactivated(
   userId: string,
@@ -15,11 +16,11 @@ export async function setProfileDeactivated(
   if (!error) return null;
 
   if (/deactivated_at/i.test(error.message)) {
-    return 'La mise en pause du compte n’est pas encore disponible. Réessaie dans quelques instants.';
+    return t('profile.deactivatedUnavailable');
   }
 
   return userErrorMessage(
     error,
-    'Impossible de mettre à jour la pause du compte'
+    t('profile.deactivatedUpdateFail')
   );
 }

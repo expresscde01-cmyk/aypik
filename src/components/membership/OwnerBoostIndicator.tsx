@@ -1,6 +1,8 @@
 import { Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
+import { dateLocale } from '@/i18n/format';
+import { useTranslation } from 'react-i18next';
 
 export function formatBoostUntil(iso: string): {
   short: string;
@@ -8,16 +10,16 @@ export function formatBoostUntil(iso: string): {
   date: string;
 } {
   const d = new Date(iso);
-  const short = d.toLocaleDateString('fr-FR', {
+  const short = d.toLocaleDateString(dateLocale(), {
     day: 'numeric',
     month: 'short',
   });
-  const date = d.toLocaleDateString('fr-FR', {
+  const date = d.toLocaleDateString(dateLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
-  const full = d.toLocaleString('fr-FR', {
+  const full = d.toLocaleString(dateLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -37,6 +39,7 @@ export default function OwnerBoostIndicator({
   /** Pages secondaires mobile : icône + « Boosté », sans la date. */
   shortLabel?: boolean;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { status } = useMembership();
 
@@ -46,13 +49,13 @@ export default function OwnerBoostIndicator({
     ? formatBoostUntil(status.boost_ends_at)
     : null;
   const label = until
-    ? `Boost actif jusqu’au ${until.full}`
-    : 'Boost actif';
+    ? t('membership.boostUntil', { date: until.full })
+    : t('membership.boostActive');
   const visible = shortLabel
-    ? 'Boosté'
+    ? t('membership.boosted')
     : until
-      ? `Boost jusqu’au ${until.short}`
-      : 'Boost actif';
+      ? t('membership.boostUntilShort', { date: until.short })
+      : t('membership.boostActive');
   const hideTextOnMobile = iconOnlyOnMobile && !shortLabel;
 
   return (

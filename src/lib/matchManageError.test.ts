@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  CHAT_NOT_MATCHED_MESSAGE,
+  chatNotMatchedMessage,
   matchManageDisplayError,
   matchManageRpcErrorCode,
 } from './matchManageError.ts';
@@ -12,7 +12,7 @@ test('manage_active_match not_matched ne reste pas le code d’écriture', () =>
 });
 
 test('la modale Gestion du match n’affiche pas le bandeau d’écriture', () => {
-  assert.equal(matchManageDisplayError(CHAT_NOT_MATCHED_MESSAGE), null);
+  assert.equal(matchManageDisplayError(chatNotMatchedMessage()), null);
   assert.equal(matchManageDisplayError('Impossible d’archiver ce match.'), 'Impossible d’archiver ce match.');
   assert.equal(matchManageDisplayError(null), null);
 });

@@ -3,36 +3,27 @@
  * Like, Flash, Match, Matché le, Match le — jamais « coup de cœur ».
  */
 import { pickDeclinedEncouragement } from '@/lib/declinedEncouragements';
+import { formatDateLong, formatDateWeekdayLong } from '../i18n/format.ts';
+import { t } from '../i18n/t.ts';
 
 export type InteractionOrigin = 'like' | 'flash';
 
-function parseDate(iso: string): Date | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d;
+function someone(): string {
+  return t('common.someone');
+}
+
+function originKind(origin: InteractionOrigin): string {
+  return origin === 'flash' ? 'Flash' : 'Like';
 }
 
 /** Date d’interaction : « 14 août 2026 ». */
 export function formatInteractionDate(iso: string): string {
-  const d = parseDate(iso);
-  if (!d) return '';
-  return d.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatDateLong(iso);
 }
 
 /** Date de match CGU : « vendredi 14 août 2026 ». */
 export function formatMatchCalendarDate(iso: string): string {
-  const d = parseDate(iso);
-  if (!d) return '';
-  return d.toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatDateWeekdayLong(iso);
 }
 
 export function originHistoryLabel(
@@ -41,9 +32,9 @@ export function originHistoryLabel(
 ): string {
   const date = formatInteractionDate(iso);
   if (origin === 'flash') {
-    return date ? `Flash du ${date} ⚡` : 'Flash ⚡';
+    return date ? t('matches.flashOfDate', { date }) : t('matches.flashOnly');
   }
-  return date ? `Like du ${date} ❤️` : 'Like ❤️';
+  return date ? t('matches.likeOfDate', { date }) : t('matches.likeOnly');
 }
 
 /** Carte Mes Matchs — Flash/Like reçu non encore tranché (à étudier). */
@@ -51,7 +42,9 @@ export function pendingToDecideLabel(
   origin: InteractionOrigin,
   iso: string
 ): string {
-  return `${originHistoryLabel(origin, iso)} — à étudier`;
+  return t('matches.pendingToDecide', {
+    history: originHistoryLabel(origin, iso),
+  });
 }
 
 /**
@@ -79,9 +72,9 @@ export function matchedHistoryLabel(
 ): string {
   const date = formatMatchCalendarDate(iso);
   if (role === 'initiated') {
-    return date ? `Match le ${date}` : 'Match';
+    return date ? t('matches.matchLe', { date }) : 'Match';
   }
-  return date ? `Matché le ${date}` : 'Matché';
+  return date ? t('matches.matcheLe', { date }) : 'Matché';
 }
 
 /** Carte Mes Matchs — match validé sans aucun message. */
@@ -89,7 +82,9 @@ export function matchedNoDialogueLabel(
   iso: string,
   role: MatchRole = 'accepted'
 ): string {
-  return `${matchedHistoryLabel(iso, role)} — pas encore de dialogue`;
+  return t('matches.matchedNoDialogue', {
+    history: matchedHistoryLabel(iso, role),
+  });
 }
 
 /** Carte Mes Matchs — match avec au moins un message de chaque côté. */
@@ -97,11 +92,13 @@ export function matchedWithDialogueLabel(
   iso: string,
   role: MatchRole = 'accepted'
 ): string {
-  return `${matchedHistoryLabel(iso, role)} — Discussion en cours`;
+  return t('matches.matchedWithDialogue', {
+    history: matchedHistoryLabel(iso, role),
+  });
 }
 
 export function matchDialogueChipLabel(hasTwoWay: boolean): string {
-  return hasTwoWay ? 'Discussion en cours' : '1er mot';
+  return hasTwoWay ? t('matches.chipDiscussionCap') : t('matches.chipFirstWord');
 }
 
 function senderNameFromBody(body: string): string {
@@ -120,39 +117,39 @@ function senderNameFromBody(body: string): string {
     /^(.+?)\s+(?:t['’]a\s|a matché|a liké|a accepté|a décliné)/i
   );
   const name = match?.[1]?.trim();
-  return name || 'Quelqu’un';
+  return name || someone();
 }
 
 /** Descriptions du panneau cloche : ponctuation finale si elle manque (conserve ! et ?). */
 export function withNotificationPeriod(text: string): string {
-  const t = text.trim();
-  if (!t) return t;
-  if (/[.!?…]$/u.test(t)) return t;
-  return `${t}.`;
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  if (/[.!?…]$/u.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
 }
 
 export function messageReceivedNotification(name: string): {
   title: string;
   body: string;
 } {
-  const actor = name.trim() || 'Quelqu’un';
+  const actor = name.trim() || someone();
   return {
-    title: 'Nouveau message',
-    body: `${actor} t'a envoyé un message.`,
+    title: t('notifications.newMessageTitle'),
+    body: t('notifications.newMessageBody', { name: actor }),
   };
 }
 
 function likeReceivedBody(actor: string): string {
-  return `${actor} t'a envoyé un Like ❤️.`;
+  return t('notifications.newLikeBody', { name: actor });
 }
 
 export function likeReceivedNotification(name: string): {
   title: string;
   body: string;
 } {
-  const actor = name.trim() || 'Quelqu’un';
+  const actor = name.trim() || someone();
   return {
-    title: 'Nouveau Like',
+    title: t('notifications.newLikeTitle'),
     body: likeReceivedBody(actor),
   };
 }
@@ -168,10 +165,10 @@ export function flashReceivedNotification(name: string): {
   title: string;
   body: string;
 } {
-  const actor = name.trim() || 'Quelqu’un';
+  const actor = name.trim() || someone();
   return {
-    title: 'Nouveau Flash',
-    body: `${actor} t'a envoyé un Flash ⚡.`,
+    title: t('notifications.newFlashTitle'),
+    body: t('notifications.newFlashBody', { name: actor }),
   };
 }
 
@@ -180,13 +177,13 @@ export function matchCreatedNotification(
   name: string,
   origin: InteractionOrigin
 ): { title: string; body: string } {
-  const actor = name.trim() || 'Quelqu’un';
+  const actor = name.trim() || someone();
   return {
-    title: 'C’est un match !',
+    title: t('notifications.matchCreatedTitle'),
     body:
       origin === 'flash'
-        ? `${actor} a matché ton Flash ⚡.`
-        : `${actor} a matché ton Like ❤️.`,
+        ? t('notifications.matchCreatedFlash', { name: actor })
+        : t('notifications.matchCreatedLike', { name: actor }),
   };
 }
 
@@ -195,11 +192,11 @@ export function matchWaitingNotification(
   name: string,
   origin: InteractionOrigin = 'like'
 ): { title: string; body: string } {
-  const actor = name.trim() || 'Quelqu’un';
-  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const actor = name.trim() || someone();
+  const label = originKind(origin);
   return {
-    title: 'En attente',
-    body: `${actor} a mis ton ${label} en attente.`,
+    title: t('notifications.waitingTitle'),
+    body: t('notifications.waitingBody', { name: actor, label }),
   };
 }
 
@@ -209,10 +206,10 @@ export function matchWaitReminderNotification(
   _origin: InteractionOrigin = 'like'
 ): { title: string; body: string } {
   const prenom = (actorName.trim() || '').split(/\s+/)[0];
-  const who = prenom || 'ce membre';
+  const who = prenom || t('common.thisMember');
   return {
-    title: 'En attente',
-    body: `Ne laisse pas ${who} dans l'attente.`,
+    title: t('notifications.waitingTitle'),
+    body: t('notifications.waitReminderBody', { name: who }),
   };
 }
 
@@ -221,8 +218,8 @@ export function matchWaitExpiryNotification(): {
   body: string;
 } {
   return {
-    title: 'Attente bientôt expirée',
-    body: 'Tu as des profils en attente qui vont bientôt expirer, pense à les consulter.',
+    title: t('notifications.waitExpiryTitle'),
+    body: t('notifications.waitExpiryBody'),
   };
 }
 
@@ -234,14 +231,18 @@ export function matchDeclinedNotification(
   title: string;
   body: string;
 } {
-  const actor = name.trim() || 'Quelqu’un';
-  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const actor = name.trim() || someone();
+  const label = originKind(origin);
   const encouragement = pickDeclinedEncouragement(
     seed?.trim() || `${actor}\0${label}`
   );
   return {
-    title: 'Pas cette fois',
-    body: `${actor} a décliné ton ${label}. ${encouragement}`,
+    title: t('notifications.declinedTitle'),
+    body: t('notifications.declinedBody', {
+      name: actor,
+      label,
+      encouragement,
+    }),
   };
 }
 
@@ -253,12 +254,12 @@ export function declinedArchiveStatusLabel(
 ): string {
   const when = declinedAt ? formatInteractionDate(declinedAt) : '';
   if (source === 'mine') {
-    return when ? `Archivé le ${when}` : 'Archivé';
+    return when ? t('matches.archivedOn', { date: when }) : t('matches.archived');
   }
-  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const label = originKind(origin);
   return when
-    ? `A décliné ton ${label} le ${when}`
-    : `A décliné ton ${label}`;
+    ? t('matches.declinedYourOn', { label, date: when })
+    : t('matches.declinedYour', { label });
 }
 
 /** Carte live « Mis en attente par l’autre ». */
@@ -266,11 +267,11 @@ export function waitingByOtherStatusLabel(
   origin: InteractionOrigin,
   at?: string | null
 ): string {
-  const label = origin === 'flash' ? 'Flash' : 'Like';
+  const label = originKind(origin);
   const when = at ? formatInteractionDate(at) : '';
   return when
-    ? `A mis ton ${label} en attente le ${when}`
-    : `A mis ton ${label} en attente`;
+    ? t('matches.waitingYourOn', { label, date: when })
+    : t('matches.waitingYour', { label });
 }
 
 /** Carte jaune archivée dans « Mis en attente ». */
@@ -281,12 +282,12 @@ export function waitArchiveStatusLabel(
 ): string {
   const when = archivedAt ? formatInteractionDate(archivedAt) : '';
   if (source === 'theirs') {
-    const label = origin === 'flash' ? 'Flash' : 'Like';
+    const label = originKind(origin);
     return when
-      ? `A mis ton ${label} en attente — archivé le ${when}`
-      : `A mis ton ${label} en attente — archivé`;
+      ? t('matches.waitArchiveTheirsOn', { label, date: when })
+      : t('matches.waitArchiveTheirs', { label });
   }
-  return when ? `Archivé le ${when}` : 'Archivé';
+  return when ? t('matches.archivedOn', { date: when }) : t('matches.archived');
 }
 
 /** Carte « Matchs rompus ». */
@@ -296,16 +297,20 @@ export function brokenMatchStatusLabel(
 ): string {
   const when = at ? formatInteractionDate(at) : '';
   if (action === 'archive') {
-    return when ? `Archivé le ${when}` : 'Match archivé';
+    return when
+      ? t('matches.archivedOn', { date: when })
+      : t('matches.matchArchived');
   }
-  return when ? `Match rompu le ${when}` : 'Match rompu';
+  return when
+    ? t('matches.matchBrokenOn', { date: when })
+    : t('matches.matchBrokenStatus');
 }
 
 /** Origine d’une fiche « Matchs rompus » (avant rupture) : échange des deux côtés. */
 export function brokenMatchOriginLabel(hadDialogue: boolean): string {
   return hadDialogue
-    ? "Provenait d'une discussion en cours"
-    : "Provenait d'un 1er mot";
+    ? t('matches.brokenFromDiscussion')
+    : t('matches.brokenFromFirstWord');
 }
 
 /** Rappel local (fiche / Mes Matchs) pour celle/celui qui a choisi Attendre. */
@@ -313,31 +318,32 @@ export function waitingMatchReminder(
   origin: InteractionOrigin,
   viewerGender?: 'homme' | 'femme' | null
 ): string {
-  const kind = origin === 'flash' ? 'Flash' : 'Like';
-  const ready = viewerGender === 'femme' ? 'prête' : 'prêt';
-  return `Tu as mis ce ${kind} en attente : matche ou refuse quand tu seras ${ready}. Archiver est un rangement personnel, sans effet sur l’autre membre.`;
+  const kind = originKind(origin);
+  const ready =
+    viewerGender === 'femme' ? t('common.readyFemale') : t('common.readyMale');
+  return t('matches.waitingReminder', { label: kind, ready });
 }
 
 /** Après un refus (sens interdit) : suite Jeter / Archiver. */
 export function refusedInboxFollowup(origin: InteractionOrigin): string {
-  const kind = origin === 'flash' ? 'Flash' : 'Like';
-  return `Tu as refusé ce ${kind}. Tu peux maintenant le jeter ou l'archiver.`;
+  return t('matches.refusedFollowup', { label: originKind(origin) });
 }
 
 /** @deprecated Préférer waitingMatchReminder(origin, gender). */
-export const WAITING_MATCH_REMINDER = waitingMatchReminder('like', null);
+export function waitingMatchReminderLike(): string {
+  return waitingMatchReminder('like', null);
+}
 
 /** Nous avons validé leur Flash / Like (rôle accepted). */
 export function matchAcceptedByUsNotification(
   name: string,
   origin: InteractionOrigin = 'like'
 ): { title: string; body: string } {
-  const actor = name.trim() || 'Quelqu’un';
-  const label = origin === 'flash' ? 'Flash' : 'Like';
-  const text = `Tu as validé le ${label} de ${actor} : match confirmé (la messagerie est ouverte).`;
+  const actor = name.trim() || someone();
+  const label = originKind(origin);
   return {
-    title: 'Match confirmé',
-    body: text,
+    title: t('notifications.matchAcceptedTitle'),
+    body: t('notifications.matchAcceptedBody', { label, name: actor }),
   };
 }
 

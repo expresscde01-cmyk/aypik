@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { MEMBER_UNAVAILABLE_MESSAGE } from '@/lib/userError';
+import { memberUnavailableMessage } from '@/lib/userError';
+import { t } from '../i18n/t.ts';
 import {
   SITE_FREE_MODE,
   isFounderPrivilegeActive,
@@ -30,7 +31,7 @@ export async function sendFlash(toUserId: string): Promise<SendFlashResult> {
   }
 
   if (!data || typeof data !== 'object') {
-    return { ok: false, error: 'Réponse invalide' };
+    return { ok: false, error: t('errors.invalidReply') };
   }
 
   const payload = data as Record<string, unknown>;
@@ -78,28 +79,28 @@ export function flashErrorMessage(
   status?: OfferStatusLike
 ): string {
   if (error && error.includes('member_unavailable')) {
-    return MEMBER_UNAVAILABLE_MESSAGE;
+    return memberUnavailableMessage();
   }
   switch (error) {
     case 'flash_reserved_for_founders':
     case 'flash_not_available_for_founders':
-      return 'Le flash est réservé aux Membres Fondateurs pendant le lancement.';
+      return t('errors.flashFounderOnly');
     case 'flash_quota_exhausted':
       if (status && status.plan === 'premium') {
-        return 'Limite de flashes atteinte pour aujourd’hui.';
+        return t('errors.flashLimitToday');
       }
       if (SITE_FREE_MODE) {
-        return 'Limite de flashes atteinte pour aujourd’hui. Réessaie demain.';
+        return t('errors.flashLimitFree');
       }
-      return 'Limite de flashes atteinte pour aujourd’hui. Passe à Premium pour en envoyer davantage.';
+      return t('errors.flashLimitPremium');
     case 'invalid_target':
     case 'age_rule_violation':
-      return 'Profil invalide.';
+      return t('errors.invalidProfile');
     case 'profile_not_found':
-      return 'Ce profil n’est plus disponible.';
+      return t('errors.profileGone');
     case 'not_authenticated':
-      return 'Session expirée. Reconnecte-toi.';
+      return t('errors.sessionExpired');
     default:
-      return error || 'Impossible d’envoyer le flash.';
+      return error || t('errors.flashFail');
   }
 }

@@ -20,6 +20,8 @@ import {
 import MatcherWord, { CrownIcon } from '@/components/MatcherWord';
 import type { InboxDecision } from '@/lib/inboxResponses';
 import type { ProfileGender } from '@/components/ProfileSetup';
+import { displayInterest } from '@/lib/interests';
+import { useTranslation } from 'react-i18next';
 
 export type ProfileDetailCandidate = {
   id: string;
@@ -104,6 +106,7 @@ export default function ProfileDetailModal({
   onRestoreLink?: () => void;
   onPurgeLink?: () => void;
 }) {
+  const { t } = useTranslation();
   const interests = candidate.interests || [];
   const mutual = new Set(candidate.mutual_interests || []);
   const pendingInbox =
@@ -175,7 +178,7 @@ export default function ProfileDetailModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px] cursor-pointer"
-        aria-label="Fermer"
+        aria-label={t('common.closeAria')}
         onClick={onClose}
       />
       <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
@@ -197,12 +200,12 @@ export default function ProfileDetailModal({
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 cursor-pointer"
-            aria-label="Fermer"
+            aria-label={t('common.closeAria')}
           >
             <X className="w-4 h-4 text-gray-500 pointer-events-none" />
           </button>
           <span className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded-full bg-black/45 text-white text-xs font-semibold backdrop-blur-sm pointer-events-none">
-            {candidate.age} ans
+            {t('profile.ageYears', { age: candidate.age })}
           </span>
           {unreadCount > 0 && (
             <span className="absolute top-3 left-3 min-w-[1.35rem] h-[1.35rem] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center unread-badge-pulse">
@@ -267,7 +270,7 @@ export default function ProfileDetailModal({
           {interests.length > 0 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
-                Centres d’intérêt
+                {t('discover.interestsFilter')}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {interests.map((interest) => {
@@ -282,7 +285,7 @@ export default function ProfileDetailModal({
                       }`}
                     >
                       {shared ? '✦ ' : ''}
-                      {interest}
+                      {displayInterest(interest)}
                     </span>
                   );
                 })}
@@ -297,7 +300,9 @@ export default function ProfileDetailModal({
               className="btn-open-conversation w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
             >
               <MessageCircle className="w-4 h-4" />
-              {unreadMessagesLabel(unreadCount)} — ouvrir
+              {t('discover.openUnread', {
+                unread: unreadMessagesLabel(unreadCount),
+              })}
             </button>
           ) : null}
 
@@ -343,13 +348,13 @@ export default function ProfileDetailModal({
                 <p className="text-sm text-gray-600">
                   {showRefusedSheetActions
                     ? refusedInboxFollowup(inboxHistory.origin)
-                    : 'Tu as décliné ce profil.'}
+                    : t('matches.declinedYou')}
                 </p>
               ) : null}
               {inboxHistory.declinedByThem ? (
                 <p className="text-sm text-purple-800">
                   {inboxHistory.declinedByThemLabel ||
-                    'A décliné ton Like ou Flash'}
+                    t('matches.declinedThemGeneric')}
                 </p>
               ) : null}
               {inboxHistory.declinedByThem &&
@@ -363,7 +368,7 @@ export default function ProfileDetailModal({
                       onClick={(e) => fireDeclined(e, onDeclinedArchive)}
                       className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                     >
-                      {busy ? '…' : 'Archiver'}
+                      {busy ? '…' : t('matches.archive')}
                     </button>
                   ) : null}
                   {onDeclinedDelete ? (
@@ -374,7 +379,7 @@ export default function ProfileDetailModal({
                       onClick={(e) => requestDelete(e, onDeclinedDelete)}
                       className="btn-purge-trigger w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                     >
-                      {busy ? '…' : 'Supprimer'}
+                      {busy ? '…' : t('common.delete')}
                     </button>
                   ) : null}
                 </div>
@@ -403,7 +408,7 @@ export default function ProfileDetailModal({
                   className="btn-open-conversation w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Ouvrir la conversation
+                  {t('matches.openConversation')}
                 </button>
               ) : null}
 
@@ -432,7 +437,7 @@ export default function ProfileDetailModal({
                     onClick={(e) => fireDeclined(e, onWaitingArchive)}
                     className="btn-archive w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                   >
-                    {busy ? '…' : 'Archiver'}
+                    {busy ? '…' : t('matches.archive')}
                   </button>
                   <button
                     type="button"
@@ -446,7 +451,7 @@ export default function ProfileDetailModal({
                     }
                     className="btn-discard-outline w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 leading-tight cursor-pointer bg-white border border-[#dc2626] text-[#dc2626]"
                   >
-                    {busy ? '…' : 'Jeter'}
+                    {busy ? '…' : t('matches.throwAway')}
                   </button>
                 </div>
               ) : showRefusedSheetActions ? (
@@ -458,7 +463,7 @@ export default function ProfileDetailModal({
                     onClick={(e) => fireDeclined(e, onWaitingArchive)}
                     className="btn-archive w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                   >
-                    {busy ? '…' : 'Archiver'}
+                    {busy ? '…' : t('matches.archive')}
                   </button>
                   <button
                     type="button"
@@ -472,7 +477,7 @@ export default function ProfileDetailModal({
                     }
                     className="btn-discard-outline w-full py-2.5 px-2 rounded-xl text-sm font-semibold disabled:opacity-40 leading-tight cursor-pointer bg-white border border-[#dc2626] text-[#dc2626]"
                   >
-                    {busy ? '…' : 'Jeter'}
+                    {busy ? '…' : t('matches.throwAway')}
                   </button>
                 </div>
               ) : showInboxActions ? (
@@ -493,7 +498,7 @@ export default function ProfileDetailModal({
                     onClick={() => requestInboxDecision('wait')}
                     className="btn-wait w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
                   >
-                    Attendre
+                    {t('matches.wait')}
                   </button>
                   <button
                     type="button"
@@ -502,7 +507,7 @@ export default function ProfileDetailModal({
                     onClick={() => requestInboxDecision('refuse')}
                     className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-[#dc2626] hover:bg-gray-50 disabled:opacity-40"
                   >
-                    Refuser
+                    {t('matches.refuse')}
                   </button>
                 </div>
               ) : null}
@@ -517,7 +522,7 @@ export default function ProfileDetailModal({
                     onClick={(e) => fireDeclined(e, onRestoreLink)}
                     className="btn-restore-link w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 cursor-pointer"
                   >
-                    {busy ? '…' : 'Rétablir le lien'}
+                    {busy ? '…' : t('matches.restoreLink')}
                   </button>
                 ) : null}
                 {onPurgeLink ? (
@@ -528,7 +533,7 @@ export default function ProfileDetailModal({
                     onClick={(e) => requestDelete(e, onPurgeLink)}
                     className="btn-purge-trigger w-full py-2.5 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                   >
-                    {busy ? '…' : 'Supprimer'}
+                    {busy ? '…' : t('common.delete')}
                   </button>
                 ) : null}
               </div>
@@ -540,11 +545,13 @@ export default function ProfileDetailModal({
                 type="button"
                 onClick={onSkip}
                 className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer overflow-visible"
-                aria-label={`Masquer ${candidate.display_name}`}
+                aria-label={t('discover.hideName', {
+                  name: candidate.display_name,
+                })}
               >
                 <X className="size-5 shrink-0 text-gray-400 pointer-events-none" />
                 <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-gray-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-gray-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
-                  Masquer
+                  {t('matches.hide')}
                 </span>
               </button>
               {showFlashCta && (
@@ -555,8 +562,12 @@ export default function ProfileDetailModal({
                   className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                   aria-label={
                     alreadyFlashed
-                      ? `Déjà flashé ${candidate.display_name}`
-                      : `Flasher ${candidate.display_name}`
+                      ? t('discover.alreadyFlashedName', {
+                          name: candidate.display_name,
+                        })
+                      : t('discover.flashProfile', {
+                          name: candidate.display_name,
+                        })
                   }
                 >
                   <Zap
@@ -565,7 +576,9 @@ export default function ProfileDetailModal({
                     strokeWidth={2}
                   />
                   <span className="profile-action-tooltip pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
-                    {alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash ⚡'}
+                    {alreadyFlashed
+                      ? t('discover.alreadyFlashedTooltip')
+                      : t('discover.sendFlashTooltip')}
                   </span>
                 </button>
               )}
@@ -576,8 +589,10 @@ export default function ProfileDetailModal({
                 className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                 aria-label={
                   alreadyLiked
-                    ? `Déjà liké ${candidate.display_name}`
-                    : `Liker ${candidate.display_name}`
+                    ? t('discover.alreadyLikedName', {
+                        name: candidate.display_name,
+                      })
+                    : t('discover.likeProfile', { name: candidate.display_name })
                 }
               >
                 <Heart
@@ -587,10 +602,12 @@ export default function ProfileDetailModal({
                 />
                 <span className="profile-action-tooltip pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
                   {alreadyLiked
-                    ? 'Déjà liké'
+                    ? t('discover.alreadyLikedTooltip')
                     : likesExhausted
-                      ? 'Limite de likes atteinte'
-                      : `Liker ${LIKE_NOTIFICATION_EMOJI} ce profil`}
+                      ? t('discover.likesLimitReached')
+                      : t('discover.likeThisProfile', {
+                          emoji: LIKE_NOTIFICATION_EMOJI,
+                        })}
                 </span>
               </button>
             </div>

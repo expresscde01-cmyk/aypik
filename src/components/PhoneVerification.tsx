@@ -7,6 +7,7 @@ import { requestPhoneVerificationSms } from '@/lib/sendPhoneVerification';
 import { useAuth } from '@/lib/auth';
 import { BrandMark } from '@/components/BrandLockup';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+import { useTranslation } from 'react-i18next';
 
 /** Doit correspondre au réglage "SMS OTP Expiry" côté Supabase Dashboard. */
 const OTP_VALIDITY_SECONDS = 60;
@@ -29,6 +30,7 @@ type Step = 'enter-phone' | 'enter-code';
  * 30 SMS/h — ouvrir d'autres pays progressivement.
  */
 export default function PhoneVerification() {
+  const { t } = useTranslation();
   const { signOut } = useAuth();
   const [step, setStep] = useState<Step>('enter-phone');
   const [phoneInput, setPhoneInput] = useState('');
@@ -71,7 +73,7 @@ export default function PhoneVerification() {
 
   const sendCode = async (target: string) => {
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci de valider le CAPTCHA avant de continuer.');
+      setError(t('auth.needCaptcha'));
       return;
     }
     setLoading(true);
@@ -81,7 +83,7 @@ export default function PhoneVerification() {
       await requestPhoneVerificationSms(target, captchaToken);
       setE164(target);
       setStep('enter-code');
-      setInfo(`Code envoyé par SMS au ${formatE164ForDisplay(target)}.`);
+      setInfo(t('auth.phoneCodeSent', { phone: formatE164ForDisplay(target) }));
       startCooldown();
     } catch (err) {
       setError(translateAuthError(err));
@@ -96,9 +98,7 @@ export default function PhoneVerification() {
     setError(null);
     const target = toE164France(phoneInput);
     if (!target) {
-      setError(
-        'Numéro invalide. Saisis un numéro français, ex. 06 52 28 94 11.'
-      );
+      setError(t('auth.phoneInvalidFrance'));
       return;
     }
     await sendCode(target);
@@ -110,7 +110,7 @@ export default function PhoneVerification() {
     setInfo(null);
     if (!e164) return;
     if (!isValidOtpCode(code)) {
-      setError('Le code doit contenir 6 chiffres.');
+      setError(t('auth.phoneCodeDigits'));
       return;
     }
     setLoading(true);
@@ -156,11 +156,10 @@ export default function PhoneVerification() {
             <BrandMark size="lg" className="mx-auto" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">
-            Vérifie ton numéro
+            {t('auth.phoneTitle')}
           </h1>
           <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-            Pour la sécurité de la communauté, on demande à chacun de
-            confirmer un numéro de téléphone avant d&apos;accéder à Aypik.
+            {t('auth.phoneIntro')}
           </p>
         </div>
 
@@ -169,7 +168,7 @@ export default function PhoneVerification() {
             <form onSubmit={handlePhoneSubmit} noValidate className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Numéro de téléphone
+                  {t('auth.phoneLabel')}
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -185,7 +184,7 @@ export default function PhoneVerification() {
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-gray-400">
-                  Numéro français uniquement pour le moment.
+                  {t('auth.phoneFranceOnly')}
                 </p>
               </div>
 
@@ -206,7 +205,7 @@ export default function PhoneVerification() {
                 disabled={loading || captchaBlocking}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? 'Envoi du code...' : 'Recevoir le code par SMS'}
+                {loading ? t('auth.phoneSending') : t('auth.phoneSendSms')}
               </button>
             </form>
           )}
@@ -219,12 +218,12 @@ export default function PhoneVerification() {
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Modifier le numéro
+                {t('auth.phoneChange')}
               </button>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Code reçu par SMS
+                  {t('auth.phoneCodeLabel')}
                 </label>
                 <input
                   type="text"
@@ -255,7 +254,7 @@ export default function PhoneVerification() {
                 disabled={loading || code.length !== 6}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? 'Vérification...' : 'Valider le code'}
+                {loading ? t('auth.phoneVerifying') : t('auth.phoneValidate')}
               </button>
 
               {TURNSTILE_SITE_KEY && (
@@ -275,8 +274,8 @@ export default function PhoneVerification() {
                 className="w-full text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {cooldown > 0
-                  ? `Renvoyer le code (${cooldown}s)`
-                  : 'Renvoyer le code'}
+                  ? t('auth.phoneResendWait', { seconds: cooldown })
+                  : t('auth.phoneResend')}
               </button>
             </form>
           )}
@@ -287,7 +286,7 @@ export default function PhoneVerification() {
               onClick={() => void signOut()}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Se déconnecter
+              {t('common.signOut')}
             </button>
           </div>
         </div>

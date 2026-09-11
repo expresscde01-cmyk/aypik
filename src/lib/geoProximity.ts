@@ -6,6 +6,7 @@
  * Hiérarchie (le plus proche gagne, un seul badge) :
  * 1. Même ville  2. Même département  3. Même région  4. Région voisine
  */
+import { t } from '../i18n/t.ts';
 
 export type GeoProximityLevel =
   | 'city'
@@ -340,7 +341,7 @@ export const GEO_RADIUS_KM_OPTIONS = [30, 50, 100, 200, 300, 400, 500] as const;
 export type GeoRadiusKm = (typeof GEO_RADIUS_KM_OPTIONS)[number];
 export const GEO_RADIUS_KM_DEFAULT: GeoRadiusKm = 100;
 
-/** Libellés du menu Découvrir. */
+/** Libellés FR canoniques (comparaisons / données stockées). L’UI utilise geoPerimeterFilterLabel. */
 export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
   city: 'Même ville',
   department: 'Même département',
@@ -356,6 +357,26 @@ export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
   la_france_dans_le_monde: 'LA FRANCE DANS LE MONDE',
   international: 'INTERNATIONAL (hors France et assimilés)',
 };
+
+const GEO_PERIMETER_I18N_KEY: Record<GeoPerimeterFilter, string> = {
+  city: 'discover.geo.sameCity',
+  department: 'discover.geo.sameDepartment',
+  region: 'discover.geo.sameRegion',
+  neighboring_region: 'discover.geo.neighborRegions',
+  northwest: 'discover.geo.northwest',
+  northeast: 'discover.geo.northeast',
+  southwest: 'discover.geo.southwest',
+  southeast: 'discover.geo.southeast',
+  ile_de_france: 'discover.geo.ileDeFrance',
+  center: 'discover.geo.center',
+  anywhere: 'discover.geo.france',
+  la_france_dans_le_monde: 'discover.geo.franceWorld',
+  international: 'discover.geo.international',
+};
+
+export function geoPerimeterFilterLabel(id: GeoPerimeterFilter): string {
+  return t(GEO_PERIMETER_I18N_KEY[id]);
+}
 
 export const GEO_PERIMETER_OPTIONS: readonly GeoPerimeterFilter[] = [
   'city',
@@ -559,14 +580,14 @@ export function cardGeoProximityLabel(
   location?: string | null
 ): string | null {
   const level = geoProximityLevelFromFlags(flags);
-  if (level === 'city') return GEO_PERIMETER_FILTER_LABEL.city;
-  if (level === 'department') return GEO_PERIMETER_FILTER_LABEL.department;
-  if (level === 'region') return GEO_PERIMETER_FILTER_LABEL.region;
+  if (level === 'city') return geoPerimeterFilterLabel('city');
+  if (level === 'department') return geoPerimeterFilterLabel('department');
+  if (level === 'region') return geoPerimeterFilterLabel('region');
   if (level === 'neighboring_region') {
-    return GEO_PERIMETER_FILTER_LABEL.neighboring_region;
+    return geoPerimeterFilterLabel('neighboring_region');
   }
   const zone = macroZoneFromLocation(location);
-  return zone ? GEO_PERIMETER_FILTER_LABEL[zone] : null;
+  return zone ? geoPerimeterFilterLabel(zone) : null;
 }
 
 /**
@@ -582,9 +603,9 @@ export function profileCardGeoBadge(
 ): string | null {
   if (perimeter && isGeoMacroZone(perimeter)) {
     if (locationIsIleDeFrance(location)) {
-      return GEO_PERIMETER_FILTER_LABEL.ile_de_france;
+      return geoPerimeterFilterLabel('ile_de_france');
     }
-    return GEO_PERIMETER_FILTER_LABEL[perimeter];
+    return geoPerimeterFilterLabel(perimeter);
   }
   return cardGeoProximityLabel(flags, location);
 }
@@ -660,5 +681,5 @@ export function formatDistanceKmBadge(
   if (typeof distanceKm !== 'number' || !Number.isFinite(distanceKm) || distanceKm < 0) {
     return null;
   }
-  return `à ${Math.max(1, Math.round(distanceKm))} km`;
+  return t('common.distanceKm', { n: Math.max(1, Math.round(distanceKm)) });
 }

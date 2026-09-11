@@ -2,6 +2,8 @@ import {
   FOUNDER_MAX_SLOTS,
   isFounderPrivilegeActive,
 } from '@/lib/founderCopy';
+import { dateLocale } from '../i18n/format.ts';
+import { t } from '../i18n/t.ts';
 
 export type MembershipPlan = 'free' | 'premium' | 'founder';
 
@@ -69,8 +71,9 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   effective_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
 };
 
-export const MEMBERSHIP_REQUIRED_ERROR =
-  "Impossible de finaliser l'inscription : aucune offre valide n'est liée à ton profil. Réessaie.";
+export function membershipRequiredError(): string {
+  return t('profile.chooseOfferFirst');
+}
 
 const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
 
@@ -198,7 +201,7 @@ export function formatPremiumPriceLabel(
 
 export function formatDateFr(iso: string | null | undefined): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('fr-FR', {
+  return new Date(iso).toLocaleDateString(dateLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { MapPin, Loader2, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   searchFrenchCommunes,
   type GeoCommune,
@@ -22,11 +23,13 @@ export function CityAutocomplete({
   onChange,
   selected,
   onSelect,
-  placeholder = 'Paris, Lyon…',
+  placeholder,
   id,
   className = '',
   invalid = false,
 }: CityAutocompleteProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t('profile.cityPlaceholder');
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -92,7 +95,7 @@ export function CityAutocomplete({
           setQueryError(
             err instanceof Error
               ? err.message
-              : 'Impossible de charger les suggestions.'
+              : t('profile.cityLoadError')
           );
         } finally {
           if (!cancelled) setLoading(false);
@@ -187,7 +190,7 @@ export function CityAutocomplete({
                 ? 'border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100'
                 : 'border-gray-200 focus:border-rose-400 focus:ring-rose-100'
           }`}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
         />
         {loading ? (
           <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-400 animate-spin" />
@@ -201,9 +204,14 @@ export function CityAutocomplete({
 
       {isValidated && (
         <p className="mt-1.5 text-xs text-emerald-700">
-          Ville officielle sélectionnée
+          {t('profile.cityOfficialSelected')}
           {selected.codesPostaux[0]
-            ? ` · CP ${selected.codesPostaux.length > 1 ? `${[...selected.codesPostaux].sort()[0]}–${[...selected.codesPostaux].sort().slice(-1)[0]}` : selected.codesPostaux[0]}`
+            ? ` · ${t('profile.postalCodeAbbr', {
+                code:
+                  selected.codesPostaux.length > 1
+                    ? `${[...selected.codesPostaux].sort()[0]}–${[...selected.codesPostaux].sort().slice(-1)[0]}`
+                    : selected.codesPostaux[0],
+              })}`
             : ''}
         </p>
       )}
@@ -220,7 +228,7 @@ export function CityAutocomplete({
         >
           {suggestions.length === 0 ? (
             <li className="px-3.5 py-2.5 text-sm text-gray-500">
-              Aucune commune trouvée
+              {t('profile.cityNoneFound')}
             </li>
           ) : (
           suggestions.map((commune, index) => {

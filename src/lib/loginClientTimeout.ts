@@ -1,12 +1,15 @@
+import { t } from '../i18n/t.ts';
+
 /** Garde-fou d’affichage uniquement — n’altère pas le timing d’égalisation serveur. */
 export const LOGIN_CLIENT_TIMEOUT_MS = 12_000;
 
-export const LOGIN_TIMEOUT_MESSAGE =
-  'La connexion prend plus de temps que prévu, réessaie.';
+export function loginTimeoutMessage(): string {
+  return t('auth.loginTimeout');
+}
 
 export class LoginClientTimeoutError extends Error {
   constructor() {
-    super(LOGIN_TIMEOUT_MESSAGE);
+    super(t('auth.loginTimeout'));
     this.name = 'LoginClientTimeoutError';
   }
 }

@@ -1,23 +1,28 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import { t as tStatic } from '@/i18n/t';
 
-export const DELETE_LINK_CONFIRM_MESSAGE =
-  'Veux-tu vraiment supprimer ce lien ? Cette action est irréversible.';
+export function deleteLinkConfirmMessage(): string {
+  return tStatic('matches.deleteLinkConfirm');
+}
 
 export default function ConfirmDeleteModal({
   busy = false,
-  message = DELETE_LINK_CONFIRM_MESSAGE,
+  message,
   emphasizeConfirm = false,
   onCancel,
   onConfirm,
 }: {
   busy?: boolean;
   message?: string;
-  /** Gras sur SUPPRIMER — uniquement après « Supprimer définitivement ». */
   emphasizeConfirm?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
+  const text = message ?? t('matches.deleteLinkConfirm');
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
@@ -36,7 +41,7 @@ export default function ConfirmDeleteModal({
       <button
         type="button"
         className="absolute inset-0 bg-slate-900/45"
-        aria-label="Annuler"
+        aria-label={t('common.cancel')}
         onClick={onCancel}
       />
       <div className="relative w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl border border-gray-100 animate-fadeIn">
@@ -44,7 +49,7 @@ export default function ConfirmDeleteModal({
           id="confirm-delete-title"
           className="text-sm font-semibold text-gray-900 leading-relaxed"
         >
-          {message}
+          {text}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
@@ -53,7 +58,7 @@ export default function ConfirmDeleteModal({
             onClick={onCancel}
             className="py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"
           >
-            Annuler
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -63,7 +68,7 @@ export default function ConfirmDeleteModal({
               emphasizeConfirm ? ' btn-delete-confirm--emphasis' : ' font-semibold'
             }`}
           >
-            {busy ? '…' : 'Supprimer'}
+            {busy ? '…' : t('common.delete')}
           </button>
         </div>
       </div>

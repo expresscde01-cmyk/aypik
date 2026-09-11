@@ -17,6 +17,8 @@ import {
   type VisibilityChoice,
 } from '@/lib/accountStatus';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 type AppTabHeaderProps = {
   onHome: () => void;
@@ -80,6 +82,7 @@ export default function AppTabHeader({
   accountMenuRequestKey = 0,
 }: AppTabHeaderProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const pcHeader = usePcHeader();
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
@@ -111,6 +114,7 @@ export default function AppTabHeader({
     <div className="flex w-full items-center justify-between gap-2">
       <HomeBackButton onClick={onHome} />
       <div className="flex items-center justify-end gap-2 min-w-0 shrink">
+        <LanguageSwitcher compact />
         <OwnerBoostIndicator shortLabel />
         <AccountStatusBadges
           statuses={accountStatuses}
@@ -134,11 +138,12 @@ export default function AppTabHeader({
         type="button"
         onClick={onHome}
         className="inline-flex flex-nowrap items-center min-w-0 max-w-full"
-        aria-label="Retour à l’accueil"
+        aria-label={t('common.backHome')}
       >
         <BrandHeaderBrand compact={taglineCompact} />
       </button>
       <div ref={rightRef} className="flex items-center gap-1 shrink-0 ml-auto">
+        <LanguageSwitcher compact />
         <NotificationsBell
           onOpenInbox={onOpenInbox}
           active={notificationsActive}
@@ -161,7 +166,7 @@ export default function AppTabHeader({
               className="hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
             >
               <LogOut className="w-4 h-4" aria-hidden />
-              Déconnexion
+              {t('common.signOutShort')}
             </button>
           </>
         )}

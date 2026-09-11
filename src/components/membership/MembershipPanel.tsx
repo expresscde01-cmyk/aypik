@@ -6,16 +6,17 @@ import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
 import { cancelPremiumSubscription } from '@/lib/payments';
 import {
-  FOUNDER_AFTER_6_MONTHS_BODY,
-  FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
-  FOUNDER_BENEFIT_NO_CARD,
-  FOUNDER_BENEFIT_UNLIMITED_LIKES,
   FOUNDER_MAX_SLOTS,
-  FOUNDER_SLOTS_SUBTITLE,
   SITE_FREE_MODE,
+  founderAfter6MonthsBody,
+  founderBenefitBoostFirstMonth,
+  founderBenefitNoCard,
+  founderBenefitUnlimitedLikes,
+  founderSlotsSubtitle,
   isFounderOffer,
   offerShortName,
 } from '@/lib/founderCopy';
+import { useTranslation } from 'react-i18next';
 import {
   daysUntil,
   formatPremiumPriceLabel,
@@ -35,6 +36,7 @@ function FounderActiveBanner({
   activating?: boolean;
   exhausted?: boolean;
 }) {
+  const { t } = useTranslation();
   const showCta = !exhausted && Boolean(onActivate);
 
   if (exhausted) {
@@ -46,17 +48,16 @@ function FounderActiveBanner({
         <div className="relative p-5 sm:p-6 space-y-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-200/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-gray-600 border border-gray-300/80">
             <Gift className="w-3.5 h-3.5" />
-            Offre épuisée
+            {t('membership.offerExhausted')}
           </span>
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-700 tracking-tight leading-tight">
-              Membre Fondateur
+              {t('common.offer.memberFondateur')}
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
-              Les {FOUNDER_MAX_SLOTS} places ont été attribuées
               {SITE_FREE_MODE
-                ? '.'
-                : '. Choisis l’offre Freemium ou Premium pour continuer.'}
+                ? t('membership.founderSlotsTaken', { maxSlots: FOUNDER_MAX_SLOTS })
+                : t('membership.founderSlotsTakenPaid', { maxSlots: FOUNDER_MAX_SLOTS })}
             </p>
           </div>
         </div>
@@ -77,7 +78,7 @@ function FounderActiveBanner({
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-900 border border-white/80 shadow-sm">
             <Gift className="w-3.5 h-3.5" />
-            Offre limitée
+            {t('landing.founderBadge')}
           </span>
           {status.is_founder && (
             <FounderBadge number={status.founder_number} />
@@ -86,24 +87,24 @@ function FounderActiveBanner({
         </div>
         {status.has_premium ? (
           <p className="text-xs font-medium text-amber-950/80 leading-snug">
-            Premium : tes avantages Fondateur pendant 6 mois, dont le Boost offert le 1er mois.
+            {t('membership.founderPremiumMonths')}
           </p>
         ) : null}
 
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-amber-950 tracking-tight leading-tight">
-            Membre Fondateur
+            {t('common.offer.memberFondateur')}
           </h2>
           <p className="mt-2 text-base sm:text-lg font-semibold text-amber-950/90 leading-snug">
-            {FOUNDER_SLOTS_SUBTITLE}
+            {founderSlotsSubtitle()}
           </p>
         </div>
 
         <ul className="space-y-2">
           {[
-            FOUNDER_BENEFIT_NO_CARD,
-            FOUNDER_BENEFIT_UNLIMITED_LIKES,
-            FOUNDER_BENEFIT_BOOST_FIRST_MONTH,
+            founderBenefitNoCard(),
+            founderBenefitUnlimitedLikes(),
+            founderBenefitBoostFirstMonth(),
           ].map((item) => (
             <li
               key={item}
@@ -125,7 +126,7 @@ function FounderActiveBanner({
               disabled={activating}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-700 text-white text-sm sm:text-base font-bold shadow-lg shadow-emerald-900/35 ring-2 ring-white/70 hover:bg-emerald-800 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {activating ? 'Activation…' : 'Activer mon offre Fondateur'}
+              {activating ? t('membership.activating') : t('membership.activateFounder')}
             </button>
           </div>
         )}
@@ -143,6 +144,7 @@ function FreemiumClaimCard({
   activating?: boolean;
   primary?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={
@@ -165,7 +167,7 @@ function FreemiumClaimCard({
               : 'text-xs font-medium text-gray-500'
           }
         >
-          Offre Freemium
+          {t('landing.freemiumTitle')}
         </p>
         <p
           className={
@@ -174,12 +176,12 @@ function FreemiumClaimCard({
               : 'text-lg font-bold tracking-tight text-gray-800 mt-0.5'
           }
         >
-          Gratuit
+          {t('membership.free')}
         </p>
       </div>
       <div className="p-4 space-y-3">
         <p className="text-xs text-gray-600 leading-relaxed">
-          Accès à l’essentiel d’Aypik, sans engagement ni carte bancaire.
+          {t('membership.freemiumAccess')}
         </p>
         <button
           type="button"
@@ -191,7 +193,7 @@ function FreemiumClaimCard({
               : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
           }
         >
-          {activating ? 'Activation…' : 'Continuer en Freemium'}
+          {activating ? t('membership.activating') : t('membership.continueFreemium')}
         </button>
       </div>
     </div>
@@ -199,6 +201,7 @@ function FreemiumClaimCard({
 }
 
 function OptionalPremiumNote({ months }: { months: number }) {
+  const { t } = useTranslation();
   if (SITE_FREE_MODE) return null;
 
   return (
@@ -209,10 +212,10 @@ function OptionalPremiumNote({ months }: { months: number }) {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-700">
-            Après tes {months} mois offerts
+            {t('membership.afterMonthsTitle', { months })}
           </p>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-            {FOUNDER_AFTER_6_MONTHS_BODY}
+            {founderAfter6MonthsBody()}
           </p>
         </div>
       </div>
@@ -238,6 +241,7 @@ export function MembershipPanel({
   claimingOffer?: boolean;
   signupGate?: boolean;
 }) {
+  const { t } = useTranslation();
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
   const daysLeft = daysUntil(status.founder_premium_until);
@@ -291,7 +295,7 @@ export function MembershipPanel({
   const handleCancel = async () => {
     if (
       !window.confirm(
-        'Résilier Premium ? Tu ne seras plus prélevé. Aucun frais de résiliation. L’accès reste actif jusqu’à la fin de la période déjà payée.'
+        t('membership.cancelConfirm')
       )
     ) {
       return;
@@ -304,7 +308,7 @@ export function MembershipPanel({
       setCancelMsg(err);
       return;
     }
-    setCancelMsg('Résiliation enregistrée.');
+    setCancelMsg(t('membership.cancelDone'));
     onRefresh?.();
   };
 
@@ -316,11 +320,10 @@ export function MembershipPanel({
             <Heart className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-            Ta formule
+            {t('membership.yourPlan')}
           </h2>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            6 mois offerts, sans carte bancaire. Active l’offre Fondateur
-            pour créer ton profil.
+            {t('membership.founderIntro')}
           </p>
         </div>
 
@@ -354,13 +357,11 @@ export function MembershipPanel({
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start gap-2">
           <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-emerald-900 leading-relaxed">
-            Offre activée :{' '}
-            <strong>
-              {isFounderOffer(status)
-                ? 'Membre Fondateur'
-                : offerShortName(status)}
-            </strong>
-            . Tu peux maintenant compléter ton profil.
+            {t('membership.offerActivated', {
+              offer: isFounderOffer(status)
+                ? t('common.offer.memberFondateur')
+                : offerShortName(status),
+            })}
           </p>
         </div>
       )}
@@ -377,13 +378,14 @@ export function MembershipPanel({
           <Bell className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-900">
-              Ta période Fondateur touche à sa fin
+              {t('membership.founderEndingTitle')}
             </p>
             <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-              Dans {daysLeft} jour{daysLeft! > 1 ? 's' : ''}, tes{' '}
-              {status.founder_premium_months} mois à 0 € se terminent. Tu
-              pourras rester en freemium, ou reconduire en soutien à{' '}
-              <strong>{priceLabel}</strong>.
+              {t('membership.founderDaysLeft', {
+                count: daysLeft!,
+                months: status.founder_premium_months,
+                price: priceLabel,
+              })}
             </p>
           </div>
         </div>
@@ -396,7 +398,7 @@ export function MembershipPanel({
       <div className="space-y-3 pt-1">
         {!signupGate && !SITE_FREE_MODE && (
           <p className="text-sm font-bold uppercase tracking-wide text-gray-800 px-0.5">
-            Offres
+            {t('membership.offers')}
           </p>
         )}
 
@@ -412,8 +414,8 @@ export function MembershipPanel({
 
         {showPaidPremiumActive && !SITE_FREE_MODE && (
           <SoftPremiumBanner
-            title="Abonnement Premium actif"
-            description="Qui t'a liké, filtres avancés et likes illimités sont inclus."
+            title={t('membership.premiumActive')}
+            description={t('membership.premiumBenefits')}
             priceLabel={SITE_FREE_MODE ? undefined : priceLabel}
           />
         )}
@@ -421,11 +423,10 @@ export function MembershipPanel({
         {canCancelPaid && !SITE_FREE_MODE && (
           <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-2">
             <p className="text-sm font-semibold text-gray-900">
-              Gérer l’abonnement
+              {t('membership.manageSub')}
             </p>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Résiliation en un clic, sans frais ni parcours compliqué. Tu
-              conserves Premium jusqu’à la fin de la période déjà payée.
+              {t('membership.cancelHint')}
             </p>
             <button
               type="button"
@@ -433,7 +434,7 @@ export function MembershipPanel({
               disabled={canceling}
               className="w-full py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
             >
-              {canceling ? 'Résiliation…' : 'Résilier Premium'}
+              {canceling ? t('membership.canceling') : t('membership.cancelPremium')}
             </button>
             {cancelMsg && (
               <p className="text-xs text-center text-gray-600">{cancelMsg}</p>
@@ -445,11 +446,12 @@ export function MembershipPanel({
           <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-3 flex items-start gap-2">
             <Award className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-900 leading-relaxed">
-              Badge Membre Fondateur
-              {typeof status.founder_number === 'number'
-                ? ` #${status.founder_number}`
-                : ''}{' '}
-              — visible sur ton profil.
+              {t('membership.founderBadgeVisible', {
+                number:
+                  typeof status.founder_number === 'number'
+                    ? ` #${status.founder_number}`
+                    : '',
+              })}
             </p>
           </div>
         )}

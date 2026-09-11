@@ -5,6 +5,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
+import { widgetLanguage } from '@/i18n/format';
 
 /**
  * Widget Cloudflare Turnstile (CAPTCHA) — rendu explicite via window.turnstile.
@@ -92,9 +94,11 @@ const Turnstile = forwardRef<
     className?: string;
   }
 >(function Turnstile({ siteKey, onVerify, onExpire, className }, ref) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
   const [error, setError] = useState(false);
+  const language = widgetLanguage();
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -124,7 +128,7 @@ const Turnstile = forwardRef<
           onExpire?.();
         },
         theme: 'light',
-        language: 'fr',
+        language,
       });
     });
 
@@ -136,7 +140,7 @@ const Turnstile = forwardRef<
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteKey]);
+  }, [siteKey, language]);
 
   if (!siteKey) return null;
 
@@ -145,7 +149,7 @@ const Turnstile = forwardRef<
       <div ref={containerRef} className={className} />
       {error && (
         <p className="mt-1.5 text-xs text-red-500">
-          Le CAPTCHA n&apos;a pas pu se charger. Réessaie ou recharge la page.
+          {t('common.turnstileLoadFail')}
         </p>
       )}
     </div>

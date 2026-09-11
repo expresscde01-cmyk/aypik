@@ -1,12 +1,14 @@
+import { t } from '@/i18n/t';
+
 export function formatUnreadCount(count: number): string {
   return count > 9 ? '9+' : String(count);
 }
 
 export function unreadMessagesLabel(count: number): string {
   if (count <= 0) return '';
-  if (count === 1) return '1 message non lu';
-  if (count > 9) return 'Plus de 9 messages non lus';
-  return `${count} messages non lus`;
+  if (count === 1) return t('notifications.unreadOne');
+  if (count > 9) return t('notifications.unreadMoreThan9');
+  return t('notifications.unreadMany', { count });
 }
 
 /** Encadré synthèse cloche — messages non lus. */
@@ -17,13 +19,13 @@ export function unreadMessagesRecapCopy(count: number): {
   const n = Math.max(0, count);
   const qty =
     n <= 1
-      ? '1 message non lu'
+      ? t('notifications.unreadOne')
       : n > 9
-        ? 'plus de 9 messages non lus'
-        : `${n} messages non lus`;
+        ? t('notifications.unreadMoreThan9')
+        : t('notifications.unreadMany', { count: n });
   return {
-    title: `Tu as ${qty}`,
-    body: 'Ouvre ta boîte de dialogue pour répondre.',
+    title: t('notifications.unreadRecapTitle', { qty }),
+    body: t('notifications.unreadRecapBody'),
   };
 }
 

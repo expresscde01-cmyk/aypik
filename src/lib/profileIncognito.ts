@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { userErrorMessage } from '@/lib/userError';
+import { t } from '../i18n/t.ts';
 
 export async function setProfileIncognito(
   userId: string,
@@ -13,11 +14,11 @@ export async function setProfileIncognito(
   if (!error) return null;
 
   if (/incognito_at/i.test(error.message)) {
-    return 'Le mode Incognito n’est pas encore disponible. Réessaie dans quelques instants.';
+    return t('profile.incognitoUnavailable');
   }
 
   return userErrorMessage(
     error,
-    'Impossible de mettre à jour le mode Incognito'
+    t('profile.incognitoUpdateFail')
   );
 }

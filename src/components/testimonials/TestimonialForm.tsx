@@ -6,18 +6,20 @@ import { userErrorMessage } from '@/lib/userError';
 import {
   fetchMyTestimonial,
   submitPaidTestimonial,
-  TESTIMONIAL_CONSENT_LABEL,
   TESTIMONIAL_MAX_LEN,
   TESTIMONIAL_MIN_LEN,
   withdrawMyTestimonial,
   type MyTestimonial,
 } from '@/lib/testimonials';
+import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/i18n/format';
 
 export default function TestimonialForm({
   status,
 }: {
   status: MembershipStatus;
 }) {
+  const { t } = useTranslation();
   const [mine, setMine] = useState<MyTestimonial | null>(null);
   const [body, setBody] = useState('');
   const [consent, setConsent] = useState(false);
@@ -61,12 +63,12 @@ export default function TestimonialForm({
     setError(null);
     setSaved(false);
     if (!consent) {
-      setError('Le consentement est obligatoire pour publier un témoignage.');
+      setError(t('profile.testimonialConsentRequired'));
       return;
     }
     if (body.trim().length < TESTIMONIAL_MIN_LEN) {
       setError(
-        `Écris au moins ${TESTIMONIAL_MIN_LEN} caractères pour que le témoignage soit lisible.`
+        t('profile.testimonialTooShortHint', { count: TESTIMONIAL_MIN_LEN })
       );
       return;
     }
@@ -92,9 +94,7 @@ export default function TestimonialForm({
 
   const handleWithdraw = async () => {
     if (
-      !window.confirm(
-        'Retirer ton témoignage du site ? Le consentement sera révoqué et le texte effacé.'
-      )
+      !window.confirm(t('profile.testimonialWithdrawConfirm'))
     ) {
       return;
     }
@@ -129,26 +129,27 @@ export default function TestimonialForm({
         </div>
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-            Ton témoignage
+            {t('profile.testimonialTitle')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 leading-relaxed">
-            Réservé aux membres Premium. Ton prénom pourra apparaître sur le
-            site, uniquement si tu coches le consentement ci-dessous.
+            {t('profile.testimonialReserved')}
           </p>
         </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Chargement…</p>
+        <p className="text-sm text-gray-400">{t('common.loadingEllipsis')}</p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {mine?.exists && (
             <p className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
-              Témoignage publié
+              {t('profile.testimonialPublished')}
               {mine.consent_given_at
-                ? ` · consentement du ${new Date(
-                    mine.consent_given_at
-                  ).toLocaleString('fr-FR')}`
+                ? t('profile.testimonialConsentOf', {
+                    date: new Date(mine.consent_given_at).toLocaleString(
+                      dateLocale()
+                    ),
+                  })
                 : ''}
               .
             </p>
@@ -159,7 +160,7 @@ export default function TestimonialForm({
               htmlFor="testimonial-body"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
             >
-              Ton message
+              {t('profile.testimonialMessage')}
             </label>
             <textarea
               id="testimonial-body"
@@ -168,7 +169,7 @@ export default function TestimonialForm({
               rows={5}
               maxLength={TESTIMONIAL_MAX_LEN}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
-              placeholder="Ce que Aypik t’a apporté, en quelques phrases sincères…"
+              placeholder={t('profile.testimonialPlaceholder')}
             />
             <p className="text-xs text-gray-400 mt-1 text-right">
               {body.trim().length}/{TESTIMONIAL_MAX_LEN}
@@ -183,7 +184,7 @@ export default function TestimonialForm({
               className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
             />
             <span className="text-sm text-gray-700 leading-relaxed">
-              Afficher aussi ma photo de profil (optionnel)
+              {t('profile.testimonialShowPhoto')}
             </span>
           </label>
 
@@ -196,11 +197,9 @@ export default function TestimonialForm({
               required
             />
             <span className="text-sm text-gray-800 leading-relaxed">
-              {TESTIMONIAL_CONSENT_LABEL}
+              {t('profile.testimonialConsentLabel')}
               <span className="block text-xs text-gray-500 mt-1">
-                Case non pré-cochée. Tu peux retirer ce consentement à tout
-                moment. La preuve (oui/non + date et heure) est enregistrée
-                sur ton profil.
+                {t('profile.testimonialConsentHint')}
               </span>
             </span>
           </label>
@@ -213,7 +212,7 @@ export default function TestimonialForm({
           {saved && (
             <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
               <Check className="h-4 w-4" />
-              Merci, ton témoignage est enregistré.
+              {t('profile.testimonialSaved')}
             </p>
           )}
 
@@ -224,10 +223,10 @@ export default function TestimonialForm({
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-50"
             >
               {saving
-                ? 'Enregistrement…'
+                ? t('profile.savingPref')
                 : mine?.exists
-                  ? 'Mettre à jour'
-                  : 'Publier mon témoignage'}
+                  ? t('profile.testimonialUpdate')
+                  : t('profile.testimonialPublish')}
             </button>
             {mine?.exists && (
               <button
@@ -236,7 +235,7 @@ export default function TestimonialForm({
                 disabled={saving}
                 className="py-2.5 px-4 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
               >
-                Retirer
+                {t('profile.testimonialWithdraw')}
               </button>
             )}
           </div>

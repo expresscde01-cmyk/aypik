@@ -1,6 +1,9 @@
+import { t } from '../i18n/t.ts';
+
 /** Libellé d’envoi de message — hors sujet dans « Gestion du match ». */
-export const CHAT_NOT_MATCHED_MESSAGE =
-  'Tu ne peux écrire qu’à un membre avec qui tu as matché.';
+export function chatNotMatchedMessage(): string {
+  return t('errors.chatNotMatched');
+}
 
 /**
  * `manage_active_match` renvoie `not_matched` si le SQL ne voit pas le match.
@@ -17,6 +20,6 @@ export function matchManageDisplayError(
 ): string | null {
   const text = (error || '').trim();
   if (!text) return null;
-  if (text === CHAT_NOT_MATCHED_MESSAGE) return null;
+  if (text === t('errors.chatNotMatched')) return null;
   return text;
 }

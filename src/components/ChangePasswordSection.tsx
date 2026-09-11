@@ -8,10 +8,9 @@ import {
 } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+import { useTranslation } from 'react-i18next';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
-
-const SUCCESS_MESSAGE = 'Votre mot de passe a été mis à jour avec succès';
 
 function PasswordField({
   id,
@@ -30,6 +29,7 @@ function PasswordField({
   placeholder?: string;
   hint?: string;
 }) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   return (
     <div>
@@ -51,7 +51,7 @@ function PasswordField({
           type="button"
           onClick={() => setVisible((prev) => !prev)}
           className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          aria-label={visible ? t('auth.hidePassword') : t('auth.showPassword')}
         >
           {visible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </button>
@@ -62,6 +62,7 @@ function PasswordField({
 }
 
 export default function ChangePasswordSection() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -96,11 +97,11 @@ export default function ChangePasswordSection() {
 
     const email = user?.email?.trim();
     if (!email) {
-      setError('Session invalide. Reconnecte-toi pour modifier ton mot de passe.');
+      setError(t('profile.sessionInvalidPassword'));
       return;
     }
     if (!currentPassword) {
-      setError('Saisis ton ancien mot de passe.');
+      setError(t('profile.needOldPassword'));
       return;
     }
 
@@ -110,15 +111,15 @@ export default function ChangePasswordSection() {
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError('Les deux mots de passe ne correspondent pas.');
+      setError(t('auth.passwordsMismatch'));
       return;
     }
     if (newPassword === currentPassword) {
-      setError('Le nouveau mot de passe doit être différent de l\'ancien.');
+      setError(t('errors.samePassword'));
       return;
     }
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci de valider le CAPTCHA avant de continuer.');
+      setError(t('auth.needCaptcha'));
       return;
     }
 
@@ -131,7 +132,7 @@ export default function ChangePasswordSection() {
       });
       if (verifyError) {
         if (isInvalidLoginCredentials(verifyError)) {
-          throw new Error("L'ancien mot de passe est incorrect.");
+          throw new Error(t('profile.oldPasswordIncorrect'));
         }
         throw verifyError;
       }
@@ -144,7 +145,7 @@ export default function ChangePasswordSection() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setSuccess(SUCCESS_MESSAGE);
+      setSuccess(t('profile.passwordUpdated'));
     } catch (err) {
       setError(translateAuthError(err));
     } finally {
@@ -159,33 +160,32 @@ export default function ChangePasswordSection() {
       className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
     >
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
-        MOT DE PASSE
+        {t('profile.passwordSectionTitle')}
       </h2>
       <p className="text-sm text-gray-500 mb-4">
-        Modifie ton mot de passe. Il doit contenir au moins 12 caractères, une
-        majuscule et un caractère spécial.
+        {t('profile.passwordSectionHint')}
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <PasswordField
           id="profile-current-password"
-          label="Ancien mot de passe"
+          label={t('profile.oldPassword')}
           value={currentPassword}
           onChange={handleFieldChange(setCurrentPassword)}
           autoComplete="current-password"
         />
         <PasswordField
           id="profile-new-password"
-          label="Nouveau mot de passe"
+          label={t('profile.newPassword')}
           value={newPassword}
           onChange={handleFieldChange(setNewPassword)}
           autoComplete="new-password"
-          placeholder="12 caractères min., majuscule, symbole"
-          hint="Au moins 12 caractères, une majuscule et un caractère spécial."
+          placeholder={t('auth.passwordPlaceholderSignup')}
+          hint={t('auth.passwordHint')}
         />
         <PasswordField
           id="profile-confirm-password"
-          label="Confirmation du nouveau mot de passe"
+          label={t('profile.confirmNewPassword')}
           value={confirmPassword}
           onChange={handleFieldChange(setConfirmPassword)}
           autoComplete="new-password"
@@ -223,7 +223,7 @@ export default function ChangePasswordSection() {
           }
           className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60"
         >
-          {saving ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+          {saving ? t('profile.updatingPassword') : t('profile.updatePassword')}
         </button>
       </form>
     </div>

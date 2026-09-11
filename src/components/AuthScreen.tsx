@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  EMAIL_OR_PASSWORD_INCORRECT_MESSAGE,
+  emailOrPasswordIncorrectMessage,
   isEmailAlreadyRegisteredError,
   isInvalidLoginCredentials,
   isObfuscatedDuplicateSignup,
@@ -19,11 +19,11 @@ import {
 } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
 import {
-  ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE,
-  ACCOUNT_LOCKED_MESSAGE,
-  RESET_EMAIL_SENT_MESSAGE,
+  accountLockedCheckMailMessage,
+  accountLockedMessage,
+  resetEmailSentMessage,
   isLoginClientTimeout,
-  LOGIN_TIMEOUT_MESSAGE,
+  loginTimeoutMessage,
   loginLockFlagsFromError,
   notifyAccountLocked,
   isValidResetEmail,
@@ -31,7 +31,7 @@ import {
   signInWithPasswordSecure,
 } from '@/lib/loginSecurity';
 import {
-  ADULTS_ONLY_MESSAGE,
+  adultsOnlyMessage,
   MIN_USER_AGE,
   isAdult,
   latestBirthDateForAge,
@@ -45,6 +45,8 @@ import {
   consumeAuthNotice,
   writeRememberSession,
 } from '@/lib/sessionIdle';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import { useTranslation, Trans } from 'react-i18next';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
@@ -57,6 +59,7 @@ export default function AuthScreen({
   onBack?: () => void;
   initialMode?: Mode;
 }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -98,15 +101,15 @@ export default function AuthScreen({
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      setError('Saisis ton adresse e-mail pour réinitialiser ton mot de passe.');
+      setError(t('auth.needEmailReset'));
       return;
     }
     if (!isValidResetEmail(email)) {
-      setError('Adresse e-mail invalide.');
+      setError(t('auth.invalidEmail'));
       return;
     }
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci de valider le CAPTCHA avant de continuer.');
+      setError(t('auth.needCaptcha'));
       return;
     }
     if (resetBusy) return;
@@ -116,7 +119,7 @@ export default function AuthScreen({
       await sendPasswordResetEmail(email, captchaToken || undefined);
       setError(null);
       setOfferPasswordReset(false);
-      setInfo(RESET_EMAIL_SENT_MESSAGE);
+      setInfo(resetEmailSentMessage());
     } catch (err) {
       setOfferPasswordReset(true);
       setError(translateAuthError(err));
@@ -143,20 +146,18 @@ export default function AuthScreen({
       const emailed = await notifyAccountLocked(currentEmail);
       if (emailed) {
         setOfferPasswordReset(false);
-        setError(ACCOUNT_LOCKED_MESSAGE);
+        setError(accountLockedMessage());
         return;
       }
     }
 
     setOfferPasswordReset(true);
-    setError(ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE);
+    setError(accountLockedCheckMailMessage());
   };
 
   const showSignupConfirmation = () => {
     setSignupSuccess(true);
-    setInfo(
-      `Un email de confirmation a été envoyé à ${email}. Clique sur le lien qu'il contient pour activer ton compte.`
-    );
+    setInfo(t('auth.confirmEmailSent', { email }));
   };
 
   const handlePasswordFailure = async (currentEmail: string, err: unknown) => {
@@ -168,7 +169,7 @@ export default function AuthScreen({
 
     setAccountLocked(false);
     setOfferPasswordReset(true);
-    setError(EMAIL_OR_PASSWORD_INCORRECT_MESSAGE);
+    setError(emailOrPasswordIncorrectMessage());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,17 +179,17 @@ export default function AuthScreen({
     if (!accountLocked) setOfferPasswordReset(false);
 
     if (!email.trim()) {
-      setError('Saisis ton adresse e-mail.');
+      setError(t('auth.needEmail'));
       return;
     }
 
     if (mode === 'signup') {
       if (!birthDate) {
-        setError('Indique ta date de naissance.');
+        setError(t('auth.needBirthDate'));
         return;
       }
       if (!isAdult(birthDate)) {
-        setError(ADULTS_ONLY_MESSAGE);
+        setError(adultsOnlyMessage());
         return;
       }
       const passwordError = validateSignupPassword(password);
@@ -197,18 +198,18 @@ export default function AuthScreen({
         return;
       }
     } else if (password.length < 1) {
-      setError('Saisis ton mot de passe.');
+      setError(t('auth.needPassword'));
       return;
     }
 
     if (mode === 'signin' && accountLocked) {
       setOfferPasswordReset(true);
-      setError(ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE);
+      setError(accountLockedCheckMailMessage());
       return;
     }
 
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError('Merci de valider le CAPTCHA avant de continuer.');
+      setError(t('auth.needCaptcha'));
       return;
     }
 
@@ -251,7 +252,7 @@ export default function AuthScreen({
         return;
       }
       if (mode === 'signin' && isLoginClientTimeout(err)) {
-        setError(LOGIN_TIMEOUT_MESSAGE);
+        setError(loginTimeoutMessage());
         return;
       }
       if (mode === 'signin' && shouldCountLoginFailure(err)) {
@@ -260,7 +261,7 @@ export default function AuthScreen({
       }
       if (mode === 'signin' && isInvalidLoginCredentials(err)) {
         setOfferPasswordReset(true);
-        setError(EMAIL_OR_PASSWORD_INCORRECT_MESSAGE);
+        setError(emailOrPasswordIncorrectMessage());
         return;
       }
       setError(translateAuthError(err));
@@ -279,6 +280,9 @@ export default function AuthScreen({
       </div>
 
       <div className="relative w-full max-w-md">
+        <div className="flex justify-end mb-3">
+          <LanguageSwitcher compact />
+        </div>
         <div className="text-center mb-8">
           <a
             href="/"
@@ -287,7 +291,7 @@ export default function AuthScreen({
               onBack?.();
             }}
             className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
-            aria-label="Accueil Aypik"
+            aria-label={t('common.homeAria')}
           >
             <div className="mb-5 animate-pop">
               <BrandMark size="lg" className="mx-auto" />
@@ -307,7 +311,7 @@ export default function AuthScreen({
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Créer un compte
+              {t('auth.tabSignup')}
             </button>
             <button
               type="button"
@@ -318,7 +322,7 @@ export default function AuthScreen({
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Se connecter
+              {t('auth.tabSignin')}
             </button>
           </div>
 
@@ -329,7 +333,7 @@ export default function AuthScreen({
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">
-                  Vérifie ta boîte mail
+                  {t('auth.checkMailTitle')}
                 </p>
                 <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
                   {info}
@@ -340,14 +344,14 @@ export default function AuthScreen({
                 onClick={() => switchMode('signin')}
                 className="text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
               >
-                Retour à la connexion
+                {t('auth.backToSignin')}
               </button>
             </div>
           ) : (
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Email
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -364,7 +368,7 @@ export default function AuthScreen({
                     }
                   }}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-                  placeholder="toi@exemple.com"
+                  placeholder={t('auth.emailPlaceholder')}
                 />
               </div>
             </div>
@@ -375,7 +379,7 @@ export default function AuthScreen({
                   htmlFor="signup-birth-date-year"
                   className="block text-sm font-semibold text-gray-700 mb-1.5"
                 >
-                  Date de naissance
+                  {t('auth.birthDate')}
                 </label>
                 <BirthDatePicker
                   id="signup-birth-date"
@@ -389,7 +393,7 @@ export default function AuthScreen({
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Mot de passe
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -401,8 +405,8 @@ export default function AuthScreen({
                   className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
                   placeholder={
                     mode === 'signup'
-                      ? '12 caractères min., majuscule, symbole'
-                      : 'Ton mot de passe'
+                      ? t('auth.passwordPlaceholderSignup')
+                      : t('auth.passwordPlaceholderSignin')
                   }
                 />
                 <button
@@ -411,8 +415,8 @@ export default function AuthScreen({
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label={
                     showPassword
-                      ? 'Masquer le mot de passe'
-                      : 'Afficher le mot de passe'
+                      ? t('auth.hidePassword')
+                      : t('auth.showPassword')
                   }
                 >
                   {showPassword ? (
@@ -424,7 +428,7 @@ export default function AuthScreen({
               </div>
               {mode === 'signup' && (
                 <p className="mt-1.5 text-xs text-gray-400">
-                  Au moins 12 caractères, une majuscule et un caractère spécial.
+                  {t('auth.passwordHint')}
                 </p>
               )}
             </div>
@@ -439,11 +443,10 @@ export default function AuthScreen({
                 />
                 <span className="text-sm text-gray-600 leading-snug">
                   <span className="font-semibold text-gray-800">
-                    Rester connecté
+                    {t('auth.rememberSession')}
                   </span>
                   <span className="block text-xs text-gray-500 mt-0.5">
-                    Sur cet appareil. Sinon, déconnexion après 30&nbsp;min
-                    d&apos;inactivité.
+                    {t('auth.rememberSessionHint')}
                   </span>
                 </span>
               </label>
@@ -471,7 +474,7 @@ export default function AuthScreen({
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="min-w-0 space-y-2">
                   <p>{error}</p>
-                  {mode === 'signin' && error === LOGIN_TIMEOUT_MESSAGE && (
+                  {mode === 'signin' && error === loginTimeoutMessage() && (
                     <button
                       type="submit"
                       disabled={
@@ -480,7 +483,7 @@ export default function AuthScreen({
                       }
                       className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
                     >
-                      Réessayer
+                      {t('common.retry')}
                     </button>
                   )}
                   {mode === 'signin' && offerPasswordReset && (
@@ -490,7 +493,7 @@ export default function AuthScreen({
                       disabled={resetBusy}
                       className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
                     >
-                      {resetBusy ? 'Envoi du lien...' : 'Mot de passe oublié ?'}
+                      {resetBusy ? t('auth.sendingLink') : t('auth.forgotPassword')}
                     </button>
                   )}
                 </div>
@@ -507,12 +510,12 @@ export default function AuthScreen({
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading
-                ? 'Chargement...'
+                ? t('auth.loading')
                 : mode === 'signup'
-                  ? 'Créer mon compte'
+                  ? t('auth.submitSignup')
                   : accountLocked
-                    ? 'Compte bloqué'
-                    : 'Se connecter'}
+                    ? t('auth.submitLocked')
+                    : t('auth.submitSignin')}
             </button>
           </form>
           )}
@@ -520,21 +523,25 @@ export default function AuthScreen({
           <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <ShieldCheck className="w-4 h-4" />
-              100% privé
+              {t('auth.badgePrivate')}
             </div>
             <div className="w-1 h-1 rounded-full bg-gray-300" />
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <Sparkles className="w-4 h-4" />
-              Sans enfants
+              {t('auth.badgeChildfree')}
             </div>
           </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
-          En t&apos;inscrivant, tu confirmes avoir 18 ans révolus, être une
-          personne sans enfant et accepter les{' '}
-          <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
-          .
+          <Trans
+            i18nKey="auth.legalConsent"
+            components={{
+              legalDoc: (
+                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
+              ),
+            }}
+          />
         </p>
       </div>
       </div>

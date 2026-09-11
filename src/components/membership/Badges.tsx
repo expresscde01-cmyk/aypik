@@ -1,4 +1,5 @@
 import { Award, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function FounderBadge({
   number,
@@ -9,6 +10,7 @@ export function FounderBadge({
   size?: 'sm' | 'md';
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const pad = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
   const compactPad =
     size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs';
@@ -20,10 +22,10 @@ export function FounderBadge({
       className={`inline-flex items-center whitespace-nowrap rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200 ${
         compact ? `${compactPad} gap-0.5` : `${pad} gap-1`
       }`}
-      title="Membre Fondateur"
+      title={t('common.offer.memberFondateur')}
     >
       <Award className={icon} />
-      {compact ? 'Fondateur' : 'Membre Fondateur'}
+      {compact ? t('common.offer.shortFondateur') : t('common.offer.memberFondateur')}
       {compact ? null : numberLabel}
     </span>
   );
@@ -39,10 +41,11 @@ export function ProfileCardCornerBadges({
   isFounder?: boolean;
   founderNumber?: number | null;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/40 text-white text-[11px] font-semibold backdrop-blur-sm">
-        {age} ans
+        {t('profile.ageYears', { age })}
       </span>
       {isFounder ? (
         <div className="absolute top-2 left-2 z-[3] flex items-start max-w-[70%] lg:max-w-[calc(100%-4.5rem)]">
@@ -59,6 +62,7 @@ export function ProfileCardCornerBadges({
 }
 
 export function PremiumBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const { t } = useTranslation();
   const pad = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
   const icon = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5';
 
@@ -67,7 +71,7 @@ export function PremiumBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
       className={`inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100 ${pad}`}
     >
       <Sparkles className={icon} />
-      Premium
+      {t('common.offer.shortPremium')}
     </span>
   );
 }

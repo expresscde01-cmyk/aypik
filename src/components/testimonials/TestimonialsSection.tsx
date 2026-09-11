@@ -5,6 +5,7 @@ import {
   fetchPublishedTestimonials,
   type PublishedTestimonial,
 } from '@/lib/testimonials';
+import { useTranslation } from 'react-i18next';
 
 function initials(name: string) {
   const trimmed = name.trim();
@@ -49,6 +50,7 @@ export default function TestimonialsSection({
 }: {
   variant?: 'landing' | 'app';
 }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<PublishedTestimonial[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -84,10 +86,10 @@ export default function TestimonialsSection({
     >
       <div className={variant === 'landing' ? 'mb-8 text-center' : ''}>
         <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-          Ils ont choisi Aypik
+          {t('landing.testimonialsTitle')}
         </h2>
         <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-          Paroles de membres Premium, publiées avec leur consentement.
+          {t('landing.testimonialsSubtitle')}
         </p>
       </div>
       <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 no-scrollbar sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3">

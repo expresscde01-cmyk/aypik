@@ -10,6 +10,7 @@ import {
   isFounderPeriodActive,
   type MembershipStatus,
 } from '@/lib/membership';
+import { useTranslation } from 'react-i18next';
 
 function offerIncludesPremiumPerks(status: MembershipStatus): boolean {
   return isFounderPeriodActive(status) || status.plan === 'premium';
@@ -26,32 +27,34 @@ export function WhoLikedTeaser({
   priceLabel?: string;
   status: MembershipStatus;
 }) {
+  const { t } = useTranslation();
   if (!locked) return null;
 
   const namedOffer = offerLabel(status);
   const included = offerIncludesPremiumPerks(status);
   const lockLabel =
     !SITE_FREE_MODE && priceLabel
-      ? `Premium · ${priceLabel}`
+      ? t('membership.premiumDotPrice', { price: priceLabel })
       : included
-        ? `Inclus dans ${namedOffer}`
+        ? t('membership.includedInOffer', { offer: namedOffer })
         : SITE_FREE_MODE
-          ? 'Aperçu'
-          : 'Inclus avec Premium';
+          ? t('membership.preview')
+          : t('membership.includedPremium');
 
   const body = included
     ? count > 0
-      ? `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké. Découvre qui — c’est inclus dans ${namedOffer}.`
-      : `Quand quelqu’un te likera, tu pourras le découvrir — c’est inclus dans ${namedOffer}.`
+      ? t('membership.whoLikedCount', { count, offer: namedOffer })
+      : t('membership.whoLikedEmpty', { offer: namedOffer })
     : count > 0
       ? SITE_FREE_MODE
-        ? `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké.`
-        : `${count} personne${count > 1 ? 's' : ''} t'${count > 1 ? 'ont' : 'a'} liké. Découvre qui avec Premium${
-            priceLabel ? ` (${priceLabel})` : ''
-          }.`
+        ? t('membership.whoLikedCountLocked', { count })
+        : t('membership.whoLikedCountPremium', {
+            count,
+            price: priceLabel ? ` (${priceLabel})` : '',
+          })
       : SITE_FREE_MODE
-        ? 'Quand quelqu’un te likera, tu pourras le découvrir ici.'
-        : 'Quand quelqu’un te likera, tu pourras le découvrir avec Premium.';
+        ? t('membership.whoLikedEmptyHere')
+        : t('membership.whoLikedEmptyPremium');
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 relative overflow-hidden">
@@ -59,7 +62,7 @@ export function WhoLikedTeaser({
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-rose-500" />
           <h3 className="text-sm font-semibold text-gray-900">
-            Qui t'a liké
+            {t('membership.whoLiked')}
           </h3>
         </div>
         <SoftLock label={lockLabel} />
@@ -103,11 +106,12 @@ export function AdvancedFiltersTeaser({
   activeCount?: number;
   inactive?: boolean;
 }) {
+  const { t } = useTranslation();
   const short = offerShortName(status);
   const included = offerIncludesPremiumPerks(status);
   const title = included
-    ? `Filtres avancés & avantages ${short}`
-    : 'Filtres avancés';
+    ? t('membership.filtersAdvancedNamed', { name: short })
+    : t('membership.benefitFilters');
 
   if (!locked) {
     return (
@@ -132,7 +136,7 @@ export function AdvancedFiltersTeaser({
       >
         <span className="flex items-center gap-2 text-xs font-semibold">
           <Filter className="w-4 h-4 text-emerald-700" />
-          Filtres avancés
+          {t('membership.benefitFilters')}
           {activeCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-800">
               {activeCount}
@@ -157,7 +161,7 @@ export function AdvancedFiltersTeaser({
         ? short
         : SITE_FREE_MODE
           ? null
-          : 'Premium';
+          : t('common.offer.shortPremium');
 
   return (
     <button
@@ -178,6 +182,7 @@ export function AdvancedFiltersTeaser({
 }
 
 export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
+  const { t } = useTranslation();
   const priceLabel = SITE_FREE_MODE
     ? undefined
     : formatPremiumPriceLabel(
@@ -196,7 +201,7 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
   if (status.unlimited_likes) {
     return (
       <p className="text-center text-xs text-gray-400">
-        Likes illimités ·{' '}
+        {t('membership.likesUnlimitedShort')}{' '}
         <span className="text-rose-500 font-medium">{short}</span>
       </p>
     );
@@ -207,15 +212,15 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
   if (remaining <= 0) {
     return (
       <SoftPremiumBanner
-        title="Limite de likes atteinte pour aujourd’hui"
+        title={t('membership.likesLimitTitle')}
         description={
           included
-            ? `Les likes illimités sont inclus dans ${namedOffer}. Réessaie dans un instant.`
+            ? t('membership.likesUnlimitedIn', { offer: namedOffer })
             : priceLabel
-              ? `Reviens demain, ou passe à Premium (${priceLabel}) pour liker sans limite — à ton rythme.`
+              ? t('membership.comeBackOrPremiumPrice', { price: priceLabel })
               : SITE_FREE_MODE
-                ? 'Reviens demain pour liker à nouveau — à ton rythme.'
-                : 'Reviens demain, ou passe à Premium pour liker sans limite — à ton rythme.'
+                ? t('membership.comeBackTomorrow')
+                : t('membership.comeBackOrPremium')
         }
         priceLabel={priceLabel}
       />
@@ -225,7 +230,7 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
   if (remaining <= 3) {
     return (
       <p className="text-center text-xs text-amber-600">
-        Plus que {remaining} like{remaining > 1 ? 's' : ''} aujourd’hui ·{' '}
+        {t('membership.likesLeftToday', { count: remaining })}{' '}
         <Heart className="w-3 h-3 inline" />
       </p>
     );
@@ -233,7 +238,7 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
 
   return (
     <p className="text-center text-xs text-gray-400">
-      {remaining} likes restants aujourd’hui
+      {t('membership.likesRemainingToday', { count: remaining })}
     </p>
   );
 }

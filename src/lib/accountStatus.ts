@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
 /** Statuts de compte affichés dans le header. Extensible sans changer le markup. */
 export type AccountStatusId = 'paused' | 'deactivated' | 'incognito';
@@ -39,49 +40,56 @@ export function resolveVisibilityChoice(
 
 /** Libellé d’état affiché après « Visibilité – » dans le menu. */
 export function visibilityMenuHint(choice: VisibilityChoice): string {
-  if (choice === 'paused') return 'Hors découverte';
-  if (choice === 'deactivated') return 'En pause';
-  if (choice === 'incognito') return 'Incognito';
-  return 'Normale';
+  if (choice === 'paused') return t('profile.visibilityHintPaused');
+  if (choice === 'deactivated') return t('profile.visibilityHintDeactivated');
+  if (choice === 'incognito') return t('profile.visibilityIncognito');
+  return t('profile.visibilityNormal');
 }
 
-export const VISIBILITY_RADIO_OPTIONS: {
+export function visibilityRadioOptions(): {
   id: VisibilityChoice;
   label: string;
-}[] = [
-  { id: 'visible', label: 'Normale' },
-  { id: 'incognito', label: 'Incognito' },
-  {
-    id: 'paused',
-    label: 'Ne plus apparaître dans Découvrir et Suggestions',
-  },
-  { id: 'deactivated', label: 'Mettre le compte en pause' },
-];
+}[] {
+  return [
+    { id: 'visible', label: t('profile.visibilityNormal') },
+    { id: 'incognito', label: t('profile.visibilityIncognito') },
+    {
+      id: 'paused',
+      label: t('profile.visibilityPaused'),
+    },
+    { id: 'deactivated', label: t('profile.visibilityDeactivated') },
+  ];
+}
 
-export const ACCOUNT_STATUS_HOME_BANNER: Record<
-  AccountStatusId,
-  { text: string; className: string }
-> = {
-  paused: {
-    text: 'Tu n’apparais plus dans Découvrir ni dans Suggestions pour toi.',
-    className:
-      'text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
-  },
-  deactivated: {
-    text: 'Ton compte est en pause : tu ne peux plus interagir avec l’application tant que tu ne l’as pas réactivé. Les messages, likes et flashs reçus pendant cette période ne seront pas conservés.',
-    className:
-      'text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
-  },
-  incognito: {
-    text: 'Le mode Incognito est activé : tu utilises l’application sans apparaître en ligne aux yeux des autres membres.',
-    className:
-      'text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
-  },
+const ACCOUNT_STATUS_HOME_BANNER_CLASS: Record<AccountStatusId, string> = {
+  paused:
+    'text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
+  deactivated:
+    'text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
+  incognito:
+    'text-sm text-violet-800 bg-violet-50 border border-violet-100 rounded-xl px-4 py-2.5 max-w-md mx-auto leading-relaxed',
 };
 
+const ACCOUNT_STATUS_HOME_BANNER_KEY: Record<AccountStatusId, string> = {
+  paused: 'profile.bannerPaused',
+  deactivated: 'profile.bannerDeactivated',
+  incognito: 'profile.bannerIncognito',
+};
+
+export function accountStatusHomeBanner(id: AccountStatusId): {
+  text: string;
+  className: string;
+} {
+  return {
+    text: t(ACCOUNT_STATUS_HOME_BANNER_KEY[id]),
+    className: ACCOUNT_STATUS_HOME_BANNER_CLASS[id],
+  };
+}
+
 /** Corps de la modale de confirmation avant mise en pause (conditionnel). */
-export const ACCOUNT_PAUSE_CONFIRM_DESCRIPTION =
-  'Si ton compte est en pause : tu ne peux plus interagir avec l’application tant que tu ne l’as pas réactivé. Les messages, likes et flashs reçus pendant cette période ne seront pas conservés.';
+export function accountPauseConfirmDescription(): string {
+  return t('profile.pauseConfirmDescription');
+}
 
 const visibilityUiKey = (userId: string) =>
   `aypik.accountVisibilityUi.${userId}`;

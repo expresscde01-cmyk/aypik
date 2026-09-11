@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { ADULTS_ONLY_MESSAGE, isAdult, parseProfileGender } from '@/lib/dating';
+import { adultsOnlyMessage, isAdult, parseProfileGender } from '@/lib/dating';
+import { useTranslation } from 'react-i18next';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
 import UnreadBadge from '@/components/UnreadBadge';
@@ -71,6 +72,7 @@ export default function AppShell() {
 }
 
 function AppShellView() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(
@@ -161,7 +163,7 @@ function AppShellView() {
 
   const applyVisibilityChoice = useCallback(
     async (choice: VisibilityChoice): Promise<string | null> => {
-      if (!user) return 'Session invalide.';
+      if (!user) return t('common.sessionInvalid');
       const pauseErr = await setProfilePaused(user.id, choice === 'paused');
       if (pauseErr) return pauseErr;
       const incognitoErr = await setProfileIncognito(
@@ -201,7 +203,7 @@ function AppShellView() {
     if (error) {
       setProfile(null);
       setProfileLoadError(
-        userErrorMessage(error, 'Impossible de charger ton profil')
+        userErrorMessage(error, t('common.profileLoadError'))
       );
       setProfileLoading(false);
       return null;
@@ -341,7 +343,7 @@ function AppShellView() {
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
-    'Membre';
+    t('common.member');
   const accountDeleted = Boolean(profile?.deletion_requested_at);
   const accountStatuses = resolveAccountStatuses({
     paused,
@@ -401,14 +403,14 @@ function AppShellView() {
             onClick={() => void loadViewerProfile()}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
-            Réessayer
+            {t('common.retry')}
           </button>
           <button
             type="button"
             onClick={() => void signOut()}
             className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
           >
-            Se déconnecter
+            {t('common.signOut')}
           </button>
         </div>
       </div>
@@ -430,14 +432,14 @@ function AppShellView() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
         <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
-            Ce compte a été supprimé.
+            {t('common.accountDeleted')}
           </p>
           <button
             type="button"
             onClick={() => void signOut()}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
-            Se déconnecter
+            {t('common.signOut')}
           </button>
         </div>
       </div>
@@ -449,14 +451,14 @@ function AppShellView() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
         <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
-            {ADULTS_ONLY_MESSAGE}
+            {adultsOnlyMessage()}
           </p>
           <button
             type="button"
             onClick={() => void signOut()}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
-            Se déconnecter
+            {t('common.signOut')}
           </button>
         </div>
       </div>
@@ -531,21 +533,18 @@ function AppShellView() {
                 <div className="discover-intro-inner">
                   <div className="discover-intro-motion pt-3 pb-2 sm:pb-2.5">
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                      Découvrir
+                      {t('discover.title')}
                     </h1>
                     <span
                       className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
                       aria-hidden
                     />
                     <p className="mt-1.5 text-sm text-gray-500 leading-snug">
-                      Découvre des profils qui pourraient te plaire
+                      {t('discover.subtitle')}
                     </p>
                     <p className="mt-2 text-xs text-gray-500 leading-relaxed italic">
                       <em>
-                        Les filtres sélectionnés ici s’appliqueront
-                        automatiquement dès que tu quitteras cette page pour
-                        personnaliser les suggestions qui te seront faites
-                        sur ta page Accueil.
+                        {t('discover.filtersApplyNote')}
                       </em>
                     </p>
                   </div>
@@ -655,26 +654,26 @@ function AppShellView() {
         <div className="max-w-2xl mx-auto px-2 h-16 flex items-center justify-around">
           <NavButton
             icon={<Home className="w-5 h-5" />}
-            label="Accueil"
+            label={t('common.nav.home')}
             active={tab === 'home'}
             onClick={() => openTab('home')}
           />
           <NavButton
             icon={<Compass className="w-5 h-5" />}
-            label="Découvrir"
+            label={t('common.nav.discover')}
             active={tab === 'discover'}
             onClick={() => openTab('discover')}
           />
           <NavButton
             icon={<Heart className="w-5 h-5" />}
-            label="Matchs"
+            label={t('common.nav.matches')}
             active={tab === 'matches'}
             badge={unread.total}
             onClick={() => openMatches()}
           />
           <NavButton
             icon={<User className="w-5 h-5" />}
-            label="Profil"
+            label={t('common.nav.profile')}
             active={tab === 'profile'}
             onClick={() => {
               if (tab === 'discover') {

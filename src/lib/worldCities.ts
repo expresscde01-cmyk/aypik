@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
 export type WorldCityHit = {
   geonameId: number;
@@ -28,7 +29,7 @@ export async function searchWorldCities(
   });
   if (signal?.aborted) return [];
   if (error) {
-    throw new Error(error.message || 'Impossible de charger les villes.');
+    throw new Error(error.message || t('profile.citiesLoadFail'));
   }
 
   const rows = Array.isArray(data) ? data : [];

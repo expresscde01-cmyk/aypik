@@ -64,16 +64,18 @@ import {
   ghostClickIgnoreUntil,
   shouldIgnoreBellClick,
 } from '@/lib/bellGhostClick';
+import { t } from '@/i18n/t';
+import { useTranslation } from 'react-i18next';
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'À l’instant';
-  if (mins < 60) return `Il y a ${mins} min`;
+  if (mins < 1) return t('common.justNow');
+  if (mins < 60) return t('common.agoMinutes', { n: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Il y a ${hours} h`;
+  if (hours < 24) return t('common.agoHours', { n: hours });
   const days = Math.floor(hours / 24);
-  return `Il y a ${days} j`;
+  return t('common.agoDays', { n: days });
 }
 
 function isInboxNotification(n: SocialNotification): boolean {
@@ -333,6 +335,7 @@ export default function NotificationsBell({
   /** Une seule cloche écoute le temps réel social : celle de l’onglet visible. */
   active?: boolean;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     matchedIds,
@@ -1581,7 +1584,7 @@ export default function NotificationsBell({
         />
         <div
           role="dialog"
-          aria-label="Notifications"
+          aria-label={t('notifications.title')}
           className="fixed z-[90] max-w-[calc(100vw-1rem)] rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/80 overflow-hidden animate-fadeIn"
           style={{
             top: panelPos.top,
@@ -1591,7 +1594,7 @@ export default function NotificationsBell({
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-gray-900">Notifications</p>
+            <p className="text-sm font-semibold text-gray-900">{t('notifications.title')}</p>
             {showMarkAll && (
               <button
                 type="button"
@@ -1599,7 +1602,7 @@ export default function NotificationsBell({
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                Tout lu
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -1627,7 +1630,7 @@ export default function NotificationsBell({
               <div className="px-4 py-8 text-center">
                 <Sparkles className="w-6 h-6 text-rose-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
-                  Aucune notification pour le moment
+                  {t('notifications.empty')}
                 </p>
               </div>
             ) : (
@@ -1873,7 +1876,7 @@ export default function NotificationsBell({
                 <button
                   type="button"
                   className="notif-scroll-hint"
-                  aria-label="Faire défiler les notifications"
+                  aria-label={t('notifications.scrollAria')}
                   onClick={scrollNotificationsDown}
                 >
                   <span className="notif-scroll-hint__icon" aria-hidden>
@@ -1907,8 +1910,8 @@ export default function NotificationsBell({
         className="relative p-2 rounded-xl text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
         aria-label={
           badgeCount > 0
-            ? `Notifications, ${badgeCount} non lus`
-            : 'Notifications'
+            ? t('notifications.titleWithUnread', { count: badgeCount })
+            : t('notifications.title')
         }
         aria-expanded={open}
       >

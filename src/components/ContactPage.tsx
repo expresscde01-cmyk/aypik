@@ -4,11 +4,14 @@ import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 import { LegalLink, SiteFooter } from '@/components/LegalChrome';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import {
-  CONTACT_CATEGORIES,
-  CONTACT_SUCCESS_MESSAGE,
+  contactCategories,
+  contactSuccessMessage,
+  contactSendError,
   submitContactForm,
   validateContactForm,
 } from '@/lib/contact';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import { useTranslation, Trans } from 'react-i18next';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
@@ -16,6 +19,7 @@ const FIELD_CLASS =
   'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 bg-white';
 
 export default function ContactPage() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [category, setCategory] = useState('');
@@ -53,9 +57,7 @@ export default function ContactPage() {
       setError(result.error);
       resetCaptcha();
     } catch {
-      setError(
-        "L'envoi a échoué. Merci de réessayer dans quelques instants."
-      );
+      setError(contactSendError());
       resetCaptcha();
     } finally {
       setLoading(false);
@@ -71,11 +73,14 @@ export default function ContactPage() {
         </div>
 
         <div className="relative w-full max-w-lg">
+          <div className="flex justify-end mb-3">
+            <LanguageSwitcher compact />
+          </div>
           <div className="text-center mb-8">
             <a
               href="/"
               className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
-              aria-label="Accueil Aypik"
+              aria-label={t('common.homeAria')}
             >
               <div className="mb-5">
                 <BrandMark size="lg" className="mx-auto" />
@@ -86,11 +91,10 @@ export default function ContactPage() {
 
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              Nous contacter
+              {t('contact.title')}
             </h1>
             <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
-              Une question, un souci technique ou un signalement : écrivez-nous,
-              nous lisons chaque message.
+              {t('contact.subtitle')}
             </p>
 
             {sent ? (
@@ -99,7 +103,7 @@ export default function ContactPage() {
                   <ShieldCheck className="w-7 h-7 text-emerald-600" />
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">
-                  {CONTACT_SUCCESS_MESSAGE}
+                  {contactSuccessMessage()}
                 </p>
               </div>
             ) : (
@@ -109,7 +113,7 @@ export default function ContactPage() {
                     htmlFor="contact-name"
                     className="block text-sm font-semibold text-gray-700 mb-1.5"
                   >
-                    Nom
+                    {t('contact.name')}
                   </label>
                   <div className="relative">
                     <UserRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -123,7 +127,7 @@ export default function ContactPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className={`${FIELD_CLASS} pl-11`}
-                      placeholder="Votre nom"
+                      placeholder={t('contact.namePlaceholder')}
                     />
                   </div>
                 </div>
@@ -133,7 +137,7 @@ export default function ContactPage() {
                     htmlFor="contact-email"
                     className="block text-sm font-semibold text-gray-700 mb-1.5"
                   >
-                    E-mail
+                    {t('contact.email')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -147,11 +151,11 @@ export default function ContactPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={`${FIELD_CLASS} pl-11`}
-                      placeholder="vous@exemple.com"
+                      placeholder={t('contact.emailPlaceholder')}
                     />
                   </div>
                   <p className="mt-1.5 text-xs text-gray-400">
-                    Nous l’utiliserons uniquement pour vous répondre.
+                    {t('contact.emailHint')}
                   </p>
                 </div>
 
@@ -160,7 +164,7 @@ export default function ContactPage() {
                     htmlFor="contact-category"
                     className="block text-sm font-semibold text-gray-700 mb-1.5"
                   >
-                    Sujet
+                    {t('contact.subject')}
                   </label>
                   <select
                     id="contact-category"
@@ -170,8 +174,8 @@ export default function ContactPage() {
                     onChange={(e) => setCategory(e.target.value)}
                     className={FIELD_CLASS}
                   >
-                    <option value="">Choisir un sujet</option>
-                    {CONTACT_CATEGORIES.map((item) => (
+                    <option value="">{t('contact.subjectPlaceholder')}</option>
+                    {contactCategories().map((item) => (
                       <option key={item.value} value={item.value}>
                         {item.label}
                       </option>
@@ -184,7 +188,7 @@ export default function ContactPage() {
                     htmlFor="contact-message"
                     className="block text-sm font-semibold text-gray-700 mb-1.5"
                   >
-                    Message
+                    {t('contact.message')}
                   </label>
                   <textarea
                     id="contact-message"
@@ -195,7 +199,7 @@ export default function ContactPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className={`${FIELD_CLASS} resize-y min-h-[8rem]`}
-                    placeholder="Votre message"
+                    placeholder={t('contact.messagePlaceholder')}
                   />
                 </div>
 
@@ -208,9 +212,14 @@ export default function ContactPage() {
                     className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-200"
                   />
                   <span>
-                    J&apos;accepte que mes données soient utilisées pour traiter
-                    ma demande. Voir les{' '}
-                    <LegalLink>CGU (politique de confidentialité)</LegalLink>.
+                    <Trans
+                      i18nKey="contact.consent"
+                      components={{
+                        legalLink: (
+                          <LegalLink>{t('contact.consentLegalLink')}</LegalLink>
+                        ),
+                      }}
+                    />
                   </span>
                 </label>
 
@@ -239,7 +248,7 @@ export default function ContactPage() {
                   }
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Envoi…' : 'Envoyer'}
+                  {loading ? t('contact.sending') : t('common.send')}
                 </button>
               </form>
             )}

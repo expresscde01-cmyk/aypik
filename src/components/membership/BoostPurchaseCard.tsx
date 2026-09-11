@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import { SoftLock } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/i18n/format';
 
 export function BoostPurchaseCard({
   hasBoost,
@@ -12,6 +14,7 @@ export function BoostPurchaseCard({
   boostEndsAt: string | null;
   onPurchase: () => Promise<string | null>;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -37,20 +40,22 @@ export function BoostPurchaseCard({
           <Sparkles className="w-5 h-5 text-amber-600" />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-900">Boost 24 h</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t('membership.boost24h')}
+          </h3>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-            Mets ton profil en avant pendant une journée. Achat ponctuel,
-            sans abonnement.
+            {t('membership.boostDesc')}
           </p>
 
           {hasBoost && boostEndsAt && (
             <p className="text-xs text-amber-700 font-medium mt-2">
-              Actif jusqu’au{' '}
-              {new Date(boostEndsAt).toLocaleString('fr-FR', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
+              {t('membership.activeUntil', {
+                date: new Date(boostEndsAt).toLocaleString(dateLocale(), {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
               })}
             </p>
           )}
@@ -64,7 +69,7 @@ export function BoostPurchaseCard({
 
           {done && !error && (
             <p className="text-xs text-green-700 mt-2 font-medium">
-              Boost activé — ton profil est mis en avant.
+              {t('membership.boostActivated')}
             </p>
           )}
 
@@ -77,12 +82,12 @@ export function BoostPurchaseCard({
                 className="px-3.5 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
               >
                 {loading
-                  ? 'Activation...'
+                  ? t('membership.activatingShort')
                   : hasBoost
-                    ? 'Prolonger 24 h · 2,99 €'
-                    : 'Activer 24 h · 2,99 €'}
+                    ? t('membership.extendBoost')
+                    : t('membership.activateBoost')}
               </button>
-              <SoftLock label="Achat unique" />
+              <SoftLock label={t('membership.oneTimePurchase')} />
             </div>
           )}
         </div>

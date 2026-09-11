@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { peerSetsFromDialogueFlagRows } from '@/lib/twoWayDialogue';
+import { dateLocale } from '../i18n/format.ts';
 
 export type ChatMessage = {
   id: string;
@@ -408,13 +409,13 @@ export function formatMessageTime(iso: string) {
     date.getDate() === now.getDate();
 
   if (sameDay) {
-    return date.toLocaleTimeString('fr-FR', {
+    return date.toLocaleTimeString(dateLocale(), {
       hour: '2-digit',
       minute: '2-digit',
     });
   }
 
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(dateLocale(), {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',

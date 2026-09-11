@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { capturePwaInstallPrompt } from '@/lib/pwaPromptBridge';
+import { bootstrapLocale } from '@/i18n/bootstrap';
 
+bootstrapLocale();
 capturePwaInstallPrompt();
 
 // DEV : expose `__testPaymentSubs()` dans la console navigateur

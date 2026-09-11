@@ -29,7 +29,7 @@ import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
-  GEO_PERIMETER_FILTER_LABEL,
+  geoPerimeterFilterLabel,
   GEO_PERIMETER_SCOPE_MENU,
   GEO_FRANCE_STRATA_MENU,
   isGeoPerimeterFilter,
@@ -45,7 +45,7 @@ import {
 } from '@/lib/geoProximity';
 import {
   WORLD_ZONE_CONTINENTS,
-  WORLD_ZONE_LABEL,
+  worldZoneDisplayLabel,
   FRANCE_WORLD_CHOICE_ALL,
   FRANCE_WORLD_CHOICE_OVERSEAS,
   FRANCE_WORLD_CHOICE_FRANCOPHONE,
@@ -76,11 +76,7 @@ import {
 } from '@/lib/discoveryCatalog';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 import {
-  ACTIFS_SORT_HINT,
-  DISTANCE_SORT_HINT,
-  INTERESTS_SORT_HINT,
   newProfilesCutoffIso,
-  newProfilesSortHint,
   newProfilesWindowMonths,
   sortDiscoveryCandidates,
   sortDiscoveryFilterResults,
@@ -99,26 +95,28 @@ import {
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
 import { LIKE_NOTIFICATION_EMOJI } from '@/lib/interactionCopy';
 import PortaledActionTooltip from '@/components/PortaledActionTooltip';
+import { useTranslation } from 'react-i18next';
+import { t as tStatic } from '@/i18n/t';
 
 const SORT_OPTIONS = [
   {
     id: 'nouveaux',
-    label: 'Nouveaux profils',
+    labelKey: 'discover.sortNewProfiles',
     icon: '🕒',
   },
   {
     id: 'distance',
-    label: 'Distance',
+    labelKey: 'discover.sortDistance',
     icon: '📍',
   },
   {
     id: 'interests',
-    label: 'Centres d’intérêt',
+    labelKey: 'discover.interestsFilter',
     icon: 'palette',
   },
   {
     id: 'actifs',
-    label: 'Actifs',
+    labelKey: 'discover.sortActive',
     icon: '💫',
   },
 ] as const;
@@ -132,7 +130,7 @@ function PerimeterMenuLabel({
   id: GeoPerimeterFilter;
   closed?: boolean;
 }) {
-  const label = GEO_PERIMETER_FILTER_LABEL[id];
+  const label = geoPerimeterFilterLabel(id);
   const row = `${closed ? 'inline-flex' : 'flex'} items-center gap-1.5 min-w-0`;
   const iconSlot =
     'inline-flex w-3.5 h-3.5 shrink-0 items-center justify-center';
@@ -185,7 +183,7 @@ function PartoutMenuLabel({ closed }: { closed?: boolean }) {
         className={`w-3.5 h-3.5 shrink-0${closed ? ' text-emerald-700' : ''}`}
         aria-hidden
       />
-      <span className="truncate">{WORLD_ZONE_LABEL.worldwide}</span>
+      <span className="truncate">{worldZoneDisplayLabel('worldwide')}</span>
     </span>
   );
 }
@@ -246,7 +244,7 @@ function PreciseCountryPanel({
           onClick={onBack}
         >
           <ChevronLeft className="w-4 h-4 shrink-0" aria-hidden />
-          Un pays précis
+          {tStatic('discover.specificCountry')}
         </button>
       </li>
       <li className="px-2 pb-1.5 pt-0.5">
@@ -255,8 +253,8 @@ function PreciseCountryPanel({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           onMouseDown={(event) => event.stopPropagation()}
-          placeholder="Rechercher un pays"
-          aria-label="Rechercher un pays"
+          placeholder={tStatic('discover.searchCountry')}
+          aria-label={tStatic('discover.searchCountry')}
           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-emerald-950 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-300"
         />
       </li>
@@ -418,7 +416,9 @@ function WorldZoneSelect({
           role="listbox"
           aria-multiselectable
           aria-label={
-            countryLevel ? 'Un pays précis' : 'Périmètre géographique'
+            countryLevel
+              ? tStatic('discover.specificCountry')
+              : tStatic('discover.geoPerimeter')
           }
           className={`geo-perimeter-menu mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm${
             countryLevel ? ' geo-perimeter-menu--page' : ' absolute z-40'
@@ -444,7 +444,7 @@ function WorldZoneSelect({
                       className={optionClass(selected)}
                       onClick={() => pick(zone)}
                     >
-                      {WORLD_ZONE_LABEL[zone]}
+                      {worldZoneDisplayLabel(zone)}
                     </button>
                   </li>
                 );
@@ -462,7 +462,7 @@ function WorldZoneSelect({
                   className={optionClass(worldwide, true)}
                   onClick={() => pick('worldwide')}
                 >
-                  {WORLD_ZONE_LABEL.worldwide}
+                  {worldZoneDisplayLabel('worldwide')}
                 </button>
               </li>
               <li role="option" aria-selected={preciseIsos.length > 0}>
@@ -471,7 +471,7 @@ function WorldZoneSelect({
                   className={`${optionClass(preciseIsos.length > 0, true)} flex items-center justify-between gap-2`}
                   onClick={() => setCountryLevel(true)}
                 >
-                  <span>Un pays précis</span>
+                  <span>{tStatic('discover.specificCountry')}</span>
                   <ChevronRight className="w-4 h-4 shrink-0" aria-hidden />
                 </button>
               </li>
@@ -610,8 +610,8 @@ function FranceWorldSelect({
           aria-multiselectable={countryLevel}
           aria-label={
             countryLevel
-              ? 'Un pays précis'
-              : 'Territoires et pays francophones'
+              ? tStatic('discover.specificCountry')
+              : tStatic('discover.francophoneTerritories')
           }
           className="geo-perimeter-menu geo-perimeter-menu--page mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
         >
@@ -671,7 +671,7 @@ function FranceWorldSelect({
                   className={`${optionClass(isCountry, true)} flex items-center justify-between gap-2`}
                   onClick={() => setCountryLevel(true)}
                 >
-                  <span>Un pays précis</span>
+                  <span>{tStatic('discover.specificCountry')}</span>
                   <ChevronRight className="w-4 h-4 shrink-0" aria-hidden />
                 </button>
               </li>
@@ -769,7 +769,7 @@ function GeoPerimeterSelect({
       {open && (
         <ul
           role="listbox"
-          aria-label="Périmètre géographique"
+          aria-label={tStatic('discover.geoPerimeter')}
           className="geo-perimeter-menu absolute z-40 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
         >
           {GEO_PERIMETER_SCOPE_MENU.map((item, index) => {
@@ -883,7 +883,7 @@ function FranceStrataSelect({
           </span>
           {exclusiveApplies && exclusive ? (
             <span className="geo-perimeter-closed-exclusive">
-              (exclusivement)
+              {tStatic('discover.exclusiveClosed')}
             </span>
           ) : null}
         </span>
@@ -897,7 +897,7 @@ function FranceStrataSelect({
       {open && (
         <ul
           role="listbox"
-          aria-label="Périmètre en France"
+          aria-label={tStatic('discover.geoPerimeterFrance')}
           className="geo-perimeter-menu geo-perimeter-menu--page mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 pb-1.5 shadow-sm"
         >
           <li className="px-2 pt-0.5 pb-1">
@@ -906,11 +906,11 @@ function FranceStrataSelect({
               role="switch"
               aria-checked={exclusiveApplies && exclusive}
               aria-disabled={!exclusiveApplies}
-              aria-label="Exclusivement"
+              aria-label={tStatic('discover.exclusive')}
               title={
                 exclusiveApplies
-                  ? 'Uniquement cette strate, hors zones plus proches'
-                  : 'Disponible à partir de Même département, puis Même région et Régions voisines'
+                  ? tStatic('discover.exclusiveOnlyThis')
+                  : tStatic('discover.exclusiveHint')
               }
               className={`geo-exclusive-toggle${
                 exclusiveApplies && exclusive
@@ -988,12 +988,12 @@ function FranceStrataSelect({
 
 type InterestOverlapValue = 0 | 1 | 2 | 3;
 
-const INTEREST_OVERLAP_LABEL: Record<InterestOverlapValue, string> = {
-  0: 'I N D I F F É R E N T',
-  1: "Au moins 1 centre d'intérêt",
-  2: "Au moins 2 centres d'intérêt",
-  3: "Au moins 3 centres d'intérêt",
-};
+function interestOverlapLabel(value: InterestOverlapValue): string {
+  if (value === 0) return tStatic('discover.interestsIndifferent');
+  if (value === 1) return tStatic('discover.interestsAtLeast1');
+  if (value === 2) return tStatic('discover.interestsAtLeast2');
+  return tStatic('discover.interestsAtLeast3');
+}
 
 const INTEREST_OVERLAP_MENU: readonly (
   | { type: 'option'; value: InterestOverlapValue }
@@ -1061,7 +1061,7 @@ function InterestOverlapSelect({
         <span
           className={`truncate text-emerald-950${current === 0 ? ' font-medium' : ''}`}
         >
-          {INTEREST_OVERLAP_LABEL[current]}
+          {interestOverlapLabel(current)}
         </span>
         <ChevronDown
           className={`w-4 h-4 text-emerald-600 shrink-0 transition-transform ${
@@ -1073,7 +1073,7 @@ function InterestOverlapSelect({
       {open && (
         <ul
           role="listbox"
-          aria-label="Centres d’intérêt en commun"
+          aria-label={tStatic('discover.interestsInCommon')}
           className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 shadow-sm overflow-hidden"
         >
           {INTEREST_OVERLAP_MENU.map((item, index) => {
@@ -1111,7 +1111,7 @@ function InterestOverlapSelect({
                     setOpen(false);
                   }}
                 >
-                  {INTEREST_OVERLAP_LABEL[item.value]}
+                  {interestOverlapLabel(item.value)}
                 </button>
               </li>
             );
@@ -1137,6 +1137,7 @@ export default function DiscoveryPage({
   /** False dès qu’on quitte Découvrir : la mémoire de session se réinitialise. */
   pageActive?: boolean;
 } = {}) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id;
   const { status, refresh, loading: membershipLoading } = useMembership();
@@ -1252,7 +1253,7 @@ export default function DiscoveryPage({
         .eq('id', userId!)
         .maybeSingle();
       if (profileErr || !profile) {
-        throw new Error('Impossible de charger ton profil');
+        throw new Error(tStatic('common.profileLoadError'));
       }
       const loaded = profile as Profile;
       void ensureProfileCoordinates(loaded);
@@ -1375,9 +1376,9 @@ export default function DiscoveryPage({
   const loading = viewerQuery.isLoading || edgesQuery.isLoading;
   const searching = catalogQuery.isLoading;
   const catalogError = catalogQuery.error
-    ? userErrorMessage(catalogQuery.error, 'Impossible de charger les profils')
+    ? userErrorMessage(catalogQuery.error, t('discover.loadProfilesError'))
     : viewerQuery.error
-      ? userErrorMessage(viewerQuery.error, 'Impossible de charger ton profil')
+      ? userErrorMessage(viewerQuery.error, t('common.profileLoadError'))
       : null;
   const displayError = error || catalogError;
 
@@ -1395,10 +1396,10 @@ export default function DiscoveryPage({
       );
 
   const sortHints: Record<SortChoice, string> = {
-    nouveaux: newProfilesSortHint(newMonths),
-    distance: DISTANCE_SORT_HINT,
-    interests: INTERESTS_SORT_HINT,
-    actifs: ACTIFS_SORT_HINT,
+    nouveaux: t('discover.sortHintNew'),
+    distance: t('discover.sortHintDistance'),
+    interests: t('discover.sortHintInterests'),
+    actifs: t('discover.sortHintActive'),
   };
 
   const displayed = useMemo(
@@ -1409,7 +1410,7 @@ export default function DiscoveryPage({
     [candidates, sortChoice, newMonths, sortEnabled]
   );
 
-  const countLabel = `${displayed.length} profil${displayed.length > 1 ? 's' : ''}`;
+  const countLabel = t('discover.profilesCount', { count: displayed.length });
 
   useEffect(() => {
     if (!openProfile) return;
@@ -1446,14 +1447,14 @@ export default function DiscoveryPage({
           .maybeSingle();
 
         if (reverse) {
-          setToast(`C’est un match avec ${candidate.display_name} !`);
+          setToast(t('discover.matchToast', { name: candidate.display_name }));
           window.setTimeout(() => setToast(null), 2800);
         }
 
         invalidateLikeFlashEdges(user.id);
         await refresh();
       } catch (err) {
-        setError(userErrorMessage(err, 'Une erreur est survenue'));
+        setError(userErrorMessage(err, t('common.errorOccurred')));
       } finally {
         setActingId(null);
       }
@@ -1505,16 +1506,16 @@ export default function DiscoveryPage({
         hideFromCurrentFilter(candidate.id);
         setToast(
           result.already_flashed
-            ? 'Tu as déjà flashé ce profil'
+            ? t('discover.alreadyFlashed')
             : result.matched
-              ? `C’est un match avec ${candidate.display_name} !`
-              : `Flash envoyé à ${candidate.display_name} ✨`
+              ? t('discover.matchToast', { name: candidate.display_name })
+              : t('discover.flashSent', { name: candidate.display_name })
         );
 
         window.setTimeout(() => setToast(null), 2800);
         invalidateLikeFlashEdges(user.id);
       } catch {
-        setError('Impossible d’envoyer le flash');
+        setError(t('discover.flashFail'));
       } finally {
         setActingId(null);
       }
@@ -1595,16 +1596,16 @@ export default function DiscoveryPage({
             >
               <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                Suggestions ciblées
+                {t('discover.targetedSuggestions')}
               </p>
               <div className="flex flex-col gap-1 text-sm text-gray-700">
-                Périmètre géographique
+                {t('discover.geoPerimeter')}
                 <span className="text-[11px] leading-snug text-gray-500 font-normal">
                   {geoPerimeter === 'international'
-                    ? 'Plusieurs continents possibles. PARTOUT retire toute restriction. « Un pays précis » ouvre la liste.'
+                    ? t('discover.intlHintWorldwide')
                     : geoPerimeter === 'la_france_dans_le_monde'
-                      ? 'PARTOUT = outre-mer et pays francophones. « Un pays précis » ouvre la liste.'
-                      : 'Option "Exclusivement" en haut du second menu'}
+                      ? t('discover.intlHintFranceWorld')
+                      : t('discover.exclusiveHint')}
                 </span>
                 <GeoPerimeterSelect
                   value={geoPerimeter}
@@ -1677,7 +1678,7 @@ export default function DiscoveryPage({
                 ) : null}
               </div>
               <div className="flex flex-col gap-1 text-sm text-gray-700">
-                Centres d’intérêt en commun (min.)
+                {t('discover.interestsInCommonMin')}
                 <InterestOverlapSelect
                   value={minOverlap}
                   disabled={!filtersActive}
@@ -1701,17 +1702,18 @@ export default function DiscoveryPage({
 
       {showFiltersHint && !status.can_use_advanced_filters && !SITE_FREE_MODE && (
         <SoftPremiumBanner
-          title="Filtres avancés"
+          title={t('discover.advancedFilters')}
           description={
             isFounderPeriodActive(status) || status.plan === 'premium'
-              ? `Ville, centres d’intérêt et affinage : inclus dans ${offerLabel(status)}${
-                  priceLabel ? ` (${priceLabel})` : ''
-                }. La navigation de base reste libre.`
+              ? t('discover.premiumFiltersIncluded', {
+                  offer: offerLabel(status),
+                  price: priceLabel ? ` (${priceLabel})` : '',
+                })
               : priceLabel
-                ? `Ville, centres d’intérêt et affinage : disponibles avec Premium (${priceLabel}). La navigation de base reste libre.`
+                ? t('discover.premiumFiltersLockedPrice', { price: priceLabel })
                 : SITE_FREE_MODE
-                  ? 'Ville, centres d’intérêt et affinage : la navigation de base reste libre.'
-                  : 'Ville, centres d’intérêt et affinage : disponibles avec Premium. La navigation de base reste libre.'
+                  ? t('discover.premiumFiltersFreeMode')
+                  : t('discover.premiumFiltersLocked')
           }
           priceLabel={priceLabel}
         />
@@ -1734,7 +1736,7 @@ export default function DiscoveryPage({
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
-            <div className="text-gray-400 text-sm">Recherche en cours...</div>
+            <div className="text-gray-400 text-sm">{t('discover.searching')}</div>
           </div>
         </div>
       ) : displayError ? null : candidates.length === 0 ? (
@@ -1744,32 +1746,33 @@ export default function DiscoveryPage({
           </div>
           {filtersActive && hasActiveFilter ? (
             <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
-              Aucun profil ne correspond à ces filtres.
+              {t('discover.emptyFilters')}
             </p>
           ) : (
             <>
               <h2 className="text-xl font-bold text-gray-900">
-                C'est tout pour le moment
+                {t('discover.emptyEndTitle')}
               </h2>
               <p className="text-gray-500 max-w-sm">
-                Reviens plus tard pour découvrir de nouveaux profils.
+                {t('discover.emptyEndBody')}
               </p>
             </>
           )}
           {!canFilter && !SITE_FREE_MODE && (
             <div className="w-full max-w-sm">
               <SoftPremiumBanner
-                title="Affiner tes rencontres"
+                title={t('discover.refineTitle')}
                 description={
                   isFounderPeriodActive(status) || status.plan === 'premium'
-                    ? `Les filtres par ville et centres d’intérêt sont inclus dans ${offerLabel(status)}${
-                        priceLabel ? ` (${priceLabel})` : ''
-                      } — sans toucher au gratuit de base.`
+                    ? t('discover.refineIncluded', {
+                        offer: offerLabel(status),
+                        price: priceLabel ? ` (${priceLabel})` : '',
+                      })
                     : priceLabel
-                      ? `Les filtres par ville et centres d’intérêt sont inclus avec Premium (${priceLabel}) — sans toucher au gratuit de base.`
+                      ? t('discover.refinePremiumPrice', { price: priceLabel })
                       : SITE_FREE_MODE
-                        ? 'Les filtres par ville et centres d’intérêt restent optionnels — la navigation de base est libre.'
-                        : 'Les filtres par ville et centres d’intérêt sont inclus avec Premium — sans toucher au gratuit de base.'
+                        ? t('discover.refineFree')
+                        : t('discover.refinePremium')
                 }
                 priceLabel={priceLabel}
               />
@@ -1793,7 +1796,7 @@ export default function DiscoveryPage({
                 <span className="discovery-sort-toggle-track" aria-hidden>
                   <span className="discovery-sort-toggle-thumb" />
                 </span>
-                <span className="discovery-sort-toggle-text">Trier par</span>
+                <span className="discovery-sort-toggle-text">{t('discover.sortBy')}</span>
               </button>
               <div
                 id="discovery-sort-pills"
@@ -1834,7 +1837,7 @@ export default function DiscoveryPage({
                       aria-disabled={!sortEnabled}
                       disabled={!sortEnabled}
                       tabIndex={sortEnabled ? 0 : -1}
-                      aria-label={`${option.label}. ${hint}`}
+                      aria-label={`${t(option.labelKey)}. ${hint}`}
                       onClick={() => {
                         if (!sortEnabled) return;
                         setSortChoice(option.id);
@@ -1852,7 +1855,7 @@ export default function DiscoveryPage({
                           option.icon
                         )}
                       </span>
-                      {option.label}
+                      {t(option.labelKey)}
                     </button>
                   </div>
                 );
@@ -1864,8 +1867,8 @@ export default function DiscoveryPage({
           {displayed.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
               {sortEnabled && sortChoice === 'nouveaux'
-                ? 'Aucun nouveau profil sur cette période.'
-                : 'Profils masqués. Les filtres n’ont pas changé le résultat.'}
+                ? t('discover.emptyPeriod')
+                : t('discover.emptyMasked')}
             </p>
           ) : (
           <ul className="profile-cards-grid overflow-visible">
@@ -1904,9 +1907,9 @@ export default function DiscoveryPage({
                   Like
                 </span>
                 <span>
-                  : notifient la personne
+                  {t('discover.flashLikeHint')}
                   {status.plan !== 'premium' && !isFounderPeriodActive(status)
-                    ? ' (3 / jour en freemium)'
+                    ? t('discover.flashLikeHintFreemium')
                     : ''}
                 </span>
               </p>
@@ -2008,6 +2011,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onFlash: (c: Candidate) => void;
   onLike: (c: Candidate) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <li>
       <article
@@ -2023,8 +2027,11 @@ const DiscoveryCard = memo(function DiscoveryCard({
           onClick={() => onOpen(c)}
           aria-label={
             unreadCount > 0
-              ? `Voir le profil de ${c.display_name}, ${unreadMessagesLabel(unreadCount)}`
-              : `Voir le profil de ${c.display_name}`
+              ? t('discover.viewProfileUnread', {
+                  name: c.display_name,
+                  unread: unreadMessagesLabel(unreadCount),
+                })
+              : t('discover.viewProfile', { name: c.display_name })
           }
         />
         <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none overflow-hidden rounded-t-2xl">
@@ -2066,8 +2073,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
               onSkip(c.id);
             }}
             className="pointer-events-auto absolute bottom-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
-            title="Masquer"
-            aria-label={`Masquer ${c.display_name}`}
+            title={t('matches.hide')}
+            aria-label={t('discover.hideName', { name: c.display_name })}
           >
             <X className="w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </button>
@@ -2105,9 +2112,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
           {c.mutual_interests.length > 0 && (
             <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
               <Sparkles className="w-3 h-3 shrink-0" />
-              {c.mutual_interests.length === 1
-                ? "1 centre d'intérêt en commun"
-                : `${c.mutual_interests.length} centres d'intérêt en commun`}
+              {t('discover.mutualInterest', {
+                count: c.mutual_interests.length,
+              })}
             </p>
           )}
           <div
@@ -2117,7 +2124,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
           >
             {showFlashCta && (
               <DiscoveryActionButton
-                tooltip={alreadyFlashed ? 'Déjà flashé' : 'Envoyer un flash ⚡'}
+                tooltip={alreadyFlashed ? t('discover.alreadyFlashedTooltip') : t('discover.sendFlashTooltip')}
                 onClick={(e) => {
                   e.stopPropagation();
                   onFlash(c);
@@ -2126,8 +2133,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 className="relative w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
                 aria-label={
                   alreadyFlashed
-                    ? `Déjà flashé ${c.display_name}`
-                    : `Flasher ${c.display_name}`
+                    ? t('discover.alreadyFlashedName', { name: c.display_name })
+                    : t('discover.flashProfile', { name: c.display_name })
                 }
               >
                 <Zap className="w-4 h-4 text-white" fill="white" />
@@ -2136,10 +2143,12 @@ const DiscoveryCard = memo(function DiscoveryCard({
             <DiscoveryActionButton
               tooltip={
                 alreadyLiked
-                  ? 'Déjà liké'
+                  ? t('discover.alreadyLikedTooltip')
                   : likesExhausted
-                    ? 'Limite de likes atteinte'
-                    : `Liker ${LIKE_NOTIFICATION_EMOJI} ce profil`
+                    ? t('discover.likesLimitReached')
+                    : t('discover.likeThisProfile', {
+                        emoji: LIKE_NOTIFICATION_EMOJI,
+                      })
               }
               onClick={(e) => {
                 e.stopPropagation();
@@ -2149,8 +2158,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
               className="relative w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
               aria-label={
                 alreadyLiked
-                  ? `Déjà liké ${c.display_name}`
-                  : `Liker ${c.display_name}`
+                  ? t('discover.alreadyLikedName', { name: c.display_name })
+                  : t('discover.likeProfile', { name: c.display_name })
               }
             >
               <Heart className="w-4 h-4 text-white" fill="white" />

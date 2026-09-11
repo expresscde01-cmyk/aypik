@@ -1,11 +1,12 @@
 import { Lock, Sparkles } from 'lucide-react';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { useTranslation } from 'react-i18next';
 
 export function SoftPremiumBanner({
   title,
   description,
   onAction,
-  actionLabel = 'Découvrir Premium',
+  actionLabel,
   priceLabel,
 }: {
   title: string;
@@ -15,6 +16,8 @@ export function SoftPremiumBanner({
   /** Tarif affiché dynamiquement, ex. « 19,99 € / mois » */
   priceLabel?: string;
 }) {
+  const { t } = useTranslation();
+  const cta = actionLabel ?? t('membership.discoverPremium');
   return (
     <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50 to-amber-50 p-4">
       <div className="flex items-start gap-3">
@@ -39,7 +42,7 @@ export function SoftPremiumBanner({
               onClick={onAction}
               className="mt-2.5 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors"
             >
-              {actionLabel} →
+              {cta} →
             </button>
           )}
         </div>
@@ -49,14 +52,16 @@ export function SoftPremiumBanner({
 }
 
 export function SoftLock({
-  label = 'Inclus avec Premium',
+  label,
 }: {
   label?: string;
 }) {
+  const { t } = useTranslation();
+  const text = label ?? t('membership.includedPremium');
   return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-500">
       <Lock className="w-3.5 h-3.5" />
-      {label}
+      {text}
     </span>
   );
 }

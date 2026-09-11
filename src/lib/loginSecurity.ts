@@ -1,9 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import { withClientTimeout } from '@/lib/loginClientTimeout';
+import { t } from '../i18n/t.ts';
 
 export {
   LOGIN_CLIENT_TIMEOUT_MS,
-  LOGIN_TIMEOUT_MESSAGE,
+  loginTimeoutMessage,
   LoginClientTimeoutError,
   isLoginClientTimeout,
   withClientTimeout,
@@ -13,15 +14,18 @@ export {
 export const LOGIN_FAILURE_LIMIT = 4;
 
 /** Affiché uniquement après un notify_lock réussi (e-mail « Déblocage de votre compte Aypik »). */
-export const ACCOUNT_LOCKED_MESSAGE =
-  "Pour des raisons de sécurité, ce compte est bloqué après plusieurs tentatives. Un e-mail vient de t'être envoyé pour réinitialiser ton mot de passe et débloquer ton compte.";
+export function accountLockedMessage(): string {
+  return t('auth.accountLocked');
+}
 
 /** Compte verrouillé côté serveur, sans nouvel e-mail de déblocage dans cette session. */
-export const ACCOUNT_LOCKED_CHECK_MAIL_MESSAGE =
-  "Pour des raisons de sécurité, ce compte est bloqué. Consulte ta boîte mail pour le lien de déblocage, ou utilise « Mot de passe oublié » si tu ne l'as pas reçu.";
+export function accountLockedCheckMailMessage(): string {
+  return t('auth.accountLockedCheckMail');
+}
 
-export const RESET_EMAIL_SENT_MESSAGE =
-  "Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d'être envoyé.";
+export function resetEmailSentMessage(): string {
+  return t('auth.resetEmailSent');
+}
 
 const TIMED_LOGIN_RPC = new Set(['login_security_is_locked']);
 
@@ -264,7 +268,7 @@ export async function sendPasswordResetEmail(
   const redirectTo = recoveryRedirectUrl();
 
   if (!isValidResetEmail(trimmed)) {
-    throw new Error('Adresse e-mail invalide');
+    throw new Error(t('errors.emailInvalid'));
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
@@ -286,7 +290,7 @@ export async function sendPasswordResetEmail(
   if (resent) return;
 
   throw new Error(
-    "Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Réessaie dans un instant."
+    t('errors.resetEmailFail')
   );
 }
 
@@ -403,7 +407,7 @@ export async function signInWithPasswordSecure(
   }
 
   throw new Error(
-    'Impossible de se connecter pour le moment. Réessaie dans un instant.'
+    t('errors.loginUnavailable')
   );
 }
 

@@ -8,15 +8,7 @@ import {
 import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
-
-const PREMIUM_PERKS = [
-  'Voir qui a liké ton profil',
-  'Filtres géographiques & centres d’intérêt',
-  'Likes illimités',
-];
-
-const FOUNDER_LOCK_REASON =
-  "Inaccessible : l'offre Fondateur inclut déjà tous les avantages Premium gratuitement";
+import { useTranslation } from 'react-i18next';
 
 export function PremiumConversionCard({
   status,
@@ -24,7 +16,7 @@ export function PremiumConversionCard({
   onPaymentSuccess,
   tone = 'primary',
   disabled = false,
-  disabledReason = FOUNDER_LOCK_REASON,
+  disabledReason,
 }: {
   status: MembershipStatus;
   founderExpired?: boolean;
@@ -35,8 +27,15 @@ export function PremiumConversionCard({
   disabled?: boolean;
   disabledReason?: string;
 }) {
+  const { t } = useTranslation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   if (SITE_FREE_MODE) return null;
+  const lockReason = disabledReason ?? t('membership.founderIncludesPremium');
+  const premiumPerks = [
+    t('membership.benefitWhoLiked'),
+    t('membership.benefitGeoInterests'),
+    t('membership.benefitUnlimitedLikes'),
+  ];
 
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
@@ -50,13 +49,12 @@ export function PremiumConversionCard({
   const secondary = tone === 'secondary';
 
   const activeLabel = founderExpired
-    ? `Reprendre Premium · ${priceLabel}`
+    ? t('membership.resumePremium', { price: priceLabel })
     : secondary
-      ? `Soutenir plus tard · ${priceLabel}`
-      : `Passer à Premium · ${priceLabel}`;
+      ? t('membership.supportLater', { price: priceLabel })
+      : t('membership.goPremium', { price: priceLabel });
 
-  /** Ancrage de prix purement décoratif quand Fondateur est actif */
-  const lockedLabel = `Offre Premium · ${priceLabel}`;
+  const lockedLabel = t('membership.offerPremiumPrice', { price: priceLabel });
 
   return (
     <>
@@ -85,10 +83,10 @@ export function PremiumConversionCard({
             }
           >
             {founderExpired
-              ? 'Reconduction Premium (optionnelle)'
+              ? t('membership.premiumRenewal')
               : disabled || secondary
-                ? 'Premium optionnel'
-                : 'Abonnement Premium'}
+                ? t('membership.premiumOptional')
+                : t('membership.subPremium')}
           </p>
           <div className="flex items-baseline gap-1.5 mt-0.5">
             <span
@@ -107,25 +105,24 @@ export function PremiumConversionCard({
                   : 'text-sm text-white/90'
               }
             >
-              / mois
+              {t('membership.perMonth')}
             </span>
           </div>
         </div>
 
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            Premium à 19,99 € / mois pour un confort d&apos;utilisation, sans
-            engagement.
+            {t('membership.premiumNoCommitment')}
           </p>
 
           {disabled && (
             <p className="text-xs font-medium text-gray-700 leading-relaxed bg-white/70 border border-gray-200 rounded-xl px-3 py-2">
-              {disabledReason}
+              {lockReason}
             </p>
           )}
 
           <ul className="space-y-1.5">
-            {PREMIUM_PERKS.map((perk) => (
+            {premiumPerks.map((perk) => (
               <li
                 key={perk}
                 className="flex items-center gap-2 text-xs text-gray-600"
@@ -168,12 +165,12 @@ export function PremiumConversionCard({
             {!disabled && (
               <>
                 <p className="text-xs text-center text-gray-500 leading-relaxed">
-                  Sans engagement · résiliable à tout moment en un clic
+                  {t('membership.withoutCommitment')}
                 </p>
                 <p className="text-[10px] text-center text-gray-400 leading-relaxed">
-                  Paiement sécurisé par carte (Stripe) ou PayPal ·{' '}
+                  {t('membership.securePaymentLegal')}{' '}
                   <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-                    CGU / CGV
+                    {t('common.legalCguCgv')}
                   </LegalLink>
                 </p>
               </>
