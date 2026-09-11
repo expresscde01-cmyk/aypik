@@ -797,7 +797,9 @@
     "documentTitle": "[ES] Conditions Générales d'Utilisation",
     "lastUpdated": "[ES] Dernière mise à jour : 10 septembre 2026. Version applicable au lancement bénévole et gratuit du Service.",
     "footerAccept": "[ES] En utilisant {{brand}} — {{baseline}} — vous confirmez avoir lu et accepté les présentes Conditions Générales d’Utilisation.",
-    "officialNotice": "[ES] Document officiel disponible en français — traduction à venir."
+    "officialNotice": "Esta es una traducción informativa no oficial. Solo la versión francesa de estos Términos de Servicio (Conditions Générales d’Utilisation) es jurídicamente vinculante. En caso de discrepancia o conflicto, prevalecerá la versión francesa.",
+    "officialNoticeTitle": "Traducción no oficial",
+    "readOfficialFrench": "Leer la versión oficial en francés"
   },
   "emails": {
     "legalFooterAccount": "[ES] Tu reçois cet e-mail car tu as un compte sur Aypik.",
