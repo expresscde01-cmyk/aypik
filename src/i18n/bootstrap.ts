@@ -22,6 +22,7 @@ export function resolveBootLocale(): AppLocale {
   const stored = readStoredLocale();
   if (stored) return stored;
 
+  // Locales placeholder : pas de bascule auto via le navigateur.
   if (!isLikelyCrawler()) {
     const nav = localeFromNavigator(navigator.languages ?? [navigator.language]);
     if (nav) return nav;

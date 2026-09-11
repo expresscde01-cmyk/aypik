@@ -116,6 +116,7 @@
       "safariMacStep3": "Vérifie le nom, puis clique sur Ajouter."
     },
     "language": "Langue",
+    "localeBetaBanner": "Cette traduction est actuellement en version bêta",
     "languages": {
       "fr": "Français",
       "en": "English",

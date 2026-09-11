@@ -21,6 +21,7 @@ import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 import SessionIdleGuard from '@/components/SessionIdleGuard';
 import { peekAuthNotice } from '@/lib/sessionIdle';
 import LanguageProvider from '@/i18n/LanguageProvider';
+import LocaleBetaBanner from '@/i18n/LocaleBetaBanner';
 import { t } from '@/i18n/t';
 
 const LegalTermsPage = lazy(() => import('@/components/LegalTerms'));
@@ -235,6 +236,7 @@ function AppContent() {
 
   return (
     <>
+      <LocaleBetaBanner />
       {unsubNotice && maintenanceGate !== 'on' && (
         <UnsubscribeBanner
           notice={unsubNotice}

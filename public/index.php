@@ -66,6 +66,14 @@ if ($locale === 'fr' && preg_match('#^/fr(/.*)?$#', $requestPath)) {
     exit;
 }
 
+// Miroir de src/i18n/locales.ts LOCALE_PLACEHOLDER — désactiver langue par langue après trad pro.
+$localePlaceholder = [
+    'fr' => false,
+    'en' => true,
+    'es' => true,
+];
+$localeIsPlaceholder = !empty($localePlaceholder[$locale]);
+
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = (string) ($_SERVER['HTTP_HOST'] ?? 'aypik.fr');
 $origin = $scheme . '://' . $host;
@@ -201,11 +209,19 @@ $html = preg_replace(
 $hFr = htmlspecialchars($hreflangFr, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $hEn = htmlspecialchars($hreflangEn, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $hEs = htmlspecialchars($hreflangEs, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-$hreflangTags =
-    '<link rel="alternate" hreflang="fr" href="' . $hFr . '">' .
-    '<link rel="alternate" hreflang="en" href="' . $hEn . '">' .
-    '<link rel="alternate" hreflang="es" href="' . $hEs . '">' .
-    '<link rel="alternate" hreflang="x-default" href="' . $hFr . '">';
+$hreflangParts = ['<link rel="alternate" hreflang="fr" href="' . $hFr . '" data-aypik-hreflang="1">'];
+if (!$localePlaceholder['en']) {
+    $hreflangParts[] = '<link rel="alternate" hreflang="en" href="' . $hEn . '" data-aypik-hreflang="1">';
+}
+if (!$localePlaceholder['es']) {
+    $hreflangParts[] = '<link rel="alternate" hreflang="es" href="' . $hEs . '" data-aypik-hreflang="1">';
+}
+$hreflangParts[] = '<link rel="alternate" hreflang="x-default" href="' . $hFr . '" data-aypik-hreflang="1">';
+$hreflangTags = implode('', $hreflangParts);
+if ($localeIsPlaceholder) {
+    $hreflangTags =
+        '<meta name="robots" content="noindex, follow" data-aypik-robots="1">' . $hreflangTags;
+}
 $html = preg_replace('/<\/head>/i', $hreflangTags . '</head>', $html, 1) ?? $html;
 
 if ($locale === 'en' || $locale === 'es') {

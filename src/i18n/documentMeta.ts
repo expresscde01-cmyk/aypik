@@ -1,6 +1,8 @@
 import i18n from '@/i18n/config';
 import {
   DEFAULT_LOCALE,
+  indexableLocales,
+  isPlaceholderLocale,
   isSupportedLocale,
   LOCALE_TO_OG,
   type AppLocale,
@@ -21,6 +23,24 @@ function hreflangHref(locale: AppLocale, rest: string): string {
   return `${origin()}${path === '/' ? '/' : path}`;
 }
 
+function syncRobotsMeta(locale: AppLocale): void {
+  const existing = document.querySelector('meta[data-aypik-robots]');
+  if (isPlaceholderLocale(locale)) {
+    const el =
+      existing ??
+      (() => {
+        const meta = document.createElement('meta');
+        meta.setAttribute('name', 'robots');
+        meta.setAttribute('data-aypik-robots', '1');
+        document.head.appendChild(meta);
+        return meta;
+      })();
+    el.setAttribute('content', 'noindex, follow');
+    return;
+  }
+  existing?.remove();
+}
+
 export function syncDocumentMeta(locale: AppLocale = currentLocale()): void {
   document.documentElement.lang = locale;
   const title = i18n.t('seo.title');
@@ -32,16 +52,19 @@ export function syncDocumentMeta(locale: AppLocale = currentLocale()): void {
   setMeta('meta[name="twitter:title"]', i18n.t('seo.twitterTitle'));
   setMeta('meta[name="twitter:description"]', i18n.t('seo.twitterDescription'));
   setMeta('meta[name="application-name"]', i18n.t('seo.applicationName'));
+  syncRobotsMeta(locale);
 
   const { rest } = stripLocalePrefix(window.location.pathname);
   const existing = document.querySelectorAll('link[data-aypik-hreflang]');
   existing.forEach((n) => n.remove());
   const head = document.head;
+  const defaultHref = hreflangHref(DEFAULT_LOCALE, rest);
   const tags: Array<{ lang: string; href: string }> = [
-    { lang: 'fr', href: hreflangHref('fr', rest) },
-    { lang: 'en', href: hreflangHref('en', rest) },
-    { lang: 'es', href: hreflangHref('es', rest) },
-    { lang: 'x-default', href: hreflangHref('fr', rest) },
+    ...indexableLocales().map((lang) => ({
+      lang,
+      href: hreflangHref(lang, rest),
+    })),
+    { lang: 'x-default', href: defaultHref },
   ];
   for (const tag of tags) {
     const link = document.createElement('link');
