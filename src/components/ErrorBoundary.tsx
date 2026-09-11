@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { t } from '@/i18n/t';
 
 interface Props {
   children: ReactNode;
@@ -18,7 +19,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       hasError: true,
       message: import.meta.env.DEV
         ? error.message
-        : 'Recharge la page. Si ça continue, réessaie dans un instant.',
+        : t('common.errorBoundaryHint'),
     };
   }
 
@@ -37,14 +38,14 @@ export default class ErrorBoundary extends Component<Props, State> {
               <AlertCircle className="w-8 h-8 text-red-400" />
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Une erreur est survenue
+              {t('common.errorOccurred')}
             </h1>
             <p className="text-gray-500 text-sm mb-4">{this.state.message}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-6 py-2.5 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition-colors"
             >
-              Recharger la page
+              {t('common.reloadPage')}
             </button>
           </div>
         </div>

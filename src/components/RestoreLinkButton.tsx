@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 /** Bouton rapide Rétablir le lien — chaîne ouverte au repos, refermée au survol. */
 export default function RestoreLinkButton({
   disabled,
@@ -12,6 +14,7 @@ export default function RestoreLinkButton({
   name: string;
   tooltip?: 'left' | 'top' | 'right' | 'logo' | 'logo-tr';
 }) {
+  const { t } = useTranslation();
   const blocked = Boolean(disabled || busy);
 
   return (
@@ -22,7 +25,7 @@ export default function RestoreLinkButton({
         onClick();
       }}
       disabled={blocked}
-      aria-label={`Rétablir le lien avec ${name}`}
+      aria-label={t('matches.restoreLinkNamed', { name })}
       className="group relative z-10 w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-visible bg-transparent hover:z-20 cursor-pointer disabled:cursor-default disabled:opacity-40"
     >
       <span className="restore-chain-capsule pointer-events-none relative flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm">
@@ -60,7 +63,7 @@ export default function RestoreLinkButton({
                   : 'top-[calc(100%-6px)] left-[calc(100%-4px)]'
         }`}
       >
-        Rétablir le lien
+        {t('matches.restoreLink')}
       </span>
     </button>
   );

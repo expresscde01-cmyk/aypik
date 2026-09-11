@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BRAND_LOCKUP_NO_COPY_CLASS } from '@/lib/brandCopyGuard';
 
 type BrandLockupProps = {
@@ -179,6 +180,9 @@ export function BrandHeaderBrand({
   hideTagline = false,
   className = '',
 }: BrandHeaderBrandProps) {
+  const { t } = useTranslation();
+  const baseline = t('common.brandBaseline');
+  const shortTag = t('common.brandShortTagline');
   const stacked =
     compact === true ? true : compact === false ? false : null;
 
@@ -196,7 +200,7 @@ export function BrandHeaderBrand({
         <BrandMarkNav />
         <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
           <span className={brandClass}>{BRAND}</span>
-          <span className={longTagClass}>{BASELINE}</span>
+          <span className={longTagClass}>{baseline}</span>
         </span>
       </span>
     );
@@ -214,16 +218,16 @@ export function BrandHeaderBrand({
         <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
           <span className={brandClass}>{BRAND}</span>
           {stacked === null && (
-            <span className={`hidden sm:inline ${longTagClass}`}>{BASELINE}</span>
+            <span className={`hidden sm:inline ${longTagClass}`}>{baseline}</span>
           )}
         </span>
       </span>
       {stacked === true ? (
-        <span className={`${tagIndent} ${shortTagClass}`}>{BRAND_SHORT_TAGLINE}</span>
+        <span className={`${tagIndent} ${shortTagClass}`}>{shortTag}</span>
       ) : (
         showShortTag && (
           <span className={`sm:hidden ${tagIndent} ${shortTagClass}`}>
-            {BRAND_SHORT_TAGLINE}
+            {shortTag}
           </span>
         )
       )}
@@ -237,6 +241,9 @@ export function BrandLockup({
   compact,
   hideTagline = false,
 }: BrandLockupProps) {
+  const { t } = useTranslation();
+  const baseline = t('common.brandBaseline');
+  const shortTag = t('common.brandShortTagline');
   if (variant === 'hero') {
     return (
       <div className={`text-center ${className}`}>
@@ -247,7 +254,7 @@ export function BrandLockup({
           <span className="mr-1.5 text-gray-300" aria-hidden>
             —
           </span>
-          {BASELINE}
+          {baseline}
         </p>
       </div>
     );
@@ -266,7 +273,7 @@ export function BrandLockup({
           <span className="mr-1" aria-hidden>
             —
           </span>
-          {BASELINE}
+          {baseline}
         </span>
       </span>
     );
@@ -298,13 +305,13 @@ export function BrandLockup({
         <span
           className={`text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
         >
-          {BRAND_SHORT_TAGLINE}
+          {shortTag}
         </span>
       ) : stacked === false ? (
         <span
           className={`whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
         >
-          {BASELINE}
+          {baseline}
         </span>
       ) : (
         <>
@@ -312,13 +319,13 @@ export function BrandLockup({
             <span
               className={`sm:hidden text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
             >
-              {BRAND_SHORT_TAGLINE}
+              {shortTag}
             </span>
           )}
           <span
             className={`hidden sm:inline whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}
           >
-            {BASELINE}
+            {baseline}
           </span>
         </>
       )}

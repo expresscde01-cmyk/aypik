@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   Folder,
@@ -459,22 +460,27 @@ function IntroLegendBar({
 }
 
 function IntroLegendAvant() {
+  const { t } = useTranslation();
   return (
     <div className="match-intro-legend match-intro-legend--avant">
       <div className="match-intro-legend-brackets">
-        <IntroLegendBracket label="Like ou Flash" span="full" />
-        <IntroLegendBracket label="Mis de côté" span="mid" />
-        <IntroLegendBracket label="À" span="actions" />
+        <IntroLegendBracket label={t('matches.legendLikeOrFlash')} span="full" />
+        <IntroLegendBracket label={t('matches.legendSetAside')} span="mid" />
+        <IntroLegendBracket label={t('matches.legendA')} span="actions" />
       </div>
       <IntroLegendBar columns={4}>
-        <span className="match-intro-legend-seg match-chip-new">Nouveaux</span>
-        <span className="match-intro-legend-seg match-chip-wait">Par toi</span>
+        <span className="match-intro-legend-seg match-chip-new">
+          {t('matches.legendNew')}
+        </span>
+        <span className="match-intro-legend-seg match-chip-wait">
+          {t('matches.legendByYou')}
+        </span>
         <span className="match-intro-legend-seg match-chip-wait-by-other">
-          Par l&apos;autre
+          {t('matches.legendByThem')}
         </span>
         <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--split">
           <span className="sr-only">
-            Supprimer, archiver ou matcher
+            {t('matches.legendActionsHint')}
           </span>
           <span className="match-intro-legend-actions-split" aria-hidden>
             <span className="match-intro-legend-actions-declined">
@@ -499,14 +505,15 @@ function IntroLegendAvant() {
 }
 
 function IntroLegendPendant() {
+  const { t } = useTranslation();
   return (
     <div className="match-intro-legend">
       <IntroLegendBar columns={2}>
         <span className="match-intro-legend-seg match-chip-matched-quiet">
-          1er mot
+          {t('matches.chipFirstWord')}
         </span>
         <span className="match-intro-legend-seg match-chip-matched-chat">
-          Discussions en cours
+          {t('matches.discussionsInProgress')}
         </span>
       </IntroLegendBar>
     </div>
@@ -514,26 +521,27 @@ function IntroLegendPendant() {
 }
 
 function IntroLegendApres() {
+  const { t } = useTranslation();
   return (
     <div className="match-intro-legend">
       <IntroLegendBar columns="apres">
         <span className="match-intro-legend-seg match-chip-broken">
           <span className="match-intro-legend-broken-label">
-            <span>Match rompu</span>
-            <span>par toi</span>
+            <span>{t('matches.brokenMatch')}</span>
+            <span>{t('matches.brokenByYou')}</span>
           </span>
         </span>
         <span className="match-intro-legend-seg match-chip-broken-theirs">
           <span className="match-intro-legend-broken-label">
-            <span>Match rompu</span>
-            <span>par l&apos;autre</span>
+            <span>{t('matches.brokenMatch')}</span>
+            <span>{t('matches.brokenByThem')}</span>
           </span>
         </span>
         <span className="match-intro-legend-seg match-chip-souris">
-          Nouveau cycle
+          {t('matches.newCycle')}
         </span>
         <span className="match-intro-legend-seg match-intro-legend-seg--actions match-intro-legend-seg--bouquet">
-          <span className="sr-only">Bouquet — nouvelles rencontres</span>
+          <span className="sr-only">{t('matches.bouquetAria')}</span>
           <span className="match-intro-legend-finish-flag" aria-hidden>
             <span />
             <span />
@@ -776,11 +784,12 @@ function HintActionIcon({
 }
 
 function DeclinedActionHint({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       role="dialog"
       aria-modal="false"
-      aria-label="Que faire de ce profil"
+      aria-label={t('matches.whatToDoAria')}
       className="absolute bottom-full left-1/2 z-30 mb-1 w-[min(calc(100vw-2rem),19rem)] -translate-x-1/2"
     >
       <div className="declined-action-hint relative px-3.5 py-3 pr-9 text-xs leading-relaxed text-gray-700">
@@ -791,16 +800,14 @@ function DeclinedActionHint({ onClose }: { onClose: () => void }) {
             onClose();
           }}
           className="absolute top-1.5 right-1.5 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-amber-100/70 transition-colors"
-          aria-label="Fermer"
+          aria-label={t('common.closeAria')}
         >
           <X className="w-3.5 h-3.5" strokeWidth={2.4} />
         </button>
         <p className="text-center">
-          Tu peux soit archiver ce profil{' '}
-          <HintActionIcon kind="archive" /> pour le conserver dans ta page
-          &quot;Mes Matchs&quot;, soit le supprimer{' '}
-          <HintActionIcon kind="delete" /> pour le faire disparaître
-          définitivement de ta page.
+          {t('matches.declinedHintBefore')}{' '}
+          <HintActionIcon kind="archive" /> {t('matches.declinedHintMid')}{' '}
+          <HintActionIcon kind="delete" /> {t('matches.declinedHintAfter')}
         </p>
         <span aria-hidden className="declined-action-hint-caret" />
         <span aria-hidden className="declined-action-hint-caret-fill" />
@@ -916,6 +923,7 @@ export default function MatchesPage({
   /** Onglet Matchs visible : resync inbox à la réouverture, sans poll. */
   pageActive?: boolean;
 } = {}) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
   const { publish, markResolved, clearDigestActor } = useMatchesInboxSync();
@@ -1742,7 +1750,7 @@ export default function MatchesPage({
         return list.find((c) => c.archiveId === open.archiveId) ?? null;
       });
     } catch (err) {
-      setError(userErrorMessage(err, 'Impossible de charger les matchs rompus.'));
+      setError(userErrorMessage(err, t('matches.loadBrokenError')));
       setBrokenMatches([]);
     }
   }, [user]);
@@ -2159,7 +2167,7 @@ export default function MatchesPage({
         });
         await Promise.all([loadMatches(), refreshMembership()]);
       } catch (err) {
-        setError(userErrorMessage(err, 'Impossible de valider le match'));
+        setError(userErrorMessage(err, t('matches.validateMatchError')));
       } finally {
         endActing();
       }
@@ -2212,7 +2220,7 @@ export default function MatchesPage({
           }
         });
       } catch (err) {
-        setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
+        setError(userErrorMessage(err, t('matches.decisionError')));
       } finally {
         endActing();
       }
@@ -2258,7 +2266,7 @@ export default function MatchesPage({
           releasePinnedActor(item.profile.id);
         });
       } catch (err) {
-        setError(userErrorMessage(err, 'Impossible d’enregistrer ta réponse'));
+        setError(userErrorMessage(err, t('matches.decisionError')));
       } finally {
         endActing();
       }
@@ -2324,8 +2332,8 @@ export default function MatchesPage({
           userErrorMessage(
             err,
             archive
-              ? 'Impossible d’archiver ce profil.'
-              : 'Impossible de supprimer cette notification.'
+              ? t('matches.archiveProfileError')
+              : t('matches.deleteNotifError')
           )
         );
         if (archive) await loadDeclinedArchives();
@@ -2436,8 +2444,8 @@ export default function MatchesPage({
           userErrorMessage(
             err,
             archive
-              ? 'Impossible d’archiver ce profil.'
-              : 'Impossible de supprimer cette notification.'
+              ? t('matches.archiveProfileError')
+              : t('matches.deleteNotifError')
           )
         );
         await loadPendingWaiting();
@@ -2485,7 +2493,7 @@ export default function MatchesPage({
         }
       } catch (err) {
         setError(
-          userErrorMessage(err, 'Impossible de supprimer cette archive.')
+          userErrorMessage(err, t('matches.deleteArchiveError'))
         );
         await loadWaitArchives();
         await loadMatches();
@@ -2584,7 +2592,7 @@ export default function MatchesPage({
         await deleteDeclinedArchive(card.archiveId, card.profile.id);
       } catch (err) {
         setError(
-          userErrorMessage(err, 'Impossible de supprimer cette archive.')
+          userErrorMessage(err, t('matches.deleteArchiveError'))
         );
       } finally {
         declinedBusyRef.current = false;
@@ -2610,7 +2618,7 @@ export default function MatchesPage({
         });
         await Promise.all([loadMatches(), loadBrokenMatches()]);
       } catch (err) {
-        setError(userErrorMessage(err, 'Impossible de rétablir ce match.'));
+        setError(userErrorMessage(err, t('matches.restoreMatchError')));
         await loadBrokenMatches();
       } finally {
         setBrokenBusyId(null);
@@ -2640,7 +2648,7 @@ export default function MatchesPage({
         });
       } catch (err) {
         setError(
-          userErrorMessage(err, 'Impossible de supprimer définitivement ce lien.')
+          userErrorMessage(err, t('matches.purgeError'))
         );
         await loadBrokenMatches();
       } finally {
@@ -2816,7 +2824,7 @@ export default function MatchesPage({
       else status = 'new';
       return {
         id: match.profile.id,
-        displayName: (match.profile.display_name || '').trim() || 'Quelqu’un',
+        displayName: (match.profile.display_name || '').trim() || t('common.someone'),
         status,
         origin: match.origin,
       };
@@ -3024,7 +3032,7 @@ export default function MatchesPage({
                 isToStudy || match.waiting ? 3 : 2
               )}
               variant={match.waiting ? 'ban' : 'trash'}
-              label={match.waiting ? 'Jeter' : 'Supprimer'}
+              label={match.waiting ? t('matches.throwAway') : t('common.delete')}
               onClick={() => {
                 if (match.waiting) {
                   if (waitingDeleteUi('card-ban') === 'open-manage') {
@@ -3185,7 +3193,7 @@ export default function MatchesPage({
             name={card.profile.display_name}
             busy={declinedBusyId === card.archiveId}
             variant="trash"
-            label="Supprimer"
+            label={t('common.delete')}
             tooltip={cardActionTooltip(
               card.source === 'mine' ? 1 : 0,
               card.source === 'mine' ? 2 : 1
@@ -3287,11 +3295,11 @@ export default function MatchesPage({
       return null;
     }
     return (
-      <section id="match-floor-wait" className="space-y-6" aria-label="Mis en attente">
+      <section id="match-floor-wait" className="space-y-6" aria-label={t('matches.floorWaitingByYou')}>
         {mineActive.length > 0 ? (
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
-              <ColorChip label="Mis en attente par toi" tone="wait" />
+              <ColorChip label={t('matches.floorWaitingByYou')} tone="wait" />
               <span className="text-gray-400 font-normal">
                 ({mineActive.length})
               </span>
@@ -3305,7 +3313,7 @@ export default function MatchesPage({
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-wait-by-other">
-                Mis en attente par l&apos;autre
+                {t('matches.floorWaitingByOther')}
               </span>
               <span className="text-gray-400 font-normal">
                 ({theirsLive.length})
@@ -3320,7 +3328,7 @@ export default function MatchesPage({
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-wait-archive">
-                Mis en attente par toi - archive
+                {t('matches.floorWaitingArchiveYou')}
               </span>
               <span className="text-gray-400 font-normal">
                 ({mineArchived.length})
@@ -3335,7 +3343,7 @@ export default function MatchesPage({
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-wait-theirs">
-                Mis en attente par l&apos;autre - archive
+                {t('matches.floorWaitingArchiveOther')}
               </span>
               <span className="text-gray-400 font-normal">
                 ({theirsArchived.length})
@@ -3441,7 +3449,7 @@ export default function MatchesPage({
           <RefuseButton
             name={card.profile.display_name}
             busy={busy}
-            label="Supprimer"
+            label={t('common.delete')}
             tooltip={cardActionTooltip(1, 2)}
             onClick={() => void handlePendingDeclined(card, false)}
           />
@@ -3454,10 +3462,10 @@ export default function MatchesPage({
   const renderPendingDeclinedFloor = () => {
     if (pendingDeclined.length === 0) return null;
     return (
-      <section className="space-y-2" aria-label="Pas cette fois">
+      <section className="space-y-2" aria-label={t('matches.floorDeclined')}>
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
           <span className="match-intro-chip match-chip-declined">
-            Pas cette fois
+            {t('matches.floorDeclined')}
           </span>
           <span className="text-gray-400 font-normal">
             ({pendingDeclined.length})
@@ -3558,7 +3566,7 @@ export default function MatchesPage({
           <RefuseButton
             name={card.profile.display_name}
             busy={declinedBusyId === card.archiveId}
-            label="Supprimer"
+            label={t('common.delete')}
             tooltip={cardActionTooltip(0, 1)}
             onClick={() => void handleDeleteArchived(card)}
           />
@@ -3571,10 +3579,10 @@ export default function MatchesPage({
   const renderDeclinedArchiveFloor = () => {
     if (declinedArchives.length === 0) return null;
     return (
-      <section className="space-y-2" aria-label="Pas cette fois — archives">
+      <section className="space-y-2" aria-label={t('matches.floorDeclinedArchives')}>
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
           <span className="match-intro-chip match-chip-declined-archive">
-            Pas cette fois — archives
+            {t('matches.floorDeclinedArchives')}
           </span>
           <span className="text-gray-400 font-normal">
             ({declinedArchives.length})
@@ -3675,7 +3683,7 @@ export default function MatchesPage({
           <RefuseButton
             name={card.profile.display_name}
             busy={busy}
-            label="Supprimer"
+            label={t('common.delete')}
             tooltip={cardActionTooltip(
               card.source === 'mine' ? 1 : 0,
               card.source === 'mine' ? 2 : 1
@@ -3692,12 +3700,12 @@ export default function MatchesPage({
     const theirsBroken = brokenMatches.filter((c) => c.source === 'theirs');
     if (mineBroken.length === 0 && theirsBroken.length === 0) return null;
     return (
-      <section className="space-y-6" aria-label="Matchs rompus">
+      <section className="space-y-6" aria-label={t('matches.floorBrokenYou')}>
         {mineBroken.length > 0 ? (
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-broken">
-                Matchs rompus par toi
+                {t('matches.floorBrokenYou')}
               </span>
               <span className="text-gray-400 font-normal">
                 ({mineBroken.length})
@@ -3712,7 +3720,7 @@ export default function MatchesPage({
           <div className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
               <span className="match-intro-chip match-chip-broken-theirs">
-                Matchs rompus par l&apos;autre
+                {t('matches.floorBrokenThem')}
               </span>
               <span className="text-gray-400 font-normal">
                 ({theirsBroken.length})
@@ -3732,7 +3740,7 @@ export default function MatchesPage({
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
-          <div className="text-gray-400 text-sm">Chargement de tes matchs...</div>
+          <div className="text-gray-400 text-sm">{t('matches.loading')}</div>
         </div>
       </div>
     );
@@ -3758,9 +3766,9 @@ export default function MatchesPage({
           </div>
           <h2
             className="text-xl font-bold text-blue-900 my-4"
-            aria-label="Pas encore de match"
+            aria-label={t('matches.emptyTitle')}
           >
-            {Array.from('Pas encore de match').map((char, i, chars) => (
+            {Array.from(t('matches.emptyTitle')).map((char, i, chars) => (
               <span
                 key={i}
                 aria-hidden
@@ -3772,27 +3780,17 @@ export default function MatchesPage({
             ))}
           </h2>
           <p className="text-gray-500 max-w-md font-bold not-italic">
-            Continue à explorer les profils dans la section Découvrir.
+            {t('matches.emptyBody')}
           </p>
           <p className="text-gray-500 max-w-md mt-2 font-normal italic">
-            Un profil apparaît ici dès qu&apos;on t&apos;envoie un flash{' '}
-            <Zap
-              className="w-4 h-4 inline mb-0.5 text-amber-500"
-              fill="currentColor"
-              aria-hidden
-            />{' '}
-            ou un like{' '}
-            <Heart
-              className="w-4 h-4 inline mb-0.5 text-rose-500"
-              fill="currentColor"
-              aria-hidden
-            />
-            . Réponds pour valider ton match.
+            {t('matches.emptyHint')}
           </p>
         </div>
         <SoftPremiumBanner
-          title="Messages illimités après match"
-          description={`Dès qu'il y a réciprocité, tu peux échanger librement — c’est inclus dans ${offerLabel(status)}.`}
+          title={t('matches.unlimitedMessagesTitle')}
+          description={t('matches.unlimitedMessagesBody', {
+            offer: offerLabel(status),
+          })}
         />
       </div>
     );
@@ -3831,16 +3829,16 @@ export default function MatchesPage({
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        Mes Matchs (
+        {t('matches.title')} (
         {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
-        Glossaire
+        {t('matches.glossary')}
       </p>
       <div className="mb-5 space-y-2">
         <IntroAccordionSection
           id="avant"
-          title="Avant"
+          title={t('matches.glossaryAvant')}
           titleIcons={
             <>
               <Heart className="w-3.5 h-3.5" fill="currentColor" />
@@ -3853,10 +3851,10 @@ export default function MatchesPage({
         >
           <p>
             Tu trouveras sur cette page tous les profils qui t&apos;ont adressé
-            un <ColorChip label="like ou flash — à étudier" tone="new" />. Tu
+            un <ColorChip label={t('matches.chipToStudy')} tone="new" />. Tu
             pourras soit les refuser (pour qu&apos;ils disparaissent de cette
             page), soit les{' '}
-            <ColorChip label="mettre en attente" tone="wait" /> (pour les
+            <ColorChip label={t('matches.chipWait')} tone="wait" /> (pour les
             étudier plus tard), soit les{' '}
             <span className="match-intro-chip inline-flex items-center border border-rose-100 bg-white text-rose-600">
               <MatcherWord />
@@ -3866,12 +3864,12 @@ export default function MatchesPage({
           <p>
             Les profils que tu as toi-même mis en attente apparaissent dans{' '}
             <span className="match-intro-chip match-chip-wait">
-              Mis en attente par toi
+              {t('matches.floorWaitingByYou')}
             </span>
             . Si c&apos;est l&apos;autre personne qui a mis ton like ou ton
             flash en attente, tu le retrouveras dans{' '}
             <span className="match-intro-chip match-chip-wait-by-other">
-              Mis en attente par l&apos;autre
+              {t('matches.floorWaitingByOther')}
             </span>{' '}
             : tu pourras consulter le profil, la décision lui appartenant.
           </p>
@@ -3880,7 +3878,7 @@ export default function MatchesPage({
             décliné un de tes likes ou de tes flashs. Tu pourras choisir
             ensuite entre{' '}
             <span className="match-intro-chip match-chip-declined">
-              les supprimer ou les archiver
+              {t('matches.deleteOrArchive')}
             </span>
             .
           </p>
@@ -3888,7 +3886,7 @@ export default function MatchesPage({
 
         <IntroAccordionSection
           id="pendant"
-          title="Pendant"
+          title={t('matches.glossaryPendant')}
           titleIcons={<MessageCircle className="w-3.5 h-3.5" />}
           legend={<IntroLegendPendant />}
           isOpen={openIntroSection === 'pendant'}
@@ -3896,24 +3894,24 @@ export default function MatchesPage({
         >
           <p>
             Tous tes matchs sont classés soit{' '}
-            <ColorChip label="1er mot" tone="matched-quiet" /> tant qu&apos;il
+            <ColorChip label={t('matches.chipFirstWord')} tone="matched-quiet" /> tant qu&apos;il
             n&apos;y a pas encore eu un message de chaque côté (y compris
             lorsqu&apos;un seul a écrit), soit{' '}
-            <ColorChip label="discussion en cours" tone="matched-chat" /> dès
+            <ColorChip label={t('matches.chipDiscussion')} tone="matched-chat" /> dès
             que chacun a envoyé au moins un message.
           </p>
         </IntroAccordionSection>
 
         <IntroAccordionSection
           id="apres"
-          title="Après"
+          title={t('matches.glossaryApres')}
           titleIcons={
             <>
               <RestoreChainGlyph className="w-3.5 h-3.5" />
               <RefuseTrashGlyph className="refuse-trash w-3.5 h-3.5" />
               <RefreshCw className="w-3.5 h-3.5" strokeWidth={2.4} />
               <span className="mx-0.5 text-[0.65rem] font-medium leading-none">
-                ou
+                {t('matches.orWord')}
               </span>
               <Flower2 className="w-3.5 h-3.5" strokeWidth={2.4} />
             </>
@@ -3926,12 +3924,12 @@ export default function MatchesPage({
             Un match déjà validé peut être archivé ou rompu depuis la
             conversation. Tu le retrouveras alors dans{' '}
             <span className="match-intro-chip match-chip-broken">
-              Matchs rompus par toi
+              {t('matches.floorBrokenYou')}
             </span>{' '}
             si c&apos;est toi qui as pris cette décision (tu pourras alors le
             rétablir ou le supprimer), ou dans{' '}
             <span className="match-intro-chip match-chip-broken-theirs">
-              Matchs rompus par l&apos;autre
+              {t('matches.floorBrokenThem')}
             </span>{' '}
             si c&apos;est ton interlocuteur qui a choisi de rompre le lien (tu
             pourras uniquement le supprimer).
@@ -3940,7 +3938,7 @@ export default function MatchesPage({
             Tes autres matchs, eux, restent bien actifs et continuent
             normalement — et de{' '}
             <span className="match-intro-chip match-chip-souris">
-              nouvelles rencontres
+              {t('matches.newEncounters')}
             </span>{' '}
             pleines de bonheur sont déjà en chemin
             <span className="match-intro-dot-cluster" aria-hidden>
@@ -3962,29 +3960,29 @@ export default function MatchesPage({
       {/* Étages : Pendant → Avant → Après (même découpage que le glossaire) */}
       <div className="space-y-8">
         {hasPendantStage ? (
-          <MatchStageBlock label="Pendant">
+          <MatchStageBlock label={t('matches.glossaryPendant')}>
             {renderFloor(
               'matched-chat',
-              'Discussion en cours',
+              t('matches.chipDiscussionCap'),
               floors.matchedChat
             )}
             {renderFloor(
               'matched-quiet',
-              '1er mot',
+              t('matches.chipFirstWord'),
               floors.matchedQuiet
             )}
           </MatchStageBlock>
         ) : null}
         {hasAvantStage ? (
-          <MatchStageBlock label="Avant">
+          <MatchStageBlock label={t('matches.glossaryAvant')}>
             {renderWaitFloor()}
-            {renderFloor('new', 'Like / Flash à étudier', floors.new)}
+            {renderFloor('new', t('matches.floorToStudy'), floors.new)}
             {renderPendingDeclinedFloor()}
             {renderDeclinedArchiveFloor()}
           </MatchStageBlock>
         ) : null}
         {hasApresStage ? (
-          <MatchStageBlock label="Après">
+          <MatchStageBlock label={t('matches.glossaryApres')}>
             {renderBrokenFloor()}
           </MatchStageBlock>
         ) : null}

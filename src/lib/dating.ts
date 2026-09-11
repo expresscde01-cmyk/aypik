@@ -1,9 +1,12 @@
+import { t } from '../i18n/t.ts';
+
 export type ProfileGender = 'homme' | 'femme';
 
 export const MIN_USER_AGE = 18;
 
-export const ADULTS_ONLY_MESSAGE =
-  'Ce service est exclusivement réservé aux personnes majeures.';
+export function adultsOnlyMessage(): string {
+  return t('common.adultsOnly');
+}
 
 export function parseProfileGender(
   value: string | null | undefined

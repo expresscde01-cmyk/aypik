@@ -1,74 +1,85 @@
 import { isAuthWeakPasswordError } from '@supabase/supabase-js';
+import { t } from '../i18n/t.ts';
 
-export const EMAIL_ALREADY_REGISTERED_MESSAGE =
-  'Un compte existe déjà avec cette adresse e-mail. Connecte-toi plutôt.';
+export function emailAlreadyRegisteredMessage(): string {
+  return t('errors.emailAlreadyRegistered');
+}
 
-export const EMAIL_OR_PASSWORD_INCORRECT_MESSAGE =
-  'Email ou mot de passe incorrect.';
+export function emailOrPasswordIncorrectMessage(): string {
+  return t('errors.emailOrPasswordIncorrect');
+}
 
-const CODE_MESSAGES: Record<string, string> = {
-  weak_password: 'Le mot de passe est trop faible.',
-  email_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
-  user_already_exists: EMAIL_ALREADY_REGISTERED_MESSAGE,
-  already_registered: EMAIL_ALREADY_REGISTERED_MESSAGE,
-  invalid_credentials: EMAIL_OR_PASSWORD_INCORRECT_MESSAGE,
-  captcha_failed: 'CAPTCHA invalide ou expiré. Réessaie.',
-  email_not_confirmed:
-    'Confirme ton adresse e-mail avant de te connecter.',
-  email_address_invalid: 'Adresse e-mail invalide.',
-  signup_disabled: "L'inscription est actuellement désactivée.",
-  over_request_rate_limit: 'Trop de tentatives. Réessaie plus tard.',
-  over_email_send_rate_limit:
-    "Trop d'e-mails envoyés. Réessaie plus tard.",
-  account_locked:
-    "Pour des raisons de sécurité, ce compte est bloqué. Consulte ta boîte mail pour le lien de déblocage, ou utilise « Mot de passe oublié » si tu ne l'as pas reçu.",
-  validation_failed: 'Les informations saisies sont invalides.',
-  same_password: 'Le nouveau mot de passe doit être différent de l\'ancien.',
-  phone_exists: 'Ce numéro de téléphone est déjà utilisé par un autre compte.',
-  sms_send_failed:
-    "Impossible d'envoyer le SMS pour le moment. Réessaie dans un instant.",
-  over_sms_send_rate_limit:
-    'Trop de SMS envoyés. Réessaie dans quelques heures.',
-  phone_country_not_allowed:
-    "Ce préfixe pays n'est pas encore ouvert pour la vérification par SMS.",
-  unauthorized: 'Session invalide. Reconnecte-toi pour continuer.',
+const CODE_KEYS: Record<string, string> = {
+  weak_password: 'errors.weakPassword',
+  email_exists: 'errors.emailAlreadyRegistered',
+  user_already_exists: 'errors.emailAlreadyRegistered',
+  already_registered: 'errors.emailAlreadyRegistered',
+  invalid_credentials: 'errors.emailOrPasswordIncorrect',
+  captcha_failed: 'errors.captchaInvalid',
+  email_not_confirmed: 'errors.emailNotConfirmed',
+  email_address_invalid: 'errors.emailInvalid',
+  signup_disabled: 'errors.signupDisabled',
+  over_request_rate_limit: 'errors.rateLimit',
+  over_email_send_rate_limit: 'errors.emailRateLimit',
+  account_locked: 'auth.accountLockedCheckMail',
+  validation_failed: 'errors.generic',
+  same_password: 'errors.samePassword',
+  phone_exists: 'errors.phoneExists',
+  sms_send_failed: 'errors.smsSendFailed',
+  over_sms_send_rate_limit: 'errors.smsRateLimit',
+  phone_country_not_allowed: 'errors.phoneCountry',
+  unauthorized: 'errors.unauthorized',
 };
 
-const MESSAGE_PATTERNS: [RegExp, string][] = [
-  [/password.*at least/i, 'Le mot de passe doit contenir au moins 12 caractères.'],
-  [/already registered/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
-  [/user_already_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
-  [/email_exists/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
-  [/users_normalized_email/i, EMAIL_ALREADY_REGISTERED_MESSAGE],
-  [/invalid login credentials/i, EMAIL_OR_PASSWORD_INCORRECT_MESSAGE],
-  [/captcha protection/i, 'CAPTCHA invalide ou expiré. Réessaie.'],
-  [/captcha_failed/i, 'CAPTCHA invalide ou expiré. Réessaie.'],
-  [/email.*confirm/i, 'Confirme ton adresse e-mail.'],
-  [/unable to validate email/i, 'Adresse e-mail invalide.'],
-  [/signup requires a valid password/i, 'Saisis un mot de passe valide.'],
-  [/password is known to be weak/i, 'Ce mot de passe est trop courant. Choisis-en un autre.'],
+const MESSAGE_PATTERNS: [RegExp, () => string][] = [
+  [
+    /password.*at least/i,
+    () => t('errors.passwordMinLength', { count: 12 }),
+  ],
+  [/already registered/i, () => t('errors.emailAlreadyRegistered')],
+  [/user_already_exists/i, () => t('errors.emailAlreadyRegistered')],
+  [/email_exists/i, () => t('errors.emailAlreadyRegistered')],
+  [/users_normalized_email/i, () => t('errors.emailAlreadyRegistered')],
+  [/invalid login credentials/i, () => t('errors.emailOrPasswordIncorrect')],
+  [/captcha protection/i, () => t('errors.captchaInvalid')],
+  [/captcha_failed/i, () => t('errors.captchaInvalid')],
+  [/email.*confirm/i, () => t('errors.emailNotConfirmed')],
+  [/unable to validate email/i, () => t('errors.emailInvalid')],
+  [/signup requires a valid password/i, () => t('auth.needPassword')],
+  [/password is known to be weak/i, () => t('errors.passwordCommon')],
   [
     /new password should be different from the old password/i,
-    'Le nouveau mot de passe doit être différent de l\'ancien.',
+    () => t('errors.samePassword'),
   ],
-  [/same_password/i, 'Le nouveau mot de passe doit être différent de l\'ancien.'],
-  [/error sending recovery email/i, "Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Réessaie dans un instant."],
-  [/failed to send a request to the edge function/i, "Impossible d'envoyer la demande pour le moment. Réessaie dans un instant."],
-  [/edge function returned a non-2xx/i, "Impossible d'envoyer la demande pour le moment. Réessaie dans un instant."],
-  [/token has expired or is invalid/i, 'Code invalide ou expiré. Demande un nouveau code.'],
-  [/invalid.*otp/i, 'Code invalide ou expiré. Demande un nouveau code.'],
-  [/invalid phone number/i, 'Numéro de téléphone invalide.'],
-  [/phone_number_invalid/i, 'Numéro de téléphone invalide.'],
-  [/phone_country_not_allowed/i, "Ce préfixe pays n'est pas encore ouvert pour la vérification par SMS."],
-  [/phone_provider_disabled/i, "La vérification par téléphone n'est pas disponible pour le moment."],
+  [/same_password/i, () => t('errors.samePassword')],
+  [
+    /error sending recovery email/i,
+    () => t('errors.smsSendFailed'),
+  ],
+  [
+    /failed to send a request to the edge function/i,
+    () => t('errors.smsSendFailed'),
+  ],
+  [
+    /edge function returned a non-2xx/i,
+    () => t('errors.smsSendFailed'),
+  ],
+  [/token has expired or is invalid/i, () => t('errors.otpInvalid')],
+  [/invalid.*otp/i, () => t('errors.otpInvalid')],
+  [/invalid phone number/i, () => t('errors.phoneInvalid')],
+  [/phone_number_invalid/i, () => t('errors.phoneInvalid')],
+  [/phone_country_not_allowed/i, () => t('errors.phoneCountry')],
+  [/phone_provider_disabled/i, () => t('errors.phoneDisabled')],
 ];
 
-const WEAK_PASSWORD_REASONS: Record<string, string> = {
-  length: 'Le mot de passe doit contenir au moins 12 caractères.',
-  characters:
-    'Le mot de passe doit contenir au moins une majuscule et un caractère spécial.',
-  pwned: 'Ce mot de passe a été compromis dans une fuite de données. Choisis-en un autre.',
-};
+function weakPasswordReason(reason: string): string {
+  if (reason === 'length') return t('errors.passwordMinLength', { count: 12 });
+  if (reason === 'characters') {
+    return `${t('errors.passwordUppercase')} ${t('errors.passwordSpecial')}`;
+  }
+  if (reason === 'pwned') return t('errors.passwordPwned');
+  return t('errors.weakPassword');
+}
 
 function authErrorBlob(err: unknown): { code: string; text: string } {
   const o = err && typeof err === 'object' ? (err as Record<string, unknown>) : {};
@@ -108,30 +119,28 @@ export function isObfuscatedDuplicateSignup(user: {
 export function translateAuthError(err: unknown): string {
   if (isAuthWeakPasswordError(err)) {
     if (err.reasons.length > 0) {
-      return err.reasons
-        .map((reason) => WEAK_PASSWORD_REASONS[reason] ?? 'Le mot de passe est trop faible.')
-        .join(' ');
+      return err.reasons.map((reason) => weakPasswordReason(reason)).join(' ');
     }
-    return 'Le mot de passe est trop faible.';
+    return t('errors.weakPassword');
   }
 
   if (isEmailAlreadyRegisteredError(err)) {
-    return EMAIL_ALREADY_REGISTERED_MESSAGE;
+    return t('errors.emailAlreadyRegistered');
   }
 
   const message =
-    err instanceof Error ? err.message : 'Une erreur est survenue';
+    err instanceof Error ? err.message : t('common.errorOccurred');
   const code =
     err && typeof err === 'object' && 'code' in err
       ? String((err as { code?: string }).code)
       : undefined;
 
-  if (code && CODE_MESSAGES[code]) {
-    return CODE_MESSAGES[code];
+  if (code && CODE_KEYS[code]) {
+    return t(CODE_KEYS[code]);
   }
 
-  for (const [pattern, french] of MESSAGE_PATTERNS) {
-    if (pattern.test(message)) return french;
+  for (const [pattern, messageFn] of MESSAGE_PATTERNS) {
+    if (pattern.test(message)) return messageFn();
   }
 
   return message;

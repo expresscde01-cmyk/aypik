@@ -6,12 +6,13 @@ import { purgeExpiredDeletions } from '@/lib/deleteAccount';
 import {
   DEFAULT_MEMBERSHIP,
   isValidLinkedOffer,
-  MEMBERSHIP_REQUIRED_ERROR,
+  membershipRequiredError,
   parseMembershipStatus,
   type MembershipPlan,
   type MembershipStatus,
 } from '@/lib/membership';
 import { userErrorMessage } from '@/lib/userError';
+import { t } from '@/i18n/t';
 
 export type EnsureMembershipResult = {
   ok: boolean;
@@ -22,8 +23,9 @@ export type EnsureMembershipResult = {
 
 export type SignupOffer = 'founder' | 'free';
 
-const SCHEMA_CACHE_ERROR =
-  "L'activation de l'offre n'est pas encore disponible. Réessaie dans quelques secondes.";
+function schemaCacheError(): string {
+  return t('membership.schemaCacheError');
+}
 
 function isMissingRpc(error: { code?: string; message: string }, name: string) {
   return (
@@ -42,7 +44,7 @@ function isSchemaCacheError(error: { code?: string; message: string }) {
 }
 
 function publicErrorMessage(error: { code?: string; message: string }) {
-  if (isSchemaCacheError(error)) return SCHEMA_CACHE_ERROR;
+  if (isSchemaCacheError(error)) return schemaCacheError();
   return error.message;
 }
 
@@ -102,7 +104,7 @@ async function claimOfferFallback(
 
   return {
     ok: false,
-    error: error ? publicErrorMessage(error) : SCHEMA_CACHE_ERROR,
+    error: error ? publicErrorMessage(error) : schemaCacheError(),
     plan: null,
     is_founder: false,
   };
@@ -139,7 +141,7 @@ export function useMembership() {
         setError(null);
       } else {
         setError(
-          userErrorMessage(rpcError, 'Impossible de charger ton offre')
+          userErrorMessage(rpcError, t('membership.offerLoadFail'))
         );
       }
     } else {
@@ -230,8 +232,8 @@ export function useMembership() {
           ok: false,
           error:
             typeof raw.error === 'string' && raw.error
-              ? `Offre non enregistrée (${raw.error}).`
-              : MEMBERSHIP_REQUIRED_ERROR,
+              ? t('membership.offerNotSaved', { error: raw.error })
+              : membershipRequiredError(),
           plan: null,
           is_founder: false,
         };
@@ -278,7 +280,7 @@ export function useMembership() {
           }
           return {
             ok: false,
-            error: MEMBERSHIP_REQUIRED_ERROR,
+            error: membershipRequiredError(),
             plan: null,
             is_founder: false,
           };
@@ -310,7 +312,7 @@ export function useMembership() {
         await refresh();
         return {
           ok: false,
-          error: MEMBERSHIP_REQUIRED_ERROR,
+          error: membershipRequiredError(),
           plan: null,
           is_founder: false,
         };

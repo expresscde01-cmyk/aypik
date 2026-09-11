@@ -1,22 +1,43 @@
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
-export const CONTACT_CATEGORIES = [
-  { value: 'general', label: 'Question générale' },
-  { value: 'technical', label: 'Problème technique' },
-  { value: 'report', label: 'Signalement' },
-  { value: 'other', label: 'Autre' },
+const CONTACT_CATEGORY_IDS = [
+  'general',
+  'technical',
+  'report',
+  'other',
 ] as const;
 
-export type ContactCategory = (typeof CONTACT_CATEGORIES)[number]['value'];
+export type ContactCategory = (typeof CONTACT_CATEGORY_IDS)[number];
 
-export const CONTACT_SUCCESS_MESSAGE =
-  'Votre message a bien été envoyé, nous vous répondrons sous 48 heures.';
+const CONTACT_CATEGORY_KEYS: Record<ContactCategory, string> = {
+  general: 'contact.categoryGeneral',
+  technical: 'contact.categoryTechnical',
+  report: 'contact.categoryReport',
+  other: 'contact.categoryOther',
+};
 
-export const CONTACT_CAPTCHA_ERROR =
-  'Le CAPTCHA est invalide ou a expiré. Merci de le valider à nouveau.';
+export function contactCategories(): {
+  value: ContactCategory;
+  label: string;
+}[] {
+  return CONTACT_CATEGORY_IDS.map((value) => ({
+    value,
+    label: t(CONTACT_CATEGORY_KEYS[value]),
+  }));
+}
 
-export const CONTACT_SEND_ERROR =
-  "L'envoi a échoué. Merci de réessayer dans quelques instants.";
+export function contactSuccessMessage(): string {
+  return t('contact.success');
+}
+
+export function contactCaptchaError(): string {
+  return t('contact.captchaError');
+}
+
+export function contactSendError(): string {
+  return t('contact.sendError');
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,18 +55,18 @@ export function validateContactForm(
   const name = values.name.trim();
   const email = values.email.trim();
   const message = values.message.trim();
-  if (!name) return 'Indiquez votre nom.';
-  if (!email) return 'Indiquez votre adresse e-mail.';
-  if (!EMAIL_RE.test(email)) return 'Adresse e-mail invalide.';
+  if (!name) return t('contact.needName');
+  if (!email) return t('contact.needEmail');
+  if (!EMAIL_RE.test(email)) return t('errors.emailInvalid');
   if (!isContactCategory(values.category)) {
-    return 'Choisissez un sujet.';
+    return t('contact.needSubject');
   }
-  if (!message) return 'Écrivez votre message.';
+  if (!message) return t('contact.needMessage');
   if (message.length > 4000) {
-    return 'Le message est trop long (4 000 caractères maximum).';
+    return t('contact.messageTooLong');
   }
   if (!values.consent) {
-    return 'Merci d’accepter l’utilisation de vos données pour traiter la demande.';
+    return t('contact.needConsent');
   }
   return null;
 }
@@ -59,7 +80,7 @@ export async function submitContactForm(
     return { ok: false, code: 'validation_failed', error: validationError };
   }
   if (!captchaToken) {
-    return { ok: false, code: 'captcha_failed', error: CONTACT_CAPTCHA_ERROR };
+    return { ok: false, code: 'captcha_failed', error: contactCaptchaError() };
   }
 
   const { data, error } = await supabase.functions.invoke('contact', {
@@ -93,15 +114,15 @@ export async function submitContactForm(
 }
 
 function isContactCategory(value: string): value is ContactCategory {
-  return CONTACT_CATEGORIES.some((item) => item.value === value);
+  return (CONTACT_CATEGORY_IDS as readonly string[]).includes(value);
 }
 
 function messageForContactCode(code: string): string {
-  if (code === 'captcha_failed') return CONTACT_CAPTCHA_ERROR;
+  if (code === 'captcha_failed') return contactCaptchaError();
   if (code === 'validation_failed') {
-    return 'Vérifiez les champs du formulaire, puis réessayez.';
+    return t('contact.validationFailed');
   }
-  return CONTACT_SEND_ERROR;
+  return contactSendError();
 }
 
 async function functionErrorCode(

@@ -31,36 +31,39 @@ import { formatBoostUntil } from '@/components/membership/OwnerBoostIndicator';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { WorldCityAutocomplete } from '@/components/WorldCityAutocomplete';
 import {
-  CITY_SELECTION_REQUIRED_ERROR,
+  citySelectionRequiredError,
   communeFromStoredLabel,
   type GeoCommune,
 } from '@/lib/geoCommunes';
 import { resolveCommuneCoordinates } from '@/lib/profileCoordinates';
-import { WORLD_COUNTRIES } from '@/lib/worldGeo';
+import { countryDisplayName, WORLD_COUNTRIES } from '@/lib/worldGeo';
 import type { WorldCityHit } from '@/lib/worldCities';
 import {
   INTEREST_CATEGORIES,
   ALL_SUGGESTED_INTERESTS,
   MAX_CUSTOM_INTEREST_LENGTH,
   MIN_INTERESTS,
-  INTERESTS_MIN_ERROR,
+  interestsMinError,
+  displayInterest,
+  categoryLabel,
   normalizeInterestKey,
   sanitizeCustomInterest,
 } from '@/lib/interests';
-import { MEMBERSHIP_REQUIRED_ERROR } from '@/lib/membership';
+import { membershipRequiredError } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
 import { userErrorMessage } from '@/lib/userError';
 import {
-  ADULTS_ONLY_MESSAGE,
+  adultsOnlyMessage,
   MIN_USER_AGE,
   isAdult,
   latestBirthDateForAge,
 } from '@/lib/dating';
 import BirthDatePicker from '@/components/BirthDatePicker';
+import { currentLocale } from '@/i18n/documentMeta';
+import { dateLocale } from '@/i18n/format';
+import { useTranslation } from 'react-i18next';
 
 export type ProfileGender = 'homme' | 'femme';
-
-const GENDER_REQUIRED_ERROR = 'Indique si tu es un homme ou une femme.';
 
 export interface Profile {
   id: string;
@@ -89,12 +92,15 @@ export const PROFILE_CARD_COLUMNS =
   'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id';
 
 /** Profil du compte connecté (préférences e-mail en plus). */
-export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled`;
+export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled, preferred_locale`;
 
 const COUNTRY_SELECT_OPTIONS = [
   ...WORLD_COUNTRIES.filter((row) => row.iso2 === 'FR'),
   ...WORLD_COUNTRIES.filter((row) => row.iso2 !== 'FR').sort((a, b) =>
-    a.nameFr.localeCompare(b.nameFr, 'fr')
+    countryDisplayName(a.iso2).localeCompare(
+      countryDisplayName(b.iso2),
+      dateLocale()
+    )
   ),
 ];
 
@@ -108,6 +114,7 @@ export default function ProfileSetup({
   /** Incrémenté par AppShell à chaque navigation menu → profil (scroll rejoué). */
   profileFocusKey?: number;
 }) {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const {
     status,
@@ -164,7 +171,7 @@ export default function ProfileSetup({
         .maybeSingle();
 
       if (error) {
-        setError(userErrorMessage(error, 'Impossible de charger ton profil'));
+        setError(userErrorMessage(error, t('common.profileLoadError')));
         setLoading(false);
         return;
       }
@@ -290,7 +297,7 @@ export default function ProfileSetup({
     } catch (err) {
       setEmailNotificationsEnabled(!enabled);
       setError(
-        userErrorMessage(err, 'Impossible d’enregistrer la préférence e-mail')
+        userErrorMessage(err, t('profile.emailPrefError'))
       );
     } finally {
       setPrefsSaving(false);
@@ -298,7 +305,7 @@ export default function ProfileSetup({
   };
 
   const toggleInterest = (interest: string) => {
-    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    setError((prev) => (prev === interestsMinError() ? null : prev));
     const already = interests.some(
       (i) => normalizeInterestKey(i) === normalizeInterestKey(interest)
     );
@@ -334,13 +341,13 @@ export default function ProfileSetup({
     );
     const label = known ?? cleaned;
 
-    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    setError((prev) => (prev === interestsMinError() ? null : prev));
     setInterests((prev) => [...prev, label]);
     setCustomInterest('');
   };
 
   const removeInterest = (interest: string) => {
-    setError((prev) => (prev === INTERESTS_MIN_ERROR ? null : prev));
+    setError((prev) => (prev === interestsMinError() ? null : prev));
     setInterests((prev) => prev.filter((i) => i !== interest));
   };
 
@@ -376,7 +383,7 @@ export default function ProfileSetup({
     try {
       const result = await claimSignupOffer(offer);
       if (!result.ok) {
-        setError(result.error || MEMBERSHIP_REQUIRED_ERROR);
+        setError(result.error || membershipRequiredError());
       }
     } finally {
       setClaimingOffer(false);
@@ -390,7 +397,7 @@ export default function ProfileSetup({
 
     if (isSignup && !status.membership_linked) {
       setError(
-        'Choisis et active d’abord une offre pour continuer l’inscription.'
+        t('profile.chooseOfferFirst')
       );
       return;
     }
@@ -402,39 +409,37 @@ export default function ProfileSetup({
         selectedWorldCity.label === location.trim();
 
     if (!cityOk) {
-      setCityError(CITY_SELECTION_REQUIRED_ERROR);
-      setError(CITY_SELECTION_REQUIRED_ERROR);
+      setCityError(citySelectionRequiredError());
+      setError(citySelectionRequiredError());
       return;
     }
 
     if (interests.length < MIN_INTERESTS) {
-      setError(INTERESTS_MIN_ERROR);
+      setError(interestsMinError());
       return;
     }
 
     if (!birthDate) {
-      setError('Indique ta date de naissance.');
+      setError(t('auth.needBirthDate'));
       return;
     }
 
     if (!isAdult(birthDate)) {
-      setError(ADULTS_ONLY_MESSAGE);
+      setError(adultsOnlyMessage());
       return;
     }
 
     if (!genderLocked && gender !== 'homme' && gender !== 'femme') {
-      setError(GENDER_REQUIRED_ERROR);
+      setError(t('profile.genderRequired'));
       return;
     }
 
     setSaving(true);
 
     try {
-      if (!user) throw new Error('Non connecté');
+      if (!user) throw new Error(t('common.notConnected'));
       if (hasChildren) {
-        throw new Error(
-          "Ce site est réservé aux personnes sans enfants. Tu as indiqué avoir des enfants."
-        );
+        throw new Error(t('profile.childfreeBlocked'));
       }
 
       let nextPhotoUrl = photoUrl;
@@ -444,7 +449,7 @@ export default function ProfileSetup({
           photoFile
         );
         if (uploadError || !url) {
-          throw new Error(uploadError || "Échec de l'envoi de la photo.");
+          throw new Error(uploadError || t('profile.photoUploadFail'));
         }
         nextPhotoUrl = url;
       }
@@ -462,6 +467,7 @@ export default function ProfileSetup({
         interests: string[];
         photo_url: string;
         email_notifications_enabled: boolean;
+        preferred_locale: string;
         gender?: ProfileGender;
         lat?: number | null;
         lng?: number | null;
@@ -478,6 +484,7 @@ export default function ProfileSetup({
         interests,
         photo_url: nextPhotoUrl,
         email_notifications_enabled: emailNotificationsEnabled,
+        preferred_locale: currentLocale(),
       };
 
       if (!genderLocked) {
@@ -513,7 +520,7 @@ export default function ProfileSetup({
 
       const membership = await ensureMembershipLinked();
       if (!membership.ok) {
-        throw new Error(membership.error || MEMBERSHIP_REQUIRED_ERROR);
+        throw new Error(membership.error || membershipRequiredError());
       }
 
       if (isSignup && membership.is_founder) {
@@ -559,7 +566,7 @@ export default function ProfileSetup({
   if (loading || (isSignup && membershipLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse text-gray-400">Chargement...</div>
+        <div className="animate-pulse text-gray-400">{t('common.loading')}</div>
       </div>
     );
   }
@@ -576,14 +583,14 @@ export default function ProfileSetup({
             onClick={() => void refresh()}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
-            Réessayer
+            {t('common.retry')}
           </button>
           <button
             type="button"
             onClick={() => void signOut()}
             className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
           >
-            Se déconnecter
+            {t('common.signOut')}
           </button>
         </div>
       </div>
@@ -600,7 +607,7 @@ export default function ProfileSetup({
               onClick={() => void signOut()}
               className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
             >
-              Se déconnecter
+              {t('common.signOut')}
             </button>
           </div>
         )}
@@ -637,9 +644,9 @@ export default function ProfileSetup({
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mon profil</h1>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('profile.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Renseigne tes informations pour apparaître dans les recherches
+            {t('profile.subtitle')}
           </p>
           {status.is_founder && (
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
@@ -649,8 +656,8 @@ export default function ProfileSetup({
           {status.has_boost ? (
             <p className="text-xs font-medium text-[#8A6D1D] mt-2">
               {status.boost_ends_at
-                ? `Boost actif jusqu’au ${formatBoostUntil(status.boost_ends_at).date}`
-                : 'Boost actif'}
+                ? t('membership.boostUntil', { date: formatBoostUntil(status.boost_ends_at).date })
+                : t('membership.boostActive')}
             </p>
           ) : null}
         </div>
@@ -666,7 +673,7 @@ export default function ProfileSetup({
               {photoPreview || photoUrl ? (
                 <img
                   src={photoPreview || photoUrl}
-                  alt="Aperçu"
+                  alt={t('profile.photoPreview')}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -675,7 +682,7 @@ export default function ProfileSetup({
             </div>
             <div className="flex-1 min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Ta photo
+                {t('profile.photo')}
               </label>
               <input
                 ref={fileInputRef}
@@ -692,8 +699,8 @@ export default function ProfileSetup({
                 >
                   <ImagePlus className="w-4 h-4" />
                   {photoPreview || photoUrl
-                    ? 'Changer de photo'
-                    : 'Choisir une photo'}
+                    ? t('profile.photoChange')
+                    : t('profile.photoChoose')}
                 </button>
                 {photoFile && (
                   <button
@@ -701,14 +708,14 @@ export default function ProfileSetup({
                     onClick={clearSelectedPhoto}
                     className="text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                 )}
               </div>
               <p className="mt-1.5 text-xs text-gray-400 truncate">
                 {photoFileName
                   ? photoFileName
-                  : 'JPEG, PNG ou WebP · 5 Mo max'}
+                  : t('profile.photoFormatsHint')}
               </p>
             </div>
           </div>
@@ -718,7 +725,7 @@ export default function ProfileSetup({
           {/* Display name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Nom affiché <span className="text-rose-500">*</span>
+              {t('profile.displayName')} <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -726,7 +733,7 @@ export default function ProfileSetup({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-              placeholder="Ton prénom ou pseudo"
+              placeholder={t('profile.displayNamePlaceholder')}
             />
           </div>
 
@@ -736,7 +743,7 @@ export default function ProfileSetup({
               htmlFor="profile-birth-date-year"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
             >
-              Date de naissance <span className="text-rose-500">*</span>
+              {t('auth.birthDate')} <span className="text-rose-500">*</span>
             </label>
             <BirthDatePicker
               id="profile-birth-date"
@@ -751,12 +758,12 @@ export default function ProfileSetup({
           {!genderLocked && (
             <div>
               <p className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Genre <span className="text-rose-500">*</span>
+                {t('profile.gender')} <span className="text-rose-500">*</span>
               </p>
               <div
                 className="flex gap-2"
                 role="group"
-                aria-label="Genre"
+                aria-label={t('profile.gender')}
                 aria-required="true"
               >
                 <button
@@ -769,7 +776,7 @@ export default function ProfileSetup({
                       : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
                   }`}
                 >
-                  Un homme
+                  {t('profile.genderMale')}
                 </button>
                 <button
                   type="button"
@@ -781,7 +788,7 @@ export default function ProfileSetup({
                       : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
                   }`}
                 >
-                  Une femme
+                  {t('profile.genderFemale')}
                 </button>
               </div>
             </div>
@@ -794,7 +801,7 @@ export default function ProfileSetup({
                 htmlFor="profile-country"
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
               >
-                Pays <span className="text-rose-500">*</span>
+                {t('profile.country')} <span className="text-rose-500">*</span>
               </label>
               <select
                 id="profile-country"
@@ -811,7 +818,7 @@ export default function ProfileSetup({
               >
                 {COUNTRY_SELECT_OPTIONS.map((row) => (
                   <option key={row.iso2} value={row.iso2}>
-                    {row.nameFr}
+                    {countryDisplayName(row.iso2)}
                   </option>
                 ))}
               </select>
@@ -821,7 +828,7 @@ export default function ProfileSetup({
                 htmlFor="profile-city"
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
               >
-                Ville <span className="text-rose-500">*</span>
+                {t('profile.city')} <span className="text-rose-500">*</span>
               </label>
               {countryCode === 'FR' ? (
                 <CityAutocomplete
@@ -831,7 +838,7 @@ export default function ProfileSetup({
                     setLocation(next);
                     setCityError(null);
                     setError((prev) =>
-                      prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                      prev === citySelectionRequiredError() ? null : prev
                     );
                   }}
                   selected={selectedCity}
@@ -840,12 +847,12 @@ export default function ProfileSetup({
                     if (commune) {
                       setCityError(null);
                       setError((prev) =>
-                        prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                        prev === citySelectionRequiredError() ? null : prev
                       );
                     }
                   }}
                   invalid={Boolean(cityError)}
-                  placeholder="Tape puis choisis dans la liste…"
+                  placeholder={t('profile.cityPlaceholder')}
                 />
               ) : (
                 <WorldCityAutocomplete
@@ -856,7 +863,7 @@ export default function ProfileSetup({
                     setLocation(next);
                     setCityError(null);
                     setError((prev) =>
-                      prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                      prev === citySelectionRequiredError() ? null : prev
                     );
                   }}
                   selected={selectedWorldCity}
@@ -865,12 +872,12 @@ export default function ProfileSetup({
                     if (city) {
                       setCityError(null);
                       setError((prev) =>
-                        prev === CITY_SELECTION_REQUIRED_ERROR ? null : prev
+                        prev === citySelectionRequiredError() ? null : prev
                       );
                     }
                   }}
                   invalid={Boolean(cityError)}
-                  placeholder="Tape puis choisis dans la liste…"
+                  placeholder={t('profile.cityPlaceholder')}
                 />
               )}
               {cityError && (
@@ -888,7 +895,7 @@ export default function ProfileSetup({
               <Baby className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  As-tu des enfants ?
+                  {t('profile.hasChildren')}
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -900,7 +907,7 @@ export default function ProfileSetup({
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    Non
+                    {t('profile.no')}
                   </button>
                   <button
                     type="button"
@@ -911,13 +918,13 @@ export default function ProfileSetup({
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    Oui
+                    {t('profile.yes')}
                   </button>
                 </div>
                 {hasChildren && (
                   <p className="text-xs text-rose-600 mt-2 flex items-center gap-1 animate-fadeIn">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    Ce site est réservé aux personnes sans enfants.
+                    {t('profile.childfreeOnly')}
                   </p>
                 )}
               </div>
@@ -927,7 +934,7 @@ export default function ProfileSetup({
           {/* Interests */}
           <div className="space-y-4">
             <label className="block text-sm font-semibold text-gray-700">
-              Centres d&apos;intérêt
+              {t('profile.interests')}
             </label>
 
             {interests.length > 0 && (
@@ -937,12 +944,12 @@ export default function ProfileSetup({
                     key={interest}
                     className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-semibold bg-rose-500 text-white shadow-sm shadow-rose-200"
                   >
-                    {interest}
+                    {displayInterest(interest)}
                     <button
                       type="button"
                       onClick={() => removeInterest(interest)}
                       className="p-0.5 rounded-full hover:bg-white/20 transition-colors"
-                      aria-label={`Retirer ${interest}`}
+                      aria-label={t('profile.removeInterest', { name: displayInterest(interest) })}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -955,7 +962,7 @@ export default function ProfileSetup({
               {INTEREST_CATEGORIES.map((category) => (
                 <div key={category.id}>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                    {category.label}
+                    {categoryLabel(category.id)}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {category.interests.map((interest) => {
@@ -978,7 +985,7 @@ export default function ProfileSetup({
                           {selected && (
                             <Check className="w-3.5 h-3.5 inline mr-1" />
                           )}
-                          {interest}
+                          {displayInterest(interest)}
                         </button>
                       );
                     })}
@@ -989,7 +996,7 @@ export default function ProfileSetup({
 
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Ajouter le vôtre
+                {t('profile.addCustom')}
               </p>
               <div className="flex gap-2">
                 <input
@@ -1004,7 +1011,7 @@ export default function ProfileSetup({
                     }
                   }}
                   className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
-                  placeholder="Ex. Astronomie amateur, Bridge…"
+                  placeholder={t('profile.customInterestPlaceholder')}
                 />
                 <button
                   type="button"
@@ -1012,7 +1019,7 @@ export default function ProfileSetup({
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  Ajouter
+                  {t('profile.add')}
                 </button>
               </div>
             </div>
@@ -1021,8 +1028,8 @@ export default function ProfileSetup({
           {/* Bio (optionnelle) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Bio{' '}
-              <span className="font-normal text-gray-400">(optionnel)</span>
+              {t('profile.bio')}{' '}
+              <span className="font-normal text-gray-400">{t('profile.bioOptional')}</span>
             </label>
             <textarea
               value={bio}
@@ -1030,7 +1037,7 @@ export default function ProfileSetup({
               rows={4}
               maxLength={500}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
-              placeholder="Parle de toi, ce que tu aimes, ce que tu recherches..."
+              placeholder={t('profile.bioPlaceholder')}
             />
             <p className="text-xs text-gray-400 mt-1 text-right">
               {bio.length}/500
@@ -1049,11 +1056,10 @@ export default function ProfileSetup({
           >
             <div>
               <h2 className="text-sm font-bold text-gray-900 tracking-tight">
-                Préférences
+                {t('profile.preferences')}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                Gère les e-mails de notification envoyés par Aypik (flashs,
-                actualisations, messages d’accueil, etc.).
+                {t('profile.emailPrefsHint')}
               </p>
             </div>
             <label className="flex items-start gap-3 cursor-pointer">
@@ -1068,14 +1074,10 @@ export default function ProfileSetup({
               />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-gray-800">
-                  Recevoir les notifications et actualisations par e-mail
+                  {t('profile.emailNotifications')}
                 </span>
                 <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
-                  En cochant cette option, tu acceptes de recevoir les
-                  communications non essentielles de la plateforme, telles que
-                  les nouveautés, les flashs ou les actualités du site. Les
-                  e-mails strictement nécessaires au bon fonctionnement de ton
-                  compte pourront toujours t&apos;être envoyés.
+                  {t('profile.emailPrefsLegal')}
                 </span>
                 {(prefsSaving || prefsSaved) && (
                   <span
@@ -1084,11 +1086,11 @@ export default function ProfileSetup({
                     }`}
                   >
                     {prefsSaving ? (
-                      'Enregistrement…'
+                      t('profile.savingPref')
                     ) : (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        Préférence enregistrée
+                        {t('profile.preferenceSaved')}
                       </>
                     )}
                   </span>
@@ -1115,9 +1117,9 @@ export default function ProfileSetup({
           >
             {saving
               ? photoFile
-                ? 'Envoi de la photo…'
-                : 'Sauvegarde...'
-              : 'Enregistrer mon profil'}
+                ? t('profile.uploadingPhoto')
+                : t('profile.saving')
+              : t('profile.saveProfile')}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
@@ -1130,10 +1132,9 @@ export default function ProfileSetup({
 
         {allowAccountDeletion && (
           <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
-            <h2 className="text-sm font-semibold text-gray-900 mb-1">SUPPRESSION DU COMPTE</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">{t('profile.deleteAccountTitle')}</h2>
             <p className="text-sm text-gray-500 mb-4">
-              La suppression de ton compte est immédiate et définitive.
-              Ton profil, tes likes et tes matchs seront effacés.
+              {t('profile.deleteAccountBody')}
             </p>
 
             <button
@@ -1145,7 +1146,7 @@ export default function ProfileSetup({
               className="w-full py-3 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Supprimer mon compte
+              {t('profile.deleteAccountCta')}
             </button>
 
             {confirmDelete && (
@@ -1160,13 +1161,10 @@ export default function ProfileSetup({
                     id="delete-account-title"
                     className="text-base font-bold text-gray-900"
                   >
-                    Attention
+                    {t('common.attention')}
                   </h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    Cette action est immédiate et définitive. Toutes tes
-                    données seront effacées. Si tu es Membre Fondateur, ton
-                    statut et ton numéro d&apos;inscription seront également
-                    perdus et ne pourront pas être récupérés.
+                    {t('profile.deleteConfirmFounder')}
                   </p>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
@@ -1178,10 +1176,7 @@ export default function ProfileSetup({
                       className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
                     />
                     <span className="text-sm text-gray-700 leading-relaxed">
-                      Je comprends que cette action est immédiate et
-                      définitive, et que si je suis Membre Fondateur, je
-                      perdrai également ce statut ainsi que mon numéro
-                      d&apos;inscription.
+                      {t('profile.deleteAcknowledge')}
                     </span>
                   </label>
                   <div className="delete-confirm-actions flex gap-3 pt-1 items-stretch">
@@ -1191,7 +1186,7 @@ export default function ProfileSetup({
                       disabled={deleting}
                       className="flex-1 min-w-0 basis-0 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center text-center"
                     >
-                      Annuler
+                      {t('common.cancel')}
                     </button>
                     <button
                       type="button"
@@ -1199,28 +1194,28 @@ export default function ProfileSetup({
                       disabled={deleting || !deleteAcknowledged}
                       aria-label={
                         deleting
-                          ? 'Suppression...'
-                          : 'Confirmer la suppression'
+                          ? t('profile.deleting')
+                          : t('profile.confirmDeletion')
                       }
                       className={`delete-confirm-btn flex-1 min-w-0 basis-0 py-3 rounded-xl font-semibold flex items-center justify-center${
                         deleteAcknowledged ? ' delete-confirm-btn--ready' : ''
                       }`}
                     >
                       {deleting ? (
-                        'Suppression...'
+                        t('profile.deleting')
                       ) : deleteAcknowledged ? (
                         <span className="text-center leading-snug" aria-hidden>
                           <span className="font-extrabold [-webkit-text-stroke:0.5px_currentColor]">
-                            CONFIRMER
+                            {t('common.confirmUpper')}
                           </span>
                           <br />
-                          la suppression
+                          {t('profile.confirmDeletionLine')}
                         </span>
                       ) : (
                         <span className="text-center leading-snug" aria-hidden>
-                          Confirmer
+                          {t('common.confirm')}
                           <br />
-                          la suppression
+                          {t('profile.confirmDeletionLine')}
                         </span>
                       )}
                     </button>

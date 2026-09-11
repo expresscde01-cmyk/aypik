@@ -48,11 +48,12 @@ import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { userErrorMessage } from '@/lib/userError';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
 import {
-  ACCOUNT_STATUS_HOME_BANNER,
+  accountStatusHomeBanner,
   resolveVisibilityChoice,
   type AccountStatusId,
   type VisibilityChoice,
 } from '@/lib/accountStatus';
+import { useTranslation } from 'react-i18next';
 
 type HomeSuggestion = SuggestedProfile & {
   is_founder?: boolean;
@@ -101,6 +102,7 @@ export default function HomeDashboard({
   accountStatuses?: AccountStatusId[];
   onAccountStatusClick?: (id: AccountStatusId) => void;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
@@ -200,7 +202,7 @@ export default function HomeDashboard({
     (homeQuery.error
       ? homeQuery.error instanceof Error
         ? homeQuery.error.message
-        : 'Impossible de charger les suggestions'
+        : t('discover.loadSuggestionsError')
       : null);
 
   useEffect(() => {
@@ -238,14 +240,14 @@ export default function HomeDashboard({
           .maybeSingle();
 
         if (reverse) {
-          setToast(`C’est un match avec ${candidate.display_name} !`);
+          setToast(t('discover.matchToast', { name: candidate.display_name }));
           window.setTimeout(() => setToast(null), 2800);
         }
 
         invalidateLikeFlashEdges(user.id);
         await refresh();
       } catch (err) {
-        setActionError(userErrorMessage(err, 'Une erreur est survenue'));
+        setActionError(userErrorMessage(err, t('common.errorOccurred')));
       } finally {
         setActingId(null);
       }
@@ -277,16 +279,16 @@ export default function HomeDashboard({
         setFlashedIds((prev) => new Set(prev).add(candidate.id));
         setToast(
           result.already_flashed
-            ? 'Tu as déjà flashé ce profil'
+            ? t('discover.alreadyFlashed')
             : result.matched
-              ? `C’est un match avec ${candidate.display_name} !`
-              : `Flash envoyé à ${candidate.display_name} ✨`
+              ? t('discover.matchToast', { name: candidate.display_name })
+              : t('discover.flashSent', { name: candidate.display_name })
         );
 
         window.setTimeout(() => setToast(null), 2800);
         invalidateLikeFlashEdges(user.id);
       } catch {
-        setActionError('Impossible d’envoyer le flash');
+        setActionError(t('discover.flashFail'));
       } finally {
         setActingId(null);
       }
@@ -330,7 +332,7 @@ export default function HomeDashboard({
                 type="button"
                 onClick={onHome}
                 className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
-                aria-label="Haut de la page d’accueil"
+                aria-label={t('common.homeTopAria')}
               >
                 <BrandHeaderBrand compact={taglineCompact} />
               </button>
@@ -360,7 +362,7 @@ export default function HomeDashboard({
                       className="hidden lg:inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors whitespace-nowrap shrink-0"
                     >
                       <LogOut className="w-4 h-4" aria-hidden />
-                      Déconnexion
+                      {t('common.signOutShort')}
                     </button>
                   </>
                 )}
@@ -379,7 +381,7 @@ export default function HomeDashboard({
               type="button"
               onClick={onHome}
               className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
-              aria-label="Haut de la page d’accueil"
+              aria-label={t('common.homeTopAria')}
             >
               <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
             </button>
@@ -410,18 +412,17 @@ export default function HomeDashboard({
             className="text-xs font-extrabold uppercase tracking-[0.28em] bg-clip-text text-transparent"
             style={{ backgroundImage: BRAND_GRADIENT_CSS }}
           >
-            Aypik
+            {t('common.brandName')}
           </p>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Bonjour, {displayName}
+            {t('discover.homeHello', { name: displayName })}
           </h1>
           <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-            Des profils proches de toi, de ton âge et de tes centres
-            d’intérêt — sélectionnés pour toi.
+            {t('discover.homeIntro')}
           </p>
           {accountStatuses[0] && (
-            <p className={ACCOUNT_STATUS_HOME_BANNER[accountStatuses[0]].className}>
-              {ACCOUNT_STATUS_HOME_BANNER[accountStatuses[0]].text}
+            <p className={accountStatusHomeBanner(accountStatuses[0]).className}>
+              {accountStatusHomeBanner(accountStatuses[0]).text}
             </p>
           )}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
@@ -431,7 +432,7 @@ export default function HomeDashboard({
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/60 hover:opacity-95 transition-opacity"
             >
               <Compass className="w-4 h-4" />
-              Découvrir
+              {t('common.nav.discover')}
             </button>
             <button
               type="button"
@@ -439,12 +440,12 @@ export default function HomeDashboard({
               className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
               aria-label={
                 unreadTotal > 0
-                  ? `Mes Matchs, ${unreadMessagesLabel(unreadTotal)}`
-                  : 'Mes Matchs'
+                  ? `${t('matches.title')}, ${unreadMessagesLabel(unreadTotal)}`
+                  : t('matches.title')
               }
             >
               <Heart className="w-4 h-4 text-rose-500" />
-              Mes Matchs
+              {t('matches.title')}
               {unreadTotal > 0 && (
                 <UnreadBadge
                   count={unreadTotal}
@@ -460,10 +461,10 @@ export default function HomeDashboard({
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900 tracking-tight">
-                Suggestions pour toi
+                {t('discover.suggestionsTitle')}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Près de chez toi · âge · centres d’intérêt
+                {t('discover.suggestionsSubtitle')}
               </p>
             </div>
             <button
@@ -471,7 +472,7 @@ export default function HomeDashboard({
               onClick={onOpenProfile}
               className="text-xs font-semibold text-rose-600 hover:text-rose-700"
             >
-              Mon profil
+              {t('profile.title')}
             </button>
           </div>
 
@@ -495,20 +496,14 @@ export default function HomeDashboard({
             <div className="rounded-2xl border border-dashed border-rose-200 bg-white/70 px-5 py-10 text-center">
               <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-2" />
               <p className="text-sm text-gray-600 leading-relaxed">
-                Aucun profil ne correspond actuellement à ta zone
-                géographique et à tes centres d’intérêt. Modifie tes
-                préférences dans la section{' '}
-                <strong className="font-semibold text-gray-800">
-                  Découvrir
-                </strong>{' '}
-                ou reviens plus tard.
+                {t('discover.suggestionsEmpty')}
               </p>
               <button
                 type="button"
                 onClick={onOpenDiscover}
                 className="mt-4 text-sm font-semibold text-rose-600"
               >
-                Découvrir les profils →
+                {t('discover.discoverProfilesCta')}
               </button>
             </div>
           ) : (
@@ -522,8 +517,11 @@ export default function HomeDashboard({
                     onClick={() => setOpenProfile(p)}
                     aria-label={
                       unreadCount > 0
-                        ? `Voir le profil de ${p.display_name}, ${unreadMessagesLabel(unreadCount)}`
-                        : `Voir le profil de ${p.display_name}`
+                        ? t('discover.viewProfileUnread', {
+                            name: p.display_name,
+                            unread: unreadMessagesLabel(unreadCount),
+                          })
+                        : t('discover.viewProfile', { name: p.display_name })
                     }
                     className={`w-full text-left rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
                       unreadCount > 0
@@ -589,9 +587,9 @@ export default function HomeDashboard({
                       {p.mutual_interest_count > 0 && (
                         <p className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
                           <Sparkles className="w-3 h-3" />
-                          {p.mutual_interest_count === 1
-                            ? "1 centre d'intérêt en commun"
-                            : `${p.mutual_interest_count} centres d'intérêt en commun`}
+                          {t('discover.mutualInterest', {
+                            count: p.mutual_interest_count,
+                          })}
                         </p>
                       )}
                     </div>

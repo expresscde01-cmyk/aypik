@@ -20,14 +20,10 @@ import ContactPage from '@/components/ContactPage';
 import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 import SessionIdleGuard from '@/components/SessionIdleGuard';
 import { peekAuthNotice } from '@/lib/sessionIdle';
+import LanguageProvider from '@/i18n/LanguageProvider';
+import { t } from '@/i18n/t';
 
 const LegalTermsPage = lazy(() => import('@/components/LegalTerms'));
-
-const UNSUBSCRIBED_SUCCESS_MESSAGE =
-  "Vous êtes désabonné·e. Vous ne recevrez plus d'e-mails de notification de la part d'Aypik. Les e-mails strictement nécessaires au fonctionnement du compte (sécurité, facturation) peuvent encore vous être envoyés.";
-
-const UNSUBSCRIBED_ERROR_DEFAULT =
-  'Ce lien de désabonnement est invalide.';
 
 type UnsubscribeNotice = {
   kind: 'success' | 'error';
@@ -48,10 +44,10 @@ function consumeUnsubscribedFromUrl(): UnsubscribeNotice | null {
   if (raw === '1' || raw === '0') {
     consumedUnsubscribeNotice =
       raw === '1'
-        ? { kind: 'success', text: UNSUBSCRIBED_SUCCESS_MESSAGE }
+        ? { kind: 'success', text: t('common.unsubscribedSuccess') }
         : {
             kind: 'error',
-            text: params.get('reason')?.trim() || UNSUBSCRIBED_ERROR_DEFAULT,
+            text: params.get('reason')?.trim() || t('common.unsubscribedInvalid'),
           };
     const url = new URL(window.location.href);
     url.searchParams.delete('unsubscribed');
@@ -96,7 +92,7 @@ function UnsubscribeBanner({
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-black/5 flex items-center justify-center shrink-0 -mt-1 -mr-1"
-            aria-label="Fermer"
+            aria-label={t('common.closeAria')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -289,9 +285,11 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrandLockupCopyGuard />
-          <SessionIdleGuard />
-          <AppContent />
+          <LanguageProvider>
+            <BrandLockupCopyGuard />
+            <SessionIdleGuard />
+            <AppContent />
+          </LanguageProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

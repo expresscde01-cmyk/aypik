@@ -5,10 +5,12 @@ import type { Profile } from '@/components/ProfileSetup';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import { matchManageDisplayError } from '@/lib/matchManageError';
+import { useTranslation } from 'react-i18next';
+import { t as tStatic } from '@/i18n/t';
 
 function firstName(name: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return 'ce profil';
+  if (!trimmed) return tStatic('matches.thisProfile');
   return trimmed.split(/\s+/)[0] || trimmed;
 }
 
@@ -39,9 +41,10 @@ export default function MatchManageModal({
   onRestore?: () => void;
   onPurge?: () => void;
 }) {
+  const { t } = useTranslation();
   const [confirmPurge, setConfirmPurge] = useState(false);
   const name = firstName(peer.display_name);
-  const kindLabel = origin === 'flash' ? 'flash' : 'like';
+  const kindLabel = origin === 'flash' ? t('matches.flashOnly') : t('matches.likeOnly');
   const showArchivePurge = mode === 'manage' || mode === 'waiting';
   const displayError = matchManageDisplayError(error);
 
@@ -58,32 +61,18 @@ export default function MatchManageModal({
 
   const title =
     mode === 'broken'
-      ? `Match rompu avec ${name}`
+      ? t('matches.manageBrokenTitle', { name })
       : mode === 'waiting'
-        ? `Gestion du ${kindLabel} avec ${name}`
-        : `Gestion du match avec ${name}`;
+        ? t('matches.manageKindTitle', { kind: kindLabel, name })
+        : t('matches.manageTitle', { name });
 
   const description =
     mode === 'broken' ? (
-      'Rétablis ce match ou supprime définitivement ce lien.'
+      t('matches.manageRestoreHint')
     ) : mode === 'waiting' ? (
-      <>
-        Archive ce {kindLabel} pour le ranger dans{' '}
-        <strong className="font-bold text-gray-800">
-          Mis en attente par toi - archive
-        </strong>
-        {' '}
-        (rangement personnel, sans effet sur l&apos;autre membre), ou
-        supprime-le définitivement.
-      </>
+      t('matches.waitingArchiveHint', { kind: kindLabel })
     ) : (
-      <>
-        Archive ce match pour le retrouver dans{' '}
-        <strong className="font-bold text-gray-800">
-          Matchs rompus par toi
-        </strong>
-        , ou supprime-le définitivement.
-      </>
+      t('matches.manageRestoreHint')
     );
 
   return createPortal(
@@ -96,7 +85,7 @@ export default function MatchManageModal({
       <button
         type="button"
         className="absolute inset-0 bg-slate-900/45 backdrop-blur-[1px]"
-        aria-label="Fermer"
+        aria-label={t('common.closeAria')}
         onClick={onClose}
       />
       <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden animate-fadeIn">
@@ -128,7 +117,7 @@ export default function MatchManageModal({
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-400 shrink-0"
-            aria-label="Fermer"
+            aria-label={t('common.closeAria')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -148,7 +137,7 @@ export default function MatchManageModal({
               onClick={onArchive}
               className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
             >
-              {busy ? '…' : 'Archiver'}
+              {busy ? '…' : t('matches.archive')}
             </button>
             <button
               type="button"
@@ -165,7 +154,7 @@ export default function MatchManageModal({
                     strokeWidth={2.75}
                     aria-hidden
                   />
-                  <span>Supprimer définitivement</span>
+                  <span>{t('matches.deletePermanently')}</span>
                 </>
               )}
             </button>
@@ -178,7 +167,7 @@ export default function MatchManageModal({
               onClick={onRestore}
               className="w-full py-2.5 rounded-xl btn-restore-link text-sm font-semibold disabled:opacity-40"
             >
-              {busy ? '…' : 'Rétablir'}
+              {busy ? '…' : t('matches.restore')}
             </button>
             <button
               type="button"
@@ -186,7 +175,7 @@ export default function MatchManageModal({
               onClick={() => setConfirmPurge(true)}
               className="w-full py-2.5 rounded-xl btn-purge-trigger text-sm font-semibold disabled:opacity-40"
             >
-              {busy ? '…' : 'Supprimer définitivement'}
+              {busy ? '…' : t('matches.deletePermanently')}
             </button>
           </div>
         )}

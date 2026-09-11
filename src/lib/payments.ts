@@ -2,9 +2,11 @@ import { loadStripe } from '@stripe/stripe-js/pure';
 import type { Stripe } from '@stripe/stripe-js';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
-const PAYMENTS_DISABLED =
-  'Les paiements sont désactivés. Aypik est entièrement gratuit pour le moment.';
+function paymentsDisabledMessage(): string {
+  return t('membership.paymentsDisabled');
+}
 
 export type PaymentMethodChoice = 'card' | 'paypal';
 
@@ -39,7 +41,7 @@ export async function createStripeSubscription(): Promise<{
   clientSecret: string;
   subscriptionId: string;
 } | { error: string }> {
-  if (SITE_FREE_MODE) return { error: PAYMENTS_DISABLED };
+  if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-stripe-subscription',
     { body: {} }
@@ -49,13 +51,13 @@ export async function createStripeSubscription(): Promise<{
     return {
       error:
         error.message ||
-        "Impossible de démarrer le paiement Stripe. Vérifie que la fonction Edge est déployée.",
+        t('membership.stripeStartFail'),
     };
   }
 
   if (data?.error) return { error: String(data.error) };
   if (!data?.clientSecret) {
-    return { error: 'Réponse Stripe incomplète (clientSecret manquant).' };
+    return { error: t('membership.stripeIncomplete') };
   }
 
   return {
@@ -68,7 +70,7 @@ export async function createPayPalSubscription(urls: {
   returnUrl: string;
   cancelUrl: string;
 }): Promise<{ approveUrl: string; subscriptionId: string } | { error: string }> {
-  if (SITE_FREE_MODE) return { error: PAYMENTS_DISABLED };
+  if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-paypal-subscription',
     { body: urls }
@@ -78,13 +80,13 @@ export async function createPayPalSubscription(urls: {
     return {
       error:
         error.message ||
-        "Impossible de démarrer PayPal. Vérifie que la fonction Edge est déployée.",
+        t('membership.paypalStartFail'),
     };
   }
 
   if (data?.error) return { error: String(data.error) };
   if (!data?.approveUrl) {
-    return { error: 'URL d’approbation PayPal manquante.' };
+    return { error: t('membership.paypalApproveMissing') };
   }
 
   return {
@@ -94,7 +96,7 @@ export async function createPayPalSubscription(urls: {
 }
 
 export async function cancelPremiumSubscription(): Promise<string | null> {
-  if (SITE_FREE_MODE) return PAYMENTS_DISABLED;
+  if (SITE_FREE_MODE) return paymentsDisabledMessage();
   const { data, error } = await supabase.functions.invoke('cancel-premium', {
     body: {},
   });
@@ -102,7 +104,7 @@ export async function cancelPremiumSubscription(): Promise<string | null> {
   if (error) {
     return (
       error.message ||
-      'Impossible de résilier. Réessaie ou contacte le support.'
+      t('membership.cancelFail')
     );
   }
 

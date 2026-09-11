@@ -25,6 +25,7 @@ import { matchDialogueChipLabel } from '@/lib/interactionCopy';
 import { matchManageDisplayError } from '@/lib/matchManageError';
 import MatchManageModal from '@/components/MatchManageModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
+import { useTranslation } from 'react-i18next';
 
 type ChatScreenProps = {
   peer: Profile;
@@ -40,6 +41,7 @@ export default function ChatScreen({
   onMatchHidden,
   onDialogueStarted,
 }: ChatScreenProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { status } = useMembership();
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -226,7 +228,7 @@ export default function ChatScreen({
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);
       setError(
-        userErrorMessage(err, 'Impossible d’envoyer le message. Réessaie.')
+        userErrorMessage(err, t('matches.chatSendFail'))
       );
     } finally {
       setSending(false);
@@ -253,8 +255,8 @@ export default function ChatScreen({
     } catch (err) {
       const fallback =
         action === 'purge'
-          ? 'Impossible de supprimer définitivement ce lien.'
-          : 'Impossible d’archiver ce match.';
+          ? t('matches.purgeError')
+          : t('matches.archiveError');
       setManageError(
         matchManageDisplayError(userErrorMessage(err, fallback)) || fallback
       );
@@ -272,11 +274,11 @@ export default function ChatScreen({
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-label={`Conversation avec ${peer.display_name}`}>
+    <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-label={t('matches.conversationWith', { name: peer.display_name })}>
       <button
         type="button"
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]"
-        aria-label="Fermer la conversation"
+        aria-label={t('matches.closeConversation')}
         onClick={onClose}
       />
       <aside className="absolute inset-y-0 right-0 flex h-full w-full sm:max-w-md flex-col bg-white shadow-[-12px_0_40px_rgba(15,23,42,0.18)] border-l border-gray-200">
@@ -286,7 +288,7 @@ export default function ChatScreen({
               type="button"
               onClick={onClose}
               className="w-9 h-9 rounded-lg hover:bg-rose-50 flex items-center justify-center text-gray-500"
-              aria-label="Retour aux matchs"
+              aria-label={t('matches.chatBack')}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -311,7 +313,7 @@ export default function ChatScreen({
               <p className="text-[11px] text-rose-500 font-medium flex items-center gap-1">
                 <Heart className="w-3 h-3" fill="currentColor" />
                 {loading
-                  ? 'Conversation'
+                  ? t('matches.conversation')
                   : matchDialogueChipLabel(
                       Boolean(
                         user &&
@@ -337,14 +339,13 @@ export default function ChatScreen({
                       <Heart className="w-7 h-7 text-rose-400" fill="currentColor" />
                     </div>
                     <p className="text-sm font-semibold text-gray-800">
-                      C’est un match avec {peer.display_name}
+                      {t('matches.chatMatchBanner', { name: peer.display_name })}
                     </p>
                     <p className="text-xs text-gray-500 mt-1.5 max-w-xs">
-                      Tes messages s’affichent ici, dans ce fil de discussion.
+                      {t('matches.chatEmpty')}
                     </p>
                     <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                      Messagerie illimitée — c’est inclus dans{' '}
-                      {offerLabel(status)}.
+                      {t('matches.chatUnlimited', { offer: offerLabel(status) })}
                     </p>
                   </div>
                 )}
@@ -397,7 +398,7 @@ export default function ChatScreen({
         <footer className="shrink-0 bg-white border-t-2 border-rose-200 shadow-[0_-10px_28px_rgba(136,19,55,0.1)] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="px-4 pt-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-500 mb-2">
-              Écrire un message
+              {t('matches.chatWrite')}
             </p>
             <form
               className="flex items-end gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 p-2"
@@ -413,7 +414,7 @@ export default function ChatScreen({
                 onKeyDown={onKeyDown}
                 rows={2}
                 maxLength={2000}
-                placeholder={`Écrire à ${peer.display_name}…`}
+                placeholder={t('matches.chatWriteTo', { name: peer.display_name })}
                 readOnly={false}
                 disabled={sending}
                 className="flex-1 resize-none max-h-28 rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300 disabled:opacity-60"
@@ -422,7 +423,7 @@ export default function ChatScreen({
                 type="submit"
                 disabled={sending || !draft.trim()}
                 className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-300/70 disabled:opacity-40 disabled:shadow-none hover:brightness-105 transition-all shrink-0"
-                aria-label="Envoyer"
+                aria-label={t('matches.chatSend')}
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -436,7 +437,7 @@ export default function ChatScreen({
                 }}
                 className="text-[12px] text-gray-500 underline decoration-gray-400/80 underline-offset-2 decoration-from-font bg-amber-50/90 px-1 rounded-sm hover:text-slate-700 hover:bg-amber-100/80"
               >
-                Gérer ce match
+                {t('matches.manageMatch')}
               </button>
             </p>
           </div>

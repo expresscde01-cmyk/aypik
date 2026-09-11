@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { t } from '@/i18n/t';
+import { currentLocale } from '@/i18n/documentMeta';
+import { isLocalizedContactPath, withLocalePrefix } from '@/i18n/path';
 
 export function openLegalTerms() {
   const url = new URL(window.location.href);
@@ -19,16 +23,21 @@ export function isLegalTermsOpen() {
   return new URLSearchParams(window.location.search).get('legal') === 'cgu';
 }
 
+export function legalDocLabel(): string {
+  return SITE_FREE_MODE ? t('legal.docLabelFree') : t('legal.docLabelPaid');
+}
+
 /** Intitulé du document légal affiché (CGU seules tant que le lancement est gratuit). */
 export const LEGAL_DOC_LABEL = SITE_FREE_MODE ? 'CGU' : 'CGU / CGV';
 
 export function LegalLink({
-  children = LEGAL_DOC_LABEL,
+  children,
   className = '',
 }: {
   children?: ReactNode;
   className?: string;
 }) {
+  const label = children ?? legalDocLabel();
   return (
     <button
       type="button"
@@ -38,7 +47,7 @@ export function LegalLink({
         'underline underline-offset-2 hover:text-rose-600 transition-colors'
       }
     >
-      {children}
+      {label}
     </button>
   );
 }
@@ -47,9 +56,12 @@ export const SUPPORT_EMAIL = 'aypik.contact@gmail.com';
 
 export const CONTACT_PATH = '/contact';
 
+export function contactHref(): string {
+  return withLocalePrefix(currentLocale(), CONTACT_PATH);
+}
+
 export function isContactPage() {
-  const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  return path === CONTACT_PATH;
+  return isLocalizedContactPath();
 }
 
 export function ContactLink({
@@ -57,9 +69,10 @@ export function ContactLink({
 }: {
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <a
-      href={CONTACT_PATH}
+      href={contactHref()}
       target="_blank"
       rel="noopener noreferrer"
       className={
@@ -67,7 +80,7 @@ export function ContactLink({
         'underline underline-offset-2 hover:text-rose-600 transition-colors'
       }
     >
-      Nous contacter
+      {t('common.contactUs')}
     </a>
   );
 }
@@ -79,6 +92,8 @@ export function SiteFooter({
   compact?: boolean;
   showLegal?: boolean;
 }) {
+  const { t } = useTranslation();
+  const doc = legalDocLabel();
   return (
     <footer
       className={`border-t border-rose-100/80 bg-white/60 ${
@@ -92,12 +107,12 @@ export function SiteFooter({
       >
         {compact ? (
           <p>
-            Vous avez des questions ? <ContactLink />
+            {t('common.footerQuestions')} <ContactLink />
             {showLegal && (
               <>
                 {' · '}
                 <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-                  {LEGAL_DOC_LABEL}
+                  {doc}
                 </LegalLink>
               </>
             )}
@@ -105,13 +120,13 @@ export function SiteFooter({
         ) : (
           <>
             <p>
-              Vous avez des questions ? <ContactLink />
+              {t('common.footerQuestions')} <ContactLink />
             </p>
             {showLegal && (
               <p>
-                Aypik · 18 ans et plus ·{' '}
+                {t('common.footerAgeLegal')}{' '}
                 <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
-                  {LEGAL_DOC_LABEL}
+                  {doc}
                 </LegalLink>
               </p>
             )}

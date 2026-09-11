@@ -1,3 +1,5 @@
+import { t } from '../i18n/t.ts';
+
 export type InterestCategory = {
   id: string;
   label: string;
@@ -118,8 +120,17 @@ export const ALL_SUGGESTED_INTERESTS: string[] = INTEREST_CATEGORIES.flatMap(
 export const MIN_INTERESTS = 3;
 export const MAX_CUSTOM_INTEREST_LENGTH = 32;
 
-export const INTERESTS_MIN_ERROR =
-  'Sélectionne au moins 3 centres d’intérêt';
+export function interestsMinError(): string {
+  return t('interests.minError');
+}
+
+export function displayInterest(canonicalFr: string): string {
+  return t(`interests.items.${canonicalFr}`, { defaultValue: canonicalFr });
+}
+
+export function categoryLabel(id: string): string {
+  return t(`interests.categories.${id}`, { defaultValue: id });
+}
 
 /** Normalise pour comparer sans doublon (casse / espaces). */
 export function normalizeInterestKey(value: string): string {

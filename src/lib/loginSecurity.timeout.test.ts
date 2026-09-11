@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   LOGIN_CLIENT_TIMEOUT_MS,
-  LOGIN_TIMEOUT_MESSAGE,
+  loginTimeoutMessage,
   LoginClientTimeoutError,
   isLoginClientTimeout,
   withClientTimeout,
@@ -15,7 +15,7 @@ test('timeout client : la promesse se termine avec le message visible', async ()
     () => withClientTimeout(hang, 20),
     (err: unknown) => {
       assert.equal(isLoginClientTimeout(err), true);
-      assert.equal((err as Error).message, LOGIN_TIMEOUT_MESSAGE);
+      assert.equal((err as Error).message, loginTimeoutMessage());
       return true;
     }
   );

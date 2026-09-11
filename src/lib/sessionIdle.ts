@@ -1,3 +1,5 @@
+import { t } from '../i18n/t.ts';
+
 /**
  * Déconnexion pour inactivité (sessions « ordinaires »).
  * « Rester connecté » (login) exempte le timeout de 30 min.
@@ -30,8 +32,9 @@ export const IDLE_TIMEOUT_MS = IDLE_DEBUG_SHORT ? 30_000 : 30 * MINUTE;
 /** Avertissement : 2 min avant l’expiration (ou 10 s en mode debug court). */
 export const IDLE_WARN_BEFORE_MS = IDLE_DEBUG_SHORT ? 10_000 : 2 * MINUTE;
 
-export const IDLE_SIGNED_OUT_MESSAGE =
-  'Vous avez été déconnecté pour inactivité.';
+export function idleSignedOutMessage(): string {
+  return t('common.sessionIdleNotice');
+}
 
 export type AuthNoticeKind = 'idle';
 
@@ -81,7 +84,7 @@ export function consumeAuthNotice(): AuthNoticeKind | null {
 }
 
 export function authNoticeMessage(kind: AuthNoticeKind | null): string | null {
-  if (kind === 'idle') return IDLE_SIGNED_OUT_MESSAGE;
+  if (kind === 'idle') return t('common.sessionIdleNotice');
   return null;
 }
 

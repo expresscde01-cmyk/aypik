@@ -28,6 +28,8 @@ import {
 } from '@/lib/membership';
 import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { useTranslation } from 'react-i18next';
+import { widgetLanguage } from '@/i18n/format';
 
 type Step = 'choose' | 'card' | 'paypal_redirect' | 'success';
 
@@ -47,6 +49,7 @@ export function PaymentCheckoutModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const amount = formatPriceCents(
     status.premium_price_cents,
@@ -73,9 +76,7 @@ export function PaymentCheckoutModal({
   const startCard = async () => {
     setError(null);
     if (!isStripeConfigured()) {
-      setError(
-        'Paiement par carte non configuré. Ajoutez VITE_STRIPE_PUBLISHABLE_KEY et déployez la fonction create-stripe-subscription.'
-      );
+      setError(t('membership.stripeNotConfigured'));
       return;
     }
     setLoading(true);
@@ -93,7 +94,7 @@ export function PaymentCheckoutModal({
     setError(null);
     if (!isPayPalConfigured()) {
       setError(
-        'PayPal non configuré. Ajoutez VITE_PAYPAL_CLIENT_ID et déployez create-paypal-subscription.'
+        t('membership.paypalNotConfigured')
       );
       return;
     }
@@ -128,7 +129,7 @@ export function PaymentCheckoutModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-        aria-label="Fermer"
+        aria-label={t('common.closeAria')}
         onClick={onClose}
       />
 
@@ -139,17 +140,17 @@ export function PaymentCheckoutModal({
               id="checkout-title"
               className="text-base font-bold text-gray-900"
             >
-              Paiement Premium
+              {t('membership.checkoutTitle')}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Tunnel sécurisé · sans engagement caché
+              {t('membership.checkoutSecure')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400"
-            aria-label="Fermer la fenêtre"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -161,22 +162,22 @@ export function PaymentCheckoutModal({
             <div className="flex items-baseline justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-gray-900">
-                  Abonnement Premium
+                  {t('membership.subPremium')}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Renouvellement mensuel
+                  {t('membership.monthlyRenewal')}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-gray-900">{amount}</p>
-                <p className="text-xs text-gray-500">/ mois</p>
+                <p className="text-xs text-gray-500">{t('membership.perMonth')}</p>
               </div>
             </div>
             <ul className="mt-3 space-y-1.5">
               {[
-                'Voir qui a liké ton profil',
-                'Filtres avancés',
-                'Likes illimités',
+                t('membership.benefitWhoLiked'),
+                t('membership.benefitFilters'),
+                t('membership.benefitUnlimitedLikes'),
               ].map((item) => (
                 <li
                   key={item}
@@ -189,13 +190,11 @@ export function PaymentCheckoutModal({
             </ul>
             <p className="mt-3 text-xs text-gray-600 leading-relaxed border-t border-gray-200 pt-3">
               <strong className="font-semibold text-gray-800">
-                Résiliable à tout moment en un clic
+                {t('membership.cancelAnytime')}
               </strong>{' '}
-              depuis ton profil. Aucun frais de résiliation. Tu gardes
-              l’accès jusqu’à la fin de la période déjà payée. En continuant,
-              tu acceptes les{' '}
+              {t('membership.checkoutTermsAfter')}{' '}
               <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium">
-                CGU / CGV
+                {t('common.legalCguCgv')}
               </LegalLink>
               .
             </p>
@@ -204,10 +203,10 @@ export function PaymentCheckoutModal({
           {step === 'success' && (
             <div className="rounded-2xl bg-green-50 border border-green-100 p-4 text-center space-y-2">
               <p className="text-sm font-semibold text-green-800">
-                Paiement confirmé
+                {t('membership.paymentConfirmed')}
               </p>
               <p className="text-xs text-green-700">
-                Ton Premium ({priceLabel}) est actif. Merci pour ton soutien.
+                {t('membership.premiumActiveThanks', { price: priceLabel })}
               </p>
               <button
                 type="button"
@@ -217,7 +216,7 @@ export function PaymentCheckoutModal({
                 }}
                 className="mt-2 w-full py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold"
               >
-                Continuer
+                {t('common.continue')}
               </button>
             </div>
           )}
@@ -226,26 +225,26 @@ export function PaymentCheckoutModal({
             <>
               <div>
                 <p className="text-sm font-semibold text-gray-900 mb-2">
-                  Choisis ton mode de paiement
+                  {t('membership.choosePayment')}
                 </p>
                 <div className="grid gap-2">
                   <PaymentOption
                     selected={method === 'card'}
                     onSelect={() => setMethod('card')}
-                    title="Carte bancaire"
-                    subtitle="Visa, Mastercard, etc. via Stripe"
+                    title={t('membership.cardBank')}
+                    subtitle={t('membership.cardBankHint')}
                     icon={<CreditCard className="w-5 h-5" />}
                     disabled={!isStripeConfigured()}
-                    badge={!isStripeConfigured() ? 'À configurer' : undefined}
+                    badge={!isStripeConfigured() ? t('membership.toConfigure') : undefined}
                   />
                   <PaymentOption
                     selected={method === 'paypal'}
                     onSelect={() => setMethod('paypal')}
                     title="PayPal"
-                    subtitle="Redirection sécurisée vers PayPal"
+                    subtitle={t('membership.paypalRedirect')}
                     icon={<PayPalMark />}
                     disabled={!isPayPalConfigured()}
-                    badge={!isPayPalConfigured() ? 'À configurer' : undefined}
+                    badge={!isPayPalConfigured() ? t('membership.toConfigure') : undefined}
                   />
                 </div>
               </div>
@@ -266,18 +265,18 @@ export function PaymentCheckoutModal({
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Préparation...
+                    {t('membership.preparing')}
                   </>
                 ) : method === 'card' ? (
-                  `Continuer · ${priceLabel}`
+                  t('membership.continuePrice', { price: priceLabel })
                 ) : (
-                  `Continuer avec PayPal · ${priceLabel}`
+                  t('membership.continuePaypal', { price: priceLabel })
                 )}
               </button>
 
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Paiement chiffré · nous ne stockons pas tes données de carte
+                {t('membership.cardEncrypted')}
               </p>
             </>
           )}
@@ -287,7 +286,7 @@ export function PaymentCheckoutModal({
               stripe={getStripe()}
               options={{
                 clientSecret,
-                locale: 'fr',
+                locale: widgetLanguage(),
                 appearance: {
                   theme: 'stripe',
                   variables: {
@@ -316,11 +315,10 @@ export function PaymentCheckoutModal({
             <div className="py-8 text-center space-y-3">
               <Loader2 className="w-8 h-8 animate-spin text-rose-500 mx-auto" />
               <p className="text-sm text-gray-700 font-medium">
-                Redirection vers PayPal…
+                {t('membership.redirectingPaypal')}
               </p>
               <p className="text-xs text-gray-500">
-                Tu vas confirmer l’abonnement {priceLabel} sur le site
-                PayPal, puis revenir ici.
+                {t('membership.paypalConfirmHint', { price: priceLabel })}
               </p>
             </div>
           )}
@@ -343,6 +341,7 @@ function StripeCardForm({
 }) {
   const stripe = useStripe();
   const elements = useElements();
+  const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -365,7 +364,7 @@ function StripeCardForm({
     setSubmitting(false);
 
     if (error) {
-      const msg = error.message ?? 'Paiement refusé. Vérifie ta carte.';
+      const msg = error.message ?? t('membership.paymentRefused');
       setLocalError(msg);
       onError(msg);
       return;
@@ -377,7 +376,7 @@ function StripeCardForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm font-semibold text-gray-900">
-        Saisie sécurisée de la carte
+        {t('membership.cardEntry')}
       </p>
       <div className="rounded-xl border border-gray-200 p-3 bg-white">
         <PaymentElement
@@ -402,7 +401,7 @@ function StripeCardForm({
           disabled={submitting}
           className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
         >
-          Retour
+          {t('common.back')}
         </button>
         <button
           type="submit"
@@ -412,17 +411,16 @@ function StripeCardForm({
           {submitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Paiement…
+              {t('membership.paying')}
             </>
           ) : (
-            `Payer ${priceLabel}`
+            t('membership.payAmount', { price: priceLabel })
           )}
         </button>
       </div>
 
       <p className="text-[11px] text-center text-gray-400 leading-relaxed">
-        En confirmant, tu acceptes un prélèvement récurrent de {priceLabel}.
-        Résiliable à tout moment en un clic.
+        {t('membership.recurringConsent', { price: priceLabel })}
       </p>
     </form>
   );

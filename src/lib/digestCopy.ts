@@ -1,10 +1,12 @@
+import { t } from '../i18n/t.ts';
+
 function firstNameOf(name?: string | null): string | null {
   const token = (name || '').trim().split(/\s+/)[0];
   return token ? token : null;
 }
 
 export function digestFirstName(name?: string | null): string {
-  return firstNameOf(name) || 'Quelqu’un';
+  return firstNameOf(name) || t('common.someone');
 }
 
 export type DigestPerson = { id: string; name: string };
@@ -20,13 +22,18 @@ export function formatDigestNameList(names: string[]): string {
   const n = cleaned.length;
   if (n === 0) return '';
   if (n === 1) return cleaned[0];
-  if (n === 2) return `${cleaned[0]} et ${cleaned[1]}`;
-  if (n === 3) return `${cleaned[0]}, ${cleaned[1]} et ${cleaned[2]}`;
+  const and = t('common.and');
+  if (n === 2) return `${cleaned[0]} ${and} ${cleaned[1]}`;
+  if (n === 3) return `${cleaned[0]}, ${cleaned[1]} ${and} ${cleaned[2]}`;
   if (n === 4) {
-    return `${cleaned[0]}, ${cleaned[1]}, ${cleaned[2]} et ${cleaned[3]}`;
+    return `${cleaned[0]}, ${cleaned[1]}, ${cleaned[2]} ${and} ${cleaned[3]}`;
   }
   const rest = n - 2;
-  return `${cleaned[0]}, ${cleaned[1]} et ${rest} autre${rest > 1 ? 's' : ''}`;
+  return t('common.andOthers', {
+    count: rest,
+    name1: cleaned[0],
+    name2: cleaned[1],
+  });
 }
 
 export function sliceDigestPeople<T extends { name: string }>(
@@ -62,14 +69,12 @@ export function newProfilesNotificationCopy(names: string[]): {
   body: string;
 } {
   return {
-    title: 'À découvrir',
+    title: t('notifications.digestDiscoverTitle'),
     body: bodyWithNames(
       names,
-      (list) =>
-        `Tu as le profil de ${list} à étudier. Prends un moment pour le découvrir.`,
-      (list) =>
-        `Tu as les profils de ${list} à étudier. Prends un moment pour les découvrir.`,
-      `Tu as des profils à étudier. Prends un moment pour les découvrir.`
+      (list) => t('notifications.digestDiscoverOne', { names: list }),
+      (list) => t('notifications.digestDiscoverMany', { names: list }),
+      t('notifications.digestDiscoverEmpty')
     ),
   };
 }
@@ -79,12 +84,12 @@ export function waitingProfilesNotificationCopy(names: string[]): {
   body: string;
 } {
   return {
-    title: 'En attente',
+    title: t('notifications.waitingTitle'),
     body: bodyWithNames(
       names,
-      (list) => `Ne laisse pas ${list} dans l'attente.`,
-      (list) => `Ne laisse pas ${list} dans l'attente.`,
-      `Ne laisse pas ces membres dans l'attente.`
+      (list) => t('notifications.waitReminderBody', { name: list }),
+      (list) => t('notifications.waitReminderBody', { name: list }),
+      t('notifications.digestWaitingEmpty')
     ),
   };
 }
@@ -120,39 +125,33 @@ export function firstExchangeNotificationCopy(
 } {
   if (tone === 'reply') {
     return {
-      title: '1er mot',
+      title: t('notifications.digestFirstWordTitle'),
       body: bodyWithNames(
         names,
-        (list) =>
-          `Pense à répondre à ${list} pour lancer la conversation.`,
-        (list) =>
-          `Pense à répondre à ${list} pour lancer les conversations.`,
-        `Pense à répondre pour lancer la conversation.`
+        (list) => t('notifications.digestFirstReplyOne', { names: list }),
+        (list) => t('notifications.digestFirstReplyMany', { names: list }),
+        t('notifications.digestFirstReplyEmpty')
       ),
     };
   }
   if (tone === 'mixed') {
     return {
-      title: '1er mot',
+      title: t('notifications.digestFirstWordTitle'),
       body: bodyWithNames(
         names,
-        (list) =>
-          `Pense à écrire ou à répondre à ${list} pour lancer la conversation.`,
-        (list) =>
-          `Pense à écrire ou à répondre à ${list} pour lancer les conversations.`,
-        `Pense à écrire ou à répondre pour lancer la conversation.`
+        (list) => t('notifications.digestFirstMixedOne', { names: list }),
+        (list) => t('notifications.digestFirstMixedMany', { names: list }),
+        t('notifications.digestFirstMixedEmpty')
       ),
     };
   }
   return {
-    title: '1er mot',
+    title: t('notifications.digestFirstWordTitle'),
     body: bodyWithNames(
       names,
-      (list) =>
-        `Pense à écrire le 1er mot à ${list} pour lancer la conversation.`,
-      (list) =>
-        `Pense à écrire les 1ers mots à ${list} pour lancer les conversations.`,
-      `Pense à écrire le 1er mot pour lancer la conversation.`
+      (list) => t('notifications.digestFirstWriteOne', { names: list }),
+      (list) => t('notifications.digestFirstWriteMany', { names: list }),
+      t('notifications.digestFirstWriteEmpty')
     ),
   };
 }

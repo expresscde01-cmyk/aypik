@@ -1,8 +1,5 @@
-/**
- * Géographie mondiale déclarative (pays → zone produit).
- * Miroir de public.world_countries — garder SQL et TS alignés.
- * Pas de GPS : coordonnées = centre de ville déclarée (GeoNames).
- */
+import { dateLocale } from '../i18n/format.ts';
+import { t } from '../i18n/t.ts';
 
 export type WorldZone =
   | 'europe'
@@ -42,6 +39,21 @@ export const WORLD_ZONE_LABEL: Record<WorldZoneFilter, string> = {
   oceania: 'Océanie',
   worldwide: 'PARTOUT',
 };
+
+const WORLD_ZONE_I18N: Record<WorldZoneFilter, string> = {
+  europe: 'discover.zones.europe',
+  north_america: 'discover.zones.northAmerica',
+  central_america: 'discover.zones.centralAmerica',
+  south_america: 'discover.zones.southAmerica',
+  africa: 'discover.zones.africa',
+  asia: 'discover.zones.asia',
+  oceania: 'discover.zones.oceania',
+  worldwide: 'discover.zones.worldwide',
+};
+
+export function worldZoneDisplayLabel(zone: WorldZoneFilter): string {
+  return t(WORLD_ZONE_I18N[zone]);
+}
 
 export const WORLD_ZONE_CONTINENTS: readonly WorldZone[] = [
   'europe',
@@ -716,11 +728,27 @@ export function countryNameFr(
   return COUNTRY_BY_ISO.get(countryCode.trim().toUpperCase())?.nameFr ?? '';
 }
 
+export function countryDisplayName(
+  countryCode: string | null | undefined
+): string {
+  if (!countryCode) return '';
+  const iso = countryCode.trim().toUpperCase();
+  try {
+    const name = new Intl.DisplayNames([dateLocale()], { type: 'region' }).of(
+      iso
+    );
+    if (name) return name;
+  } catch {
+    /* ignore */
+  }
+  return COUNTRY_BY_ISO.get(iso)?.nameFr ?? iso;
+}
+
 export function worldZoneLabel(
   zone: string | null | undefined
 ): string {
   if (!zone) return '';
-  if (isWorldZoneFilter(zone)) return WORLD_ZONE_LABEL[zone];
+  if (isWorldZoneFilter(zone)) return worldZoneDisplayLabel(zone);
   return '';
 }
 

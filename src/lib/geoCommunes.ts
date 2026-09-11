@@ -1,3 +1,5 @@
+import { t } from '../i18n/t.ts';
+
 export type GeoCommune = {
   nom: string;
   code: string;
@@ -8,8 +10,9 @@ export type GeoCommune = {
   lng?: number;
 };
 
-export const CITY_SELECTION_REQUIRED_ERROR =
-  'Sélectionne une ville valide dans la liste déroulante';
+export function citySelectionRequiredError(): string {
+  return t('profile.selectValidCity');
+}
 
 const GEO_API = 'https://geo.api.gouv.fr/communes';
 const SEARCH_TIMEOUT_MS = 8000;
@@ -122,7 +125,7 @@ export async function searchFrenchCommunes(
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) {
-      throw new Error('Impossible de charger les suggestions de villes.');
+      throw new Error(t('profile.citySuggestionsFail'));
     }
 
     const data: unknown = await res.json();
@@ -141,11 +144,11 @@ export async function searchFrenchCommunes(
   } catch (err) {
     if (isAbortError(err)) {
       if (signal?.aborted) return [];
-      throw new Error('La recherche de villes a pris trop de temps. Réessaie.');
+      throw new Error(t('profile.citySearchTimeout'));
     }
     throw err instanceof Error
       ? err
-      : new Error('Impossible de charger les suggestions de villes.');
+      : new Error(t('profile.citySuggestionsFail'));
   } finally {
     window.clearTimeout(timer);
     signal?.removeEventListener('abort', onParentAbort);

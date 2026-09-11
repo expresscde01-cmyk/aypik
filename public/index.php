@@ -48,6 +48,32 @@ $csp = implode(
     ]
 );
 
+$requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+$requestPath = is_string($requestPath) && $requestPath !== '' ? $requestPath : '/';
+$locale = 'fr';
+$restPath = $requestPath;
+if (preg_match('#^/(fr|en|es)(/.*)?$#', $requestPath, $localeMatch)) {
+    $locale = $localeMatch[1];
+    $restPath = $localeMatch[2] ?? '/';
+    if ($restPath === '') {
+        $restPath = '/';
+    }
+}
+if ($locale === 'fr' && preg_match('#^/fr(/.*)?$#', $requestPath)) {
+    $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    $target = ($restPath === '/' ? '/' : $restPath) . ($qs !== '' ? '?' . $qs : '');
+    header('Location: ' . $target, true, 301);
+    exit;
+}
+
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = (string) ($_SERVER['HTTP_HOST'] ?? 'aypik.fr');
+$origin = $scheme . '://' . $host;
+$hreflangRest = $restPath === '/' ? '/' : rtrim($restPath, '/');
+$hreflangFr = $origin . ($hreflangRest === '/' ? '/' : $hreflangRest);
+$hreflangEn = $origin . '/en' . ($hreflangRest === '/' ? '/' : $hreflangRest);
+$hreflangEs = $origin . '/es' . ($hreflangRest === '/' ? '/' : $hreflangRest);
+
 header('Content-Type: text/html; charset=UTF-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Content-Security-Policy: ' . $csp);
@@ -156,5 +182,45 @@ JS;
 $bootFallback =
     '<script nonce="' . $nonceAttr . '">' . $bootJs . '</script>';
 $html = preg_replace('/<\/body>/i', $bootFallback . '</body>', $html, 1) ?? $html;
+
+$html = preg_replace(
+    '/<html\s+lang="fr">/i',
+    '<html lang="' . htmlspecialchars($locale, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">',
+    $html,
+    1
+) ?? $html;
+
+$ogLocale = $locale === 'en' ? 'en_GB' : ($locale === 'es' ? 'es_ES' : 'fr_FR');
+$html = preg_replace(
+    '/property="og:locale"\s+content="fr_FR"/i',
+    'property="og:locale" content="' . $ogLocale . '"',
+    $html,
+    1
+) ?? $html;
+
+$hFr = htmlspecialchars($hreflangFr, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$hEn = htmlspecialchars($hreflangEn, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$hEs = htmlspecialchars($hreflangEs, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$hreflangTags =
+    '<link rel="alternate" hreflang="fr" href="' . $hFr . '">' .
+    '<link rel="alternate" hreflang="en" href="' . $hEn . '">' .
+    '<link rel="alternate" hreflang="es" href="' . $hEs . '">' .
+    '<link rel="alternate" hreflang="x-default" href="' . $hFr . '">';
+$html = preg_replace('/<\/head>/i', $hreflangTags . '</head>', $html, 1) ?? $html;
+
+if ($locale === 'en' || $locale === 'es') {
+    $prefix = $locale === 'en' ? '[EN] ' : '[ES] ';
+    $html = preg_replace(
+        '/<title>AYPIK<\/title>/',
+        '<title>' . $prefix . 'AYPIK</title>',
+        $html,
+        1
+    ) ?? $html;
+    $html = preg_replace(
+        '/(content=")(Aypik — )/u',
+        '$1' . $prefix . '$2',
+        $html
+    ) ?? $html;
+}
 
 echo $html;

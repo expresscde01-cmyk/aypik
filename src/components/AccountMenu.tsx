@@ -17,12 +17,13 @@ import { useAuth } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { resetSuggestionSearchPrefs } from '@/lib/suggestionPrefs';
 import {
-  ACCOUNT_PAUSE_CONFIRM_DESCRIPTION,
-  VISIBILITY_RADIO_OPTIONS,
+  accountPauseConfirmDescription,
+  visibilityRadioOptions,
   visibilityMenuHint,
   type VisibilityChoice,
 } from '@/lib/accountStatus';
 import { visibilityHintTextClass } from '@/components/AccountStatusBadge';
+import { useTranslation } from 'react-i18next';
 
 export default function AccountMenu({
   displayName,
@@ -44,6 +45,7 @@ export default function AccountMenu({
   /** Incrémenté pour ouvrir le menu (badge statut) sur le sous-menu Visibilité. */
   openRequestKey?: number;
 }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
@@ -237,7 +239,7 @@ export default function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        title="Menu du compte"
+        title={t('profile.menuTitle')}
         onClick={() => {
           setError(null);
           setOpen((v) => {
@@ -261,12 +263,12 @@ export default function AccountMenu({
           ref={menuRef}
           id={menuId}
           role="menu"
-          aria-label="Menu du compte"
+          aria-label={t('profile.menuTitle')}
           className="absolute right-0 top-full mt-1.5 z-50 isolate w-[min(100vw-2rem,22rem)] max-lg:rounded-r-none rounded-2xl border border-gray-100 bg-white py-1.5 shadow-lg animate-fadeIn"
         >
           <MenuItem
             icon={<UserRound className="w-4 h-4" />}
-            label="Mon profil"
+            label={t('profile.menuMyProfile')}
             onClick={() => {
               close();
               onOpenProfile();
@@ -274,7 +276,7 @@ export default function AccountMenu({
           />
           <MenuItem
             icon={<Bell className="w-4 h-4" />}
-            label="Préférences e-mail"
+            label={t('profile.menuEmailPrefs')}
             onClick={() => {
               close();
               onOpenNotifications();
@@ -282,7 +284,7 @@ export default function AccountMenu({
           />
           <MenuItem
             icon={<Lock className="w-4 h-4" />}
-            label="Modifier mon mot de passe"
+            label={t('profile.menuChangePassword')}
             onClick={() => {
               close();
               onOpenPassword();
@@ -290,7 +292,7 @@ export default function AccountMenu({
           />
           <MenuItem
             icon={<Filter className="w-4 h-4" />}
-            label="Réinitialiser mes filtres de recherche"
+            label={t('profile.menuResetFilters')}
             disabled={!user?.id}
             onClick={() => {
               setError(null);
@@ -314,7 +316,7 @@ export default function AccountMenu({
               <Eye className="w-4 h-4" />
             </span>
             <span className="min-w-0 flex-1">
-              Visibilité –{' '}
+              {t('profile.menuVisibilityPrefix')}{' '}
               <span className={visibilityHintTextClass(visibilityChoice)}>
                 {visibilityHint}
               </span>
@@ -329,10 +331,10 @@ export default function AccountMenu({
           {visibilityOpen && (
             <div
               role="group"
-              aria-label="Visibilité"
+              aria-label={t('profile.menuVisibility')}
               className="mx-2 mb-1.5 rounded-xl border border-gray-100 bg-gray-50 py-1"
             >
-              {VISIBILITY_RADIO_OPTIONS.map((option) => {
+              {visibilityRadioOptions().map((option) => {
                 const checked = option.id === visibilityChoice;
                 return (
                   <button
@@ -368,13 +370,13 @@ export default function AccountMenu({
           )}
           <MenuItem
             icon={<RefreshCw className="w-4 h-4" />}
-            label="Actualiser la page"
+            label={t('profile.menuRefresh')}
             onClick={handleRefreshPage}
           />
           <div className="my-1.5 border-t border-gray-100" role="separator" />
           <MenuItem
             icon={<Trash2 className="w-4 h-4" />}
-            label="Supprimer mon compte"
+            label={t('profile.menuDeleteAccount')}
             destructive
             onClick={() => {
               setError(null);
@@ -385,7 +387,7 @@ export default function AccountMenu({
           />
           <MenuItem
             icon={<LogOut className="w-4 h-4" />}
-            label="Se déconnecter"
+            label={t('common.signOut')}
             onClick={() => {
               close();
               onSignOut();
@@ -405,7 +407,7 @@ export default function AccountMenu({
             <button
               type="button"
               className="absolute inset-0 bg-black/40"
-              aria-label="Annuler"
+              aria-label={t('common.cancel')}
               onClick={cancelPauseConfirm}
             />
             <div
@@ -419,13 +421,13 @@ export default function AccountMenu({
                 id="account-pause-title"
                 className="text-base font-bold text-gray-900"
               >
-                Es-tu sûr de vouloir mettre ton compte en pause ?
+                {t('profile.pauseConfirmTitle')}
               </h3>
               <p
                 id="account-pause-desc"
                 className="text-sm text-gray-700 leading-relaxed"
               >
-                {ACCOUNT_PAUSE_CONFIRM_DESCRIPTION}
+                {accountPauseConfirmDescription()}
               </p>
               {error ? (
                 <p className="text-sm text-red-700 bg-red-50 rounded-xl px-3 py-2">
@@ -439,7 +441,7 @@ export default function AccountMenu({
                   disabled={visibilityBusy}
                   className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
@@ -447,7 +449,7 @@ export default function AccountMenu({
                   disabled={visibilityBusy}
                   className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60"
                 >
-                  {visibilityBusy ? '…' : 'Mettre en pause'}
+                  {visibilityBusy ? '…' : t('profile.pauseConfirmCta')}
                 </button>
               </div>
             </div>
@@ -468,12 +470,10 @@ export default function AccountMenu({
                 id="account-reset-filters-title"
                 className="text-base font-bold text-gray-900"
               >
-                Réinitialiser tes filtres de recherche
+                {t('profile.menuResetFiltersTitle')}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Réinitialise tes filtres à leurs valeurs par défaut : périmètre
-                élargi jusqu&apos;aux régions voisines, et 1 centre
-                d&apos;intérêt en commun.
+                {t('profile.menuResetFiltersBody')}
               </p>
               <div className="flex gap-3 pt-1">
                 <button
@@ -481,14 +481,14 @@ export default function AccountMenu({
                   onClick={() => setConfirmResetFilters(false)}
                   className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
                   onClick={handleResetFilters}
                   className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
                 >
-                  Réinitialiser
+                  {t('profile.menuResetFiltersConfirm')}
                 </button>
               </div>
             </div>
@@ -509,13 +509,10 @@ export default function AccountMenu({
                 id="account-delete-title"
                 className="text-base font-bold text-gray-900"
               >
-                Attention
+                {t('common.attention')}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Cette action est immédiate et définitive. Toutes tes données
-                seront effacées. Si tu es Membre Fondateur, ton statut et ton
-                numéro d&apos;inscription seront également perdus et ne
-                pourront pas être récupérés.
+                {t('profile.deleteConfirmFounder')}
               </p>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
@@ -525,9 +522,7 @@ export default function AccountMenu({
                   className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
                 />
                 <span className="text-sm text-gray-700 leading-relaxed">
-                  Je comprends que cette action est immédiate et définitive,
-                  et que si je suis Membre Fondateur, je perdrai également ce
-                  statut ainsi que mon numéro d&apos;inscription.
+                  {t('profile.deleteAcknowledge')}
                 </span>
               </label>
               {error && (
@@ -545,34 +540,34 @@ export default function AccountMenu({
                   disabled={deleting}
                   className="flex-1 min-w-0 basis-0 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center text-center"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleDelete()}
                   disabled={deleting || !deleteAcknowledged}
                   aria-label={
-                    deleting ? 'Suppression...' : 'Confirmer la suppression'
+                    deleting ? t('profile.deleting') : t('profile.confirmDeletion')
                   }
                   className={`delete-confirm-btn flex-1 min-w-0 basis-0 py-3 rounded-xl font-semibold flex items-center justify-center${
                     deleteAcknowledged ? ' delete-confirm-btn--ready' : ''
                   }`}
                 >
                   {deleting ? (
-                    'Suppression...'
+                    t('profile.deleting')
                   ) : deleteAcknowledged ? (
                     <span className="text-center leading-snug" aria-hidden>
                       <span className="font-extrabold [-webkit-text-stroke:0.5px_currentColor]">
-                        CONFIRMER
+                        {t('common.confirmUpper')}
                       </span>
                       <br />
-                      la suppression
+                      {t('profile.confirmDeletionLine')}
                     </span>
                   ) : (
                     <span className="text-center leading-snug" aria-hidden>
-                      Confirmer
+                      {t('common.confirm')}
                       <br />
-                      la suppression
+                      {t('profile.confirmDeletionLine')}
                     </span>
                   )}
                 </button>

@@ -1,62 +1,65 @@
 /** Extrait un message lisible (Error, PostgREST `{ message }`, string). */
-import { ADULTS_ONLY_MESSAGE } from '@/lib/dating';
-import { CHAT_NOT_MATCHED_MESSAGE } from '@/lib/matchManageError';
+import { adultsOnlyMessage } from '@/lib/dating';
+import { chatNotMatchedMessage } from '@/lib/matchManageError';
+import { t } from '../i18n/t.ts';
 
 export function userErrorMessage(
   err: unknown,
-  fallback = 'Une erreur est survenue'
+  fallback?: string
 ): string {
+  const resolvedFallback = fallback ?? t('common.errorOccurred');
   if (typeof err === 'string' && err.trim()) {
-    return friendlyDbMessage(err.trim(), fallback);
+    return friendlyDbMessage(err.trim(), resolvedFallback);
   }
   if (err && typeof err === 'object' && 'message' in err) {
     const msg = (err as { message: unknown }).message;
     if (typeof msg === 'string' && msg.trim()) {
-      return friendlyDbMessage(msg.trim(), fallback);
+      return friendlyDbMessage(msg.trim(), resolvedFallback);
     }
   }
-  return fallback;
+  return resolvedFallback;
 }
 
-export const MEMBER_UNAVAILABLE_MESSAGE =
-  'Ce membre n’est pas disponible actuellement.';
+export function memberUnavailableMessage(): string {
+  return t('common.memberUnavailable');
+}
 
 function friendlyDbMessage(msg: string, fallback: string): string {
-  if (msg.includes('member_unavailable')) return MEMBER_UNAVAILABLE_MESSAGE;
+  if (msg.includes('member_unavailable')) return t('common.memberUnavailable');
   if (msg.includes('active_match_required')) return fallback;
   if (/\bnot_matched\b/.test(msg)) {
-    return CHAT_NOT_MATCHED_MESSAGE;
+    return chatNotMatchedMessage();
   }
-  if (msg.includes('minors_not_allowed')) return ADULTS_ONLY_MESSAGE;
+  if (msg.includes('minors_not_allowed')) return adultsOnlyMessage();
   if (msg.includes('decision_locked_refuse')) {
-    return 'Tu as déjà refusé ce profil.';
+    return t('errors.alreadyRefused');
   }
   if (msg.includes('decision_locked_match')) {
-    return 'Ce match est déjà validé.';
+    return t('errors.alreadyMatched');
   }
   if (msg.includes('decision_locked_wait')) {
-    return 'Ce profil est déjà en attente.';
+    return t('errors.alreadyWaiting');
   }
   if (msg.includes('no_incoming_interest')) {
-    return 'Plus d’intérêt en attente pour ce profil.';
+    return t('errors.noIncomingInterest');
   }
   if (msg.includes('not_paid_premium')) {
-    return 'Les témoignages sont réservés aux membres Premium en cours d’abonnement.';
+    return t('errors.testimonialPremiumOnly');
   }
   if (msg.includes('consent_required')) {
-    return 'Coche la case de consentement pour autoriser la diffusion de ton témoignage.';
+    return t('errors.testimonialConsent');
   }
   if (msg.includes('testimonial_too_short')) {
-    return 'Ton témoignage est trop court (40 caractères minimum).';
+    return t('errors.testimonialTooShort');
   }
   if (msg.includes('testimonial_too_long')) {
-    return 'Ton témoignage est trop long (800 caractères maximum).';
+    return t('errors.testimonialTooLong');
   }
   if (msg.includes('suggest_profiles')) {
     return 'Catalogue indisponible : colle COLLER-DISCOVERY-CATALOG.sql dans l’éditeur SQL Supabase, puis Run.';
   }
   if (msg.includes('not_initiator')) {
-    return 'Seul celui qui a rompu le lien peut le rétablir.';
+    return t('errors.onlyBreakerCanRestore');
   }
   if (
     msg.includes('manage_active_match') ||
@@ -73,7 +76,7 @@ function friendlyDbMessage(msg: string, fallback: string): string {
     return 'Action indisponible : colle COLLER-DECLINED-ARCHIVES.sql dans l’éditeur SQL Supabase, puis Run.';
   }
   if (msg.includes('reset_inbox_interest') || msg.includes('restore_inbox_wait')) {
-    return 'Impossible de rétablir ce profil.';
+    return t('errors.cannotRestoreProfile');
   }
   if (
     /PGRST\d+|42\d{3}|42501|row-level security|permission denied|column .* does not exist|schema cache|could not find the function/i.test(

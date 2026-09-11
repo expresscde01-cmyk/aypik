@@ -1,3 +1,5 @@
+import { t } from '../i18n/t.ts';
+
 /** Détection install PWA (prompt Chromium vs instructions manuelles vs masqué). */
 
 export type PwaInstallKind =
@@ -74,31 +76,31 @@ export function resolvePwaInstallKind(input: {
 export function pwaManualGuide(kind: PwaInstallKind): PwaManualGuide | null {
   if (kind === 'ios-manual') {
     return {
-      buttonLabel: 'Comment l’ajouter à l’écran d’accueil',
+      buttonLabel: t('common.pwa.iosButton'),
       steps: [
-        'Appuie sur le bouton Partager (carré avec une flèche) en bas de Safari.',
-        'Choisis Sur l’écran d’accueil.',
-        'Valide avec Ajouter.',
+        t('common.pwa.iosStep1'),
+        t('common.pwa.iosStep2'),
+        t('common.pwa.iosStep3'),
       ],
     };
   }
   if (kind === 'firefox-android-manual') {
     return {
-      buttonLabel: 'Comment l’ajouter à l’écran d’accueil',
+      buttonLabel: t('common.pwa.iosButton'),
       steps: [
-        'Appuie sur le menu (trois points) en haut à droite.',
-        'Choisis Installer — ou Ajouter à l’écran d’accueil, selon la version de Firefox.',
-        'Confirme l’ajout sur l’écran d’accueil.',
+        t('common.pwa.firefoxStep1'),
+        t('common.pwa.firefoxStep2'),
+        t('common.pwa.firefoxStep3'),
       ],
     };
   }
   if (kind === 'safari-macos-manual') {
     return {
-      buttonLabel: 'Comment l’ajouter au Dock',
+      buttonLabel: t('common.pwa.safariMacButton'),
       steps: [
-        'Dans la barre de menus, ouvre Fichier.',
-        'Choisis Ajouter au Dock (macOS Sonoma 14 et suivants). Tu peux aussi utiliser le bouton Partager de Safari, puis Ajouter au Dock.',
-        'Vérifie le nom, puis clique sur Ajouter.',
+        t('common.pwa.safariMacStep1'),
+        t('common.pwa.safariMacStep2'),
+        t('common.pwa.safariMacStep3'),
       ],
     };
   }
@@ -107,19 +109,23 @@ export function pwaManualGuide(kind: PwaInstallKind): PwaManualGuide | null {
 
 /** Bouton natif Chromium : même test Android que le reste du module. */
 export function pwaNativeButtonLabel(ua: string): string {
-  if (/android/i.test(ua)) return 'Ajouter Aypik à l’écran d’accueil';
-  return 'Ajouter Aypik au bureau';
+  if (/android/i.test(ua)) return t('common.pwa.nativeMobile');
+  return t('common.pwa.nativeDesktop');
 }
 
-export const PWA_NATIVE_WAITING_LABEL = 'En attente du navigateur';
-export const PWA_NATIVE_WAITING_HINT =
-  'Il proposera l’installation quand il sera prêt — parfois après une ou deux visites, ou s’il a déjà affiché sa bannière.';
+export function pwaNativeWaitingLabel(): string {
+  return t('common.pwa.waiting');
+}
+
+export function pwaNativeWaitingHint(): string {
+  return t('common.pwa.waitingHint');
+}
 
 export function pwaInstallDescription(ua: string, maxTouchPoints = 0): string {
   if (/android/i.test(ua) || isIosDevice(ua, maxTouchPoints)) {
-    return 'Ajoute Aypik à ton écran d’accueil pour y revenir en un tap, sans passer par le navigateur.';
+    return t('common.pwa.descMobile');
   }
-  return 'Ajoute Aypik à ton bureau pour y revenir en un clic, sans passer par le navigateur.';
+  return t('common.pwa.descDesktop');
 }
 
 export type BeforeInstallPromptEventLike = Event & {

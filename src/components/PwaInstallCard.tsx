@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Download, Share } from 'lucide-react';
 import {
-  PWA_NATIVE_WAITING_HINT,
-  PWA_NATIVE_WAITING_LABEL,
   pwaInstallDescription,
   pwaManualGuide,
   pwaNativeButtonLabel,
+  pwaNativeWaitingHint,
+  pwaNativeWaitingLabel,
 } from '@/lib/pwaInstall';
 import { usePwaInstall } from '@/lib/usePwaInstall';
+import { useTranslation } from 'react-i18next';
 
 export default function PwaInstallCard() {
+  const { t } = useTranslation();
   const { kind, promptInstall } = usePwaInstall();
   const [manualOpen, setManualOpen] = useState(false);
   const guide = pwaManualGuide(kind);
@@ -29,7 +31,7 @@ export default function PwaInstallCard() {
       className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
     >
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
-        INSTALLER L&apos;APPLICATION
+        {t('common.pwa.title')}
       </h2>
       <p className="text-sm text-gray-500 mb-4">{description}</p>
 
@@ -61,9 +63,9 @@ export default function PwaInstallCard() {
                 aria-disabled="true"
               >
                 <Download className="w-4 h-4" />
-                {PWA_NATIVE_WAITING_LABEL}
+                {pwaNativeWaitingLabel()}
               </div>
-              <p className="mt-3 text-xs text-gray-500">{PWA_NATIVE_WAITING_HINT}</p>
+              <p className="mt-3 text-xs text-gray-500">{pwaNativeWaitingHint()}</p>
             </>
           ) : (
             <button

@@ -5,6 +5,7 @@ import {
   isEmailNotificationsEnabled,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import { emailT, profileEmailLocale } from "../_shared/i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,9 +88,11 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await admin
       .from("profiles")
-      .select("display_name")
+      .select("display_name, preferred_locale")
       .eq("id", user.id)
       .maybeSingle();
+
+    const locale = await profileEmailLocale(admin, user.id);
 
     const displayName =
       (typeof body.displayName === "string" && body.displayName.trim()) ||
@@ -102,11 +105,14 @@ Deno.serve(async (req) => {
         : null;
 
     const premiumUntil = membership.founder_premium_until
-      ? new Date(membership.founder_premium_until).toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
+      ? new Date(membership.founder_premium_until).toLocaleDateString(
+        locale === "en" ? "en-GB" : locale === "es" ? "es-ES" : "fr-FR",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        },
+      )
       : null;
 
     const from =
@@ -114,15 +120,16 @@ Deno.serve(async (req) => {
       "Aypik <onboarding@resend.dev>";
 
     const subject = founderNumber
-      ? `Bienvenue sur Aypik — Membre Fondateur #${founderNumber}`
-      : "Bienvenue sur Aypik — Membre Fondateur";
+      ? emailT(locale, "welcomeSubjectFounder", { number: founderNumber })
+      : emailT(locale, "welcomeSubject");
 
     const html = wrapTransactionalEmailHtml({
-      title: "Bienvenue sur Aypik",
+      title: emailT(locale, "welcomeSubject"),
       bodyHtml: buildWelcomeBody({
         displayName,
         founderNumber,
         premiumUntil,
+        locale,
       }),
     });
 
@@ -176,33 +183,28 @@ function buildWelcomeBody(params: {
   displayName: string;
   founderNumber: number | null;
   premiumUntil: string | null;
+  locale: import("../_shared/i18n.ts").EmailLocale;
 }) {
   const name = escapeHtml(params.displayName);
   const numberLabel =
     typeof params.founderNumber === "number"
       ? `#${params.founderNumber}`
-      : "Fondateur";
+      : "";
   const until = params.premiumUntil
-    ? `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Tes 6 mois Premium offerts sont actifs jusqu'au <strong>${escapeHtml(params.premiumUntil)}</strong>.</p>`
-    : `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">Tes 6 mois Premium offerts sont maintenant actifs.</p>`;
+    ? `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">${emailT(params.locale, "welcomePremiumUntil", { date: escapeHtml(params.premiumUntil) })}</p>`
+    : `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">${emailT(params.locale, "welcomePremiumActive")}</p>`;
 
   return `
               <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Bienvenue, ${name}&nbsp;!</h1>
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(params.locale, "welcomeHello", { name })}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Tu fais partie des 500 premiers membres. Ton statut
-                <strong>Membre Fondateur ${escapeHtml(numberLabel)}</strong>
-                est confirmé à vie. Likes illimités, flash et boost de
-                visibilité du profil offert pendant le premier mois.
+                ${emailT(params.locale, "welcomeFounderBody", { numberLabel: escapeHtml(numberLabel) })}
               </p>
               ${until}
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Aucune carte bancaire n'est requise. À l'issue de cette période,
-                les avantages fonctionnels prennent fin ; ton badge Membre
-                Fondateur reste visible. Sans tacite reconduction.
+                ${emailT(params.locale, "welcomeNoCard")}
               </p>
               <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte sur Aypik — un lieu d'échange atypique réservé
-                exclusivement aux personnes sans enfants.
+                ${emailT(params.locale, "welcomeClosing")}
               </p>`;
 }

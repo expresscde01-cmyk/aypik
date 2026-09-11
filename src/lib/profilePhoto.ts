@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
 export const PROFILE_PHOTOS_BUCKET = 'profile-photos';
 export const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024; // 5 Mo
@@ -72,7 +73,7 @@ export async function uploadProfilePhoto(
     .getPublicUrl(path);
 
   if (!data?.publicUrl) {
-    return { url: null, error: "Impossible d'obtenir l'URL de la photo." };
+    return { url: null, error: t('profile.photoUrlFail') };
   }
 
   return { url: data.publicUrl, error: null };

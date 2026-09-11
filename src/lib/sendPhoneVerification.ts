@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { t } from '../i18n/t.ts';
 
 /**
  * Demande d’envoi du SMS OTP via l’Edge Function send-phone-verification
@@ -16,7 +17,7 @@ export async function requestPhoneVerificationSms(
   captchaToken: string | null
 ): Promise<void> {
   if (!captchaToken) {
-    throw Object.assign(new Error('CAPTCHA invalide ou expiré. Réessaie.'), {
+    throw Object.assign(new Error(t('errors.captchaInvalid')), {
       code: 'captcha_failed',
     });
   }
@@ -36,7 +37,7 @@ export async function requestPhoneVerificationSms(
   const message =
     typeof payload.error === 'string' && payload.error.trim()
       ? payload.error.trim()
-      : 'Impossible d’envoyer le SMS pour le moment. Réessaie dans un instant.';
+      : t('errors.smsSendFailed');
 
   throw Object.assign(new Error(message), { code });
 }

@@ -6,6 +6,7 @@ import {
   sendResendEmail,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import { emailT, profileEmailLocale, type EmailLocale } from "../_shared/i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,11 +112,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    const locale = await profileEmailLocale(admin, notif.user_id);
+
     const { subject, title, bodyHtml } = buildSocialEmail({
       kind,
       actorName,
       notifTitle: typeof notif.title === "string" ? notif.title : "",
       notifBody: typeof notif.body === "string" ? notif.body : "",
+      locale,
     });
 
     const html = wrapTransactionalEmailHtml({
@@ -162,84 +166,75 @@ function buildSocialEmail(params: {
   actorName: string;
   notifTitle: string;
   notifBody: string;
+  locale: EmailLocale;
 }): { subject: string; title: string; bodyHtml: string } {
   const name = escapeHtml(params.actorName);
+  const locale = params.locale;
+  const closing = `<p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">${emailT(locale, "socialClosing")}</p>`;
+  const brand = `<p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>`;
 
   if (params.kind === "flash_received") {
     return {
-      subject: `${params.actorName} t'a envoyé un Flash sur Aypik`,
-      title: "Flash Aypik",
+      subject: emailT(locale, "socialFlashSubject", { name: params.actorName }),
+      title: emailT(locale, "socialFlashTitle"),
       bodyHtml: `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Tu as reçu un Flash&nbsp;!</h1>
+              ${brand}
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialFlashHeading")}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                <strong>${name}</strong> t'a envoyé un Flash ⚡ sur Aypik.
-                Connecte-toi pour découvrir ce profil et répondre si le feeling est réciproque.
+                ${emailT(locale, "socialFlashBody", { name })}
               </p>
-              <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
-              </p>`,
+              ${closing}`,
     };
   }
 
   if (params.kind === "like_received") {
     return {
-      subject: `${params.actorName} t'a envoyé un Like sur Aypik`,
-      title: "Like Aypik",
+      subject: emailT(locale, "socialLikeSubject", { name: params.actorName }),
+      title: emailT(locale, "socialLikeTitle"),
       bodyHtml: `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Tu as reçu un Like&nbsp;!</h1>
+              ${brand}
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialLikeHeading")}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                <strong>${name}</strong> t'a envoyé un Like ❤️ sur Aypik.
-                Connecte-toi pour voir ce profil — le Like reste discret jusqu'à un match.
+                ${emailT(locale, "socialLikeBody", { name })}
               </p>
-              <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
-              </p>`,
+              ${closing}`,
     };
   }
 
-  // match_created
   const isAcceptorCopy =
     params.notifTitle === "Matché le" ||
     params.notifBody === "Matché le";
 
   if (isAcceptorCopy) {
     return {
-      subject: "C’est un match sur Aypik",
-      title: "Match Aypik",
+      subject: emailT(locale, "socialMatchSubject"),
+      title: emailT(locale, "socialMatchTitle"),
       bodyHtml: `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">C’est un match&nbsp;!</h1>
+              ${brand}
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialMatchHeading")}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                Tu as matché avec <strong>${name}</strong> sur Aypik.
-                Connecte-toi pour démarrer la conversation.
+                ${emailT(locale, "socialMatchAcceptorBody", { name })}
               </p>
-              <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
-              </p>`,
+              ${closing}`,
     };
   }
 
   const flashOrigin = /flash/i.test(params.notifBody);
   return {
     subject: flashOrigin
-      ? `${params.actorName} a matché ton Flash sur Aypik`
-      : `${params.actorName} a matché ton Like sur Aypik`,
-    title: "Match Aypik",
+      ? emailT(locale, "socialMatchFlashSubject", { name: params.actorName })
+      : emailT(locale, "socialMatchLikeSubject", { name: params.actorName }),
+    title: emailT(locale, "socialMatchTitle"),
     bodyHtml: `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">C’est un match&nbsp;!</h1>
+              ${brand}
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialMatchHeading")}</h1>
               <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
-                <strong>${name}</strong> ${
+                ${
                   flashOrigin
-                    ? "a matché ton Flash ⚡"
-                    : "a matché ton Like ❤️"
-                } sur Aypik.
-                Connecte-toi pour démarrer la conversation.
+                    ? emailT(locale, "socialMatchInitiatorFlash", { name })
+                    : emailT(locale, "socialMatchInitiatorLike", { name })
+                }
               </p>
-              <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
-                Belle découverte — un lieu d'échange atypique réservé exclusivement aux personnes sans enfants.
-              </p>`,
+              ${closing}`,
   };
 }

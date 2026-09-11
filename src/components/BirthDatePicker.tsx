@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { latestBirthDateForAge, MIN_USER_AGE } from '@/lib/dating';
 
-const MONTHS_FR = [
-  'Janvier',
-  'Février',
-  'Mars',
-  'Avril',
-  'Mai',
-  'Juin',
-  'Juillet',
-  'Août',
-  'Septembre',
-  'Octobre',
-  'Novembre',
-  'Décembre',
-] as const;
-
 const MIN_BIRTH_YEAR = 1920;
+const MONTH_KEYS = [
+  'common.months.1',
+  'common.months.2',
+  'common.months.3',
+  'common.months.4',
+  'common.months.5',
+  'common.months.6',
+  'common.months.7',
+  'common.months.8',
+  'common.months.9',
+  'common.months.10',
+  'common.months.11',
+  'common.months.12',
+] as const;
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -61,6 +61,7 @@ export default function BirthDatePicker({
   maxAgeDate = latestBirthDateForAge(MIN_USER_AGE),
   className = '',
 }: BirthDatePickerProps) {
+  const { t } = useTranslation();
   const maxParts =
     parseIso(maxAgeDate) || parseIso(latestBirthDateForAge(MIN_USER_AGE));
   const maxYear = maxParts?.y ?? new Date().getFullYear() - MIN_USER_AGE;
@@ -106,7 +107,7 @@ export default function BirthDatePicker({
       <div className="grid grid-cols-3 gap-2">
         <div className="relative z-10">
           <label htmlFor={`${id}-day`} className="sr-only">
-            Jour
+            {t('common.birthDay')}
           </label>
           <select
             id={`${id}-day`}
@@ -117,9 +118,9 @@ export default function BirthDatePicker({
               commit(year, month, next);
             }}
             className={selectClass}
-            aria-label="Jour de naissance"
+            aria-label={t('common.birthDayAria')}
           >
-            <option value="">Jour</option>
+            <option value="">{t('common.birthDay')}</option>
             {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
                 {d}
@@ -130,7 +131,7 @@ export default function BirthDatePicker({
 
         <div className="relative z-10">
           <label htmlFor={`${id}-month`} className="sr-only">
-            Mois
+            {t('common.birthMonth')}
           </label>
           <select
             id={`${id}-month`}
@@ -141,12 +142,12 @@ export default function BirthDatePicker({
               commit(year, next, day);
             }}
             className={selectClass}
-            aria-label="Mois de naissance"
+            aria-label={t('common.birthMonthAria')}
           >
-            <option value="">Mois</option>
-            {MONTHS_FR.map((label, i) => (
-              <option key={label} value={i + 1}>
-                {label}
+            <option value="">{t('common.birthMonth')}</option>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+              <option key={m} value={m}>
+                {t(MONTH_KEYS[m - 1])}
               </option>
             ))}
           </select>
@@ -154,7 +155,7 @@ export default function BirthDatePicker({
 
         <div className="relative z-10">
           <label htmlFor={`${id}-year`} className="sr-only">
-            Année
+            {t('common.birthYear')}
           </label>
           <select
             id={`${id}-year`}
@@ -165,9 +166,9 @@ export default function BirthDatePicker({
               commit(next, month, day);
             }}
             className={selectClass}
-            aria-label="Année de naissance"
+            aria-label={t('common.birthYearAria')}
           >
-            <option value="">Année</option>
+            <option value="">{t('common.birthYear')}</option>
             {years.map((y) => (
               <option key={y} value={y}>
                 {y}

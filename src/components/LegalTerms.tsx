@@ -1,11 +1,14 @@
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { BRAND_NAME, BRAND_BASELINE } from '@/components/BrandLockup';
 import { FOUNDER_MAX_SLOTS, SITE_FREE_MODE } from '@/lib/founderCopy';
 import {
   ContactLink,
-  LEGAL_DOC_LABEL,
   SUPPORT_EMAIL,
+  legalDocLabel,
 } from '@/components/LegalChrome';
+import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import { currentLocale } from '@/i18n/documentMeta';
 
 export {
   CONTACT_PATH,
@@ -21,6 +24,9 @@ export {
 } from '@/components/LegalChrome';
 
 export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const locale = currentLocale();
+  const docLabel = legalDocLabel();
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50">
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
@@ -29,17 +35,23 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500"
-            aria-label="Retour"
+            aria-label={t('legal.back')}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="font-bold text-gray-900 text-sm sm:text-base">
-            {LEGAL_DOC_LABEL}
+          <h1 className="font-bold text-gray-900 text-sm sm:text-base flex-1">
+            {docLabel}
           </h1>
+          <LanguageSwitcher compact />
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
+        {locale !== 'fr' && (
+          <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t('legal.officialNotice')}
+          </p>
+        )}
         <article className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed">
           <header className="space-y-2 border-b border-gray-100 pb-6">
             <p className="inline-flex items-baseline gap-1.5 text-[10px]">
