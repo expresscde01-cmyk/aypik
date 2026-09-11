@@ -113,6 +113,7 @@ function parseCities(txt) {
     const geonameId = Number(cols[0]);
     const name = cols[1];
     const asciiName = cols[2] || name;
+    const alternateNames = cols[3] || '';
     const lat = Number(cols[4]);
     const lng = Number(cols[5]);
     const country = String(cols[8] || '').toUpperCase();
@@ -125,6 +126,7 @@ function parseCities(txt) {
       geoname_id: geonameId,
       name,
       ascii_name: asciiName,
+      alternate_names: alternateNames,
       country_code: country,
       lat,
       lng,
