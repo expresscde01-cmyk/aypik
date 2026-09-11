@@ -115,7 +115,7 @@
       "safariMacStep2": "[EN] Choisis Ajouter au Dock (macOS Sonoma 14 et suivants). Tu peux aussi utiliser le bouton Partager de Safari, puis Ajouter au Dock.",
       "safariMacStep3": "[EN] Vérifie le nom, puis clique sur Ajouter."
     },
-    "language": "[EN] Langue",
+    "language": "Language",
     "localeBetaBanner": "This translation is currently in beta",
     "languages": {
       "fr": "Français",
@@ -791,12 +791,9 @@
     "validationFailed": "[EN] Vérifiez les champs du formulaire, puis réessayez."
   },
   "legal": {
-    "docLabelFree": "[EN] CGU",
-    "docLabelPaid": "[EN] CGU / CGV",
-    "back": "[EN] Retour",
-    "documentTitle": "[EN] Conditions Générales d'Utilisation",
-    "lastUpdated": "[EN] Dernière mise à jour : 10 septembre 2026. Version applicable au lancement bénévole et gratuit du Service.",
-    "footerAccept": "[EN] En utilisant {{brand}} — {{baseline}} — vous confirmez avoir lu et accepté les présentes Conditions Générales d’Utilisation.",
+    "docLabelFree": "Terms of Service",
+    "docLabelPaid": "Terms of Service / Terms of Sale",
+    "back": "Back",
     "officialNotice": "This is an unofficial, informative translation. Only the French version of these Terms of Service (Conditions Générales d’Utilisation) is legally binding. In the event of any discrepancy or conflict, the French version shall prevail.",
     "officialNoticeTitle": "Unofficial translation",
     "readOfficialFrench": "Read the official French version"
