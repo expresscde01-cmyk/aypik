@@ -8,19 +8,38 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+type PlanTier = "confort" | "premium";
+
+const PLAN_AMOUNT_CENTS: Record<PlanTier, number> = {
+  confort: 1999,
+  premium: 2499,
+};
+
+function parsePlan(raw: unknown): PlanTier {
+  return raw === "premium" ? "premium" : "confort";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const plan = parsePlan((body as { plan?: unknown })?.plan);
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const priceId = Deno.env.get("STRIPE_PREMIUM_PRICE_ID");
+    const priceId =
+      plan === "premium"
+        ? Deno.env.get("STRIPE_PREMIUM_PRICE_ID")
+        : Deno.env.get("STRIPE_CONFORT_PRICE_ID");
     if (!stripeKey || !priceId) {
       return json(
         {
           error:
-            "Stripe n'est pas configuré (STRIPE_SECRET_KEY / STRIPE_PREMIUM_PRICE_ID).",
+            plan === "premium"
+              ? "Stripe n'est pas configuré (STRIPE_SECRET_KEY / STRIPE_PREMIUM_PRICE_ID)."
+              : "Stripe n'est pas configuré (STRIPE_SECRET_KEY / STRIPE_CONFORT_PRICE_ID).",
         },
         503
       );
@@ -79,7 +98,7 @@ Deno.serve(async (req) => {
         save_default_payment_method: "on_subscription",
       },
       expand: ["latest_invoice.payment_intent"],
-      metadata: { supabase_user_id: user.id },
+      metadata: { supabase_user_id: user.id, plan },
     });
 
     const invoice = subscription.latest_invoice as Stripe.Invoice;
@@ -91,7 +110,8 @@ Deno.serve(async (req) => {
       provider_subscription_id: subscription.id,
       provider_customer_id: customerId,
       status: "incomplete",
-      amount_cents: 1999,
+      plan,
+      amount_cents: PLAN_AMOUNT_CENTS[plan],
       currency: "EUR",
       interval: "month",
     });
@@ -100,6 +120,7 @@ Deno.serve(async (req) => {
       subscriptionId: subscription.id,
       clientSecret: paymentIntent.client_secret,
       customerId,
+      plan,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur Stripe";

@@ -2,6 +2,27 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 
+type SupabaseAdmin = ReturnType<typeof createClient>;
+
+/**
+ * Le palier acheté (confort | premium) est déterminé à la création de
+ * l'abonnement (cf. create-stripe-subscription) et stocké dans
+ * payment_subscriptions.plan — c'est la source de vérité, on ne le
+ * redevine pas à partir du prix Stripe ici.
+ */
+async function getPlanForSubscription(
+  admin: SupabaseAdmin,
+  subscriptionId: string
+): Promise<"confort" | "premium"> {
+  const { data } = await admin
+    .from("payment_subscriptions")
+    .select("plan")
+    .eq("provider", "stripe")
+    .eq("provider_subscription_id", subscriptionId)
+    .maybeSingle();
+  return data?.plan === "premium" ? "premium" : "confort";
+}
+
 Deno.serve(async (req) => {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
@@ -37,10 +58,12 @@ Deno.serve(async (req) => {
     const userId = sub.metadata?.supabase_user_id;
     if (userId && (sub.status === "active" || sub.status === "trialing")) {
       const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+      const plan = await getPlanForSubscription(admin, sub.id);
       await admin.rpc("activate_paid_premium", {
         p_user_id: userId,
         p_provider: "stripe",
         p_period_end: periodEnd,
+        p_plan: plan,
       });
       await admin
         .from("payment_subscriptions")
@@ -65,10 +88,12 @@ Deno.serve(async (req) => {
       const userId = sub.metadata?.supabase_user_id;
       if (userId) {
         const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        const plan = await getPlanForSubscription(admin, sub.id);
         await admin.rpc("activate_paid_premium", {
           p_user_id: userId,
           p_provider: "stripe",
           p_period_end: periodEnd,
+          p_plan: plan,
         });
       }
     }

@@ -1,16 +1,9 @@
 import { Award, Bell, Check, Gift, Heart, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
-import { OfferConversionCard } from '@/components/membership/OfferConversionCard';
-import {
-  consumeHighlightOfferFromUrl,
-  offerCardDomId,
-  subscribeHighlightOffer,
-  type HighlightOffer,
-} from '@/lib/conversionNav';
 import { cancelPremiumSubscription } from '@/lib/payments';
 import {
   FOUNDER_MAX_SLOTS,
@@ -251,23 +244,6 @@ export function MembershipPanel({
   const { t } = useTranslation();
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
-  const [highlightedOffer, setHighlightedOffer] =
-    useState<HighlightOffer | null>(null);
-
-  useEffect(() => {
-    const apply = (offer: HighlightOffer) => {
-      setHighlightedOffer(offer);
-      window.setTimeout(() => {
-        document.getElementById(offerCardDomId(offer))?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }, 160);
-    };
-    const fromUrl = consumeHighlightOfferFromUrl();
-    if (fromUrl) apply(fromUrl);
-    return subscribeHighlightOffer(apply);
-  }, []);
   const daysLeft = daysUntil(status.founder_premium_until);
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
@@ -299,7 +275,9 @@ export function MembershipPanel({
     status.is_founder && !periodActive && !status.has_premium;
 
   const canCancelPaid =
-    status.has_premium && !periodActive && status.plan === 'premium';
+    status.has_premium &&
+    !periodActive &&
+    (status.plan === 'confort' || status.plan === 'premium');
 
   const premiumLockedByFounder = founderAvailable && !offerChosen;
   const showPaidPremiumActive =
@@ -427,53 +405,41 @@ export function MembershipPanel({
         )}
 
         {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
-          <PremiumConversionCard
-            status={status}
-            founderExpired={founderExpired}
-            onPaymentSuccess={onRefresh}
-            tone={premiumTone}
-            disabled={false}
-            highlighted={highlightedOffer === 'premium'}
-          />
-        )}
-
-        {!SITE_FREE_MODE && !signupGate && status.payment_visible && (
-          <>
-            <OfferConversionCard
-              offer="simplifie"
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PremiumConversionCard
               status={status}
-              highlighted={highlightedOffer === 'simplifie'}
+              founderExpired={founderExpired}
               onPaymentSuccess={onRefresh}
+              tone="secondary"
+              disabled={false}
+              plan="confort"
             />
-            <OfferConversionCard
-              offer="detaille"
+            <PremiumConversionCard
               status={status}
-              highlighted={highlightedOffer === 'detaille'}
+              founderExpired={founderExpired}
               onPaymentSuccess={onRefresh}
+              tone={premiumTone}
+              disabled={false}
+              plan="premium"
             />
-            <OfferConversionCard
-              offer="international"
-              status={status}
-              highlighted={highlightedOffer === 'international'}
-            />
-            <OfferConversionCard
-              offer="visibility"
-              status={status}
-              highlighted={highlightedOffer === 'visibility'}
-            />
-            <OfferConversionCard
-              offer="francophone"
-              status={status}
-              highlighted={highlightedOffer === 'francophone'}
-            />
-          </>
+          </div>
         )}
 
         {showPaidPremiumActive && !SITE_FREE_MODE && (
           <SoftPremiumBanner
-            title={t('membership.premiumActive')}
+            title={t('membership.premiumActive', { offer: offerShortName(status) })}
             description={t('membership.premiumBenefits')}
-            priceLabel={SITE_FREE_MODE ? undefined : priceLabel}
+            priceLabel={
+              SITE_FREE_MODE
+                ? undefined
+                : status.plan === 'premium'
+                  ? formatPremiumPriceLabel(
+                      status.premium_price_cents,
+                      status.premium_currency,
+                      status.premium_interval
+                    )
+                  : priceLabel
+            }
           />
         )}
 
@@ -521,7 +487,6 @@ export function MembershipPanel({
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
-            paymentVisible={status.payment_visible}
           />
         )}
       </div>

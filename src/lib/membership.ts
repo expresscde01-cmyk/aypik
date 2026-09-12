@@ -5,7 +5,12 @@ import {
 import { dateLocale } from '../i18n/format.ts';
 import { t } from '../i18n/t.ts';
 
-export type MembershipPlan = 'free' | 'premium' | 'founder';
+export type MembershipPlan =
+  | 'free'
+  | 'essentiel'
+  | 'confort'
+  | 'premium'
+  | 'founder';
 
 export type AccessPhase =
   | 'founder_full'
@@ -13,7 +18,8 @@ export type AccessPhase =
   | 'trial_simplified'
   | 'post_trial';
 
-export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
+export const DEFAULT_CONFORT_PRICE_CENTS = 1999;
+export const DEFAULT_PREMIUM_PRICE_CENTS = 2499;
 
 const VALID_PHASES: AccessPhase[] = [
   'founder_full',
@@ -53,8 +59,10 @@ export interface MembershipStatus {
   can_see_who_liked: boolean;
   can_use_advanced_filters: boolean;
   unlimited_likes: boolean;
-  /** Tarif Premium de référence (centimes), ex. 1999 = 19,99 € */
+  /** Tarif Premium de référence (centimes), ex. 2499 = 24,99 € */
   premium_price_cents: number;
+  /** Tarif Confort de référence (centimes), ex. 1999 = 19,99 € */
+  confort_price_cents: number;
   premium_currency: string;
   premium_interval: string;
   /** Prix pendant la période fondateur (0 = gratuit) */
@@ -91,6 +99,7 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   can_use_advanced_filters: false,
   unlimited_likes: false,
   premium_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
+  confort_price_cents: DEFAULT_CONFORT_PRICE_CENTS,
   premium_currency: 'EUR',
   premium_interval: 'month',
   founder_trial_price_cents: 0,
@@ -107,7 +116,13 @@ export function membershipRequiredError(): string {
   return t('profile.chooseOfferFirst');
 }
 
-const VALID_PLANS: MembershipPlan[] = ['free', 'founder', 'premium'];
+const VALID_PLANS: MembershipPlan[] = [
+  'free',
+  'founder',
+  'essentiel',
+  'confort',
+  'premium',
+];
 
 export function isValidLinkedOffer(status: {
   membership_linked?: boolean;
@@ -131,6 +146,10 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     typeof d.premium_price_cents === 'number'
       ? d.premium_price_cents
       : DEFAULT_PREMIUM_PRICE_CENTS;
+  const confort_price_cents =
+    typeof d.confort_price_cents === 'number'
+      ? d.confort_price_cents
+      : DEFAULT_CONFORT_PRICE_CENTS;
 
   const is_founder = Boolean(d.is_founder);
   const plan = (d.plan as MembershipPlan) || 'free';
@@ -185,6 +204,7 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
       Boolean(d.can_use_advanced_filters) || has_premium,
     unlimited_likes,
     premium_price_cents,
+    confort_price_cents,
     premium_currency:
       typeof d.premium_currency === 'string' ? d.premium_currency : 'EUR',
     premium_interval:
@@ -262,7 +282,7 @@ export function isFounderPeriodActive(status: MembershipStatus): boolean {
 export function isPaidPremiumActive(status: MembershipStatus): boolean {
   if (!status.has_premium) return false;
   if (status.on_founder_trial || isFounderPeriodActive(status)) return false;
-  return status.plan === 'premium';
+  return status.plan === 'confort' || status.plan === 'premium';
 }
 
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */

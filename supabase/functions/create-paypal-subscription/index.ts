@@ -7,15 +7,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+type PlanTier = "confort" | "premium";
+
+const PLAN_AMOUNT_CENTS: Record<PlanTier, number> = {
+  confort: 1999,
+  premium: 2499,
+};
+
+function parsePlan(raw: unknown): PlanTier {
+  return raw === "premium" ? "premium" : "confort";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const plan = parsePlan((body as { plan?: unknown })?.plan);
+
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
     const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
-    const planId = Deno.env.get("PAYPAL_PREMIUM_PLAN_ID");
+    const planId =
+      plan === "premium"
+        ? Deno.env.get("PAYPAL_PREMIUM_PLAN_ID")
+        : Deno.env.get("PAYPAL_CONFORT_PLAN_ID");
     const apiBase =
       Deno.env.get("PAYPAL_API_BASE") ?? "https://api-m.sandbox.paypal.com";
 
@@ -23,7 +40,9 @@ Deno.serve(async (req) => {
       return json(
         {
           error:
-            "PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / PLAN_ID).",
+            plan === "premium"
+              ? "PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / PAYPAL_PREMIUM_PLAN_ID)."
+              : "PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / PAYPAL_CONFORT_PLAN_ID).",
         },
         503
       );
@@ -44,12 +63,11 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser();
     if (userError || !user) return json({ error: "Session invalide" }, 401);
 
-    const body = await req.json().catch(() => ({}));
     const returnUrl =
-      body.returnUrl ??
+      (body as { returnUrl?: string })?.returnUrl ??
       `${Deno.env.get("PUBLIC_SITE_URL") ?? "http://localhost:5173"}/?paypal=success`;
     const cancelUrl =
-      body.cancelUrl ??
+      (body as { cancelUrl?: string })?.cancelUrl ??
       `${Deno.env.get("PUBLIC_SITE_URL") ?? "http://localhost:5173"}/?paypal=cancel`;
 
     const tokenRes = await fetch(`${apiBase}/v1/oauth2/token`, {
@@ -108,7 +126,8 @@ Deno.serve(async (req) => {
       provider: "paypal",
       provider_subscription_id: subscription.id,
       status: "pending",
-      amount_cents: 1999,
+      plan,
+      amount_cents: PLAN_AMOUNT_CENTS[plan],
       currency: "EUR",
       interval: "month",
     });
@@ -116,6 +135,7 @@ Deno.serve(async (req) => {
     return json({
       subscriptionId: subscription.id,
       approveUrl: approveLink,
+      plan,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur PayPal";
