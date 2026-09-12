@@ -9,10 +9,12 @@ export function BoostPurchaseCard({
   hasBoost,
   boostEndsAt,
   onPurchase,
+  paymentVisible = false,
 }: {
   hasBoost: boolean;
   boostEndsAt: string | null;
   onPurchase: () => Promise<string | null>;
+  paymentVisible?: boolean;
 }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ export function BoostPurchaseCard({
             </p>
           )}
 
-          {!SITE_FREE_MODE && (
+          {!SITE_FREE_MODE && paymentVisible && (
             <div className="flex items-center gap-3 mt-3">
               <button
                 type="button"

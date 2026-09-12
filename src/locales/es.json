@@ -773,7 +773,21 @@
     "activatingShort": "Activando...",
     "comeBackOrPremiumPrice": "Vuelve mañana, o pásate a Premium ({{price}}) para dar like sin límite — a tu ritmo.",
     "checkoutTermsAfter": "desde tu perfil. Sin gastos de cancelación. Conservas el acceso hasta el final del período ya pagado. Al continuar, aceptas los",
-    "securePaymentLegal": "Pago seguro con tarjeta (Stripe) o PayPal ·"
+    "securePaymentLegal": "Pago seguro con tarjeta (Stripe) o PayPal ·",
+    "lockedNeedOffer": "Esta opción ya no está incluida en el período gratuito. Elige una oferta para continuar.",
+    "comingSoon": "Próximamente",
+    "chooseOffer": "Elegir esta oferta",
+    "chatLockedHint": "El envío de mensajes ya no está incluido en el período gratuito. Elige una oferta para continuar.",
+    "offerSimplifiedTitle": "Modo simplificado",
+    "offerSimplifiedDesc": "Presentación simplificada y mensajes directos desde Descubrir.",
+    "offerDetailedTitle": "Modo detallado",
+    "offerDetailedDesc": "Presentación detallada, con likes y flashes antes de escribir.",
+    "offerInternationalTitle": "Internacional",
+    "offerInternationalDesc": "Interfaz y descubrimiento en otros idiomas.",
+    "offerVisibilityTitle": "Visibilidad",
+    "offerVisibilityDesc": "Control avanzado de tu visibilidad en Aypik.",
+    "offerFrancophoneTitle": "Países francófonos",
+    "offerFrancophoneDesc": "Amplía tus sugerencias a los países francófonos."
   },
   "contact": {
     "title": "Contáctanos",

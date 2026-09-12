@@ -7,7 +7,30 @@ import { t } from '../i18n/t.ts';
 
 export type MembershipPlan = 'free' | 'premium' | 'founder';
 
+export type AccessPhase =
+  | 'founder_full'
+  | 'trial_full'
+  | 'trial_simplified'
+  | 'post_trial';
+
 export const DEFAULT_PREMIUM_PRICE_CENTS = 1999;
+
+const VALID_PHASES: AccessPhase[] = [
+  'founder_full',
+  'trial_full',
+  'trial_simplified',
+  'post_trial',
+];
+
+function parseAccessPhase(raw: unknown): AccessPhase {
+  return VALID_PHASES.includes(raw as AccessPhase)
+    ? (raw as AccessPhase)
+    : 'trial_full';
+}
+
+function parseIsoOrNull(raw: unknown): string | null {
+  return typeof raw === 'string' && raw.length > 0 ? raw : null;
+}
 
 export interface MembershipStatus {
   user_id?: string;
@@ -41,6 +64,11 @@ export interface MembershipStatus {
   on_founder_trial: boolean;
   /** Prix effectivement facturé maintenant (0 en période fondateur) */
   effective_price_cents: number;
+  phase: AccessPhase;
+  full_access_until: string | null;
+  simplified_free_until: string | null;
+  /** True uniquement à partir de l’échéance des 6 mois propre à ce compte. */
+  payment_visible: boolean;
 }
 
 export const DEFAULT_MEMBERSHIP: MembershipStatus = {
@@ -69,6 +97,10 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   founder_premium_months: 6,
   on_founder_trial: false,
   effective_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
+  phase: 'trial_full',
+  full_access_until: null,
+  simplified_free_until: null,
+  payment_visible: false,
 };
 
 export function membershipRequiredError(): string {
@@ -173,6 +205,10 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
       : typeof d.effective_price_cents === 'number'
         ? d.effective_price_cents
         : premium_price_cents,
+    phase: parseAccessPhase(d.phase),
+    full_access_until: parseIsoOrNull(d.full_access_until),
+    simplified_free_until: parseIsoOrNull(d.simplified_free_until),
+    payment_visible: d.payment_visible === true,
   };
 }
 
@@ -237,4 +273,12 @@ export function isFounderOfferOpen(status: MembershipStatus): boolean {
 /** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
 export function isFounderAvailable(status: MembershipStatus): boolean {
   return isFounderOfferOpen(status);
+}
+
+/**
+ * Période gratuite terminée, sans abonnement payant réel.
+ * `has_premium` reflète un plan payant actif, pas la fenêtre offerte.
+ */
+export function isPostTrialLocked(status: MembershipStatus): boolean {
+  return status.phase === 'post_trial' && !status.has_premium;
 }

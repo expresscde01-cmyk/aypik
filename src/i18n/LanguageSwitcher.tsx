@@ -2,6 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth';
 import { applyLocale } from '@/i18n/applyLocale';
 import { isSupportedLocale, SUPPORTED_LOCALES, type AppLocale } from '@/i18n/locales';
+import { useMembership } from '@/lib/useMembership';
+import { isPostTrialLocked } from '@/lib/membership';
+import { openHighlightOffer } from '@/lib/conversionNav';
 
 const LANGUAGE_TITLE_KEYS = {
   fr: 'common.languages.fr',
@@ -18,14 +21,20 @@ export default function LanguageSwitcher({
 }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { status, loading } = useMembership();
   const code = (i18n.resolvedLanguage || i18n.language || 'fr').split('-')[0];
   const active: AppLocale = isSupportedLocale(code) ? code : 'fr';
+  // International n’a pas encore de facturation en base : verrouillé dès post_trial.
+  const locked = Boolean(user) && !loading && isPostTrialLocked(status);
 
   return (
     <div
       role="group"
       aria-label={t('common.language')}
-      className={`inline-flex items-center rounded-lg border border-rose-100 bg-white/80 p-0.5 ${className}`}
+      aria-disabled={locked || undefined}
+      className={`inline-flex items-center rounded-lg border border-rose-100 bg-white/80 p-0.5 ${
+        locked ? 'opacity-55 grayscale select-none' : ''
+      } ${className}`}
     >
       {SUPPORTED_LOCALES.map((code: AppLocale) => {
         const selected = active === code;
@@ -34,8 +43,16 @@ export default function LanguageSwitcher({
             key={code}
             type="button"
             aria-pressed={selected}
-            title={t(LANGUAGE_TITLE_KEYS[code])}
+            title={
+              locked
+                ? t('membership.lockedNeedOffer')
+                : t(LANGUAGE_TITLE_KEYS[code])
+            }
             onClick={() => {
+              if (locked) {
+                openHighlightOffer('international');
+                return;
+              }
               void applyLocale(code, {
                 userId: user?.id,
                 persistProfile: Boolean(user?.id),

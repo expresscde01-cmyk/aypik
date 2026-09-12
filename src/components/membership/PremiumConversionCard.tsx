@@ -8,6 +8,7 @@ import {
 import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
+import { offerCardDomId } from '@/lib/conversionNav';
 import { useTranslation } from 'react-i18next';
 
 export function PremiumConversionCard({
@@ -17,6 +18,7 @@ export function PremiumConversionCard({
   tone = 'primary',
   disabled = false,
   disabledReason,
+  highlighted = false,
 }: {
   status: MembershipStatus;
   founderExpired?: boolean;
@@ -26,10 +28,12 @@ export function PremiumConversionCard({
   /** Grisé / non cliquable (ex. pendant la période Fondateur) */
   disabled?: boolean;
   disabledReason?: string;
+  highlighted?: boolean;
 }) {
   const { t } = useTranslation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   if (SITE_FREE_MODE) return null;
+  const paymentReady = status.payment_visible && !disabled;
   const lockReason = disabledReason ?? t('membership.founderIncludesPremium');
   const premiumPerks = [
     t('membership.benefitWhoLiked'),
@@ -59,13 +63,16 @@ export function PremiumConversionCard({
   return (
     <>
       <div
+        id={offerCardDomId('premium')}
         aria-disabled={disabled || undefined}
         className={
-          disabled
-            ? 'rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none'
-            : secondary
-              ? 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
-              : 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+          `${
+            disabled
+              ? 'rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none'
+              : secondary
+                ? 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
+                : 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+          }${highlighted ? ' ring-2 ring-rose-400 ring-offset-2' : ''}`
         }
       >
         <div
@@ -140,15 +147,7 @@ export function PremiumConversionCard({
           </ul>
 
           <div className="space-y-2">
-            {disabled ? (
-              <div
-                role="presentation"
-                aria-hidden="true"
-                className="w-full py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-sm font-semibold text-center cursor-not-allowed"
-              >
-                {lockedLabel}
-              </div>
-            ) : (
+            {paymentReady ? (
               <button
                 type="button"
                 onClick={() => setCheckoutOpen(true)}
@@ -160,9 +159,17 @@ export function PremiumConversionCard({
               >
                 {activeLabel}
               </button>
+            ) : (
+              <div
+                role="presentation"
+                aria-hidden="true"
+                className="w-full py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-sm font-semibold text-center cursor-not-allowed"
+              >
+                {lockedLabel}
+              </div>
             )}
 
-            {!disabled && (
+            {paymentReady && (
               <>
                 <p className="text-xs text-center text-gray-500 leading-relaxed">
                   {t('membership.withoutCommitment')}
@@ -179,7 +186,7 @@ export function PremiumConversionCard({
         </div>
       </div>
 
-      {!disabled && checkoutOpen && (
+      {paymentReady && checkoutOpen && (
         <PaymentCheckoutModal
           open={checkoutOpen}
           onClose={() => setCheckoutOpen(false)}

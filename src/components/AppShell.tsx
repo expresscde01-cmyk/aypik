@@ -28,6 +28,7 @@ import { setProfileIncognito } from '@/lib/profileIncognito';
 import { setProfileDeactivated } from '@/lib/profileDeactivated';
 import { usePresenceHeartbeat } from '@/lib/presence';
 import { userErrorMessage } from '@/lib/userError';
+import { subscribeHighlightOffer } from '@/lib/conversionNav';
 import {
   fetchMyAccountFlags,
   loadVisibilityUiMode,
@@ -50,12 +51,14 @@ type Tab = 'home' | 'discover' | 'matches' | 'profile';
 
 function initialTabFromQuery(): Tab {
   if (typeof window === 'undefined') return 'home';
-  const open = new URLSearchParams(window.location.search).get('open');
+  const params = new URLSearchParams(window.location.search);
+  const open = params.get('open');
   if (
     open === 'preferences' ||
     open === 'profile' ||
     open === 'temoignage' ||
-    open === 'password'
+    open === 'password' ||
+    params.get('highlightOffer')
   ) {
     return 'profile';
   }
@@ -160,6 +163,16 @@ function AppShellView() {
     },
     [mountTab, persistDiscoverPrefs, tab]
   );
+
+  const openProfileForOffer = useCallback(() => {
+    if (tab === 'discover') persistDiscoverPrefs();
+    mountTab('profile');
+    setTab('profile');
+  }, [mountTab, persistDiscoverPrefs, tab]);
+
+  useEffect(() => subscribeHighlightOffer(openProfileForOffer), [
+    openProfileForOffer,
+  ]);
 
   const openAccountStatusManager = useCallback(() => {
     if (tab === 'discover') persistDiscoverPrefs();

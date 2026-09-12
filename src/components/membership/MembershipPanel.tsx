@@ -1,9 +1,16 @@
 import { Award, Bell, Check, Gift, Heart, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
+import { OfferConversionCard } from '@/components/membership/OfferConversionCard';
+import {
+  consumeHighlightOfferFromUrl,
+  offerCardDomId,
+  subscribeHighlightOffer,
+  type HighlightOffer,
+} from '@/lib/conversionNav';
 import { cancelPremiumSubscription } from '@/lib/payments';
 import {
   FOUNDER_MAX_SLOTS,
@@ -244,6 +251,23 @@ export function MembershipPanel({
   const { t } = useTranslation();
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+  const [highlightedOffer, setHighlightedOffer] =
+    useState<HighlightOffer | null>(null);
+
+  useEffect(() => {
+    const apply = (offer: HighlightOffer) => {
+      setHighlightedOffer(offer);
+      window.setTimeout(() => {
+        document.getElementById(offerCardDomId(offer))?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 160);
+    };
+    const fromUrl = consumeHighlightOfferFromUrl();
+    if (fromUrl) apply(fromUrl);
+    return subscribeHighlightOffer(apply);
+  }, []);
   const daysLeft = daysUntil(status.founder_premium_until);
   const priceLabel = formatPremiumPriceLabel(
     status.premium_price_cents,
@@ -409,7 +433,40 @@ export function MembershipPanel({
             onPaymentSuccess={onRefresh}
             tone={premiumTone}
             disabled={false}
+            highlighted={highlightedOffer === 'premium'}
           />
+        )}
+
+        {!SITE_FREE_MODE && !signupGate && status.payment_visible && (
+          <>
+            <OfferConversionCard
+              offer="simplifie"
+              status={status}
+              highlighted={highlightedOffer === 'simplifie'}
+              onPaymentSuccess={onRefresh}
+            />
+            <OfferConversionCard
+              offer="detaille"
+              status={status}
+              highlighted={highlightedOffer === 'detaille'}
+              onPaymentSuccess={onRefresh}
+            />
+            <OfferConversionCard
+              offer="international"
+              status={status}
+              highlighted={highlightedOffer === 'international'}
+            />
+            <OfferConversionCard
+              offer="visibility"
+              status={status}
+              highlighted={highlightedOffer === 'visibility'}
+            />
+            <OfferConversionCard
+              offer="francophone"
+              status={status}
+              highlighted={highlightedOffer === 'francophone'}
+            />
+          </>
         )}
 
         {showPaidPremiumActive && !SITE_FREE_MODE && (
@@ -464,6 +521,7 @@ export function MembershipPanel({
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
             onPurchase={onPurchaseBoost}
+            paymentVisible={status.payment_visible}
           />
         )}
       </div>

@@ -4,6 +4,8 @@ import { ArrowLeft, Send, AlertCircle, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
+import { isPostTrialLocked } from '@/lib/membership';
+import { openHighlightOffer } from '@/lib/conversionNav';
 import { offerLabel } from '@/lib/founderCopy';
 import type { Profile } from '@/components/ProfileSetup';
 import {
@@ -44,6 +46,7 @@ export default function ChatScreen({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { status } = useMembership();
+  const postTrialLocked = isPostTrialLocked(status);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -182,6 +185,11 @@ export default function ChatScreen({
   }, [messages.length, loading]);
 
   const handleSend = async () => {
+    if (postTrialLocked) {
+      openHighlightOffer('premium');
+      onClose();
+      return;
+    }
     if (!user || sending) return;
     const content = draft.trim();
     if (!content) return;
@@ -227,8 +235,11 @@ export default function ChatScreen({
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);
+      const raw = userErrorMessage(err, t('matches.chatSendFail'));
       setError(
-        userErrorMessage(err, t('matches.chatSendFail'))
+        /payment_required/i.test(raw) || /payment_required/i.test(String(err))
+          ? t('membership.chatLockedHint')
+          : raw
       );
     } finally {
       setSending(false);
@@ -400,8 +411,23 @@ export default function ChatScreen({
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-500 mb-2">
               {t('matches.chatWrite')}
             </p>
+            {postTrialLocked ? (
+              <p className="text-[11px] leading-snug text-gray-500 mb-2">
+                {t('membership.chatLockedHint')}
+              </p>
+            ) : null}
             <form
-              className="flex items-end gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 p-2"
+              className={`flex items-end gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 p-2 ${
+                postTrialLocked ? 'opacity-55 grayscale select-none' : ''
+              }`}
+              onClick={
+                postTrialLocked
+                  ? () => {
+                      openHighlightOffer('premium');
+                      onClose();
+                    }
+                  : undefined
+              }
               onSubmit={(e) => {
                 e.preventDefault();
                 void handleSend();
@@ -410,20 +436,30 @@ export default function ChatScreen({
               <textarea
                 ref={inputRef}
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  if (postTrialLocked) return;
+                  setDraft(e.target.value);
+                }}
                 onKeyDown={onKeyDown}
                 rows={2}
                 maxLength={2000}
                 placeholder={t('matches.chatWriteTo', { name: peer.display_name })}
-                readOnly={false}
-                disabled={sending}
+                readOnly={postTrialLocked}
+                disabled={sending || postTrialLocked}
                 className="flex-1 resize-none max-h-28 rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300 disabled:opacity-60"
               />
               <button
-                type="submit"
-                disabled={sending || !draft.trim()}
+                type={postTrialLocked ? 'button' : 'submit'}
+                disabled={postTrialLocked ? false : sending || !draft.trim()}
                 className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-300/70 disabled:opacity-40 disabled:shadow-none hover:brightness-105 transition-all shrink-0"
-                aria-label={t('matches.chatSend')}
+                aria-label={
+                  postTrialLocked
+                    ? t('membership.lockedNeedOffer')
+                    : t('matches.chatSend')
+                }
+                title={
+                  postTrialLocked ? t('membership.lockedNeedOffer') : undefined
+                }
               >
                 <Send className="w-5 h-5" />
               </button>
