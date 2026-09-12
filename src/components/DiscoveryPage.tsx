@@ -1446,8 +1446,18 @@ export default function DiscoveryPage({
     (id: string) => {
       hideFromCurrentFilter(id);
       setOpenProfile((open) => (open?.id === id ? null : open));
+      if (user) {
+        // Persisté en base (discovery_passes) : le profil réapparaîtra
+        // dans les suggestions après 2 mois. Best-effort, ne bloque pas l'UI.
+        void supabase
+          .from('discovery_passes')
+          .upsert(
+            { from_user: user.id, to_user: id },
+            { onConflict: 'from_user,to_user' }
+          );
+      }
     },
-    [hideFromCurrentFilter]
+    [hideFromCurrentFilter, user]
   );
 
   const openCandidate = useCallback(
@@ -2046,18 +2056,6 @@ const DiscoveryCard = memo(function DiscoveryCard({
               {unreadCount > 9 ? '9+' : unreadCount}
             </button>
           )}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip(c.id);
-            }}
-            className="pointer-events-auto absolute bottom-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-sm border border-white/80 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
-            title={t('matches.hide')}
-            aria-label={t('discover.hideName', { name: c.display_name })}
-          >
-            <X className="w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-          </button>
         </div>
         <div className="p-3 space-y-1.5">
           <p className="text-sm font-bold text-gray-900 truncate">
@@ -2143,6 +2141,17 @@ const DiscoveryCard = memo(function DiscoveryCard({
               }
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
+            </DiscoveryActionButton>
+            <DiscoveryActionButton
+              tooltip={t('matches.hide')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSkip(c.id);
+              }}
+              className="relative w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-transform cursor-pointer"
+              aria-label={t('discover.hideName', { name: c.display_name })}
+            >
+              <X className="w-4 h-4 text-gray-400" />
             </DiscoveryActionButton>
           </div>
         </div>

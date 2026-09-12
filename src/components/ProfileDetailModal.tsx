@@ -541,19 +541,6 @@ export default function ProfileDetailModal({
           </>
           ) : (
             <div className="flex items-center justify-center gap-4 pt-2 overflow-visible">
-              <button
-                type="button"
-                onClick={onSkip}
-                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer overflow-visible"
-                aria-label={t('discover.hideName', {
-                  name: candidate.display_name,
-                })}
-              >
-                <X className="size-5 shrink-0 text-gray-400 pointer-events-none" />
-                <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-gray-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-gray-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
-                  {t('matches.hide')}
-                </span>
-              </button>
               {showFlashCta && (
                 <button
                   type="button"
@@ -608,6 +595,19 @@ export default function ProfileDetailModal({
                       : t('discover.likeThisProfile', {
                           emoji: LIKE_NOTIFICATION_EMOJI,
                         })}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={onSkip}
+                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer overflow-visible"
+                aria-label={t('discover.hideName', {
+                  name: candidate.display_name,
+                })}
+              >
+                <X className="size-5 shrink-0 text-gray-400 pointer-events-none" />
+                <span className="pointer-events-none absolute z-30 bottom-full left-1/2 mb-1.5 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-gray-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-gray-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+                  {t('matches.hide')}
                 </span>
               </button>
             </div>
