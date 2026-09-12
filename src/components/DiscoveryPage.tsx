@@ -82,10 +82,12 @@ import {
 } from '@/lib/discoverySort';
 import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
+import ChatScreen from '@/components/ChatScreen';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
+import { isSimplifiedDiscoverMode } from '@/lib/discoverMode';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 import {
   fetchLikeFlashEdges,
@@ -1160,6 +1162,7 @@ export default function DiscoveryPage({
   const [sortChoice, setSortChoice] = useState<SortChoice>('nouveaux');
   const filtersActive = !sortEnabled;
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
+  const [chatPeer, setChatPeer] = useState<Candidate | null>(null);
   const canFilter = status.can_use_advanced_filters;
   const geoFilterActive = isGeoFilterActive(geoPerimeter);
   const hasActiveFilter = geoFilterActive || minOverlap > 0;
@@ -1212,6 +1215,7 @@ export default function DiscoveryPage({
     lastProximityPerimeterRef.current = null;
     setSessionHiddenIds(new Set());
     setOpenProfile(null);
+    setChatPeer(null);
   }, []);
 
   useEffect(() => {
@@ -1475,6 +1479,11 @@ export default function DiscoveryPage({
     },
     [onOpenUnreadChat, openCandidate]
   );
+
+  const openDialogue = useCallback((candidate: Candidate) => {
+    setOpenProfile(null);
+    setChatPeer(candidate);
+  }, []);
 
   const handleFlash = useCallback(
     async (candidate: Candidate) => {
@@ -1879,6 +1888,7 @@ export default function DiscoveryPage({
                   onSkip={handleSkip}
                   onFlash={handleFlash}
                   onLike={handleLike}
+                  onDialogue={openDialogue}
                 />
             ))}
           </ul>
@@ -1907,6 +1917,16 @@ export default function DiscoveryPage({
             <LikesQuotaHint status={status} />
           </div>
         </div>
+      )}
+
+      {chatPeer && (
+        <ChatScreen
+          peer={chatPeer}
+          onDialogueStarted={() => {
+            invalidateLikeFlashEdges(userId || '');
+          }}
+          onClose={() => setChatPeer(null)}
+        />
       )}
 
       {openProfile && (
@@ -1994,6 +2014,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onSkip,
   onFlash,
   onLike,
+  onDialogue,
 }: {
   candidate: Candidate;
   geoPerimeter: GeoPerimeterFilter;
@@ -2009,6 +2030,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onSkip: (id: string) => void;
   onFlash: (c: Candidate) => void;
   onLike: (c: Candidate) => void;
+  onDialogue: (c: Candidate) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -2151,6 +2173,22 @@ const DiscoveryCard = memo(function DiscoveryCard({
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
             </DiscoveryActionButton>
+            {isSimplifiedDiscoverMode(c.discover_mode) ? (
+              <DiscoveryActionButton
+                tooltip={t('discover.dialogueTooltip')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDialogue(c);
+                }}
+                disabled={busy}
+                className="relative w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-violet-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
+                aria-label={t('discover.dialogueProfile', {
+                  name: c.display_name,
+                })}
+              >
+                <MessageCircle className="w-4 h-4 text-white" />
+              </DiscoveryActionButton>
+            ) : null}
             <DiscoveryActionButton
               tooltip={t('matches.hide')}
               tooltipClassName="!bg-white/95 !text-gray-600 !border-gray-100"

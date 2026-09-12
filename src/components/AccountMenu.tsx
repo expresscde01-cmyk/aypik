@@ -6,6 +6,7 @@ import {
   Eye,
   Filter,
   Globe,
+  LayoutList,
   Lock,
   LogOut,
   RefreshCw,
@@ -25,7 +26,9 @@ import {
 } from '@/lib/accountStatus';
 import { visibilityHintTextClass } from '@/components/AccountStatusBadge';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
+import DiscoverModeSwitcher from '@/components/DiscoverModeSwitcher';
 import { useTranslation } from 'react-i18next';
+import type { DiscoverMode } from '@/lib/discoverMode';
 
 export default function AccountMenu({
   displayName,
@@ -36,6 +39,8 @@ export default function AccountMenu({
   onOpenNotifications,
   onSignOut,
   openRequestKey = 0,
+  discoverMode,
+  onDiscoverModeChange,
 }: {
   displayName: string;
   visibilityChoice: VisibilityChoice;
@@ -46,6 +51,8 @@ export default function AccountMenu({
   onSignOut: () => void;
   /** Incrémenté pour ouvrir le menu (badge statut) sur le sous-menu Visibilité. */
   openRequestKey?: number;
+  discoverMode?: DiscoverMode | null;
+  onDiscoverModeChange?: (mode: DiscoverMode) => void;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -304,6 +311,23 @@ export default function AccountMenu({
                 {t('common.language')}
               </p>
               <LanguageSwitcher />
+            </div>
+          </div>
+          <div
+            role="none"
+            className="flex items-start gap-2.5 px-3 py-2"
+          >
+            <span className="shrink-0 opacity-80 mt-0.5">
+              <LayoutList className="w-4 h-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-gray-800 mb-1.5">
+                {t('profile.discoverMode')}
+              </p>
+              <DiscoverModeSwitcher
+                value={discoverMode}
+                onChange={onDiscoverModeChange}
+              />
             </div>
           </div>
           <MenuItem

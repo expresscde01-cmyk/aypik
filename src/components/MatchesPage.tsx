@@ -23,6 +23,7 @@ import {
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
+import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { FounderBadge } from '@/components/membership/Badges';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
@@ -832,6 +833,7 @@ async function fetchProfileBundle(ids: string[]): Promise<{
           interests: row.interests || [],
           photo_url: row.photo_url || '',
           is_online: Boolean(row.is_online),
+          discover_mode: parseDiscoverMode(row.discover_mode),
         }));
         return { data: rows, error: null };
       }
@@ -845,6 +847,7 @@ async function fetchProfileBundle(ids: string[]): Promise<{
           (fb.data as Profile[] | null)?.map((p) => ({
             ...p,
             is_online: false,
+            discover_mode: parseDiscoverMode(p.discover_mode),
           })) ?? null,
         error: fb.error,
       };
@@ -1032,6 +1035,7 @@ export default function MatchesPage({
   onFocusActorConsumed,
   profileEpoch = 0,
   pageActive = true,
+  viewerDiscoverMode = 'detaille',
 }: {
   focusActorId?: string | null;
   focusOpenChat?: boolean;
@@ -1055,6 +1059,7 @@ export default function MatchesPage({
   profileEpoch?: number;
   /** Onglet Matchs visible : resync inbox à la réouverture, sans poll. */
   pageActive?: boolean;
+  viewerDiscoverMode?: DiscoverMode;
 } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -2964,19 +2969,23 @@ export default function MatchesPage({
     () => new Set(visibleWaitingByOthers.map((c) => c.profile.id)),
     [visibleWaitingByOthers]
   );
-  const hasPendantStage =
-    floors.matchedChat.length > 0 || floors.matchedQuiet.length > 0;
-  const hasAvantStage =
-    floors.new.length > 0 ||
-    floors.wait.length > 0 ||
-    visibleWaitingByOthers.length > 0 ||
-    visibleWaitArchives.some((c) => c.source === 'mine') ||
-    visibleWaitArchives.some(
-      (c) => c.source === 'theirs' && !waitLivePeerIds.has(c.profile.id)
-    ) ||
-    visiblePendingDeclined.length > 0 ||
-    visibleDeclinedArchives.length > 0;
-  const hasApresStage = brokenMatches.length > 0;
+  const viewerSimplified =
+    parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
+  const hasPendantStage = viewerSimplified
+    ? floors.matchedChat.length > 0
+    : floors.matchedChat.length > 0 || floors.matchedQuiet.length > 0;
+  const hasAvantStage = viewerSimplified
+    ? false
+    : floors.new.length > 0 ||
+      floors.wait.length > 0 ||
+      visibleWaitingByOthers.length > 0 ||
+      visibleWaitArchives.some((c) => c.source === 'mine') ||
+      visibleWaitArchives.some(
+        (c) => c.source === 'theirs' && !waitLivePeerIds.has(c.profile.id)
+      ) ||
+      visiblePendingDeclined.length > 0 ||
+      visibleDeclinedArchives.length > 0;
+  const hasApresStage = viewerSimplified ? false : brokenMatches.length > 0;
 
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
@@ -3932,7 +3941,10 @@ export default function MatchesPage({
     );
   }
 
-  if (matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && waitingByOthers.length === 0 && brokenMatches.length === 0) {
+  if (
+    !viewerSimplified &&
+    matches.length === 0 && declinedArchives.length === 0 && pendingDeclined.length === 0 && waitArchives.length === 0 && pendingWaiting.length === 0 && waitingByOthers.length === 0 && brokenMatches.length === 0
+  ) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -4005,12 +4017,16 @@ export default function MatchesPage({
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
         {t('matches.title')} (
-        {matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
+        {viewerSimplified
+          ? floors.matchedChat.length
+          : matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
       </h2>
-      <MatchesGlossary
-        openIntroSection={openIntroSection}
-        onToggle={toggleIntroSection}
-      />
+      {viewerSimplified ? null : (
+        <MatchesGlossary
+          openIntroSection={openIntroSection}
+          onToggle={toggleIntroSection}
+        />
+      )}
 
       {error && (
         <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
@@ -4021,6 +4037,11 @@ export default function MatchesPage({
 
       {/* Étages : Pendant → Avant → Après (même découpage que le glossaire) */}
       <div className="space-y-8">
+        {viewerSimplified && floors.matchedChat.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-10">
+            {t('matches.simplifiedEmpty')}
+          </p>
+        ) : null}
         {hasPendantStage ? (
           <MatchStageBlock label={t('matches.glossaryPendant')}>
             {renderFloor(
@@ -4028,11 +4049,13 @@ export default function MatchesPage({
               t('matches.chipDiscussionCap'),
               floors.matchedChat
             )}
-            {renderFloor(
-              'matched-quiet',
-              t('matches.chipFirstWord'),
-              floors.matchedQuiet
-            )}
+            {viewerSimplified
+              ? null
+              : renderFloor(
+                  'matched-quiet',
+                  t('matches.chipFirstWord'),
+                  floors.matchedQuiet
+                )}
           </MatchStageBlock>
         ) : null}
         {hasAvantStage ? (

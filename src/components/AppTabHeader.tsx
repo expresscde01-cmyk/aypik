@@ -19,6 +19,7 @@ import {
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import type { DiscoverMode } from '@/lib/discoverMode';
 
 type AppTabHeaderProps = {
   onHome: () => void;
@@ -43,6 +44,8 @@ type AppTabHeaderProps = {
   visibilityUi?: 'deactivated' | 'incognito' | null;
   onVisibilityChange?: (choice: VisibilityChoice) => Promise<string | null>;
   accountMenuRequestKey?: number;
+  discoverMode?: DiscoverMode | null;
+  onDiscoverModeChange?: (mode: DiscoverMode) => void;
 };
 
 /** Même bascule que le header PC d’Accueil (HomeDashboard). */
@@ -80,6 +83,8 @@ export default function AppTabHeader({
   visibilityUi = null,
   onVisibilityChange,
   accountMenuRequestKey = 0,
+  discoverMode,
+  onDiscoverModeChange,
 }: AppTabHeaderProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -106,6 +111,8 @@ export default function AppTabHeader({
         onOpenPassword={onOpenPassword}
         onOpenNotifications={onOpenNotifications}
         onSignOut={onSignOut}
+        discoverMode={discoverMode}
+        onDiscoverModeChange={onDiscoverModeChange}
       />
     ) : null;
 

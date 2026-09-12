@@ -85,11 +85,12 @@ export interface Profile {
   city_name?: string | null;
   geoname_id?: number | null;
   world_zone?: string | null;
+  discover_mode?: 'detaille' | 'simplifie';
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
 export const PROFILE_CARD_COLUMNS =
-  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id';
+  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id, discover_mode';
 
 /** Profil du compte connecté (préférences e-mail en plus). */
 export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled, preferred_locale`;

@@ -265,6 +265,10 @@
     "menuTitle": "Menú de la cuenta",
     "menuMyProfile": "Mi perfil",
     "menuEmailPrefs": "Preferencias de correo",
+    "discoverMode": "Modo de visualización",
+    "discoverModeDetailed": "Detallado",
+    "discoverModeSimplified": "Simplificado",
+    "discoverModeSimplifiedHint": "Al elegir Simplificado, aceptas recibir mensajes sin haber dado like ni flash a cambio.",
     "menuChangePassword": "Modificar mi contraseña",
     "menuResetFilters": "Restablecer mis filtros de búsqueda",
     "menuResetFiltersTitle": "Restablecer tus filtros de búsqueda",
@@ -462,7 +466,9 @@
     "hideName": "Pasar a {{name}}",
     "openUnread": "{{unread}} — abrir",
     "flashLikeHint": ": notifican a la persona",
-    "flashLikeHintFreemium": " (3/día en Freemium)"
+    "flashLikeHintFreemium": " (3/día en Freemium)",
+    "dialogueTooltip": "Escribir un mensaje",
+    "dialogueProfile": "Escribir a {{name}}"
   },
   "matches": {
     "title": "Mis Matches",
@@ -563,6 +569,7 @@
     "legendLikeOrFlash": "Like o Flash",
     "legendA": "Por",
     "emptyHint": "Un perfil aparece aquí en cuanto alguien te envía un flash o un like. Responde para confirmar tu match.",
+    "simplifiedEmpty": "Ninguna conversación en curso. Escribe a un perfil en modo simplificado desde Descubrir, o espera una respuesta.",
     "glossaryAvant": "Antes",
     "glossaryPendant": "Durante",
     "glossaryApres": "Después",
