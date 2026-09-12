@@ -1936,11 +1936,16 @@ export default function DiscoveryPage({
 
 function DiscoveryActionButton({
   tooltip,
+  tooltipClassName,
   className,
   children,
   onClick,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { tooltip: string }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  tooltip: string;
+  /** Classes additionnelles pour l'infobulle (ex. !bg-white !text-gray-600 pour dévier de l'ambré par défaut). */
+  tooltipClassName?: string;
+}) {
   const ref = useRef<HTMLButtonElement>(null);
   const [tipOpen, setTipOpen] = useState(false);
 
@@ -1963,7 +1968,11 @@ function DiscoveryActionButton({
           {children}
         </button>
       </span>
-      <PortaledActionTooltip open={tipOpen} anchorRef={ref}>
+      <PortaledActionTooltip
+        open={tipOpen}
+        anchorRef={ref}
+        tooltipClassName={tooltipClassName}
+      >
         {tooltip}
       </PortaledActionTooltip>
     </>
@@ -2144,6 +2153,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             </DiscoveryActionButton>
             <DiscoveryActionButton
               tooltip={t('matches.hide')}
+              tooltipClassName="!bg-white/95 !text-gray-600 !border-gray-100"
               onClick={(e) => {
                 e.stopPropagation();
                 onSkip(c.id);
