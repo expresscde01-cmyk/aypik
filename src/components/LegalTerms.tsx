@@ -483,11 +483,35 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 l&apos;expiration automatique d&apos;une mise en attente —,
                 le profil concerné n&apos;est plus proposé à l&apos;autre
                 partie dans Découvrir ni dans les suggestions de
-                l&apos;Accueil pendant un délai de 3 mois à compter de ce
+                l&apos;Accueil pendant un délai de 6 mois à compter de ce
                 refus. Ce masquage s&apos;applique dans les deux sens. À
                 l&apos;issue de ce délai, le profil peut à nouveau être
                 présenté, sous réserve des autres filtres du présent article
                 et des critères de mise en relation (article 3.5).
+              </p>
+              <p>
+                Lorsque l&apos;utilisateur passe un profil proposé dans
+                Découvrir (bouton « Passer »), sans lui adresser de Like ni
+                de Flash, ce profil ne lui est plus proposé, ni dans
+                Découvrir ni dans les suggestions de l&apos;Accueil, pendant
+                un délai de 2 mois à compter de cette action. Ce masquage ne
+                s&apos;applique que du côté de l&apos;utilisateur qui a passé
+                le profil ; il est sans incidence pour l&apos;autre membre.
+                À l&apos;issue de ce délai, le profil peut à nouveau être
+                présenté, sous réserve des autres filtres du présent
+                article.
+              </p>
+              <p>
+                Lorsqu&apos;un Match est rompu (Annexe A, « Matchs
+                rompus »), l&apos;autre membre n&apos;est plus proposé dans
+                Découvrir ni dans les suggestions de l&apos;Accueil pendant
+                un délai de 1 an à compter de la rupture si au moins un
+                message avait été échangé entre les deux membres avant
+                celle-ci, ou de 6 mois si aucun message n&apos;avait été
+                échangé. Ce masquage s&apos;applique dans les deux sens. À
+                l&apos;issue de ce délai, le profil peut à nouveau être
+                présenté, sous réserve des autres filtres du présent
+                article.
               </p>
               <p className="font-semibold text-gray-900">
                 3.7.2 Modes de visibilité
@@ -644,6 +668,53 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               affichés tant que le compte est actif (article 4). La validité
               du Boost est consultable à tout moment depuis la page « Mon
               profil ».
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Article 5 bis — Modes d&apos;affichage « simplifié » et «
+              détaillé »
+            </h3>
+            <p>
+              Chaque membre peut choisir librement, à tout moment et sans
+              frais, depuis le menu du compte, entre deux modes
+              d&apos;affichage des pages Découvrir et Mes Matchs.
+            </p>
+            <p>
+              <span className="font-semibold text-gray-900">
+                Mode détaillé
+              </span>{' '}
+              (mode par défaut). Le parcours complet de mise en relation
+              reste affiché, avec ses différentes étapes (À étudier, Mis en
+              attente, Match, Discussion en cours, Matchs rompus).
+              L&apos;envoi d&apos;un message à un autre membre suppose une
+              mise en relation réciproque (Like ou Flash partagé),
+              conformément au fonctionnement décrit à l&apos;article 3.7.1.
+            </p>
+            <p>
+              <span className="font-semibold text-gray-900">
+                Mode simplifié.
+              </span>{' '}
+              Les pages Découvrir et Mes Matchs sont présentées de façon
+              épurée : seules les discussions effectivement engagées
+              (message envoyé par les deux parties) apparaissent dans Mes
+              Matchs. Un bouton « Dialogue » permet d&apos;écrire
+              directement à un autre membre également en mode simplifié,
+              sans Like ni Flash préalable. En activant ce mode,
+              l&apos;utilisateur consent expressément à recevoir, de la
+              part d&apos;autres membres également en mode simplifié, un
+              premier message sans avoir lui-même exprimé d&apos;intérêt
+              réciproque au préalable.
+            </p>
+            <p>
+              Ce choix est réversible à tout moment depuis le menu du
+              compte. Il n&apos;a, à la date des présentes CGU, aucune
+              incidence sur le statut d&apos;abonnement (Fondateur, Premium
+              ou offre de base) : il est proposé gratuitement à
+              l&apos;ensemble des membres, conformément à l&apos;article
+              2.3. Ce fonctionnement est susceptible d&apos;évoluer dans
+              les conditions prévues à l&apos;article 2.4.
             </p>
           </section>
 
@@ -1071,6 +1142,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 personne qui a rompu le lien, le Match apparaît dans « Matchs
                 rompus par l&apos;autre » : seule la suppression définitive
                 est possible, le rétablissement n&apos;étant pas proposé.
+                L&apos;autre membre n&apos;est en outre plus proposé dans
+                Découvrir ni dans les suggestions de l&apos;Accueil pendant
+                un délai de 1 an (si un message avait été échangé avant la
+                rupture) ou de 6 mois (à défaut), dans les conditions de
+                l&apos;article 3.7.1.
               </p>
             </div>
             <div>
@@ -1087,6 +1163,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Page permettant de parcourir des profils compatibles, selon
                 les critères de mise en relation et le filtrage décrits à
                 l&apos;article 3.7.1.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Passer</p>
+              <p>
+                Action disponible sur Découvrir permettant d&apos;écarter un
+                profil sans lui adresser de Like ni de Flash. Le profil
+                concerné n&apos;est alors plus proposé, uniquement à
+                l&apos;utilisateur qui l&apos;a passé, pendant un délai de
+                2 mois (article 3.7.1).
               </p>
             </div>
             <div>
@@ -1189,12 +1275,35 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 réapparaître dans Découvrir&nbsp;?
               </p>
               <p>
-                Oui, mais seulement après un délai de 3 mois à compter du
+                Oui, mais seulement après un délai de 6 mois à compter du
                 refus (article 3.7.1), et sous réserve des autres filtres de
                 suggestions. Ce délai s&apos;applique que le refus ait été
                 exprimé par l&apos;utilisateur, par l&apos;autre membre, ou
                 qu&apos;il résulte de l&apos;expiration automatique d&apos;une
                 mise en attente.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Un profil que j&apos;ai passé (bouton « Passer ») peut-il
+                réapparaître dans Découvrir&nbsp;?
+              </p>
+              <p>
+                Oui, après un délai de 2 mois à compter de cette action
+                (article 3.7.1), sous réserve des autres filtres de
+                suggestions. Ce masquage ne s&apos;applique que de votre
+                côté : il est sans incidence pour l&apos;autre membre.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Un Match rompu peut-il réapparaître dans Découvrir&nbsp;?
+              </p>
+              <p>
+                Oui, après un délai de 1 an si un message avait été échangé
+                avant la rupture, ou de 6 mois dans le cas contraire
+                (article 3.7.1), sous réserve des autres filtres de
+                suggestions. Ce masquage s&apos;applique dans les deux sens.
               </p>
             </div>
             <div>
