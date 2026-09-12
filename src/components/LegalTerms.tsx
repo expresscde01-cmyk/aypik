@@ -87,7 +87,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 10 septembre 2026. Version applicable au
+              Dernière mise à jour : 12 septembre 2026. Version applicable au
               lancement bénévole et gratuit du Service.
             </p>
           </header>
