@@ -265,6 +265,10 @@
     "menuTitle": "Account menu",
     "menuMyProfile": "My profile",
     "menuEmailPrefs": "Email preferences",
+    "discoverMode": "Display mode",
+    "discoverModeDetailed": "Detailed",
+    "discoverModeSimplified": "Simplified",
+    "discoverModeSimplifiedHint": "By choosing Simplified, you agree to receive messages without having liked or flashed back.",
     "menuChangePassword": "Change my password",
     "menuResetFilters": "Reset my search filters",
     "menuResetFiltersTitle": "Reset your search filters",
@@ -462,7 +466,9 @@
     "hideName": "Pass {{name}}",
     "openUnread": "{{unread}} — open",
     "flashLikeHint": ": notify the person",
-    "flashLikeHintFreemium": " (3/day on Freemium)"
+    "flashLikeHintFreemium": " (3/day on Freemium)",
+    "dialogueTooltip": "Send a message",
+    "dialogueProfile": "Message {{name}}"
   },
   "matches": {
     "title": "My Matches",
@@ -563,6 +569,7 @@
     "legendLikeOrFlash": "Like or Flash",
     "legendA": "To",
     "emptyHint": "A profile appears here as soon as someone sends you a Flash or a Like. Respond to confirm your match.",
+    "simplifiedEmpty": "No conversations yet. Message a simplified-mode profile from Discover, or wait for a reply.",
     "glossaryAvant": "Before",
     "glossaryPendant": "During",
     "glossaryApres": "After",

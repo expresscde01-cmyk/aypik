@@ -9,6 +9,7 @@ import {
 import { candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 import { franceWorldAllowedIsos, parseInternationalCountries } from '@/lib/worldGeo';
+import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
 export const DISCOVER_CATALOG_LIMIT = 500;
@@ -38,6 +39,7 @@ export type DiscoveryCandidate = Profile & {
   updated_at?: string;
   last_active_at?: string | null;
   activity_score?: number;
+  discover_mode: DiscoverMode;
 };
 
 export type SuggestRow = {
@@ -69,6 +71,7 @@ export type SuggestRow = {
   country_code?: string | null;
   city_name?: string | null;
   world_zone?: string | null;
+  discover_mode?: string | null;
 };
 
 export function mapSuggestRow(
@@ -121,6 +124,7 @@ export function mapSuggestRow(
     country_code: row.country_code || null,
     city_name: row.city_name || null,
     world_zone: row.world_zone || null,
+    discover_mode: parseDiscoverMode(row.discover_mode),
   };
 }
 

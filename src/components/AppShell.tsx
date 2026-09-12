@@ -3,6 +3,7 @@ import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { adultsOnlyMessage, isAdult, parseProfileGender } from '@/lib/dating';
+import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { useTranslation } from 'react-i18next';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
@@ -117,6 +118,12 @@ function AppShellView() {
         visibilityUi !== 'deactivated'
     )
   );
+
+  const applyDiscoverMode = useCallback((mode: DiscoverMode) => {
+    setProfile((prev) => (prev ? { ...prev, discover_mode: mode } : prev));
+  }, []);
+
+  const viewerDiscoverMode = parseDiscoverMode(profile?.discover_mode);
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -498,6 +505,8 @@ function AppShellView() {
               accountMenuRequestKey={accountMenuRequestKey}
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
+              discoverMode={viewerDiscoverMode}
+              onDiscoverModeChange={applyDiscoverMode}
             />
           </div>
         )}
@@ -523,6 +532,8 @@ function AppShellView() {
               visibilityUi={visibilityUi}
               onVisibilityChange={applyVisibilityChoice}
               accountMenuRequestKey={accountMenuRequestKey}
+              discoverMode={viewerDiscoverMode}
+              onDiscoverModeChange={applyDiscoverMode}
             >
               <div
                 className={`discover-intro${
@@ -583,6 +594,8 @@ function AppShellView() {
               visibilityUi={visibilityUi}
               onVisibilityChange={applyVisibilityChoice}
               accountMenuRequestKey={accountMenuRequestKey}
+              discoverMode={viewerDiscoverMode}
+              onDiscoverModeChange={applyDiscoverMode}
             />
             <Suspense fallback={<TabLoadingFallback />}>
               <MatchesPage
@@ -598,6 +611,7 @@ function AppShellView() {
                 focusUnreadMailbox={inboxUnreadMailbox}
                 focusKey={inboxFocusKey}
                 profileEpoch={profileEpoch}
+                viewerDiscoverMode={profile?.discover_mode ?? 'detaille'}
                 onChatClosed={() => void unread.refresh()}
                 onFocusActorConsumed={() => {
                   setInboxActorId(null);
@@ -631,6 +645,8 @@ function AppShellView() {
               visibilityUi={visibilityUi}
               onVisibilityChange={applyVisibilityChoice}
               accountMenuRequestKey={accountMenuRequestKey}
+              discoverMode={viewerDiscoverMode}
+              onDiscoverModeChange={applyDiscoverMode}
             />
             <ProfileSetup
               allowAccountDeletion

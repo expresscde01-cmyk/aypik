@@ -55,6 +55,7 @@ import {
   type VisibilityChoice,
 } from '@/lib/accountStatus';
 import { useTranslation } from 'react-i18next';
+import type { DiscoverMode } from '@/lib/discoverMode';
 
 type HomeSuggestion = SuggestedProfile & {
   is_founder?: boolean;
@@ -81,6 +82,8 @@ export default function HomeDashboard({
   accountMenuRequestKey = 0,
   accountStatuses = [],
   onAccountStatusClick,
+  discoverMode,
+  onDiscoverModeChange,
 }: {
   displayName: string;
   onHome: () => void;
@@ -102,6 +105,8 @@ export default function HomeDashboard({
   accountMenuRequestKey?: number;
   accountStatuses?: AccountStatusId[];
   onAccountStatusClick?: (id: AccountStatusId) => void;
+  discoverMode?: DiscoverMode | null;
+  onDiscoverModeChange?: (mode: DiscoverMode) => void;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -312,6 +317,8 @@ export default function HomeDashboard({
         onOpenPassword={onOpenPassword}
         onOpenNotifications={onOpenNotifications}
         onSignOut={onSignOut}
+        discoverMode={discoverMode}
+        onDiscoverModeChange={onDiscoverModeChange}
       />
     ) : (
       <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">
