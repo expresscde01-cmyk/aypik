@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: September 10, 2026. Version applicable to the voluntary, free launch of the Service.
+Last updated: September 12, 2026. Version applicable to the voluntary, free launch of the Service.
 
 ### Preamble
 

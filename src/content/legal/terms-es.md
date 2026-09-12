@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 10 de septiembre de 2026. Versión aplicable al lanzamiento voluntario y gratuito del Servicio.
+Última actualización: 12 de septiembre de 2026. Versión aplicable al lanzamiento voluntario y gratuito del Servicio.
 
 ### Preámbulo
 
