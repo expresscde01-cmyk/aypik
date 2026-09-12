@@ -744,7 +744,8 @@ export default function NotificationsBell({
     if (
       (n.kind === 'flash_received' ||
         n.kind === 'like_received' ||
-        n.kind === 'match_waiting') &&
+        n.kind === 'match_waiting' ||
+        n.kind === 'match_declined') &&
       n.actor_id &&
       isActorResolved(n.actor_id)
     ) {

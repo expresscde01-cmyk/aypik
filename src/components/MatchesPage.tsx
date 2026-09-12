@@ -79,6 +79,10 @@ import {
   originHistoryIso,
   pinIdsFirst,
   splitPendingByOthers,
+  collectMatchedPeerIds,
+  withoutOccupiedPeers,
+  dedupePeersByCanonicalStatus,
+  isMatchedBoardPeer,
 } from '@/lib/matchHistoryDisplay';
 import { matchCardDepartClass, retainDepartingMatches } from '@/lib/matchCardDepart';
 import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
@@ -1368,6 +1372,10 @@ export default function MatchesPage({
         matchIdSet.add(f.from_user);
       }
 
+      for (const id of matchIdsIncludingInboxDecisions([], inboxRes)) {
+        matchIdSet.add(id);
+      }
+
       const flashEntries: { id: string; at: string }[] = incomingFlashes
         .filter((f) => !matchIdSet.has(f.from_user))
         .map((f) => ({ id: f.from_user, at: f.created_at }));
@@ -1378,10 +1386,6 @@ export default function MatchesPage({
           (rl) => !matchIdSet.has(rl.from_user) && !flashIdSet.has(rl.from_user)
         )
         .map((rl) => ({ id: rl.from_user, at: rl.created_at }));
-
-      for (const id of matchIdsIncludingInboxDecisions([], inboxRes)) {
-        matchIdSet.add(id);
-      }
 
       const allIds = [
         ...new Set([
@@ -2313,14 +2317,19 @@ export default function MatchesPage({
           markResolved(item.profile.id, 'matched');
           releasePinnedActor(item.profile.id);
         });
-        await Promise.all([loadMatches(), refreshMembership()]);
+        await Promise.all([
+          loadMatches(),
+          refreshMembership(),
+          loadPendingDeclined(),
+          loadDeclinedArchives(),
+        ]);
       } catch (err) {
         setError(userErrorMessage(err, t('matches.validateMatchError')));
       } finally {
         endActing();
       }
     },
-    [user, likesExhausted, loadMatches, refreshMembership, markResolved, releasePinnedActor, beginActing, endActing, playDepart]
+    [user, likesExhausted, loadMatches, refreshMembership, loadPendingDeclined, loadDeclinedArchives, markResolved, releasePinnedActor, beginActing, endActing, playDepart]
   );
 
   const handleInboxDecision = useCallback(
@@ -2811,6 +2820,33 @@ export default function MatchesPage({
     [brokenMatches]
   );
 
+  const occupiedPeerIds = useMemo(() => {
+    const next = new Set<string>();
+    for (const match of matches) next.add(match.profile.id);
+    for (const id of brokenPeerIds) next.add(id);
+    return next;
+  }, [matches, brokenPeerIds]);
+
+  const visiblePendingDeclined = useMemo(
+    () =>
+      withoutOccupiedPeers(
+        pendingDeclined,
+        occupiedPeerIds,
+        (card) => card.profile.id
+      ),
+    [pendingDeclined, occupiedPeerIds]
+  );
+
+  const visibleDeclinedArchives = useMemo(
+    () =>
+      withoutOccupiedPeers(
+        declinedArchives,
+        occupiedPeerIds,
+        (card) => card.profile.id
+      ),
+    [declinedArchives, occupiedPeerIds]
+  );
+
   const floors = useMemo(() => {
     const buckets: Record<MatchFloor, Match[]> = {
       new: [],
@@ -2818,7 +2854,7 @@ export default function MatchesPage({
       'matched-quiet': [],
       'matched-chat': [],
     };
-    for (const match of matches) {
+    for (const match of dedupePeersByCanonicalStatus(matches)) {
       if (brokenPeerIds.has(match.profile.id)) continue;
       const isPending = match.kind !== 'match';
       const isMatched = !isPending || match.alreadyLiked;
@@ -2827,6 +2863,7 @@ export default function MatchesPage({
       if (match.waiting) floor = 'wait';
       else if (isMatched) floor = hasDialogue ? 'matched-chat' : 'matched-quiet';
       else floor = 'new';
+      if (floor === 'new' && isMatchedBoardPeer(match)) continue;
       buckets[floor].push(match);
     }
     return {
@@ -2902,14 +2939,7 @@ export default function MatchesPage({
   ]);
 
   const visibleWaitArchives = useMemo(() => {
-    const matchedIds = new Set(
-      matches
-        .filter(
-          (m) =>
-            m.kind === 'match' || m.alreadyLiked || m.matchedViaWait
-        )
-        .map((m) => m.profile.id)
-    );
+    const matchedIds = collectMatchedPeerIds(matches);
     return waitArchives
       .filter((card) => !matchedIds.has(card.profile.id))
       .sort(
@@ -2944,8 +2974,8 @@ export default function MatchesPage({
     visibleWaitArchives.some(
       (c) => c.source === 'theirs' && !waitLivePeerIds.has(c.profile.id)
     ) ||
-    pendingDeclined.length > 0 ||
-    declinedArchives.length > 0;
+    visiblePendingDeclined.length > 0 ||
+    visibleDeclinedArchives.length > 0;
   const hasApresStage = brokenMatches.length > 0;
 
   /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
@@ -3605,7 +3635,7 @@ export default function MatchesPage({
   };
 
   const renderPendingDeclinedFloor = () => {
-    if (pendingDeclined.length === 0) return null;
+    if (visiblePendingDeclined.length === 0) return null;
     return (
       <section className="space-y-2" aria-label={t('matches.floorDeclined')}>
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
@@ -3613,11 +3643,11 @@ export default function MatchesPage({
             {t('matches.floorDeclined')}
           </span>
           <span className="text-gray-400 font-normal">
-            ({pendingDeclined.length})
+            ({visiblePendingDeclined.length})
           </span>
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          {pendingDeclined.map((card) => renderPendingDeclinedCard(card))}
+          {visiblePendingDeclined.map((card) => renderPendingDeclinedCard(card))}
         </div>
       </section>
     );
@@ -3722,7 +3752,7 @@ export default function MatchesPage({
   };
 
   const renderDeclinedArchiveFloor = () => {
-    if (declinedArchives.length === 0) return null;
+    if (visibleDeclinedArchives.length === 0) return null;
     return (
       <section className="space-y-2" aria-label={t('matches.floorDeclinedArchives')}>
         <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-600 tracking-wide">
@@ -3730,11 +3760,11 @@ export default function MatchesPage({
             {t('matches.floorDeclinedArchives')}
           </span>
           <span className="text-gray-400 font-normal">
-            ({declinedArchives.length})
+            ({visibleDeclinedArchives.length})
           </span>
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          {declinedArchives.map((card) => renderDeclinedArchiveCard(card))}
+          {visibleDeclinedArchives.map((card) => renderDeclinedArchiveCard(card))}
         </div>
       </section>
     );

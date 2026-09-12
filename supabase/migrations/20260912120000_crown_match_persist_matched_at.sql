@@ -227,7 +227,8 @@ BEGIN
       AND kind IN (
         'flash_received',
         'like_received',
-        'match_wait_expiry'
+        'match_wait_expiry',
+        'match_declined'
       );
 
     SELECT ir.decision, ir.updated_at

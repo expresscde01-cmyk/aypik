@@ -10,6 +10,9 @@ import {
   dropPinnedId,
   pinIdsFirst,
   matchIdsIncludingInboxDecisions,
+  collectMatchedPeerIds,
+  withoutOccupiedPeers,
+  dedupePeersByCanonicalStatus,
   removeActorFromCategoryDigest,
   splitPendingByOthers,
 } from './matchHistoryDisplay.ts';
@@ -182,6 +185,40 @@ test('reload sans overlay : inbox match + updated_at → 1er mot daté du jour',
   ]);
   assert.equal(at.get('luck'), '2026-09-12T08:00:00.000Z');
   assert.equal(at.has('old'), false);
+});
+
+test('Luck matché : plus dans à étudier ni Pas cette fois', () => {
+  const board = [
+    {
+      profile: { id: 'luck' },
+      kind: 'like',
+      alreadyLiked: false,
+      waiting: false,
+    },
+    {
+      profile: { id: 'luck' },
+      kind: 'match',
+      alreadyLiked: true,
+      waiting: false,
+    },
+  ];
+  const unique = dedupePeersByCanonicalStatus(board);
+  assert.equal(unique.length, 1);
+  assert.equal(unique[0]?.kind, 'match');
+  const matched = collectMatchedPeerIds(unique);
+  assert.equal(matched.has('luck'), true);
+  const declined = withoutOccupiedPeers(
+    [
+      { profile: { id: 'luck' } },
+      { profile: { id: 'other' } },
+    ],
+    new Set(['luck', 'still-new']),
+    (row) => row.profile.id
+  );
+  assert.deepEqual(
+    declined.map((row) => row.profile.id),
+    ['other']
+  );
 });
 
 test('removeActorFromCategoryDigest : 3 → 2 → 1 → plus de digest', () => {
