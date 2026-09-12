@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Globe,
   Map as MapIcon,
+  Lock,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -719,10 +720,13 @@ function GeoPerimeterSelect({
   value,
   disabled,
   onChange,
+  isLocked,
 }: {
   value: GeoPerimeterFilter;
   disabled: boolean;
   onChange: (next: GeoPerimeterFilter) => void;
+  /** Options payantes (Pays francophone / International) hors fenêtre gratuite : grisées, cadenas. */
+  isLocked?: (id: GeoPerimeterFilter) => boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -799,15 +803,25 @@ function GeoPerimeterSelect({
               );
             }
             const selected = item.id === scope;
+            const locked = isLocked?.(item.id) ?? false;
+            const dimmed = locked && !selected;
             return (
-              <li key={item.id} role="option" aria-selected={selected}>
+              <li
+                key={item.id}
+                role="option"
+                aria-selected={selected}
+                aria-disabled={locked || undefined}
+              >
                 <button
                   type="button"
-                  className={`w-full text-left px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-between gap-2 ${
                     selected
                       ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
-                      : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                      : dimmed
+                        ? 'text-gray-400 hover:bg-gray-50 hover:text-gray-400'
+                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
                   }`}
+                  title={locked ? tStatic('membership.lockedNeedOffer') : undefined}
                   onClick={() => {
                     if (item.id === 'anywhere') {
                       if (!isFranceHexagonePerimeter(value)) {
@@ -820,6 +834,12 @@ function GeoPerimeterSelect({
                   }}
                 >
                   <PerimeterMenuLabel id={item.id} />
+                  {locked ? (
+                    <Lock
+                      className="w-3.5 h-3.5 shrink-0 text-gray-400"
+                      aria-hidden
+                    />
+                  ) : null}
                 </button>
               </li>
             );
@@ -1615,6 +1635,11 @@ export default function DiscoveryPage({
                 <GeoPerimeterSelect
                   value={geoPerimeter}
                   disabled={!filtersActive}
+                  isLocked={(id) =>
+                    (id === 'international' && isInternationalLocked(status)) ||
+                    (id === 'la_france_dans_le_monde' &&
+                      isFrancophoneLocked(status))
+                  }
                   onChange={(next) => {
                     if (!filtersActive) return;
                     // Pays francophone / International : options payantes
