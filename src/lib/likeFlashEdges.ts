@@ -55,17 +55,26 @@ export function queryLikeFlashEdges(
 }
 
 /** Le RPC Matcher a inséré le like : le cache 60 s ne doit pas rester sans cette arête. */
-export function seedSentLikeEdge(userId: string, toUser: string) {
+export function seedSentLikeEdge(
+  userId: string,
+  toUser: string,
+  createdAt?: string | null
+) {
   if (!userId || !toUser) return;
-  const now = new Date().toISOString();
+  const at = createdAt || new Date().toISOString();
   queryClient.setQueryData(
     queryKeys.likeFlashEdges(userId),
     (old: LikeFlashEdges | undefined) => {
-      if (!old) return old;
-      if (old.sentLikes.some((row) => row.to_user === toUser)) return old;
+      const base: LikeFlashEdges = old ?? {
+        sentLikes: [],
+        receivedLikes: [],
+        receivedFlashes: [],
+        sentFlashes: [],
+      };
+      if (base.sentLikes.some((row) => row.to_user === toUser)) return base;
       return {
-        ...old,
-        sentLikes: [...old.sentLikes, { to_user: toUser, created_at: now }],
+        ...base,
+        sentLikes: [...base.sentLikes, { to_user: toUser, created_at: at }],
       };
     }
   );

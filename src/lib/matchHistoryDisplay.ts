@@ -50,6 +50,42 @@ export function originHistoryIso({
   return dateReceived || matchedAt;
 }
 
+/**
+ * Date d’entrée dans « 1er mot » : confirmation du match, pas le like/flash reçu.
+ * accepted (couronne) → inbox.updated_at / like renvoyé ; initiated → acceptation de l’autre.
+ */
+export function firstWordEventIso({
+  matchRole,
+  dateReceived,
+  matchedAt,
+  matchedBackAt,
+  inboxMatchedAt,
+}: {
+  matchRole: 'accepted' | 'initiated';
+  dateReceived: string;
+  matchedAt: string;
+  matchedBackAt: string | null;
+  inboxMatchedAt?: string | null;
+}): string {
+  if (inboxMatchedAt) return inboxMatchedAt;
+  if (matchRole === 'accepted') {
+    return matchedBackAt || matchedAt || dateReceived;
+  }
+  return matchedAt || dateReceived || matchedBackAt || '';
+}
+
+export function inboxMatchAtByActor(
+  rows: { actor_id: string; decision: string; updated_at?: string | null }[]
+): Map<string, string> {
+  const next = new Map<string, string>();
+  for (const row of rows) {
+    if (row.decision === 'match' && row.actor_id && row.updated_at) {
+      next.set(row.actor_id, row.updated_at);
+    }
+  }
+  return next;
+}
+
 export function matchSheetViaWait(
   ownWaitStartedAt: string | null | undefined,
   peerWaitStartedAt: string | null | undefined
@@ -103,6 +139,59 @@ export function matchIdsIncludingInboxDecisions(
     if (row.decision === 'match' && row.actor_id) next.add(row.actor_id);
   }
   return next;
+}
+
+export function isMatchedBoardPeer(peer: {
+  kind?: string;
+  alreadyLiked?: boolean;
+}): boolean {
+  return peer.kind === 'match' || Boolean(peer.alreadyLiked);
+}
+
+export function collectMatchedPeerIds<
+  T extends {
+    profile: { id: string };
+    kind?: string;
+    alreadyLiked?: boolean;
+  },
+>(peers: T[]): Set<string> {
+  const next = new Set<string>();
+  for (const peer of peers) {
+    if (isMatchedBoardPeer(peer)) next.add(peer.profile.id);
+  }
+  return next;
+}
+
+export function withoutOccupiedPeers<T>(
+  items: T[],
+  occupiedIds: ReadonlySet<string>,
+  getId: (item: T) => string
+): T[] {
+  if (occupiedIds.size === 0 || items.length === 0) return items;
+  return items.filter((item) => !occupiedIds.has(getId(item)));
+}
+
+/** Une seule fiche par profil : match > attente > à étudier. */
+export function dedupePeersByCanonicalStatus<
+  T extends {
+    profile: { id: string };
+    kind?: string;
+    alreadyLiked?: boolean;
+    waiting?: boolean;
+  },
+>(peers: T[]): T[] {
+  const rank = (peer: T) => {
+    if (isMatchedBoardPeer(peer)) return 3;
+    if (peer.waiting) return 2;
+    return 1;
+  };
+  const byId = new Map<string, T>();
+  for (const peer of peers) {
+    const id = peer.profile.id;
+    const prev = byId.get(id);
+    if (!prev || rank(peer) >= rank(prev)) byId.set(id, peer);
+  }
+  return [...byId.values()];
 }
 
 type CategoryDigestState = {

@@ -13,16 +13,25 @@ export type OverlayInboxRow = {
 
 const confirmed = new Map<
   string,
-  { decision: OverlayInboxDecision; origin: OverlayInboxOrigin }
+  {
+    decision: OverlayInboxDecision;
+    origin: OverlayInboxOrigin;
+    updated_at?: string;
+  }
 >();
 
 export function rememberConfirmedInboxDecision(
   actorId: string,
   decision: OverlayInboxDecision,
-  origin: OverlayInboxOrigin = 'like'
+  origin: OverlayInboxOrigin = 'like',
+  updatedAt?: string | null
 ) {
   if (!actorId) return;
-  confirmed.set(actorId, { decision, origin });
+  confirmed.set(actorId, {
+    decision,
+    origin,
+    updated_at: updatedAt || undefined,
+  });
 }
 
 export function hasConfirmedInboxDecisions(): boolean {
@@ -42,15 +51,21 @@ export function mergeConfirmedInboxDecisions<T extends OverlayInboxRow>(
   const now = new Date().toISOString();
   for (const [actorId, known] of confirmed) {
     const existing = byActor.get(actorId);
+    const stamp = known.updated_at || now;
     if (existing) {
-      byActor.set(actorId, { ...existing, decision: known.decision });
+      byActor.set(actorId, {
+        ...existing,
+        decision: known.decision,
+        updated_at:
+          existing.decision === known.decision ? existing.updated_at : stamp,
+      });
     } else {
       byActor.set(actorId, {
         actor_id: actorId,
         decision: known.decision,
         origin: known.origin,
-        updated_at: now,
-        wait_started_at: known.decision === 'wait' ? now : null,
+        updated_at: stamp,
+        wait_started_at: known.decision === 'wait' ? stamp : null,
       } as T);
     }
   }
