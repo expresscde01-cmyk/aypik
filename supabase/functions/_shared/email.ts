@@ -3,6 +3,7 @@
  * À importer depuis les Edge Functions : `../_shared/email.ts`
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { emailT, type EmailLocale } from "./i18n.ts";
 
 export function getPublicSiteUrl(): string {
   const raw =
@@ -199,32 +200,27 @@ export async function sendResendEmail(params: {
 export function buildEmailLegalFooter(
   siteUrl = getPublicSiteUrl(),
   unsubscribeUrl?: string | null,
+  locale: EmailLocale = "fr",
 ): string {
   const prefs = escapeHtml(preferencesUrl(siteUrl));
   const unsub = escapeHtml(unsubscribeUrl || preferencesUrl(siteUrl));
-  const home = escapeHtml(siteUrl);
 
   return `
   <hr style="border:none;border-top:1px solid #fce7f3;margin:28px 0 16px;" />
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">
-    Tu reçois cet e-mail car tu as un compte sur
-    <a href="${home}" style="color:#e11d48;text-decoration:underline;">Aypik</a>.
+    ${emailT(locale, "legalFooterAccount")}
   </p>
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">
     <a href="${prefs}" style="color:#e11d48;text-decoration:underline;">
-      Gérer mes préférences depuis mon profil
+      ${emailT(locale, "legalFooterManagePrefs")}
     </a>
     &nbsp;·&nbsp;
     <a href="${unsub}" style="color:#e11d48;text-decoration:underline;">
-      Désactiver les notifications par e-mail
+      ${emailT(locale, "legalFooterDisable")}
     </a>
   </p>
   <p style="margin:0;color:#9ca3af;font-size:11px;line-height:1.5;">
-    Conformément au RGPD et à la réglementation applicable, vous pouvez à tout moment
-    désactiver les e-mails de notification depuis votre page de profil Aypik
-    (section Préférences) ou via le lien de désabonnement ci-dessus. Les e-mails
-    strictement nécessaires au fonctionnement du service (sécurité, facturation)
-    peuvent rester envoyés le cas échéant.
+    ${emailT(locale, "legalFooterRgpd")}
   </p>`;
 }
 
@@ -233,13 +229,15 @@ export function wrapTransactionalEmailHtml(params: {
   bodyHtml: string;
   siteUrl?: string;
   unsubscribeUrl?: string | null;
+  locale?: EmailLocale;
 }): string {
   const siteUrl = params.siteUrl ?? getPublicSiteUrl();
   const title = escapeHtml(params.title);
-  const footer = buildEmailLegalFooter(siteUrl, params.unsubscribeUrl);
+  const locale = params.locale ?? "fr";
+  const footer = buildEmailLegalFooter(siteUrl, params.unsubscribeUrl, locale);
 
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${locale}">
 <head><meta charset="UTF-8" /><title>${title}</title></head>
 <body style="margin:0;padding:0;background:#fff7f5;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff7f5;padding:32px 16px;">

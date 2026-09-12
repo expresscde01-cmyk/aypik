@@ -140,6 +140,7 @@ Deno.serve(async (req) => {
       title,
       bodyHtml,
       unsubscribeUrl,
+      locale,
     });
 
     const sent = await sendResendEmail({

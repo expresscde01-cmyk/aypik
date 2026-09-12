@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
         premiumUntil,
         locale,
       }),
+      locale,
     });
 
     const resendRes = await fetch("https://api.resend.com/emails", {
