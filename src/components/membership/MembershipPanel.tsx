@@ -4,7 +4,12 @@ import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
+import {
+  OfferConversionCard,
+  type AddonHighlightOffer,
+} from '@/components/membership/OfferConversionCard';
 import { cancelPremiumSubscription } from '@/lib/payments';
+import type { HighlightOffer } from '@/lib/conversionNav';
 import {
   FOUNDER_MAX_SLOTS,
   SITE_FREE_MODE,
@@ -24,6 +29,12 @@ import {
   isFounderPeriodActive,
   type MembershipStatus,
 } from '@/lib/membership';
+
+const ADDON_OFFERS: AddonHighlightOffer[] = [
+  'visibility',
+  'francophone',
+  'international',
+];
 
 function FounderActiveBanner({
   status,
@@ -232,6 +243,8 @@ export function MembershipPanel({
   claimingOffer = false,
   /** Tunnel inscription : choix d’offre obligatoire avant le profil */
   signupGate = false,
+  /** Offre à mettre en avant (renvoi depuis un élément grisé, section 3 ter) */
+  highlightedOffer = null,
 }: {
   status: MembershipStatus;
   onPurchaseBoost: () => Promise<string | null>;
@@ -240,6 +253,7 @@ export function MembershipPanel({
   onClaimFreemium?: () => void;
   claimingOffer?: boolean;
   signupGate?: boolean;
+  highlightedOffer?: HighlightOffer | null;
 }) {
   const { t } = useTranslation();
   const [canceling, setCanceling] = useState(false);
@@ -275,9 +289,16 @@ export function MembershipPanel({
     status.is_founder && !periodActive && !status.has_premium;
 
   const canCancelPaid =
-    status.has_premium &&
     !periodActive &&
-    (status.plan === 'confort' || status.plan === 'premium');
+    (status.plan === 'essentiel' ||
+      status.plan === 'confort' ||
+      status.plan === 'premium');
+
+  const activeAddons = ADDON_OFFERS.filter((addon) => {
+    if (addon === 'visibility') return Boolean(status.visibilite_until);
+    if (addon === 'francophone') return Boolean(status.francophone_until);
+    return Boolean(status.international_until);
+  });
 
   const premiumLockedByFounder = founderAvailable && !offerChosen;
   const showPaidPremiumActive =
@@ -293,6 +314,21 @@ export function MembershipPanel({
     !offerChosen &&
     !founderAvailable &&
     Boolean(onClaimFreemium);
+
+  const handleCancelAddon = async (addon: AddonHighlightOffer) => {
+    if (!window.confirm(t('membership.cancelConfirm'))) return;
+    setCanceling(true);
+    setCancelMsg(null);
+    const target = addon === 'visibility' ? 'visibilite' : addon;
+    const err = await cancelPremiumSubscription(target);
+    setCanceling(false);
+    if (err) {
+      setCancelMsg(err);
+      return;
+    }
+    setCancelMsg(t('membership.cancelDone'));
+    onRefresh?.();
+  };
 
   const handleCancel = async () => {
     if (
@@ -405,7 +441,16 @@ export function MembershipPanel({
         )}
 
         {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <PremiumConversionCard
+              status={status}
+              founderExpired={founderExpired}
+              onPaymentSuccess={onRefresh}
+              tone="secondary"
+              disabled={false}
+              plan="essentiel"
+              highlighted={highlightedOffer === 'simplifie'}
+            />
             <PremiumConversionCard
               status={status}
               founderExpired={founderExpired}
@@ -413,6 +458,7 @@ export function MembershipPanel({
               tone="secondary"
               disabled={false}
               plan="confort"
+              highlighted={highlightedOffer === 'detaille'}
             />
             <PremiumConversionCard
               status={status}
@@ -421,7 +467,27 @@ export function MembershipPanel({
               tone={premiumTone}
               disabled={false}
               plan="premium"
+              highlighted={highlightedOffer === 'premium'}
             />
+          </div>
+        )}
+
+        {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 px-0.5">
+              {t('membership.addonsTitle')}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {ADDON_OFFERS.map((addon) => (
+                <OfferConversionCard
+                  key={addon}
+                  offer={addon}
+                  status={status}
+                  onPaymentSuccess={onRefresh}
+                  highlighted={highlightedOffer === addon}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -459,6 +525,41 @@ export function MembershipPanel({
             >
               {canceling ? t('membership.canceling') : t('membership.cancelPremium')}
             </button>
+            {cancelMsg && (
+              <p className="text-xs text-center text-gray-600">{cancelMsg}</p>
+            )}
+          </div>
+        )}
+
+        {!SITE_FREE_MODE && activeAddons.length > 0 && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-2">
+            <p className="text-sm font-semibold text-gray-900">
+              {t('membership.manageAddons')}
+            </p>
+            {activeAddons.map((addon) => (
+              <div
+                key={addon}
+                className="flex items-center justify-between gap-3 py-1"
+              >
+                <span className="text-xs text-gray-600">
+                  {t(
+                    addon === 'visibility'
+                      ? 'common.offer.shortVisibilite'
+                      : addon === 'francophone'
+                        ? 'common.offer.shortFrancophone'
+                        : 'common.offer.shortInternational'
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleCancelAddon(addon)}
+                  disabled={canceling}
+                  className="py-1.5 px-3 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 disabled:opacity-60"
+                >
+                  {canceling ? t('membership.canceling') : t('membership.cancelAddon')}
+                </button>
+              </div>
+            ))}
             {cancelMsg && (
               <p className="text-xs text-center text-gray-600">{cancelMsg}</p>
             )}

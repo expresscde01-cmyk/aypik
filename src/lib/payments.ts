@@ -9,7 +9,15 @@ function paymentsDisabledMessage(): string {
 }
 
 export type PaymentMethodChoice = 'card' | 'paypal';
-export type PaymentPlanTier = 'confort' | 'premium';
+export type PaymentPlanTier =
+  | 'essentiel'
+  | 'confort'
+  | 'premium'
+  | 'visibilite'
+  | 'francophone'
+  | 'international';
+/** Cible d'une résiliation : le palier, ou l'une des 3 options à la carte. */
+export type CancelTarget = 'plan' | 'visibilite' | 'francophone' | 'international';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
@@ -101,10 +109,12 @@ export async function createPayPalSubscription(
   };
 }
 
-export async function cancelPremiumSubscription(): Promise<string | null> {
+export async function cancelPremiumSubscription(
+  target: CancelTarget = 'plan'
+): Promise<string | null> {
   if (SITE_FREE_MODE) return paymentsDisabledMessage();
   const { data, error } = await supabase.functions.invoke('cancel-premium', {
-    body: {},
+    body: { target },
   });
 
   if (error) {

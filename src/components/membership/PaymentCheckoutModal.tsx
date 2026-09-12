@@ -20,6 +20,7 @@ import {
   isPayPalConfigured,
   isStripeConfigured,
   type PaymentMethodChoice,
+  type PaymentPlanTier,
 } from '@/lib/payments';
 import {
   formatPremiumPriceLabel,
@@ -33,6 +34,63 @@ import { widgetLanguage } from '@/i18n/format';
 
 type Step = 'choose' | 'card' | 'paypal_redirect' | 'success';
 
+const PLAN_PRICE_FIELD: Record<
+  PaymentPlanTier,
+  keyof Pick<
+    MembershipStatus,
+    | 'essentiel_price_cents'
+    | 'confort_price_cents'
+    | 'premium_price_cents'
+    | 'visibilite_price_cents'
+    | 'francophone_price_cents'
+    | 'international_price_cents'
+  >
+> = {
+  essentiel: 'essentiel_price_cents',
+  confort: 'confort_price_cents',
+  premium: 'premium_price_cents',
+  visibilite: 'visibilite_price_cents',
+  francophone: 'francophone_price_cents',
+  international: 'international_price_cents',
+};
+
+const PLAN_OFFER_NAME_KEY: Record<PaymentPlanTier, string> = {
+  essentiel: 'common.offer.shortEssentiel',
+  confort: 'common.offer.shortConfort',
+  premium: 'common.offer.shortPremium',
+  visibilite: 'common.offer.shortVisibilite',
+  francophone: 'common.offer.shortFrancophone',
+  international: 'common.offer.shortInternational',
+};
+
+function planBenefitKeys(plan: PaymentPlanTier): string[] {
+  switch (plan) {
+    case 'essentiel':
+      return ['membership.benefitMessaging'];
+    case 'premium':
+      return [
+        'membership.benefitWhoLiked',
+        'membership.benefitFilters',
+        'membership.benefitUnlimitedLikes',
+        'membership.benefitFullAccess',
+      ];
+    case 'confort':
+      return [
+        'membership.benefitWhoLiked',
+        'membership.benefitFilters',
+        'membership.benefitUnlimitedLikes',
+      ];
+    case 'visibilite':
+      return ['membership.benefitVisibilite'];
+    case 'francophone':
+      return ['membership.benefitFrancophone'];
+    case 'international':
+      return ['membership.benefitInternational'];
+    default:
+      return [];
+  }
+}
+
 export function PaymentCheckoutModal({
   open,
   onClose,
@@ -44,8 +102,8 @@ export function PaymentCheckoutModal({
   onClose: () => void;
   status: MembershipStatus;
   onSuccess?: () => void;
-  /** Palier acheté : Confort (19,99 €) ou Premium (24,99 €) */
-  plan?: 'confort' | 'premium';
+  /** Offre achetée : palier (Essentiel/Confort/Premium) ou option à la carte */
+  plan?: PaymentPlanTier;
 }) {
   const [method, setMethod] = useState<PaymentMethodChoice>('card');
   const [step, setStep] = useState<Step>('choose');
@@ -54,11 +112,9 @@ export function PaymentCheckoutModal({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  const priceCents =
-    plan === 'premium' ? status.premium_price_cents : status.confort_price_cents;
-  const offerName = t(
-    plan === 'premium' ? 'common.offer.shortPremium' : 'common.offer.shortConfort'
-  );
+  const priceCents = status[PLAN_PRICE_FIELD[plan]];
+  const offerName = t(PLAN_OFFER_NAME_KEY[plan]);
+  const benefits = planBenefitKeys(plan).map((key) => t(key));
   const amount = formatPriceCents(priceCents, status.premium_currency);
   const priceLabel = formatPremiumPriceLabel(
     priceCents,
@@ -182,14 +238,7 @@ export function PaymentCheckoutModal({
               </div>
             </div>
             <ul className="mt-3 space-y-1.5">
-              {[
-                t('membership.benefitWhoLiked'),
-                t('membership.benefitFilters'),
-                t('membership.benefitUnlimitedLikes'),
-                ...(plan === 'premium'
-                  ? [t('membership.benefitFullAccess')]
-                  : []),
-              ].map((item) => (
+              {benefits.map((item) => (
                 <li
                   key={item}
                   className="flex items-center gap-2 text-xs text-gray-600"

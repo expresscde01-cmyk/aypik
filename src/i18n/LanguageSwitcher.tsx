@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/auth';
 import { applyLocale } from '@/i18n/applyLocale';
 import { isSupportedLocale, SUPPORTED_LOCALES, type AppLocale } from '@/i18n/locales';
 import { useMembership } from '@/lib/useMembership';
-import { isPostTrialLocked } from '@/lib/membership';
+import { isInternationalLocked } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
 
 const LANGUAGE_TITLE_KEYS = {
@@ -24,8 +24,8 @@ export default function LanguageSwitcher({
   const { status, loading } = useMembership();
   const code = (i18n.resolvedLanguage || i18n.language || 'fr').split('-')[0];
   const active: AppLocale = isSupportedLocale(code) ? code : 'fr';
-  // International n’a pas encore de facturation en base : verrouillé dès post_trial.
-  const locked = Boolean(user) && !loading && isPostTrialLocked(status);
+  // Verrouillé après la fenêtre gratuite, sauf option International (ou Premium) active.
+  const locked = Boolean(user) && !loading && isInternationalLocked(status);
 
   return (
     <div

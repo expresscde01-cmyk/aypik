@@ -12,14 +12,21 @@ export type MembershipPlan =
   | 'premium'
   | 'founder';
 
+/** Les 3 options à la carte (indépendantes du palier, incluses dans Premium). */
+export type AddonOffer = 'visibilite' | 'francophone' | 'international';
+
 export type AccessPhase =
   | 'founder_full'
   | 'trial_full'
   | 'trial_simplified'
   | 'post_trial';
 
+export const DEFAULT_ESSENTIEL_PRICE_CENTS = 1499;
 export const DEFAULT_CONFORT_PRICE_CENTS = 1999;
 export const DEFAULT_PREMIUM_PRICE_CENTS = 2499;
+export const DEFAULT_VISIBILITE_PRICE_CENTS = 299;
+export const DEFAULT_FRANCOPHONE_PRICE_CENTS = 299;
+export const DEFAULT_INTERNATIONAL_PRICE_CENTS = 599;
 
 const VALID_PHASES: AccessPhase[] = [
   'founder_full',
@@ -63,6 +70,12 @@ export interface MembershipStatus {
   premium_price_cents: number;
   /** Tarif Confort de référence (centimes), ex. 1999 = 19,99 € */
   confort_price_cents: number;
+  /** Tarif Essentiel de référence (centimes), ex. 1499 = 14,99 € */
+  essentiel_price_cents: number;
+  /** Tarifs des 3 options à la carte (centimes) */
+  visibilite_price_cents: number;
+  francophone_price_cents: number;
+  international_price_cents: number;
   premium_currency: string;
   premium_interval: string;
   /** Prix pendant la période fondateur (0 = gratuit) */
@@ -77,6 +90,17 @@ export interface MembershipStatus {
   simplified_free_until: string | null;
   /** True uniquement à partir de l’échéance des 6 mois propre à ce compte. */
   payment_visible: boolean;
+  /** Accès à l’envoi de nouveaux messages (Essentiel/Confort/Premium, ou encore en période gratuite). */
+  has_messaging_access: boolean;
+  /** Accès aux réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître) — Visibilité ou Premium. */
+  has_visibility_access: boolean;
+  /** Accès au mode Pays francophone — option dédiée, International, ou Premium. */
+  has_francophone_access: boolean;
+  /** Accès au mode International — option dédiée, ou Premium. */
+  has_international_access: boolean;
+  visibilite_until: string | null;
+  francophone_until: string | null;
+  international_until: string | null;
 }
 
 export const DEFAULT_MEMBERSHIP: MembershipStatus = {
@@ -100,6 +124,10 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   unlimited_likes: false,
   premium_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
   confort_price_cents: DEFAULT_CONFORT_PRICE_CENTS,
+  essentiel_price_cents: DEFAULT_ESSENTIEL_PRICE_CENTS,
+  visibilite_price_cents: DEFAULT_VISIBILITE_PRICE_CENTS,
+  francophone_price_cents: DEFAULT_FRANCOPHONE_PRICE_CENTS,
+  international_price_cents: DEFAULT_INTERNATIONAL_PRICE_CENTS,
   premium_currency: 'EUR',
   premium_interval: 'month',
   founder_trial_price_cents: 0,
@@ -110,6 +138,13 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   full_access_until: null,
   simplified_free_until: null,
   payment_visible: false,
+  has_messaging_access: true,
+  has_visibility_access: true,
+  has_francophone_access: true,
+  has_international_access: true,
+  visibilite_until: null,
+  francophone_until: null,
+  international_until: null,
 };
 
 export function membershipRequiredError(): string {
@@ -150,6 +185,22 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     typeof d.confort_price_cents === 'number'
       ? d.confort_price_cents
       : DEFAULT_CONFORT_PRICE_CENTS;
+  const essentiel_price_cents =
+    typeof d.essentiel_price_cents === 'number'
+      ? d.essentiel_price_cents
+      : DEFAULT_ESSENTIEL_PRICE_CENTS;
+  const visibilite_price_cents =
+    typeof d.visibilite_price_cents === 'number'
+      ? d.visibilite_price_cents
+      : DEFAULT_VISIBILITE_PRICE_CENTS;
+  const francophone_price_cents =
+    typeof d.francophone_price_cents === 'number'
+      ? d.francophone_price_cents
+      : DEFAULT_FRANCOPHONE_PRICE_CENTS;
+  const international_price_cents =
+    typeof d.international_price_cents === 'number'
+      ? d.international_price_cents
+      : DEFAULT_INTERNATIONAL_PRICE_CENTS;
 
   const is_founder = Boolean(d.is_founder);
   const plan = (d.plan as MembershipPlan) || 'free';
@@ -205,6 +256,10 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     unlimited_likes,
     premium_price_cents,
     confort_price_cents,
+    essentiel_price_cents,
+    visibilite_price_cents,
+    francophone_price_cents,
+    international_price_cents,
     premium_currency:
       typeof d.premium_currency === 'string' ? d.premium_currency : 'EUR',
     premium_interval:
@@ -229,6 +284,14 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     full_access_until: parseIsoOrNull(d.full_access_until),
     simplified_free_until: parseIsoOrNull(d.simplified_free_until),
     payment_visible: d.payment_visible === true,
+    // Par défaut (champ absent, ex. ancien cache) : ne pas verrouiller à tort.
+    has_messaging_access: d.has_messaging_access !== false,
+    has_visibility_access: d.has_visibility_access !== false,
+    has_francophone_access: d.has_francophone_access !== false,
+    has_international_access: d.has_international_access !== false,
+    visibilite_until: parseIsoOrNull(d.visibilite_until),
+    francophone_until: parseIsoOrNull(d.francophone_until),
+    international_until: parseIsoOrNull(d.international_until),
   };
 }
 
@@ -285,6 +348,19 @@ export function isPaidPremiumActive(status: MembershipStatus): boolean {
   return status.plan === 'confort' || status.plan === 'premium';
 }
 
+/**
+ * Palier payant actif au sens large (Essentiel compris), hors période
+ * Fondateur gratuite — utile pour l’état général « offre active ».
+ */
+export function isPaidTierActive(status: MembershipStatus): boolean {
+  if (status.on_founder_trial || isFounderPeriodActive(status)) return false;
+  return (
+    status.plan === 'essentiel' ||
+    status.plan === 'confort' ||
+    status.plan === 'premium'
+  );
+}
+
 /** True tant qu’il reste des places Membre Fondateur (numerus clausus). */
 export function isFounderOfferOpen(status: MembershipStatus): boolean {
   return status.founders_remaining > 0;
@@ -301,4 +377,24 @@ export function isFounderAvailable(status: MembershipStatus): boolean {
  */
 export function isPostTrialLocked(status: MembershipStatus): boolean {
   return status.phase === 'post_trial' && !status.has_premium;
+}
+
+/** Verrouillé pour l’envoi de nouveaux messages (Essentiel débloque, pas seulement Confort/Premium). */
+export function isMessagingLocked(status: MembershipStatus): boolean {
+  return status.phase === 'post_trial' && !status.has_messaging_access;
+}
+
+/** Verrouillé pour les réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître). */
+export function isVisibilityLocked(status: MembershipStatus): boolean {
+  return status.phase === 'post_trial' && !status.has_visibility_access;
+}
+
+/** Verrouillé pour le mode Pays francophone. */
+export function isFrancophoneLocked(status: MembershipStatus): boolean {
+  return status.phase === 'post_trial' && !status.has_francophone_access;
+}
+
+/** Verrouillé pour le mode International (et donc le sélecteur de langue). */
+export function isInternationalLocked(status: MembershipStatus): boolean {
+  return status.phase === 'post_trial' && !status.has_international_access;
 }

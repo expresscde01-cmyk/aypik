@@ -4,7 +4,7 @@ import { ArrowLeft, Send, AlertCircle, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
-import { isPostTrialLocked } from '@/lib/membership';
+import { isMessagingLocked } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
 import { offerLabel } from '@/lib/founderCopy';
 import type { Profile } from '@/components/ProfileSetup';
@@ -46,7 +46,7 @@ export default function ChatScreen({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { status } = useMembership();
-  const postTrialLocked = isPostTrialLocked(status);
+  const postTrialLocked = isMessagingLocked(status);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -186,7 +186,7 @@ export default function ChatScreen({
 
   const handleSend = async () => {
     if (postTrialLocked) {
-      openHighlightOffer('premium');
+      openHighlightOffer('simplifie');
       onClose();
       return;
     }
@@ -423,7 +423,7 @@ export default function ChatScreen({
               onClick={
                 postTrialLocked
                   ? () => {
-                      openHighlightOffer('premium');
+                      openHighlightOffer('simplifie');
                       onClose();
                     }
                   : undefined

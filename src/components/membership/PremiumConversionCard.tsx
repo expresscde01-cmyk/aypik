@@ -8,7 +8,22 @@ import {
 import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
+import { offerCardDomId, type HighlightOffer } from '@/lib/conversionNav';
 import { useTranslation } from 'react-i18next';
+
+export type TierPlan = 'essentiel' | 'confort' | 'premium';
+
+const TIER_OFFER_NAME_KEY: Record<TierPlan, string> = {
+  essentiel: 'common.offer.shortEssentiel',
+  confort: 'common.offer.shortConfort',
+  premium: 'common.offer.shortPremium',
+};
+
+const TIER_HIGHLIGHT: Record<TierPlan, HighlightOffer> = {
+  essentiel: 'simplifie',
+  confort: 'detaille',
+  premium: 'premium',
+};
 
 export function PremiumConversionCard({
   status,
@@ -18,6 +33,7 @@ export function PremiumConversionCard({
   disabled = false,
   disabledReason,
   plan = 'confort',
+  highlighted = false,
 }: {
   status: MembershipStatus;
   founderExpired?: boolean;
@@ -27,25 +43,32 @@ export function PremiumConversionCard({
   /** Grisé / non cliquable (ex. pendant la période Fondateur) */
   disabled?: boolean;
   disabledReason?: string;
-  /** Palier proposé par cette carte : Confort (19,99 €) ou Premium (24,99 €) */
-  plan?: 'confort' | 'premium';
+  /** Palier proposé par cette carte : Essentiel (14,99 €), Confort (19,99 €) ou Premium (24,99 €) */
+  plan?: TierPlan;
+  /** Mis en avant (bordure ring) après un renvoi depuis un élément grisé. */
+  highlighted?: boolean;
 }) {
   const { t } = useTranslation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   if (SITE_FREE_MODE) return null;
   const lockReason = disabledReason ?? t('membership.founderIncludesPremium');
-  const offerName = t(
-    plan === 'premium' ? 'common.offer.shortPremium' : 'common.offer.shortConfort'
-  );
-  const premiumPerks = [
-    t('membership.benefitWhoLiked'),
-    t('membership.benefitGeoInterests'),
-    t('membership.benefitUnlimitedLikes'),
-    ...(plan === 'premium' ? [t('membership.benefitFullAccess')] : []),
-  ];
+  const offerName = t(TIER_OFFER_NAME_KEY[plan]);
+  const premiumPerks =
+    plan === 'essentiel'
+      ? [t('membership.benefitMessaging')]
+      : [
+          t('membership.benefitWhoLiked'),
+          t('membership.benefitGeoInterests'),
+          t('membership.benefitUnlimitedLikes'),
+          ...(plan === 'premium' ? [t('membership.benefitFullAccess')] : []),
+        ];
 
   const priceCents =
-    plan === 'premium' ? status.premium_price_cents : status.confort_price_cents;
+    plan === 'premium'
+      ? status.premium_price_cents
+      : plan === 'essentiel'
+        ? status.essentiel_price_cents
+        : status.confort_price_cents;
   const priceLabel = formatPremiumPriceLabel(
     priceCents,
     status.premium_currency,
@@ -68,13 +91,15 @@ export function PremiumConversionCard({
   return (
     <>
       <div
+        id={offerCardDomId(TIER_HIGHLIGHT[plan])}
         aria-disabled={disabled || undefined}
         className={
-          disabled
+          (disabled
             ? 'rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none'
             : secondary
               ? 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
-              : 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+              : 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50') +
+          (highlighted ? ' ring-2 ring-rose-400 ring-offset-2' : '')
         }
       >
         <div
