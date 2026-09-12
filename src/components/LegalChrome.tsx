@@ -4,6 +4,7 @@ import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { t } from '@/i18n/t';
 import { currentLocale } from '@/i18n/documentMeta';
 import { isLocalizedContactPath, withLocalePrefix } from '@/i18n/path';
+import { useMembership } from '@/lib/useMembership';
 
 export function openLegalTerms() {
   const url = new URL(window.location.href);
@@ -93,7 +94,11 @@ export function SiteFooter({
   showLegal?: boolean;
 }) {
   const { t } = useTranslation();
-  const doc = legalDocLabel();
+  const { status } = useMembership();
+  const doc =
+    SITE_FREE_MODE || !status.payment_visible
+      ? t('legal.docLabelFree')
+      : t('legal.docLabelPaid');
   return (
     <footer
       className={`border-t border-rose-100/80 bg-white/60 ${

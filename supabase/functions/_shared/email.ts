@@ -12,7 +12,6 @@ export function getPublicSiteUrl(): string {
   return raw.replace(/\/$/, "");
 }
 
-/** Lien de reset hébergé sur le site (évite les Redirect URLs Auth). */
 export function buildPasswordRecoveryPageUrl(
   tokenHash: string,
   siteUrl = getPublicSiteUrl(),
@@ -28,10 +27,45 @@ export function preferencesUrl(siteUrl = getPublicSiteUrl()): string {
   return `${siteUrl}/?open=preferences`;
 }
 
-/**
- * Vérifie si le destinataire autorise les e-mails de notification.
- * Absence de ligne / null → true (opt-out explicite uniquement).
- */
+async function hmacHex(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function buildUnsubscribeUrl(userId: string): Promise<string | null> {
+  const secret = Deno.env.get("UNSUBSCRIBE_SECRET");
+  if (!secret || !userId) return null;
+  const sig = (await hmacHex(secret, userId)).slice(0, 32);
+  const base = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
+  const params = new URLSearchParams({ u: userId, s: sig });
+  return `${base}/functions/v1/unsubscribe?${params.toString()}`;
+}
+
+export async function verifyUnsubscribeSignature(
+  userId: string,
+  sig: string,
+): Promise<boolean> {
+  const secret = Deno.env.get("UNSUBSCRIBE_SECRET");
+  if (!secret || !userId || !sig) return false;
+  const expected = (await hmacHex(secret, userId)).slice(0, 32);
+  if (expected.length !== sig.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export async function isEmailNotificationsEnabled(
   admin: SupabaseClient,
   userId: string,
@@ -44,7 +78,6 @@ export async function isEmailNotificationsEnabled(
 
   if (error) {
     console.error("email_notifications_enabled lookup failed", error.message);
-    // En cas d'erreur de lecture, on n'envoie pas (précaution).
     return false;
   }
 
@@ -98,20 +131,24 @@ export function buildAccountUnlockBodyHtml(unlockUrl: string): string {
 export function buildAccountUnlockEmailHtml(
   unlockUrl: string,
   siteUrl = getPublicSiteUrl(),
+  unsubscribeUrl?: string | null,
 ): string {
   return wrapTransactionalEmailHtml({
     title: ACCOUNT_UNLOCK_SUBJECT,
     siteUrl,
+    unsubscribeUrl,
     bodyHtml: buildAccountUnlockBodyHtml(unlockUrl),
   });
 }
 export function buildPasswordResetEmailHtml(
   resetUrl: string,
   siteUrl = getPublicSiteUrl(),
+  unsubscribeUrl?: string | null,
 ): string {
   return wrapTransactionalEmailHtml({
     title: PASSWORD_RESET_SUBJECT,
     siteUrl,
+    unsubscribeUrl,
     bodyHtml: buildPasswordResetBodyHtml(resetUrl),
   });
 }
@@ -121,6 +158,7 @@ export async function sendResendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  headers?: Record<string, string>;
 }): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
   const from =
     Deno.env.get("RESEND_FROM_EMAIL") ?? "Aypik <onboarding@resend.dev>";
@@ -135,6 +173,7 @@ export async function sendResendEmail(params: {
       to: [params.to],
       subject: params.subject,
       html: params.html,
+      ...(params.headers ? { headers: params.headers } : {}),
     }),
   });
   const resendData = await resendRes.json().catch(() => ({}));
@@ -157,9 +196,12 @@ export async function sendResendEmail(params: {
   };
 }
 
-/** Pied de page légal + lien de gestion des préférences (tous les e-mails sortants). */
-export function buildEmailLegalFooter(siteUrl = getPublicSiteUrl()): string {
+export function buildEmailLegalFooter(
+  siteUrl = getPublicSiteUrl(),
+  unsubscribeUrl?: string | null,
+): string {
   const prefs = escapeHtml(preferencesUrl(siteUrl));
+  const unsub = escapeHtml(unsubscribeUrl || preferencesUrl(siteUrl));
   const home = escapeHtml(siteUrl);
 
   return `
@@ -173,29 +215,28 @@ export function buildEmailLegalFooter(siteUrl = getPublicSiteUrl()): string {
       Gérer mes préférences depuis mon profil
     </a>
     &nbsp;·&nbsp;
-    <a href="${prefs}" style="color:#e11d48;text-decoration:underline;">
+    <a href="${unsub}" style="color:#e11d48;text-decoration:underline;">
       Désactiver les notifications par e-mail
     </a>
   </p>
   <p style="margin:0;color:#9ca3af;font-size:11px;line-height:1.5;">
     Conformément au RGPD et à la réglementation applicable, vous pouvez à tout moment
     désactiver les e-mails de notification depuis votre page de profil Aypik
-    (section Préférences). Les e-mails strictement nécessaires au fonctionnement du
-    service (sécurité, facturation) peuvent rester envoyés le cas échéant.
+    (section Préférences) ou via le lien de désabonnement ci-dessus. Les e-mails
+    strictement nécessaires au fonctionnement du service (sécurité, facturation)
+    peuvent rester envoyés le cas échéant.
   </p>`;
 }
 
-/**
- * Enveloppe le contenu HTML d’un e-mail Aypik avec le footer légal.
- */
 export function wrapTransactionalEmailHtml(params: {
   title: string;
   bodyHtml: string;
   siteUrl?: string;
+  unsubscribeUrl?: string | null;
 }): string {
   const siteUrl = params.siteUrl ?? getPublicSiteUrl();
   const title = escapeHtml(params.title);
-  const footer = buildEmailLegalFooter(siteUrl);
+  const footer = buildEmailLegalFooter(siteUrl, params.unsubscribeUrl);
 
   return `<!DOCTYPE html>
 <html lang="fr">

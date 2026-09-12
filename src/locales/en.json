@@ -773,7 +773,21 @@
     "activatingShort": "Activating...",
     "comeBackOrPremiumPrice": "Come back tomorrow, or switch to Premium ({{price}}) to like without limits — at your own pace.",
     "checkoutTermsAfter": "from your profile. No cancellation fees. You keep access until the end of your already-paid period. By continuing, you accept the",
-    "securePaymentLegal": "Secure payment by card (Stripe) or PayPal ·"
+    "securePaymentLegal": "Secure payment by card (Stripe) or PayPal ·",
+    "lockedNeedOffer": "This option is no longer included in the free period. Choose an offer to continue.",
+    "comingSoon": "Coming soon",
+    "chooseOffer": "Choose this offer",
+    "chatLockedHint": "Sending messages is no longer included in the free period. Choose an offer to continue.",
+    "offerSimplifiedTitle": "Simplified mode",
+    "offerSimplifiedDesc": "Simplified layout and direct messages from Discover.",
+    "offerDetailedTitle": "Detailed mode",
+    "offerDetailedDesc": "Detailed layout, with likes and flashes before you write.",
+    "offerInternationalTitle": "International",
+    "offerInternationalDesc": "Interface and discovery in other languages.",
+    "offerVisibilityTitle": "Visibility",
+    "offerVisibilityDesc": "Advanced control of your visibility on Aypik.",
+    "offerFrancophoneTitle": "French-speaking countries",
+    "offerFrancophoneDesc": "Widen your suggestions to French-speaking countries."
   },
   "contact": {
     "title": "Contact us",
