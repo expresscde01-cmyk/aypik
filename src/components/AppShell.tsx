@@ -557,6 +557,7 @@ function AppShellView() {
                 onOpenUnreadChat={(actorId) => openMatches(actorId, true)}
                 profileEpoch={profileEpoch}
                 pageActive={tab === 'discover'}
+                myProfile={profile}
               />
             </Suspense>
           </div>

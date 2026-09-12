@@ -22,8 +22,6 @@ export const queryClient = createAppQueryClient();
 
 export const queryKeys = {
   signupCount: () => ['platform-signup-count'] as const,
-  discoverViewer: (userId: string | undefined, epoch: number) =>
-    ['discover-viewer', userId, epoch] as const,
   discoveryCatalog: (
     userId: string | undefined,
     prefsKey: string,

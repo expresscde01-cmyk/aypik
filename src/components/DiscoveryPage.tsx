@@ -17,7 +17,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
-import { PROFILE_OWN_COLUMNS, type Profile } from '@/components/ProfileSetup';
+import { type Profile } from '@/components/ProfileSetup';
 import { ProfileCardCornerBadges, PremiumBadge } from '@/components/membership/Badges';
 import { CardGeoFacts, InternationalCardGeoFacts, FranceFlagIcon } from '@/components/GeoBadgeLine';
 import {
@@ -74,7 +74,6 @@ import {
   type DiscoveryCandidate,
   type DiscoveryCatalogSortId,
 } from '@/lib/discoveryCatalog';
-import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 import {
   newProfilesCutoffIso,
   newProfilesWindowMonths,
@@ -1129,6 +1128,7 @@ export default function DiscoveryPage({
   onOpenUnreadChat,
   profileEpoch = 0,
   pageActive = true,
+  myProfile = null,
 }: {
   unreadBySender?: Record<string, number>;
   onOpenUnreadChat?: (actorId: string) => void;
@@ -1136,6 +1136,8 @@ export default function DiscoveryPage({
   profileEpoch?: number;
   /** False dès qu’on quitte Découvrir : la mémoire de session se réinitialise. */
   pageActive?: boolean;
+  /** Profil déjà chargé par AppShell (PROFILE_CARD_COLUMNS). */
+  myProfile?: Profile | null;
 } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -1243,31 +1245,11 @@ export default function DiscoveryPage({
     };
   }, [userId]);
 
-  const viewerQuery = useQuery({
-    queryKey: queryKeys.discoverViewer(userId, profileEpoch),
-    enabled: Boolean(userId),
-    queryFn: async () => {
-      const { data: profile, error: profileErr } = await supabase
-        .from('profiles')
-        .select(PROFILE_OWN_COLUMNS)
-        .eq('id', userId!)
-        .maybeSingle();
-      if (profileErr || !profile) {
-        throw new Error(tStatic('common.profileLoadError'));
-      }
-      const loaded = profile as Profile;
-      void ensureProfileCoordinates(loaded);
-      return { profile: loaded };
-    },
-  });
-
   const edgesQuery = useQuery({
     queryKey: queryKeys.likeFlashEdges(userId || ''),
     enabled: Boolean(userId),
     queryFn: () => fetchLikeFlashEdges(userId!),
   });
-
-  const myProfile = viewerQuery.data?.profile ?? null;
 
   useEffect(() => {
     if (!edgesQuery.data) return;
@@ -1373,13 +1355,11 @@ export default function DiscoveryPage({
       myProfile?.location,
     ]
   );
-  const loading = viewerQuery.isLoading || edgesQuery.isLoading;
+  const loading = edgesQuery.isLoading;
   const searching = catalogQuery.isLoading;
   const catalogError = catalogQuery.error
     ? userErrorMessage(catalogQuery.error, t('discover.loadProfilesError'))
-    : viewerQuery.error
-      ? userErrorMessage(viewerQuery.error, t('common.profileLoadError'))
-      : null;
+    : null;
   const displayError = error || catalogError;
 
   const founderActive = isFounderPeriodActive(status);
