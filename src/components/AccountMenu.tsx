@@ -29,6 +29,9 @@ import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import DiscoverModeSwitcher from '@/components/DiscoverModeSwitcher';
 import { useTranslation } from 'react-i18next';
 import type { DiscoverMode } from '@/lib/discoverMode';
+import { useMembership } from '@/lib/useMembership';
+import { isVisibilityLocked } from '@/lib/membership';
+import { openHighlightOffer } from '@/lib/conversionNav';
 
 export default function AccountMenu({
   displayName,
@@ -56,6 +59,8 @@ export default function AccountMenu({
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { status, loading: membershipLoading } = useMembership();
+  const visibilityLocked = !membershipLoading && isVisibilityLocked(status);
   const [open, setOpen] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -184,6 +189,14 @@ export default function AccountMenu({
   };
 
   const handleVisibilitySelect = (choice: VisibilityChoice) => {
+    // Article 3.7.2 : Incognito, Pause et « Ne plus apparaître » deviennent
+    // payants (option Visibilité) après la fenêtre gratuite — « visible »
+    // (normal) reste toujours libre, ce n'est pas une restriction à vendre.
+    if (choice !== 'visible' && choice !== visibilityChoice && visibilityLocked) {
+      close();
+      openHighlightOffer('visibility');
+      return;
+    }
     if (choice === 'deactivated' && visibilityChoice !== 'deactivated') {
       setError(null);
       setConfirmPause(true);
@@ -376,6 +389,8 @@ export default function AccountMenu({
             >
               {visibilityRadioOptions().map((option) => {
                 const checked = option.id === visibilityChoice;
+                const optionLocked =
+                  option.id !== 'visible' && !checked && visibilityLocked;
                 return (
                   <button
                     key={option.id}
@@ -383,11 +398,14 @@ export default function AccountMenu({
                     role="menuitemradio"
                     aria-checked={checked}
                     disabled={visibilityBusy}
+                    title={optionLocked ? t('membership.lockedNeedOffer') : undefined}
                     onClick={() => handleVisibilitySelect(option.id)}
                     className={`w-full flex items-start gap-2.5 px-2.5 py-2 text-left text-[13px] leading-snug transition-colors disabled:opacity-50 hover:bg-slate-50 ${
                       checked
                         ? 'font-semibold text-gray-900'
-                        : 'font-medium text-gray-700'
+                        : optionLocked
+                          ? 'font-medium text-gray-400'
+                          : 'font-medium text-gray-700'
                     }`}
                   >
                     <span

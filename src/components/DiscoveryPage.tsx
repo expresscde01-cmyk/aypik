@@ -26,7 +26,13 @@ import {
 } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
-import { formatPremiumPriceLabel, isFounderPeriodActive } from '@/lib/membership';
+import {
+  formatPremiumPriceLabel,
+  isFounderPeriodActive,
+  isFrancophoneLocked,
+  isInternationalLocked,
+} from '@/lib/membership';
+import { openHighlightOffer } from '@/lib/conversionNav';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
   geoPerimeterFilterLabel,
@@ -1611,6 +1617,24 @@ export default function DiscoveryPage({
                   disabled={!filtersActive}
                   onChange={(next) => {
                     if (!filtersActive) return;
+                    // Pays francophone / International : options payantes
+                    // après la fenêtre gratuite (parcours de conversion,
+                    // section 3 ter) — le serveur applique aussi ce
+                    // garde-fou dans suggest_profiles.
+                    if (
+                      next === 'international' &&
+                      isInternationalLocked(status)
+                    ) {
+                      openHighlightOffer('international');
+                      return;
+                    }
+                    if (
+                      next === 'la_france_dans_le_monde' &&
+                      isFrancophoneLocked(status)
+                    ) {
+                      openHighlightOffer('francophone');
+                      return;
+                    }
                     if (isGeoPerimeterFilter(next)) {
                       setPrefs((prev) => ({
                         ...prev,

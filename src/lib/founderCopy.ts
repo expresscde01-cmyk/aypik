@@ -85,14 +85,16 @@ export function offerLabel(status: OfferStatusLike): string {
   if (isFounderOffer(status)) return t('common.offer.fondateur');
   if (status.plan === 'premium') return t('common.offer.premium');
   if (status.plan === 'confort') return t('common.offer.confort');
+  if (status.plan === 'essentiel') return t('common.offer.essentiel');
   return t('common.offer.freemium');
 }
 
-/** Nom court pour badges / listes : Fondateur | Freemium | Confort | Premium */
+/** Nom court pour badges / listes : Fondateur | Freemium | Essentiel | Confort | Premium */
 export function offerShortName(status: OfferStatusLike): string {
   if (isFounderOffer(status)) return t('common.offer.shortFondateur');
   if (status.plan === 'premium') return t('common.offer.shortPremium');
   if (status.plan === 'confort') return t('common.offer.shortConfort');
+  if (status.plan === 'essentiel') return t('common.offer.shortEssentiel');
   return t('common.offer.shortFreemium');
 }
 

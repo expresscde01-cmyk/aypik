@@ -27,6 +27,12 @@ import ChangePasswordSection from '@/components/ChangePasswordSection';
 import PwaInstallCard from '@/components/PwaInstallCard';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { isPaidPremiumActive } from '@/lib/membership';
+import {
+  consumeHighlightOfferFromUrl,
+  offerCardDomId,
+  subscribeHighlightOffer,
+  type HighlightOffer,
+} from '@/lib/conversionNav';
 import { formatBoostUntil } from '@/components/membership/OwnerBoostIndicator';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { WorldCityAutocomplete } from '@/components/WorldCityAutocomplete';
@@ -158,6 +164,9 @@ export default function ProfileSetup({
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
+  const [highlightedOffer, setHighlightedOffer] = useState<HighlightOffer | null>(
+    null
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const preferencesRef = useRef<HTMLDivElement>(null);
   const testimonialRef = useRef<HTMLDivElement>(null);
@@ -266,6 +275,34 @@ export default function ProfileSetup({
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [loading, profileFocusKey]);
+
+  // Section 3 ter : renvoi depuis un élément grisé (offre correspondante mise
+  // en avant + défilement automatique vers sa carte).
+  useEffect(() => {
+    if (loading) return;
+    const offer = consumeHighlightOfferFromUrl();
+    if (!offer) return;
+    setHighlightedOffer(offer);
+    const t = window.setTimeout(() => {
+      document.getElementById(offerCardDomId(offer))?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [loading]);
+
+  useEffect(() => {
+    return subscribeHighlightOffer((offer) => {
+      setHighlightedOffer(offer);
+      window.setTimeout(() => {
+        document.getElementById(offerCardDomId(offer))?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 150);
+    });
+  }, []);
 
   useEffect(() => {
     if (!photoFile) {
@@ -622,6 +659,7 @@ export default function ProfileSetup({
             claimingOffer={claimingOffer}
             onClaimFounder={() => void handleClaimOffer('founder')}
             onClaimFreemium={() => void handleClaimOffer('free')}
+            highlightedOffer={highlightedOffer}
           />
         </div>
 

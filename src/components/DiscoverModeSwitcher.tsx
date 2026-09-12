@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
-import { isPostTrialLocked } from '@/lib/membership';
+import { isMessagingLocked } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
 import {
   parseDiscoverMode,
@@ -27,7 +27,7 @@ export default function DiscoverModeSwitcher({
   const { status, loading } = useMembership();
   const [mode, setMode] = useState<DiscoverMode>(parseDiscoverMode(value));
   const [busy, setBusy] = useState(false);
-  const locked = !loading && isPostTrialLocked(status);
+  const locked = !loading && isMessagingLocked(status);
 
   useEffect(() => {
     setMode(parseDiscoverMode(value));
