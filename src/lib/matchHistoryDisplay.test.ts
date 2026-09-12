@@ -5,6 +5,8 @@ import {
   matchSheetUsesCrown,
   matchSheetViaWait,
   originHistoryIso,
+  firstWordEventIso,
+  inboxMatchAtByActor,
   dropPinnedId,
   pinIdsFirst,
   matchIdsIncludingInboxDecisions,
@@ -126,6 +128,60 @@ test('Matcher : un match déjà vu via likes croisés reste un match', () => {
   ]);
   assert.equal(ids.has('mutual'), true);
   assert.equal(ids.has('luck'), true);
+});
+
+test('Luck couronne : 1er mot trie sur la date du match, pas le like reçu', () => {
+  const likeReceived = '2026-08-19T10:00:00.000Z';
+  const matchedToday = '2026-09-12T08:00:00.000Z';
+  assert.equal(
+    firstWordEventIso({
+      matchRole: 'accepted',
+      dateReceived: likeReceived,
+      matchedAt: likeReceived,
+      matchedBackAt: null,
+      inboxMatchedAt: matchedToday,
+    }),
+    matchedToday
+  );
+  assert.equal(
+    firstWordEventIso({
+      matchRole: 'accepted',
+      dateReceived: likeReceived,
+      matchedAt: likeReceived,
+      matchedBackAt: matchedToday,
+    }),
+    matchedToday
+  );
+  assert.equal(
+    originHistoryIso({
+      matchRole: 'accepted',
+      dateReceived: likeReceived,
+      matchedAt: likeReceived,
+      matchedBackAt: matchedToday,
+    }),
+    likeReceived
+  );
+});
+
+test('reload sans overlay : inbox match + updated_at → 1er mot daté du jour', () => {
+  const ids = matchIdsIncludingInboxDecisions([], [
+    { actor_id: 'luck', decision: 'match' },
+  ]);
+  assert.equal(ids.has('luck'), true);
+  const at = inboxMatchAtByActor([
+    {
+      actor_id: 'luck',
+      decision: 'match',
+      updated_at: '2026-09-12T08:00:00.000Z',
+    },
+    {
+      actor_id: 'old',
+      decision: 'wait',
+      updated_at: '2026-08-01T00:00:00.000Z',
+    },
+  ]);
+  assert.equal(at.get('luck'), '2026-09-12T08:00:00.000Z');
+  assert.equal(at.has('old'), false);
 });
 
 test('removeActorFromCategoryDigest : 3 → 2 → 1 → plus de digest', () => {

@@ -50,6 +50,42 @@ export function originHistoryIso({
   return dateReceived || matchedAt;
 }
 
+/**
+ * Date d’entrée dans « 1er mot » : confirmation du match, pas le like/flash reçu.
+ * accepted (couronne) → inbox.updated_at / like renvoyé ; initiated → acceptation de l’autre.
+ */
+export function firstWordEventIso({
+  matchRole,
+  dateReceived,
+  matchedAt,
+  matchedBackAt,
+  inboxMatchedAt,
+}: {
+  matchRole: 'accepted' | 'initiated';
+  dateReceived: string;
+  matchedAt: string;
+  matchedBackAt: string | null;
+  inboxMatchedAt?: string | null;
+}): string {
+  if (inboxMatchedAt) return inboxMatchedAt;
+  if (matchRole === 'accepted') {
+    return matchedBackAt || matchedAt || dateReceived;
+  }
+  return matchedAt || dateReceived || matchedBackAt || '';
+}
+
+export function inboxMatchAtByActor(
+  rows: { actor_id: string; decision: string; updated_at?: string | null }[]
+): Map<string, string> {
+  const next = new Map<string, string>();
+  for (const row of rows) {
+    if (row.decision === 'match' && row.actor_id && row.updated_at) {
+      next.set(row.actor_id, row.updated_at);
+    }
+  }
+  return next;
+}
+
 export function matchSheetViaWait(
   ownWaitStartedAt: string | null | undefined,
   peerWaitStartedAt: string | null | undefined

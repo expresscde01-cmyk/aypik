@@ -74,6 +74,8 @@ import {
   matchSheetUsesCrown,
   dropPinnedId,
   matchIdsIncludingInboxDecisions,
+  inboxMatchAtByActor,
+  firstWordEventIso,
   originHistoryIso,
   pinIdsFirst,
   splitPendingByOthers,
@@ -235,6 +237,22 @@ type BrokenMatchCard = {
 function sortByDateReceivedDesc(a: Match, b: Match): number {
   const ta = new Date(a.date_received).getTime() || 0;
   const tb = new Date(b.date_received).getTime() || 0;
+  return tb - ta;
+}
+
+function firstWordIsoOf(match: Match): string {
+  return firstWordEventIso({
+    matchRole: match.matchRole,
+    dateReceived: match.date_received,
+    matchedAt: match.matched_at,
+    matchedBackAt: match.matchedBackAt,
+  });
+}
+
+/** « 1er mot » : date d’entrée dans la rubrique (match), pas le like reçu. */
+function sortByFirstWordDesc(a: Match, b: Match): number {
+  const ta = Date.parse(firstWordIsoOf(a)) || 0;
+  const tb = Date.parse(firstWordIsoOf(b)) || 0;
   return tb - ta;
 }
 
@@ -1269,7 +1287,12 @@ export default function MatchesPage({
         inboxRes = await fetchInboxResponses();
         inboxOk = true;
       } catch {
-        inboxRes = [];
+        try {
+          inboxRes = await fetchInboxResponses();
+          inboxOk = true;
+        } catch {
+          inboxRes = [];
+        }
       }
       const inboxSnapshot = inboxRes;
       inboxRes = mergeConfirmedInboxDecisions(inboxRes);
@@ -1418,6 +1441,7 @@ export default function MatchesPage({
           )
           .map((r) => r.actor_id)
       );
+      const inboxMatchAtMap = inboxMatchAtByActor(inboxRes);
       if (inboxOk) {
         retainMineWaitArchives(user.id, waitingActors);
       }
@@ -1477,6 +1501,11 @@ export default function MatchesPage({
             !isMatched &&
             (forceWait.has(p.id) ||
               (waitingActors.has(p.id) && !isWaitCleared(user.id, p.id)));
+          const inboxMatchAt = inboxMatchAtMap.get(p.id) || null;
+          const outgoingAt = matchBackAt.get(p.id) || mine || null;
+          const matchedBackAt = isMatched
+            ? inboxMatchAt || outgoingAt
+            : outgoingAt;
           return {
             profile: p,
             age: ageFromBirthDate(p.birth_date),
@@ -1484,7 +1513,7 @@ export default function MatchesPage({
             matched_at: at || '',
             kind,
             origin,
-            matchedBackAt: matchBackAt.get(p.id) || mine || null,
+            matchedBackAt,
             alreadyLiked:
               sentSet.has(p.id) ||
               outgoingFlashMap.has(p.id) ||
@@ -2256,7 +2285,15 @@ export default function MatchesPage({
       setError(null);
       try {
         forgetClearedWait(user.id, item.profile.id);
-        await respondToInboxInterest(item.profile.id, 'match', item.origin);
+        const result = await respondToInboxInterest(
+          item.profile.id,
+          'match',
+          item.origin
+        );
+        if (!result.ok || result.decision !== 'match') {
+          throw new Error('match_not_persisted');
+        }
+        const matchedAt = result.matched_at || new Date().toISOString();
         const confirmed: Match = {
           ...item,
           kind: 'match',
@@ -2265,7 +2302,7 @@ export default function MatchesPage({
           waitingAt: null,
           refused: false,
           matchRole: 'accepted',
-          matchedBackAt: new Date().toISOString(),
+          matchedBackAt: matchedAt,
           matchedViaWait: Boolean(item.waiting),
         };
         setOpenProfile(null);
@@ -2808,7 +2845,7 @@ export default function MatchesPage({
         (m) => m.profile.id
       ),
       matchedQuiet: pinIdsFirst(
-        buckets['matched-quiet'].sort(sortByDateReceivedDesc),
+        buckets['matched-quiet'].sort(sortByFirstWordDesc),
         pulseCategory === 'first' || unreadMailbox ? pinActorIds : [],
         (m) => m.profile.id
       ),
@@ -2949,10 +2986,7 @@ export default function MatchesPage({
     const isMatched = !isPending || match.alreadyLiked;
     const unreadCount = unread.bySender[match.profile.id] || 0;
     const hasDialogue = peersWithChat.has(match.profile.id);
-    const matchDateIso =
-      match.matchRole === 'initiated'
-        ? match.matched_at
-        : match.matchedBackAt || match.matched_at;
+    const matchDateIso = firstWordIsoOf(match);
     const statusLabel = match.waiting
       ? waitingMatchReminder(match.origin, myGender)
       : isMatched
@@ -4024,9 +4058,12 @@ export default function MatchesPage({
             matchedLabel:
               openProfile.kind === 'match' || openProfile.alreadyLiked
                 ? matchedHistoryLabel(
-                    openProfile.matchRole === 'initiated'
-                      ? openProfile.matched_at
-                      : openProfile.matchedBackAt || openProfile.matched_at,
+                    firstWordEventIso({
+                      matchRole: openProfile.matchRole,
+                      dateReceived: openProfile.date_received,
+                      matchedAt: openProfile.matched_at,
+                      matchedBackAt: openProfile.matchedBackAt,
+                    }),
                     openProfile.matchRole
                   )
                 : null,

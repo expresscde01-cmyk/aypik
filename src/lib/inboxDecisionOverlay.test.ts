@@ -22,6 +22,7 @@ test('overlay Matcher : un SELECT en retard ne retire pas la décision match', (
   ];
   const merged = mergeConfirmedInboxDecisions(stale);
   assert.equal(merged[0]?.decision, 'match');
+  assert.notEqual(merged[0]?.updated_at, '2026-09-01T00:00:00.000Z');
   dropConfirmedInboxDecisionsSeenIn(stale);
   assert.equal(hasConfirmedInboxDecisions(), true);
   dropConfirmedInboxDecisionsSeenIn([

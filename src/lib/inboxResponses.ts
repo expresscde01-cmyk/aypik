@@ -86,6 +86,63 @@ async function currentInboxDecision(
   return (data as { decision?: string } | null)?.decision ?? null;
 }
 
+async function currentInboxMatchAt(actorId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('inbox_responses')
+    .select('updated_at')
+    .eq('actor_id', actorId)
+    .eq('decision', 'match')
+    .maybeSingle();
+  return (data as { updated_at?: string } | null)?.updated_at ?? null;
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  const code = rpcCode(err);
+  const msg = rpcMessage(err);
+  return code === '23505' || /duplicate|unique/i.test(msg);
+}
+
+/** Filet si le RPC a renvoyé ok/already sans écrire inbox + like. */
+async function persistInboxMatchLocally(
+  actorId: string,
+  origin: InboxOrigin
+): Promise<string> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) throw new Error('not_authenticated');
+  const now = new Date().toISOString();
+  const { error: upsertErr } = await supabase.from('inbox_responses').upsert(
+    {
+      user_id: me,
+      actor_id: actorId,
+      decision: 'match',
+      origin,
+      updated_at: now,
+    },
+    { onConflict: 'user_id,actor_id' }
+  );
+  if (upsertErr) throw upsertErr;
+  const { error: likeErr } = await supabase.from('likes').insert({
+    from_user: me,
+    to_user: actorId,
+  });
+  if (likeErr && !isUniqueViolation(likeErr)) throw likeErr;
+  if ((await currentInboxDecision(actorId)) !== 'match') {
+    throw new Error('match_not_persisted');
+  }
+  return (await currentInboxMatchAt(actorId)) || now;
+}
+
+async function ensureInboxMatchPersisted(
+  actorId: string,
+  origin: InboxOrigin,
+  rpcMatchedAt?: string | null
+): Promise<string> {
+  const existing = await currentInboxMatchAt(actorId);
+  if (existing) return rpcMatchedAt || existing;
+  return persistInboxMatchLocally(actorId, origin);
+}
+
 async function confirmWaitRestored(actorId: string, silent?: boolean) {
   if (silent) return;
   try {
@@ -251,7 +308,13 @@ export async function respondToInboxInterest(
   actorId: string,
   decision: InboxDecision,
   origin?: InboxOrigin | null
-): Promise<{ ok: boolean; decision: InboxDecision; origin: InboxOrigin }> {
+): Promise<{
+  ok: boolean;
+  decision: InboxDecision;
+  origin: InboxOrigin;
+  matched_at?: string | null;
+}> {
+  const confirmedOriginFallback: InboxOrigin = origin || 'like';
   const { data, error } = await supabase.rpc('respond_to_inbox_interest', {
     p_actor: actorId,
     p_decision: decision,
@@ -264,10 +327,41 @@ export async function respondToInboxInterest(
       } catch {
         /* non bloquant */
       }
-      rememberConfirmedInboxDecision(actorId, 'wait', origin || 'like');
+      rememberConfirmedInboxDecision(actorId, 'wait', confirmedOriginFallback);
       emitInboxUpdated({ actorId, decision: 'wait' });
       await invalidateLikeFlashEdges();
-      return { ok: true, decision: 'wait', origin: origin || 'like' };
+      return { ok: true, decision: 'wait', origin: confirmedOriginFallback };
+    }
+    if (
+      decision === 'match' &&
+      rpcMessage(error).includes('decision_locked_match')
+    ) {
+      const matchedAt = await ensureInboxMatchPersisted(
+        actorId,
+        confirmedOriginFallback
+      );
+      try {
+        await sweepStaleSocialNotifications(actorId);
+      } catch {
+        /* non bloquant */
+      }
+      rememberConfirmedInboxDecision(
+        actorId,
+        'match',
+        confirmedOriginFallback,
+        matchedAt
+      );
+      const { data: auth } = await supabase.auth.getUser();
+      const me = auth.user?.id;
+      if (me) seedSentLikeEdge(me, actorId, matchedAt);
+      emitInboxUpdated({ actorId, decision: 'match' });
+      await invalidateLikeFlashEdges();
+      return {
+        ok: true,
+        decision: 'match',
+        origin: confirmedOriginFallback,
+        matched_at: matchedAt,
+      };
     }
     throw error;
   }
@@ -275,6 +369,7 @@ export async function respondToInboxInterest(
     ok?: boolean;
     decision?: InboxDecision;
     origin?: InboxOrigin;
+    matched_at?: string | null;
   };
 
   // Synchronise immédiatement la cloche (À découvrir / Flash / Like / Attente)
@@ -283,21 +378,38 @@ export async function respondToInboxInterest(
   } catch {
     /* non bloquant */
   }
-  await invalidateLikeFlashEdges();
   const confirmedDecision = row.decision || decision;
-  const confirmedOrigin = row.origin || origin || 'like';
-  rememberConfirmedInboxDecision(actorId, confirmedDecision, confirmedOrigin);
+  const confirmedOrigin = row.origin || confirmedOriginFallback;
+  let matchedAt = row.matched_at || null;
+  if (confirmedDecision === 'match') {
+    matchedAt = await ensureInboxMatchPersisted(
+      actorId,
+      confirmedOrigin,
+      matchedAt
+    );
+  }
+  rememberConfirmedInboxDecision(
+    actorId,
+    confirmedDecision,
+    confirmedOrigin,
+    matchedAt
+  );
   if (confirmedDecision === 'match') {
     const { data: auth } = await supabase.auth.getUser();
     const me = auth.user?.id;
-    if (me) seedSentLikeEdge(me, actorId);
+    if (me) seedSentLikeEdge(me, actorId, matchedAt);
   }
   emitInboxUpdated({ actorId, decision: confirmedDecision });
+  await invalidateLikeFlashEdges();
 
   return {
-    ok: row.ok !== false,
-    decision: row.decision || decision,
-    origin: row.origin || origin || 'like',
+    ok:
+      confirmedDecision === 'match'
+        ? Boolean(matchedAt)
+        : row.ok !== false,
+    decision: confirmedDecision,
+    origin: confirmedOrigin,
+    matched_at: matchedAt,
   };
 }
 
