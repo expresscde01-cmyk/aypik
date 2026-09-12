@@ -1,6 +1,27 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+type SupabaseAdmin = ReturnType<typeof createClient>;
+
+/**
+ * Le palier acheté (confort | premium) est déterminé à la création de
+ * l'abonnement (cf. create-paypal-subscription) et stocké dans
+ * payment_subscriptions.plan — c'est la source de vérité.
+ */
+async function getPlanForSubscription(
+  admin: SupabaseAdmin,
+  subscriptionId: string | undefined
+): Promise<"confort" | "premium"> {
+  if (!subscriptionId) return "confort";
+  const { data } = await admin
+    .from("payment_subscriptions")
+    .select("plan")
+    .eq("provider", "paypal")
+    .eq("provider_subscription_id", subscriptionId)
+    .maybeSingle();
+  return data?.plan === "premium" ? "premium" : "confort";
+}
+
 /**
  * Webhook PayPal (Billing Subscriptions).
  * Configurez l'URL dans le dashboard PayPal :
@@ -26,10 +47,12 @@ Deno.serve(async (req) => {
       eventType === "BILLING.SUBSCRIPTION.UPDATED"
     ) {
       if (userId && subscriptionId) {
+        const plan = await getPlanForSubscription(admin, subscriptionId);
         await admin.rpc("activate_paid_premium", {
           p_user_id: userId,
           p_provider: "paypal",
           p_period_end: null,
+          p_plan: plan,
         });
         await admin
           .from("payment_subscriptions")

@@ -13,7 +13,11 @@ import {
 import { useTranslation } from 'react-i18next';
 
 function offerIncludesPremiumPerks(status: MembershipStatus): boolean {
-  return isFounderPeriodActive(status) || status.plan === 'premium';
+  return (
+    isFounderPeriodActive(status) ||
+    status.plan === 'confort' ||
+    status.plan === 'premium'
+  );
 }
 
 export function WhoLikedTeaser({

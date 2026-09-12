@@ -38,11 +38,14 @@ export function PaymentCheckoutModal({
   onClose,
   status,
   onSuccess,
+  plan = 'confort',
 }: {
   open: boolean;
   onClose: () => void;
   status: MembershipStatus;
   onSuccess?: () => void;
+  /** Palier acheté : Confort (19,99 €) ou Premium (24,99 €) */
+  plan?: 'confort' | 'premium';
 }) {
   const [method, setMethod] = useState<PaymentMethodChoice>('card');
   const [step, setStep] = useState<Step>('choose');
@@ -51,12 +54,14 @@ export function PaymentCheckoutModal({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  const amount = formatPriceCents(
-    status.premium_price_cents,
-    status.premium_currency
+  const priceCents =
+    plan === 'premium' ? status.premium_price_cents : status.confort_price_cents;
+  const offerName = t(
+    plan === 'premium' ? 'common.offer.shortPremium' : 'common.offer.shortConfort'
   );
+  const amount = formatPriceCents(priceCents, status.premium_currency);
   const priceLabel = formatPremiumPriceLabel(
-    status.premium_price_cents,
+    priceCents,
     status.premium_currency,
     status.premium_interval
   );
@@ -80,7 +85,7 @@ export function PaymentCheckoutModal({
       return;
     }
     setLoading(true);
-    const result = await createStripeSubscription();
+    const result = await createStripeSubscription(plan);
     setLoading(false);
     if ('error' in result) {
       setError(result.error);
@@ -101,10 +106,13 @@ export function PaymentCheckoutModal({
     setLoading(true);
     setStep('paypal_redirect');
     const origin = window.location.origin;
-    const result = await createPayPalSubscription({
-      returnUrl: `${origin}/?paypal=success`,
-      cancelUrl: `${origin}/?paypal=cancel`,
-    });
+    const result = await createPayPalSubscription(
+      {
+        returnUrl: `${origin}/?paypal=success`,
+        cancelUrl: `${origin}/?paypal=cancel`,
+      },
+      plan
+    );
     setLoading(false);
     if ('error' in result) {
       setError(result.error);
@@ -140,7 +148,7 @@ export function PaymentCheckoutModal({
               id="checkout-title"
               className="text-base font-bold text-gray-900"
             >
-              {t('membership.checkoutTitle')}
+              {t('membership.checkoutTitle', { offer: offerName })}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {t('membership.checkoutSecure')}
@@ -162,7 +170,7 @@ export function PaymentCheckoutModal({
             <div className="flex items-baseline justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-gray-900">
-                  {t('membership.subPremium')}
+                  {t('membership.subPremium', { offer: offerName })}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {t('membership.monthlyRenewal')}
@@ -178,6 +186,9 @@ export function PaymentCheckoutModal({
                 t('membership.benefitWhoLiked'),
                 t('membership.benefitFilters'),
                 t('membership.benefitUnlimitedLikes'),
+                ...(plan === 'premium'
+                  ? [t('membership.benefitFullAccess')]
+                  : []),
               ].map((item) => (
                 <li
                   key={item}
@@ -206,7 +217,10 @@ export function PaymentCheckoutModal({
                 {t('membership.paymentConfirmed')}
               </p>
               <p className="text-xs text-green-700">
-                {t('membership.premiumActiveThanks', { price: priceLabel })}
+                {t('membership.premiumActiveThanks', {
+                  price: priceLabel,
+                  offer: offerName,
+                })}
               </p>
               <button
                 type="button"

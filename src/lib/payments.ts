@@ -9,6 +9,7 @@ function paymentsDisabledMessage(): string {
 }
 
 export type PaymentMethodChoice = 'card' | 'paypal';
+export type PaymentPlanTier = 'confort' | 'premium';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '';
 
@@ -37,14 +38,16 @@ export function isPayPalConfigured() {
   return Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 }
 
-export async function createStripeSubscription(): Promise<{
+export async function createStripeSubscription(
+  plan: PaymentPlanTier = 'confort'
+): Promise<{
   clientSecret: string;
   subscriptionId: string;
 } | { error: string }> {
   if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-stripe-subscription',
-    { body: {} }
+    { body: { plan } }
   );
 
   if (error) {
@@ -66,14 +69,17 @@ export async function createStripeSubscription(): Promise<{
   };
 }
 
-export async function createPayPalSubscription(urls: {
-  returnUrl: string;
-  cancelUrl: string;
-}): Promise<{ approveUrl: string; subscriptionId: string } | { error: string }> {
+export async function createPayPalSubscription(
+  urls: {
+    returnUrl: string;
+    cancelUrl: string;
+  },
+  plan: PaymentPlanTier = 'confort'
+): Promise<{ approveUrl: string; subscriptionId: string } | { error: string }> {
   if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-paypal-subscription',
-    { body: urls }
+    { body: { ...urls, plan } }
   );
 
   if (error) {
