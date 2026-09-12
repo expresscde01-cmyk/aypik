@@ -459,7 +459,7 @@
     "likeThisProfile": "Like {{emoji}} this profile",
     "alreadyFlashedName": "Already flashed {{name}}",
     "alreadyLikedName": "Already liked {{name}}",
-    "hideName": "Hide {{name}}",
+    "hideName": "Pass {{name}}",
     "openUnread": "{{unread}} — open",
     "flashLikeHint": ": notify the person",
     "flashLikeHintFreemium": " (3/day on Freemium)"
@@ -505,7 +505,7 @@
     "restoreLinkNamed": "Restore the link with {{name}}",
     "refuse": "Decline",
     "throwAway": "Discard",
-    "hide": "Hide",
+    "hide": "Pass",
     "openConversation": "Open the conversation",
     "manageMatch": "Manage this match",
     "manageTitle": "Manage your match with {{name}}",

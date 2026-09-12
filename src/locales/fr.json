@@ -459,7 +459,7 @@
     "likeThisProfile": "Liker {{emoji}} ce profil",
     "alreadyFlashedName": "Déjà flashé {{name}}",
     "alreadyLikedName": "Déjà liké {{name}}",
-    "hideName": "Masquer {{name}}",
+    "hideName": "Passer {{name}}",
     "openUnread": "{{unread}} — ouvrir",
     "flashLikeHint": ": notifient la personne",
     "flashLikeHintFreemium": " (3 / jour en freemium)"
@@ -505,7 +505,7 @@
     "restoreLinkNamed": "Rétablir le lien avec {{name}}",
     "refuse": "Refuser",
     "throwAway": "Jeter",
-    "hide": "Masquer",
+    "hide": "Passer",
     "openConversation": "Ouvrir la conversation",
     "manageMatch": "Gérer ce match",
     "manageTitle": "Gestion du match avec {{name}}",
