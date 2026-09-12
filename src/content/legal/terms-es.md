@@ -123,7 +123,11 @@ Los perfiles mostrados en Descubrir y en las sugerencias de la página de Inicio
 
 Un perfil al que el usuario ya haya enviado un Like o un Flash deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio. Esta exclusión no elimina la interacción ya registrada: el perfil sigue siendo gestionable desde Mis Matches, según su estado (Por revisar, Match, archivado, etc.).
 
-Cuando un Like o un Flash ha sido rechazado —por el usuario, por el otro miembro, o como resultado de la expiración automática de una puesta en espera—, el perfil en cuestión deja de mostrarse a la otra parte en Descubrir o en las sugerencias de la página de Inicio durante un período de 3 meses a partir de la fecha del rechazo. Esta ocultación se aplica en ambos sentidos. Al finalizar este período, el perfil podrá volver a mostrarse, sujeto a los demás filtros de este apartado y a los criterios de emparejamiento (apartado 3.5).
+Cuando un Like o un Flash ha sido rechazado —por el usuario, por el otro miembro, o como resultado de la expiración automática de una puesta en espera—, el perfil en cuestión deja de mostrarse a la otra parte en Descubrir o en las sugerencias de la página de Inicio durante un período de 6 meses a partir de la fecha del rechazo. Esta ocultación se aplica en ambos sentidos. Al finalizar este período, el perfil podrá volver a mostrarse, sujeto a los demás filtros de este apartado y a los criterios de emparejamiento (apartado 3.5).
+
+Cuando el usuario pasa un perfil mostrado en Descubrir (botón "Pasar"), sin enviarle un Like ni un Flash, ese perfil deja de mostrarse al usuario, tanto en Descubrir como en las sugerencias de la página de Inicio, durante un período de 2 meses a partir de esa acción. Esta ocultación se aplica únicamente del lado del usuario que pasó el perfil; no tiene incidencia para el otro miembro. Al finalizar este período, el perfil podrá volver a mostrarse, sujeto a los demás filtros de este apartado.
+
+Cuando un Match se rompe (véase el Anexo A, "Matches Finalizados"), el otro miembro deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio durante un período de 1 año a partir de la ruptura si se había intercambiado al menos un mensaje entre ambos miembros antes de esta, o de 6 meses si no se había intercambiado ningún mensaje. Esta ocultación se aplica en ambos sentidos. Al finalizar este período, el perfil podrá volver a mostrarse, sujeto a los demás filtros de este apartado.
 
 *3.7.2 Modos de Visibilidad*
 
@@ -162,6 +166,16 @@ Esta oferta no constituye un contrato de venta, una suscripción ni una contrapr
 ### Artículo 5 — Boost y Estatus Premium
 
 La insignia "Premium" es la etiqueta visual de las ventajas de Fundador durante su período de activación de 6 meses (Artículo 4): muestra visualmente, en el perfil, que estas ventajas (Likes y Flashes ilimitados, Boost gratuito el primer mes) están actualmente activas. Desaparece al finalizar los 6 meses, a diferencia del título honorífico "Miembro Fundador" y su número, que permanecen mostrados mientras la cuenta esté activa (Artículo 4). La validez del Boost puede consultarse en cualquier momento desde la página "Mi Perfil".
+
+### Artículo 5 bis — Modos de visualización "simplificado" y "detallado"
+
+Cada miembro puede elegir libremente, en cualquier momento y sin coste, desde el menú de la cuenta, entre dos modos de visualización de las páginas Descubrir y Mis Matches.
+
+**Modo detallado** (modo predeterminado). Se mantiene visible el recorrido completo de puesta en contacto, con sus distintas etapas (Por estudiar, En espera, Match, Conversación en curso, Matches rotos). Enviar un mensaje a otro miembro requiere una puesta en contacto recíproca (Like o Flash compartido), conforme al funcionamiento descrito en el Artículo 3.7.1.
+
+**Modo simplificado.** Las páginas Descubrir y Mis Matches se muestran de forma simplificada: en Mis Matches solo aparecen las conversaciones realmente iniciadas (mensaje enviado por ambas partes). Un botón "Diálogo" permite escribir directamente a otro miembro que también esté en modo simplificado, sin Like ni Flash previo. Al activar este modo, el usuario consiente expresamente en recibir, por parte de otros miembros también en modo simplificado, un primer mensaje sin haber expresado él mismo un interés recíproco previamente.
+
+Esta elección es reversible en cualquier momento desde el menú de la cuenta. A la fecha de estos Términos, no tiene ninguna incidencia sobre el estatus de suscripción (Fundador, Premium u oferta básica): se ofrece de forma gratuita a todos los miembros, conforme al Artículo 2.3. Este funcionamiento puede evolucionar en las condiciones previstas en el Artículo 2.4.
 
 ### Artículo 6 — Propiedad Intelectual y Contenido del Usuario
 
@@ -251,11 +265,13 @@ Un perfil en estado de "espera" (ya sea por parte del usuario o del otro miembro
 
 **Archivar / Eliminar.** Opciones de gestión ofrecidas para los perfiles que han rechazado un Like o un Flash, así como para los perfiles en espera. Archivar conserva el perfil en una sección específica de la página Mis Matches. Para una puesta en espera, archivar es únicamente una acción de organización personal: no cierra la interacción, no interrumpe el transcurso del plazo de expiración y no se notifica al otro miembro (véase "Puesta en Espera"). Eliminar retira el perfil de esta lista; para una puesta en espera, la eliminación definitiva equivale a un rechazo.
 
-**Matches Finalizados.** Un espacio de almacenamiento para los Matches archivados o finalizados a partir de una conversación ya confirmada, clasificados según quién tomó la decisión. Si el propio usuario inició el archivado o la finalización, el Match aparece en "Matches que has finalizado": el usuario puede entonces restaurar el vínculo (y el acceso a la mensajería) o eliminarlo definitivamente. Si fue la otra persona quien finalizó el vínculo, el Match aparece en "Matches que ellos finalizaron": solo es posible la eliminación definitiva, ya que no se ofrece la opción de restaurar.
+**Matches Finalizados.** Un espacio de almacenamiento para los Matches archivados o finalizados a partir de una conversación ya confirmada, clasificados según quién tomó la decisión. Si el propio usuario inició el archivado o la finalización, el Match aparece en "Matches que has finalizado": el usuario puede entonces restaurar el vínculo (y el acceso a la mensajería) o eliminarlo definitivamente. Si fue la otra persona quien finalizó el vínculo, el Match aparece en "Matches que ellos finalizaron": solo es posible la eliminación definitiva, ya que no se ofrece la opción de restaurar. El otro miembro tampoco vuelve a mostrarse en Descubrir ni en las sugerencias de la página de Inicio durante un período de 1 año (si se había intercambiado un mensaje antes de la ruptura) o de 6 meses (en caso contrario), en las condiciones del apartado 3.7.1.
 
 **Boost.** Una función que permite situar el perfil en la parte superior de la lista durante un período determinado para maximizar su visibilidad.
 
 **Descubrir.** La página que permite explorar perfiles compatibles, según los criterios de emparejamiento y el filtrado descritos en el apartado 3.7.1.
+
+**Pasar.** Una acción disponible en Descubrir que permite descartar un perfil sin enviarle un Like ni un Flash. Ese perfil deja entonces de mostrarse, únicamente al usuario que lo pasó, durante un período de 2 meses (apartado 3.7.1).
 
 **Sugerencias.** Perfiles mostrados en la página de Inicio. Siguen el mismo filtrado que Descubrir (apartado 3.7.1) y los modos de visibilidad del apartado 3.7.2.
 
@@ -284,7 +300,13 @@ El estatus de Miembro Fundador y su número asociado están estrictamente vincul
 No. Deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio (apartado 3.7.1). La interacción sigue siendo gestionable desde Mis Matches.
 
 **¿Puede reaparecer en Descubrir un perfil cuyo Like o Flash fue rechazado?**
-Sí, pero solo transcurrido un período de 3 meses desde el rechazo (apartado 3.7.1), y sujeto a los demás filtros de sugerencias. Este plazo se aplica tanto si el rechazo fue expresado por el usuario como por el otro miembro, o si resultó de la expiración automática de una puesta en espera.
+Sí, pero solo transcurrido un período de 6 meses desde el rechazo (apartado 3.7.1), y sujeto a los demás filtros de sugerencias. Este plazo se aplica tanto si el rechazo fue expresado por el usuario como por el otro miembro, o si resultó de la expiración automática de una puesta en espera.
+
+**¿Puede reaparecer en Descubrir un perfil que he pasado (botón "Pasar")?**
+Sí, transcurrido un período de 2 meses desde esa acción (apartado 3.7.1), sujeto a los demás filtros de sugerencias. Esta ocultación se aplica únicamente de tu lado; no tiene incidencia para el otro miembro.
+
+**¿Puede reaparecer en Descubrir un Match que se ha roto?**
+Sí, transcurrido un período de 1 año si se había intercambiado un mensaje antes de la ruptura, o de 6 meses en caso contrario (apartado 3.7.1), sujeto a los demás filtros de sugerencias. Esta ocultación se aplica en ambos sentidos.
 
 **¿Cuál es la diferencia entre pausar mi cuenta y eliminar mi cuenta?**
 "Pausar la cuenta" (apartado 3.7) deja la cuenta activa: la insignia de Miembro Fundador y su número se conservan; el perfil deja de mostrarse en Descubrir o en las sugerencias, y no se registran nuevas interacciones mientras dure la pausa. La eliminación (apartado 8.2) es definitiva: el perfil deja de utilizarse, los datos se borran tras el período de purga y se pierde la insignia de Fundador.

@@ -123,7 +123,11 @@ The profiles shown on Discover and in the Home page suggestions are determined a
 
 A profile to which the user has already sent a Like or a Flash is no longer shown on Discover or in the Home page suggestions. This exclusion does not remove the interaction already recorded: the profile remains manageable from My Matches, according to its status (To review, Match, archived, etc.).
 
-When a Like or a Flash has been declined — by the user, by the other member, or as a result of the automatic expiry of a hold — the profile in question is no longer shown to the other party on Discover or in the Home page suggestions for a period of 3 months from the date of the decline. This hiding applies in both directions. At the end of this period, the profile may be shown again, subject to the other filters in this Section and the matching criteria (Section 3.5).
+When a Like or a Flash has been declined — by the user, by the other member, or as a result of the automatic expiry of a hold — the profile in question is no longer shown to the other party on Discover or in the Home page suggestions for a period of 6 months from the date of the decline. This hiding applies in both directions. At the end of this period, the profile may be shown again, subject to the other filters in this Section and the matching criteria (Section 3.5).
+
+When the user passes on a profile shown on Discover (the "Skip" button), without sending it a Like or a Flash, that profile is no longer shown to the user, either on Discover or in the Home page suggestions, for a period of 2 months from that action. This hiding applies only on the side of the user who skipped the profile; it has no effect on the other member. At the end of this period, the profile may be shown again, subject to the other filters in this Section.
+
+When a Match is ended (see Appendix A, "Ended Matches"), the other member is no longer shown on Discover or in the Home page suggestions for a period of 1 year from the ending if at least one message had been exchanged between the two members beforehand, or of 6 months if no message had been exchanged. This hiding applies in both directions. At the end of this period, the profile may be shown again, subject to the other filters in this Section.
 
 *3.7.2 Visibility Modes*
 
@@ -162,6 +166,16 @@ This offer does not constitute a sales contract, a subscription, or financial co
 ### Article 5 — Boost and Premium Status
 
 The "Premium" badge is the display label for the Founder perks during their 6-month activation period (Article 4): it visually shows, on the profile, that these perks (unlimited Likes and Flashes, free Boost in the first month) are currently active. It disappears at the end of the 6 months, unlike the honorary "Founding Member" title and its number, which remain displayed for as long as the account is active (Article 4). The validity of the Boost may be checked at any time from the "My Profile" page.
+
+### Article 5 bis — "Simplified" and "Detailed" Display Modes
+
+Each member may freely choose, at any time and at no cost, from the account menu, between two display modes for the Discover and My Matches pages.
+
+**Detailed mode** (default mode). The full matching journey remains displayed, with its different stages (To review, On hold, Match, Ongoing conversation, Broken matches). Sending a message to another member requires a mutual match (a shared Like or Flash), in accordance with the mechanism described in Section 3.7.1.
+
+**Simplified mode.** The Discover and My Matches pages are shown in a streamlined form: only conversations that have actually started (a message sent by both parties) appear in My Matches. A "Message" button lets a member write directly to another member who is also in simplified mode, without a prior Like or Flash. By activating this mode, the member expressly consents to receiving, from other members also in simplified mode, a first message without having themselves expressed reciprocal interest beforehand.
+
+This choice is reversible at any time from the account menu. As of the date of these Terms, it has no bearing on subscription status (Founding Member, Premium, or basic offer): it is offered free of charge to all members, in accordance with Section 2.3. This may change under the conditions set out in Section 2.4.
 
 ### Article 6 — Intellectual Property and User Content
 
@@ -251,11 +265,13 @@ A profile placed in "on hold" status (whether by you or by the other member) wit
 
 **Archive / Delete.** Management options offered for profiles that have declined a Like or a Flash, as well as for profiles on hold. Archiving keeps the profile in a dedicated section of the My Matches page. For a hold, archiving is only a personal organizing action: it does not close the interaction, does not stop the expiry period from running, and is not notified to the other member (see "Put on Hold"). Deleting removes the profile from this list; for a hold, permanent deletion is equivalent to a decline.
 
-**Ended Matches.** A storage area for Matches archived or ended from a conversation that was already confirmed, sorted by who made the decision. If the user themselves initiated the archiving or the ending, the Match appears under "Matches you ended": the user may then restore the link (and access to messaging) or delete it permanently. If it was the other person who ended the link, the Match appears under "Matches they ended": only permanent deletion is possible, as restoring is not offered.
+**Ended Matches.** A storage area for Matches archived or ended from a conversation that was already confirmed, sorted by who made the decision. If the user themselves initiated the archiving or the ending, the Match appears under "Matches you ended": the user may then restore the link (and access to messaging) or delete it permanently. If it was the other person who ended the link, the Match appears under "Matches they ended": only permanent deletion is possible, as restoring is not offered. The other member is also no longer shown on Discover or in the Home page suggestions for a period of 1 year (if a message had been exchanged before the ending) or 6 months (otherwise), under the conditions of Section 3.7.1.
 
 **Boost.** A feature that lets you put your profile at the top of the list for a set period of time to maximize its visibility.
 
 **Discover.** The page that lets you browse compatible profiles, according to the matching criteria and filtering described in Section 3.7.1.
+
+**Skip.** An action available on Discover that lets you set aside a profile without sending it a Like or a Flash. That profile is then no longer shown, only to the user who skipped it, for a period of 2 months (Section 3.7.1).
 
 **Suggestions.** Profiles shown on the Home page. They follow the same filtering as Discover (Section 3.7.1) and the visibility modes in Section 3.7.2.
 
@@ -284,7 +300,13 @@ Founding Member status and its associated number are strictly tied to the active
 No. It is no longer shown on Discover or in the Home page suggestions (Section 3.7.1). The interaction remains manageable from My Matches.
 
 **Can a profile whose Like or Flash was declined reappear on Discover?**
-Yes, but only after a period of 3 months from the decline (Section 3.7.1), and subject to the other suggestion filters. This period applies whether the decline was expressed by the user, by the other member, or resulted from the automatic expiry of a hold.
+Yes, but only after a period of 6 months from the decline (Section 3.7.1), and subject to the other suggestion filters. This period applies whether the decline was expressed by the user, by the other member, or resulted from the automatic expiry of a hold.
+
+**Can a profile I skipped (the "Skip" button) reappear on Discover?**
+Yes, after a period of 2 months from that action (Section 3.7.1), subject to the other suggestion filters. This hiding applies only on your side; it has no effect on the other member.
+
+**Can an ended Match reappear on Discover?**
+Yes, after a period of 1 year if a message had been exchanged before the ending, or 6 months otherwise (Section 3.7.1), subject to the other suggestion filters. This hiding applies in both directions.
 
 **What is the difference between pausing my account and deleting my account?**
 "Pausing the account" (Section 3.7) leaves the account active: the Founding Member badge and its number are kept; the profile is no longer shown on Discover or in the suggestions, and new interactions are not recorded for the duration of the pause. Deletion (Section 8.2) is permanent: the profile is no longer used, data is erased after the purge period, and the Founder badge is lost.
