@@ -2,6 +2,9 @@
 -- Empêche SELECT direct de last_active_at et incognito_at (API PostgREST).
 -- card_profiles / suggest_profiles / touch_my_presence restent SECURITY DEFINER
 -- (elles lisent encore ces colonnes en tant que propriétaire de la fonction).
+-- Ne redéfinit PAS le corps de suggest_profiles. Ne pas coller les anciens
+-- COLLER-DISCOVERY-CATALOG / PROFILE-PAUSE / GEO-MACRO-ZONES / ONLINE-PRESENCE /
+-- FIX-SUGGEST-DEACTIVATED (OBSOLÈTES).
 --
 -- Un REVOKE SELECT (colonne) seul ne suffit pas si authenticated a un GRANT SELECT
 -- (ou ALL) sur la table entière : on retire le SELECT table, puis on re-accorde

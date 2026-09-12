@@ -56,7 +56,7 @@ function friendlyDbMessage(msg: string, fallback: string): string {
     return t('errors.testimonialTooLong');
   }
   if (msg.includes('suggest_profiles')) {
-    return 'Catalogue indisponible : colle COLLER-DISCOVERY-CATALOG.sql dans l’éditeur SQL Supabase, puis Run.';
+    return 'Catalogue indisponible : la fonction suggest_profiles en base n’est pas à jour. Ne coller aucun ancien COLLER-*.sql (ils écraseraient le masquage des refus). Source : supabase/migrations/20260910173743_suggest_profiles_require_gender.sql';
   }
   if (msg.includes('not_initiator')) {
     return t('errors.onlyBreakerCanRestore');

@@ -1,10 +1,10 @@
 -- Coller TOUT ce fichier dans Supabase → SQL Editor, puis Run.
--- Rétablit Découvrir et les suggestions Accueil.
+-- Crée public.regions_are_neighbors (adjacence des régions).
+-- Ne redéfinit PAS suggest_profiles.
 --
--- Cause : COLLER-PROFILE-PAUSE.sql a remplacé suggest_profiles par une version
--- qui appelle public.regions_are_neighbors(text, text). Cette fonction n’existait
--- pas en base (l’ancienne suggest_profiles utilisait la table region_neighbors).
--- Rien n’a été supprimé : il faut simplement créer la fonction manquante.
+-- Cause historique : COLLER-PROFILE-PAUSE.sql (OBSOLÈTE, ne plus coller)
+-- remplaçait suggest_profiles par une version qui appelle regions_are_neighbors.
+-- Source actuelle de la RPC : supabase/migrations/20260910173743_suggest_profiles_require_gender.sql
 
 CREATE OR REPLACE FUNCTION public.regions_are_neighbors(p_a text, p_b text)
 RETURNS boolean

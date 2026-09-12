@@ -1,8 +1,9 @@
 -- Coller TOUT ce fichier dans Supabase → SQL Editor, puis Run.
 -- Compte en pause (id interne : deactivated). Bloque likes, flashs et messages
 -- à la source : rien n’est enregistré. Les interactions antérieures restent.
--- Découvrir / Accueil : coller ensuite COLLER-FIX-SUGGEST-DEACTIVATED.sql
--- (filtre deactivated_at dans suggest_profiles).
+-- Découvrir / Accueil : le filtre deactivated_at est déjà dans
+-- supabase/migrations/20260910173743_suggest_profiles_require_gender.sql.
+-- Ne pas coller COLLER-FIX-SUGGEST-DEACTIVATED.sql (OBSOLÈTE).
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS deactivated_at timestamptz;
