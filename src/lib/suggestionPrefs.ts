@@ -14,7 +14,7 @@ export type SuggestionPrefs = {
   geoRadiusKm: GeoRadiusKm;
   /** Strate étanche dès Même département. Inactif sur Même ville, quarts, Hexagone / France dans le monde / International. */
   geoExclusive: boolean;
-  /** 0 = pas de minimum d’intérêts. Défaut produit : 1. */
+  /** 0 = Indifférent. Défaut produit : 0 (le score continue de valoriser les affinités). */
   minOverlap: number;
   /** Continents International. Tableau vide = PARTOUT. Inactif si un pays précis est choisi. */
   worldZones: WorldZone[];
@@ -32,12 +32,12 @@ export type SuggestionPrefs = {
   franceWorldCodes: string[];
 };
 
-/** Première visite / rien de configuré : jusqu’aux régions voisines + au moins 1 intérêt. */
+/** Première visite / rien de configuré : régions voisines, centres d’intérêt indifférents. */
 export const DEFAULT_SUGGESTION_PREFS: SuggestionPrefs = {
   geoPerimeter: 'neighboring_region',
   geoRadiusKm: GEO_RADIUS_KM_DEFAULT,
   geoExclusive: false,
-  minOverlap: 1,
+  minOverlap: 0,
   worldZones: [],
   internationalCountries: [],
   franceWorldChoice: 'all',

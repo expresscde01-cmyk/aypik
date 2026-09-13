@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { useMembership } from '@/lib/useMembership';
-import { isMessagingLocked } from '@/lib/membership';
-import { openHighlightOffer } from '@/lib/conversionNav';
 import {
   parseDiscoverMode,
   type DiscoverMode,
 } from '@/lib/discoverMode';
+import { useMembership } from '@/lib/useMembership';
+import { canOptOutMessagingProtection } from '@/lib/membership';
 
 const OPTIONS = [
-  { id: 'detaille' as const, labelKey: 'profile.discoverModeDetailed' as const },
   { id: 'simplifie' as const, labelKey: 'profile.discoverModeSimplified' as const },
+  { id: 'detaille' as const, labelKey: 'profile.discoverModeDetailed' as const },
 ];
 
 export default function DiscoverModeSwitcher({
@@ -25,9 +24,10 @@ export default function DiscoverModeSwitcher({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { status, loading } = useMembership();
+  const messagingOptOut =
+    !loading && canOptOutMessagingProtection(status);
   const [mode, setMode] = useState<DiscoverMode>(parseDiscoverMode(value));
   const [busy, setBusy] = useState(false);
-  const locked = !loading && isMessagingLocked(status);
 
   useEffect(() => {
     setMode(parseDiscoverMode(value));
@@ -51,10 +51,6 @@ export default function DiscoverModeSwitcher({
   }, [user?.id, value]);
 
   const select = async (next: DiscoverMode) => {
-    if (locked) {
-      openHighlightOffer(next);
-      return;
-    }
     if (!user?.id || next === mode || busy) return;
     const prev = mode;
     setMode(next);
@@ -76,10 +72,7 @@ export default function DiscoverModeSwitcher({
       <div
         role="group"
         aria-label={t('profile.discoverMode')}
-        aria-disabled={locked || undefined}
-        className={`inline-flex w-full items-center rounded-lg border border-rose-100 bg-white/80 p-0.5 ${
-          locked ? 'opacity-55 grayscale select-none' : ''
-        }`}
+        className="inline-flex w-full items-center rounded-lg border border-rose-100 bg-white/80 p-0.5"
       >
         {OPTIONS.map((option) => {
           const selected = mode === option.id;
@@ -88,8 +81,7 @@ export default function DiscoverModeSwitcher({
               key={option.id}
               type="button"
               aria-pressed={selected}
-              disabled={busy && !locked}
-              title={locked ? t('membership.lockedNeedOffer') : undefined}
+              disabled={busy}
               onClick={() => void select(option.id)}
               className={`flex-1 rounded-md px-2 py-1 text-xs font-semibold tracking-wide transition-colors disabled:opacity-60 ${
                 selected
@@ -102,15 +94,13 @@ export default function DiscoverModeSwitcher({
           );
         })}
       </div>
-      {locked ? (
-        <p className="text-[11px] leading-snug text-gray-500">
-          {t('membership.lockedNeedOffer')}
-        </p>
-      ) : mode === 'simplifie' ? (
-        <p className="text-[11px] leading-snug text-gray-500">
-          {t('profile.discoverModeSimplifiedHint')}
-        </p>
-      ) : null}
+      <p className="text-[11px] leading-snug text-gray-500">
+        {t(
+          messagingOptOut
+            ? 'profile.discoverModeHintProtected'
+            : 'profile.discoverModeHint'
+        )}
+      </p>
     </div>
   );
 }

@@ -40,6 +40,7 @@ export type DiscoveryCandidate = Profile & {
   last_active_at?: string | null;
   activity_score?: number;
   discover_mode: DiscoverMode;
+  open_messaging: boolean;
 };
 
 export type SuggestRow = {
@@ -72,6 +73,7 @@ export type SuggestRow = {
   city_name?: string | null;
   world_zone?: string | null;
   discover_mode?: string | null;
+  open_messaging?: boolean | null;
 };
 
 export function mapSuggestRow(
@@ -125,6 +127,7 @@ export function mapSuggestRow(
     city_name: row.city_name || null,
     world_zone: row.world_zone || null,
     discover_mode: parseDiscoverMode(row.discover_mode),
+    open_messaging: row.open_messaging === true,
   };
 }
 

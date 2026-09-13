@@ -6,7 +6,7 @@
   "welcomeSubjectFounder": "Bienvenue sur Aypik — Membre Fondateur #{{number}}",
   "welcomeSubject": "Bienvenue sur Aypik",
   "welcomeHello": "Bienvenue, {{name}} !",
-  "welcomeFounderBody": "Tu fais partie des 500 premiers membres. Ton statut Membre Fondateur {{numberLabel}} est confirmé à vie. Likes illimités, flash et boost de visibilité du profil offert pendant le premier mois.",
+  "welcomeFounderBody": "Tu fais partie des 1000 Membres Fondateurs. Ton statut Membre Fondateur {{numberLabel}} est confirmé tant que ton compte reste actif. Likes illimités, flash et boost de visibilité du profil offert pendant le premier mois.",
   "welcomePremiumUntil": "Tes 6 mois Premium offerts sont actifs jusqu'au {{date}}.",
   "welcomePremiumActive": "Tes 6 mois Premium offerts sont maintenant actifs.",
   "welcomeNoCard": "Aucune carte bancaire n'est requise. À l'issue de cette période, les avantages fonctionnels prennent fin ; ton badge Membre Fondateur reste visible. Sans tacite reconduction.",

@@ -25,6 +25,7 @@ import {
 import {
   formatPremiumPriceLabel,
   formatPriceCents,
+  internationalAddonPriceCents,
   type MembershipStatus,
 } from '@/lib/membership';
 import { LegalLink } from '@/components/LegalTerms';
@@ -38,6 +39,7 @@ const PLAN_PRICE_FIELD: Record<
   PaymentPlanTier,
   keyof Pick<
     MembershipStatus,
+    | 'basique_price_cents'
     | 'essentiel_price_cents'
     | 'confort_price_cents'
     | 'premium_price_cents'
@@ -46,6 +48,7 @@ const PLAN_PRICE_FIELD: Record<
     | 'international_price_cents'
   >
 > = {
+  basique: 'basique_price_cents',
   essentiel: 'essentiel_price_cents',
   confort: 'confort_price_cents',
   premium: 'premium_price_cents',
@@ -54,40 +57,45 @@ const PLAN_PRICE_FIELD: Record<
   international: 'international_price_cents',
 };
 
-const PLAN_OFFER_NAME_KEY: Record<PaymentPlanTier, string> = {
+const PLAN_OFFER_NAME_KEY = {
+  basique: 'common.offer.shortBasique',
   essentiel: 'common.offer.shortEssentiel',
   confort: 'common.offer.shortConfort',
   premium: 'common.offer.shortPremium',
   visibilite: 'common.offer.shortVisibilite',
   francophone: 'common.offer.shortFrancophone',
   international: 'common.offer.shortInternational',
-};
+} as const;
 
-function planBenefitKeys(plan: PaymentPlanTier): string[] {
+function planBenefitKeys(plan: PaymentPlanTier) {
   switch (plan) {
+    case 'basique':
+      return ['membership.benefitMessaging', 'membership.benefitQuotaBasique'] as const;
     case 'essentiel':
-      return ['membership.benefitMessaging'];
+      return [
+        'membership.benefitMessaging',
+        'membership.benefitGeoInterests',
+        'membership.benefitQuotaEssentiel',
+      ] as const;
     case 'premium':
       return [
         'membership.benefitWhoLiked',
         'membership.benefitFilters',
         'membership.benefitUnlimitedLikes',
         'membership.benefitFullAccess',
-      ];
+      ] as const;
     case 'confort':
       return [
         'membership.benefitWhoLiked',
         'membership.benefitFilters',
         'membership.benefitUnlimitedLikes',
-      ];
+      ] as const;
     case 'visibilite':
-      return ['membership.benefitVisibilite'];
+      return ['membership.benefitVisibilite'] as const;
     case 'francophone':
-      return ['membership.benefitFrancophone'];
+      return ['membership.benefitFrancophone'] as const;
     case 'international':
-      return ['membership.benefitInternational'];
-    default:
-      return [];
+      return ['membership.benefitInternational'] as const;
   }
 }
 
@@ -112,7 +120,10 @@ export function PaymentCheckoutModal({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  const priceCents = status[PLAN_PRICE_FIELD[plan]];
+  const priceCents =
+    plan === 'international'
+      ? internationalAddonPriceCents(status)
+      : status[PLAN_PRICE_FIELD[plan]];
   const offerName = t(PLAN_OFFER_NAME_KEY[plan]);
   const benefits = planBenefitKeys(plan).map((key) => t(key));
   const amount = formatPriceCents(priceCents, status.premium_currency);

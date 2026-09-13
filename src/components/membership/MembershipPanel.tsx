@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
-import { PremiumConversionCard } from '@/components/membership/PremiumConversionCard';
+import { OfferSummaryCards } from '@/components/membership/OfferSummaryCards';
 import {
   OfferConversionCard,
+  GeoReachAddonCard,
   type AddonHighlightOffer,
 } from '@/components/membership/OfferConversionCard';
+import { canBuyBoost } from '@/lib/offerAccess';
 import { cancelPremiumSubscription } from '@/lib/payments';
 import type { HighlightOffer } from '@/lib/conversionNav';
 import {
@@ -30,11 +32,7 @@ import {
   type MembershipStatus,
 } from '@/lib/membership';
 
-const ADDON_OFFERS: AddonHighlightOffer[] = [
-  'visibility',
-  'francophone',
-  'international',
-];
+const ADDON_OFFERS: AddonHighlightOffer[] = ['visibility'];
 
 function FounderActiveBanner({
   status,
@@ -290,7 +288,8 @@ export function MembershipPanel({
 
   const canCancelPaid =
     !periodActive &&
-    (status.plan === 'essentiel' ||
+    (status.plan === 'basique' ||
+      status.plan === 'essentiel' ||
       status.plan === 'confort' ||
       status.plan === 'premium');
 
@@ -306,8 +305,6 @@ export function MembershipPanel({
   const showPremiumOffer =
     !showPaidPremiumActive &&
     (premiumLockedByFounder || !status.has_premium || founderExpired);
-  const premiumTone =
-    !founderAvailable || founderExpired ? 'primary' : 'secondary';
 
   const showFreemiumClaim =
     signupGate &&
@@ -441,35 +438,21 @@ export function MembershipPanel({
         )}
 
         {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <PremiumConversionCard
-              status={status}
-              founderExpired={founderExpired}
-              onPaymentSuccess={onRefresh}
-              tone="secondary"
-              disabled={false}
-              plan="essentiel"
-              highlighted={highlightedOffer === 'simplifie'}
-            />
-            <PremiumConversionCard
-              status={status}
-              founderExpired={founderExpired}
-              onPaymentSuccess={onRefresh}
-              tone="secondary"
-              disabled={false}
-              plan="confort"
-              highlighted={highlightedOffer === 'detaille'}
-            />
-            <PremiumConversionCard
-              status={status}
-              founderExpired={founderExpired}
-              onPaymentSuccess={onRefresh}
-              tone={premiumTone}
-              disabled={false}
-              plan="premium"
-              highlighted={highlightedOffer === 'premium'}
-            />
-          </div>
+          <OfferSummaryCards
+            status={status}
+            onRefresh={onRefresh}
+            highlighted={
+              highlightedOffer === 'basique'
+                ? 'basique'
+                : highlightedOffer === 'simplifie'
+                  ? 'essentiel'
+                  : highlightedOffer === 'detaille'
+                    ? 'confort'
+                    : highlightedOffer === 'premium'
+                      ? 'premium'
+                      : null
+            }
+          />
         )}
 
         {!SITE_FREE_MODE && showPremiumOffer && !signupGate && (
@@ -477,7 +460,7 @@ export function MembershipPanel({
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500 px-0.5">
               {t('membership.addonsTitle')}
             </p>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {ADDON_OFFERS.map((addon) => (
                 <OfferConversionCard
                   key={addon}
@@ -487,6 +470,18 @@ export function MembershipPanel({
                   highlighted={highlightedOffer === addon}
                 />
               ))}
+              {status.plan !== 'premium' &&
+                !status.has_international_access &&
+                !status.international_until && (
+                  <GeoReachAddonCard
+                    status={status}
+                    onPaymentSuccess={onRefresh}
+                    highlighted={
+                      highlightedOffer === 'francophone' ||
+                      highlightedOffer === 'international'
+                    }
+                  />
+                )}
             </div>
           </div>
         )}
@@ -583,7 +578,8 @@ export function MembershipPanel({
         {!signupGate &&
           !SITE_FREE_MODE &&
           !periodActive &&
-          status.plan !== 'founder' && (
+          status.plan !== 'founder' &&
+          canBuyBoost(status) && (
           <BoostPurchaseCard
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}

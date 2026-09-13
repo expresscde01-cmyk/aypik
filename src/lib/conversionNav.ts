@@ -1,6 +1,7 @@
 export const HIGHLIGHT_OFFER_PARAM = 'highlightOffer';
 
 export const HIGHLIGHT_OFFERS = [
+  'basique',
   'simplifie',
   'detaille',
   'international',

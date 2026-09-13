@@ -1,22 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  parsePlan,
+  qualifiesForInternationalUpgrade,
+  resolveCheckoutEnv,
+} from "../_shared/plans.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
-type PlanTier = "confort" | "premium";
-
-const PLAN_AMOUNT_CENTS: Record<PlanTier, number> = {
-  confort: 1999,
-  premium: 2499,
-};
-
-function parsePlan(raw: unknown): PlanTier {
-  return raw === "premium" ? "premium" : "confort";
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -29,24 +23,8 @@ Deno.serve(async (req) => {
 
     const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
     const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
-    const planId =
-      plan === "premium"
-        ? Deno.env.get("PAYPAL_PREMIUM_PLAN_ID")
-        : Deno.env.get("PAYPAL_CONFORT_PLAN_ID");
     const apiBase =
       Deno.env.get("PAYPAL_API_BASE") ?? "https://api-m.sandbox.paypal.com";
-
-    if (!clientId || !clientSecret || !planId) {
-      return json(
-        {
-          error:
-            plan === "premium"
-              ? "PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / PAYPAL_PREMIUM_PLAN_ID)."
-              : "PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / PAYPAL_CONFORT_PLAN_ID).",
-        },
-        503
-      );
-    }
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Non authentifié" }, 401);
@@ -62,6 +40,34 @@ Deno.serve(async (req) => {
       error: userError,
     } = await supabase.auth.getUser();
     if (userError || !user) return json({ error: "Session invalide" }, 401);
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: membership } = await admin
+      .from("memberships")
+      .select("plan, francophone_until, international_until")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const checkout = resolveCheckoutEnv(
+      "paypal",
+      plan,
+      qualifiesForInternationalUpgrade(membership ?? {}),
+      (name) => Deno.env.get(name)
+    );
+    const planId = Deno.env.get(checkout.envName);
+
+    if (!clientId || !clientSecret || !planId) {
+      return json(
+        {
+          error: `PayPal n'est pas configuré (PAYPAL_CLIENT_ID / SECRET / ${checkout.envName}).`,
+        },
+        503
+      );
+    }
 
     const returnUrl =
       (body as { returnUrl?: string })?.returnUrl ??
@@ -116,18 +122,13 @@ Deno.serve(async (req) => {
       (l: { rel: string }) => l.rel === "approve"
     )?.href;
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     await admin.from("payment_subscriptions").insert({
       user_id: user.id,
       provider: "paypal",
       provider_subscription_id: subscription.id,
       status: "pending",
       plan,
-      amount_cents: PLAN_AMOUNT_CENTS[plan],
+      amount_cents: checkout.amountCents,
       currency: "EUR",
       interval: "month",
     });
