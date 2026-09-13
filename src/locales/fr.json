@@ -172,7 +172,7 @@
     "founderBenefitLikes": "Likes et Flash illimités offerts avec notification immédiate",
     "founderBenefitBoost": "Boost offert le 1er mois pour une visibilité maximale auprès de tous les membres",
     "founderBenefitFlash": "Flash offert (notification immédiate)",
-    "after6MonthsBody": "Tu restes libre d'annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Les offres sur AYPIK sont sans engagement de durée.",
+    "after6MonthsBody": "Tu restes libre d'annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à {{price}}. Les offres sur AYPIK sont sans engagement de durée.",
     "premiumTitle": "Offre Premium",
     "premiumDesc": "19,99 € / mois pour un confort d’utilisation, sans engagement.",
     "boostTitle": "Boost 24h",
@@ -481,7 +481,7 @@
     "hideName": "Passer {{name}}",
     "openUnread": "{{unread}} — ouvrir",
     "flashLikeHint": ": notifient la personne",
-    "flashLikeHintFreemium": " (3 / jour en freemium)",
+    "flashLikeHintFreemium": " ({{quota}} / jour en freemium)",
     "dialogueTooltip": "Écrire un message",
     "dialogueProfile": "Écrire à {{name}}"
   },

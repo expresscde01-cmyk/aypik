@@ -27,7 +27,7 @@ import {
 } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
-import { canPersonalizeSearch, effectiveSuggestionPrefs } from '@/lib/offerAccess';
+import { canPersonalizeSearch, dailyFlashQuota, effectiveSuggestionPrefs } from '@/lib/offerAccess';
 import {
   formatPremiumPriceLabel,
   isFounderPeriodActive,
@@ -1961,8 +1961,10 @@ export default function DiscoveryPage({
                 </span>
                 <span>
                   {t('discover.flashLikeHint')}
-                  {status.plan !== 'premium' && !isFounderPeriodActive(status)
-                    ? t('discover.flashLikeHintFreemium')
+                  {!status.unlimited_likes
+                    ? t('discover.flashLikeHintFreemium', {
+                        quota: dailyFlashQuota(status),
+                      })
                     : ''}
                 </span>
               </p>

@@ -172,7 +172,7 @@
     "founderBenefitLikes": "Unlimited Likes and Flashes included, with instant notification",
     "founderBenefitBoost": "Free Boost in your first month for maximum visibility to all members",
     "founderBenefitFlash": "Free Flash (instant notification)",
-    "after6MonthsBody": "You're always free to cancel in one click, move to the Freemium plan, or support the community with the Premium plan at €19.99/month. AYPIK plans have no fixed-term commitment.",
+    "after6MonthsBody": "You're always free to cancel in one click, move to the Freemium plan, or support the community with the Premium plan at {{price}}. AYPIK plans have no fixed-term commitment.",
     "premiumTitle": "Premium plan",
     "premiumDesc": "€19.99/month for a smoother experience, no commitment.",
     "boostTitle": "24h Boost",
@@ -481,7 +481,7 @@
     "hideName": "Pass {{name}}",
     "openUnread": "{{unread}} — open",
     "flashLikeHint": ": notify the person",
-    "flashLikeHintFreemium": " (3/day on Freemium)",
+    "flashLikeHintFreemium": " ({{quota}}/day on Freemium)",
     "dialogueTooltip": "Send a message",
     "dialogueProfile": "Message {{name}}"
   },

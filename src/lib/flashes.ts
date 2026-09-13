@@ -86,7 +86,12 @@ export function flashErrorMessage(
     case 'flash_not_available_for_founders':
       return t('errors.flashFounderOnly');
     case 'flash_quota_exhausted':
-      if (status && status.plan === 'premium') {
+      if (
+        status &&
+        (status.plan === 'premium' ||
+          status.plan === 'confort' ||
+          isFounderPrivilegeActive(status))
+      ) {
         return t('errors.flashLimitToday');
       }
       if (SITE_FREE_MODE) {
