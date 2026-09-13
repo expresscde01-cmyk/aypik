@@ -379,9 +379,9 @@ export function isPostTrialLocked(status: MembershipStatus): boolean {
   return status.phase === 'post_trial' && !status.has_premium;
 }
 
-/** Verrouillé pour l’envoi de nouveaux messages (Essentiel débloque, pas seulement Confort/Premium). */
+/** Verrouillé pour l’envoi de nouveaux messages après la Période d’essai. */
 export function isMessagingLocked(status: MembershipStatus): boolean {
-  return status.phase === 'post_trial' && !status.has_messaging_access;
+  return status.phase === 'post_trial' && !status.has_premium;
 }
 
 /** Verrouillé pour les réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître). */

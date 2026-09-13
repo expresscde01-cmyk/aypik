@@ -87,8 +87,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 12 septembre 2026. Version applicable au
-              lancement bénévole et gratuit du Service.
+              Dernière mise à jour : 13 septembre 2026.
             </p>
           </header>
 
@@ -98,17 +97,17 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               {BRAND_NAME} est une plateforme de rencontre en ligne dédiée
               exclusivement aux personnes majeures n&apos;ayant pas
               d&apos;enfants. Elle est éditée à titre personnel, dans le cadre
-              d&apos;un projet bénévole, non lucratif au lancement, et conçu
-              pour rester accessible sans contrepartie financière pour
-              l&apos;usage de base.
+              d&apos;un projet indépendant. L&apos;inscription, la création et
+              la gestion d&apos;un profil, la découverte de membres,
+              l&apos;expression d&apos;un intérêt (Like, Flash) et la
+              constitution de Matchs restent accessibles sans contrepartie
+              financière, dans les conditions précisées à l&apos;article 2.3.
             </p>
             <p>
-              Le Service repose sur la transparence, la bienveillance et le
-              refus des « dark patterns » : pas de pratiques trompeuses, pas
-              d&apos;engagement caché, pas de carte bancaire exigée pour
-              s&apos;inscrire ou utiliser le cœur du Service, pas de
-              réduction artificielle des fonctionnalités de base destinée à
-              contraindre un paiement.
+              Le Service repose sur la transparence : pas de pratiques
+              trompeuses, pas d&apos;engagement caché, pas de carte bancaire
+              exigée pour s&apos;inscrire ou pour utiliser les
+              fonctionnalités gratuites décrites à l&apos;article 2.3.
             </p>
           </section>
 
@@ -196,13 +195,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 d&apos;accès et d&apos;utilisation du Service {BRAND_NAME} :
                 création de profil, découverte de membres, expressions
                 d&apos;intérêt (Like, Flash), constitution de Matchs,
-                messagerie conditionnée à un Match, et paramètres de
+                messagerie conditionnée à un Match et, à l&apos;issue de sa
+                Période d&apos;essai (article 4), à la souscription
+                d&apos;une offre payante active, ainsi que paramètres de
                 visibilité du compte.
               </p>
               <p>
                 Les présentes CGU ne constituent pas des conditions générales
-                de vente. Aucune offre payante n&apos;est commercialisée au
-                lancement.
+                de vente. Les éventuelles offres payantes, notamment celle
+                permettant l&apos;envoi de messages à l&apos;issue de la
+                Période d&apos;essai visée à l&apos;article 4, font
+                l&apos;objet de Conditions Générales de Vente (CGV)
+                distinctes, visées à l&apos;article 2.4.
               </p>
             </div>
             <div>
@@ -217,57 +221,74 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                2.3 Cœur du Service gratuit
+                2.3 Fonctionnalités accessibles gratuitement
               </p>
               <p>
-                Le cœur du Service — à savoir, a minima, la création et la
-                gestion d&apos;un profil, la consultation des profils
-                compatibles, l&apos;expression d&apos;un intérêt de base, la
-                constitution de Matchs et l&apos;usage de la messagerie entre
-                membres matchés — restera accessible gratuitement.
+                Restent accessibles gratuitement, sans obligation de paiement
+                ni de carte bancaire : la création et la gestion d&apos;un
+                profil, la consultation des profils compatibles proposés dans
+                Découvrir et les suggestions, l&apos;expression d&apos;un
+                intérêt (Like, Flash) et la constitution de Matchs.
               </p>
               <p>
-                L&apos;utilisateur qui ne souhaite rien payer ne subira
-                aucune perte des services de base. Aucune fonctionnalité
-                constitutive du cœur du Service ne sera retirée, bridée ou
-                conditionnée à un paiement de manière à contraindre
-                l&apos;utilisateur à souscrire une option payante.
+                L&apos;envoi de messages à un membre matché est inclus
+                gratuitement pendant la Période d&apos;essai définie à
+                l&apos;article 4 (six mois pour un Membre Fondateur, un mois
+                pour tout autre utilisateur), décomptée individuellement pour
+                chaque utilisateur à compter de la création de son compte.
+                Au-delà, l&apos;envoi de nouveaux messages est réservé aux
+                utilisateurs disposant d&apos;un abonnement actif, dans les
+                conditions et selon les tarifs précisés par les Conditions
+                Générales de Vente (CGV) visées à l&apos;article 2.4.
+              </p>
+              <p>
+                La consultation des Matchs déjà formés et des messages déjà
+                reçus demeure accessible sans paiement. L&apos;utilisateur
+                qui ne souhaite pas souscrire d&apos;abonnement conserve un
+                accès complet à la création de profil, à la découverte, au
+                Like, au Flash et à la constitution de Matchs ; seul
+                l&apos;envoi de nouveaux messages, à l&apos;issue de sa
+                Période d&apos;essai (article 4), est concerné par cette
+                condition.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-gray-900">
-                2.4 Évolution future — options payantes éventuelles
-              </p>
+              <p className="font-semibold text-gray-900">2.4 Offres payantes</p>
               <p>
-                L&apos;éditeur se réserve le droit de proposer
-                ultérieurement, lorsque le projet le justifiera, des modules
-                ou options payantes strictement optionnelles (confort,
-                visibilité accrue ou fonctionnalités additionnelles n&apos;étant
-                pas indispensables à l&apos;usage de base).
+                À l&apos;issue de la Période d&apos;essai visée à
+                l&apos;article 4, l&apos;éditeur propose ou pourra proposer
+                des offres payantes, notamment pour permettre l&apos;envoi de
+                messages illimité, ainsi que, le cas échéant, des
+                fonctionnalités de confort ou de visibilité accrue.
               </p>
               <p>
                 Le cas échéant :
               </p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>
-                  les utilisateurs en seront informés préalablement, de
+                  les utilisateurs en sont informés préalablement, de
                   manière claire et distincte ;
                 </li>
                 <li>
-                  ces modules feront l&apos;objet de Conditions Générales de
-                  Vente (CGV) distinctes des présentes CGU, à accepter
-                  expressément au moment de la souscription ;
+                  ces offres font l&apos;objet de Conditions Générales de
+                  Vente (CGV) distinctes des présentes CGU, portées à la
+                  connaissance de l&apos;utilisateur et acceptées
+                  expressément avant toute souscription et tout paiement ;
                 </li>
                 <li>
-                  le refus de souscrire une option payante n&apos;entraînera
-                  ni fermeture de compte, ni perte des services de base
-                  décrits à l&apos;article 2.3.
+                  le refus de souscrire une offre payante n&apos;entraîne
+                  ni fermeture de compte, ni perte d&apos;accès à la création
+                  de profil, à la découverte de membres, au Like, au Flash et
+                  à la constitution de Matchs, décrits à l&apos;article 2.3.
+                  Il limite en revanche, à l&apos;issue de sa Période
+                  d&apos;essai (article 4), la possibilité d&apos;envoyer de
+                  nouveaux messages.
                 </li>
               </ul>
               <p>
-                Tant que de telles CGV n&apos;ont pas été publiées et
-                acceptées, aucun paiement n&apos;est dû et aucune carte
-                bancaire n&apos;est demandée.
+                Tant que des CGV afférentes à une offre payante n&apos;ont
+                pas été publiées et acceptées par l&apos;utilisateur, aucun
+                paiement ne lui est demandé au titre de cette offre.
               </p>
             </div>
             <div>
@@ -550,8 +571,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Matchs déjà constitués, les conversations et les
                 interactions déjà enregistrées (Likes, Flashs) sont
                 conservés. L&apos;utilisateur peut continuer d&apos;utiliser
-                le Service, y compris Mes Matchs et la messagerie
-                conditionnée à un Match.
+                le Service, y compris Mes Matchs et, dans les conditions de
+                l&apos;article 2.3, la messagerie conditionnée à un Match.
               </p>
               <p>
                 <span className="font-semibold text-gray-900">
@@ -610,47 +631,74 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 4 — Offre « Membre Fondateur »
+              Article 4 — Période d&apos;essai et statut « Membre Fondateur »
             </h3>
-            <p>
-              L&apos;offre Membre Fondateur est honorifique. Elle est
-              strictement réservée aux {FOUNDER_MAX_SLOTS} premiers membres
-              inscrits, dans la limite des places disponibles. Dès que ce
-              plafond est atteint, l&apos;offre n&apos;est plus proposée. Les
-              numéros de Membre Fondateur sont attribués de façon séquentielle
-              et ne sont jamais réattribués.
-            </p>
-            <p>
-              Pendant une période de six (6) mois à compter de
-              l&apos;activation de l&apos;offre sur le compte, les avantages
-              fonctionnels sont consentis à titre gracieux, sans engagement
-              de durée, sans tacite reconduction et sans aucune demande de
-              carte bancaire. Ils comprennent notamment, selon les
-              fonctionnalités effectivement déployées : likes et Flash
-              illimités, ainsi qu&apos;un boost de visibilité du profil
-              pendant le premier mois.
-            </p>
-            <p>
-              À l&apos;issue de ces six mois, les avantages fonctionnels
-              cessent. Le compte demeure alors sur l&apos;offre de base
-              gratuite. Le titre de Membre Fondateur et le numéro associé
-              restent visibles à titre honorifique tant que le compte est
-              actif.
-            </p>
-            <p>
-              Le statut de Membre Fondateur et son numéro associé sont
-              strictement liés au compte actif. En cas de désinscription ou
-              de suppression du compte, le badge est définitivement perdu et
-              ne pourra pas être réattribué. Un compte dont la visibilité
-              est restreinte ou qui est mis en pause au sens de
-              l&apos;article 3.7 demeure un compte actif ; voir également
-              l&apos;article 8.2.
-            </p>
-            <p>
-              Cette offre ne constitue ni un contrat de vente, ni un
-              abonnement, ni une contrepartie financière. Elle n&apos;ouvre
-              droit à aucun remboursement, cession ou conversion en numéraire.
-            </p>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.1 Membres Fondateurs (les {FOUNDER_MAX_SLOTS} premiers
+                comptes)
+              </p>
+              <p>
+                Un statut honorifique de « Membre Fondateur » est attribué aux{' '}
+                {FOUNDER_MAX_SLOTS} premiers comptes créés sur le Service, dans
+                la limite des places disponibles. Dès que ce plafond est
+                atteint, le statut n&apos;est plus attribué aux nouveaux
+                inscrits. Les numéros de Membre Fondateur sont attribués de
+                façon séquentielle et ne sont jamais réattribués.
+              </p>
+              <p>
+                Pendant une Période d&apos;essai de six (6) mois à compter de
+                la création de son compte, le Membre Fondateur bénéficie, à
+                titre gracieux, sans engagement de durée, sans tacite
+                reconduction et sans aucune demande de carte bancaire : de
+                l&apos;envoi de messages, de likes et Flash illimités, ainsi
+                que d&apos;un boost de visibilité du profil pendant le premier
+                mois suivant l&apos;inscription.
+              </p>
+              <p>
+                Ce statut est honorifique : au-delà des avantages de la
+                Période d&apos;essai décrits ci-dessus, il n&apos;ouvre droit
+                à aucun remboursement, cession ou conversion en numéraire. Le
+                titre et le numéro associé restent affichés tant que le
+                compte est actif ; ils sont définitivement perdus en cas de
+                désinscription ou de suppression du compte, dans les
+                conditions de l&apos;article 8.2. Un compte dont la visibilité
+                est restreinte ou qui est mis en pause au sens de
+                l&apos;article 3.7 demeure un compte actif.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.2 Autres utilisateurs
+              </p>
+              <p>
+                Tout utilisateur créant un compte au-delà des{' '}
+                {FOUNDER_MAX_SLOTS} premiers bénéficie d&apos;une Période
+                d&apos;essai d&apos;un (1) mois à compter de la création de
+                son compte, pendant laquelle l&apos;envoi de messages est
+                inclus gratuitement, sans carte bancaire ni engagement. Cette
+                Période d&apos;essai n&apos;inclut pas les avantages
+                complémentaires (likes et Flash illimités, boost de
+                visibilité) réservés aux Membres Fondateurs à l&apos;article
+                4.1.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.3 À l&apos;issue de la Période d&apos;essai
+              </p>
+              <p>
+                À l&apos;issue de sa Période d&apos;essai — six mois pour un
+                Membre Fondateur, un mois pour tout autre utilisateur — et à
+                défaut de souscription à une offre payante, l&apos;utilisateur
+                conserve un accès gratuit à la création et la gestion de son
+                profil, à Découvrir, au Like, au Flash, à la constitution de
+                Matchs et à la lecture des messages déjà reçus. Seul
+                l&apos;envoi de nouveaux messages est alors soumis à la
+                souscription d&apos;une offre payante active, dans les
+                conditions de l&apos;article 2.4.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -701,7 +749,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               (message envoyé par les deux parties) apparaissent dans Mes
               Matchs. Un bouton « Dialogue » permet d&apos;écrire
               directement à un autre membre également en mode simplifié,
-              sans Like ni Flash préalable. En activant ce mode,
+              sans Like ni Flash préalable, sous réserve, à l&apos;issue de
+              sa Période d&apos;essai (article 4), de disposer d&apos;un
+              abonnement actif dans les conditions de l&apos;article 2.3. En
+              activant ce mode,
               l&apos;utilisateur consent expressément à recevoir, de la
               part d&apos;autres membres également en mode simplifié, un
               premier message sans avoir lui-même exprimé d&apos;intérêt
@@ -1005,7 +1056,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 qu&apos;un intérêt mutuel a été confirmé (qu&apos;il
                 provienne de Likes croisés ou d&apos;un Flash accepté).
                 C&apos;est cette validation mutuelle qui ouvre l&apos;accès
-                à la messagerie.
+                à la messagerie, sous réserve, à l&apos;issue de sa Période
+                d&apos;essai (article 4), de disposer d&apos;un abonnement
+                actif permettant l&apos;envoi de messages (article 2.3).
               </p>
             </div>
             <div>
@@ -1017,7 +1070,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 sollicités, l&apos;envoi de messages est strictement
                 conditionné à un Match préalable. Il est donc impossible de
                 dialoguer avec un membre sans avoir reçu ou vu son
-                Like/Flash accepté en retour.
+                Like/Flash accepté en retour. En complément de cette
+                condition, l&apos;envoi de messages est également
+                conditionné, à l&apos;issue de sa Période d&apos;essai
+                (article 4), à la souscription d&apos;une offre payante
+                active (articles 2.3 et 2.4).
               </p>
             </div>
             <div>
@@ -1229,11 +1286,26 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le Service va-t-il devenir payant&nbsp;?
               </p>
               <p>
-                Le cœur du Service restera gratuit. Des options payantes
-                pourront éventuellement être proposées plus tard ; elles
-                seront facultatives, annoncées à l&apos;avance et régies par
-                des CGV distinctes. Qui ne paie rien conserve les services
-                de base.
+                La création de profil, la découverte de membres, le Like, le
+                Flash et la constitution de Matchs restent gratuits.
+                L&apos;envoi de messages est offert pendant la Période
+                d&apos;essai définie à l&apos;article 4 (six mois pour les
+                Membres Fondateurs, un mois pour les autres utilisateurs) ;
+                au-delà, il nécessite un abonnement actif, dont les
+                conditions et tarifs sont précisés par des CGV distinctes,
+                communiquées avant toute souscription et tout paiement.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Puis-je toujours consulter et lire les messages déjà reçus
+                sans abonnement&nbsp;?
+              </p>
+              <p>
+                Oui. À l&apos;issue de sa Période d&apos;essai (article 4),
+                seul l&apos;envoi de nouveaux messages est réservé aux
+                abonnés ; la consultation des Matchs et des messages déjà
+                reçus reste accessible sans paiement (article 2.3).
               </p>
             </div>
             <div>

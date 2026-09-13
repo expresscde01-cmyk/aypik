@@ -6,13 +6,13 @@
 
 ## Terms of Service
 
-Last updated: September 12, 2026. Version applicable to the voluntary, free launch of the Service.
+Last updated: September 13, 2026.
 
 ### Preamble
 
-Aypik is an online dating platform dedicated exclusively to adults who do not have children. It is published on a personal basis, as a volunteer, non-profit project at launch, designed to remain accessible with no financial consideration required for basic use.
+Aypik is an online dating platform dedicated exclusively to adults who do not have children. It is published on a personal basis, as an independent project. Signing up, creating and managing a profile, discovering members, expressing interest (Like, Flash) and forming Matches remain free of charge, under the conditions set out in Section 2.3.
 
-The Service is built on transparency, kindness, and a rejection of "dark patterns": no deceptive practices, no hidden commitments, no credit card required to sign up or use the core of the Service, and no artificial reduction of basic features intended to force a payment.
+The Service is built on transparency: no deceptive practices, no hidden commitment, no credit card required to sign up or to use the free features described in Section 2.3.
 
 ### Article 1 — Legal Notice (LCEN)
 
@@ -39,31 +39,31 @@ Website: https://www.o2switch.fr
 
 **2.1 Purpose**
 
-These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, messaging conditional on a Match, and account visibility settings.
+These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, messaging conditional on a Match and, at the end of their Trial Period (Article 4), on holding an active paid subscription, as well as account visibility settings.
 
-These Terms do not constitute general terms of sale. No paid offer is sold at launch.
+These Terms do not constitute general terms of sale. Any paid offers, in particular the one allowing messages to be sent at the end of the Trial Period referred to in Article 4, are governed by separate General Terms of Sale, referred to in Section 2.4.
 
 **2.2 Acceptance**
 
 Registering, creating an account, or using the Service constitutes full and complete acceptance of these Terms. If the user does not accept these Terms, they must refrain from using the Service and may request deletion of their account.
 
-**2.3 Free Core Service**
+**2.3 Features available free of charge**
 
-The core of the Service — namely, at minimum, creating and managing a profile, browsing compatible profiles, expressing basic interest, forming Matches, and using messaging between matched members — will remain accessible free of charge.
+The following remain available free of charge, with no payment or credit card required: creating and managing a profile, viewing compatible profiles shown in Discover and suggestions, expressing interest (Like, Flash) and forming Matches.
 
-A user who does not wish to pay anything will not lose any basic services. No feature that forms part of the core Service will be removed, restricted, or made conditional on payment in a way designed to force the user into subscribing to a paid option.
+Sending messages to a matched member is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one month for any other user), counted individually for each user from the date their account was created. Beyond that, sending new messages is reserved for users with an active subscription, under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4.
 
-**2.4 Future Developments — Possible Paid Options**
+Viewing Matches already formed and messages already received remains accessible free of charge. A user who does not wish to subscribe keeps full access to creating a profile, to Discover, to Like, to Flash and to forming Matches; only sending new messages, at the end of their Trial Period (Article 4), is subject to this condition.
 
-The publisher reserves the right to offer, at a later date and when the project justifies it, strictly optional paid modules or options (added comfort, increased visibility, or additional features that are not essential to basic use).
+**2.4 Paid offers**
 
-Where applicable:
+At the end of the Trial Period referred to in Article 4, the publisher offers or may offer paid plans, in particular to allow unlimited messaging, as well as, where applicable, comfort or increased-visibility features. Where applicable:
 
-- users will be informed beforehand, clearly and distinctly;
-- these modules will be governed by General Terms of Sale ("GTS") separate from these Terms, to be expressly accepted at the time of subscription;
-- declining to subscribe to a paid option will not result in account closure or loss of the basic services described in Section 2.3.
+- users are informed beforehand, clearly and distinctly;
+- these plans are governed by separate General Terms of Sale, brought to the user's attention and expressly accepted before any subscription and any payment;
+- declining to subscribe to a paid plan does not result in account closure or loss of access to creating a profile, discovering members, Like, Flash and forming Matches, as described in Section 2.3. It does, however, limit the ability to send new messages at the end of their Trial Period (Article 4).
 
-As long as such GTS have not been published and accepted, no payment is due and no credit card is requested.
+As long as General Terms of Sale for a paid plan have not been published and accepted by the user, no payment is requested from them under that plan.
 
 **2.5 Amendments to these Terms**
 
@@ -137,7 +137,7 @@ The user selects a single visibility mode at a time, from the account menu ("Vis
 
 **Incognito.** The user continues to use the Service. Their profile may still be shown on Discover and in the suggestions. However, it does not appear "online" to other members (Section 3.8). A user in Incognito mode continues to see the online status of other members, where applicable to them.
 
-**Stop appearing in Discover and Suggestions.** The profile is no longer shown to other members on Discover or in the Home page suggestions. Matches already formed, conversations, and interactions already recorded (Likes, Flashes) are kept. The user may continue to use the Service, including My Matches and messaging conditional on a Match.
+**Stop appearing in Discover and Suggestions.** The profile is no longer shown to other members on Discover or in the Home page suggestions. Matches already formed, conversations, and interactions already recorded (Likes, Flashes) are kept. The user may continue to use the Service, including My Matches and, subject to the conditions of Section 2.3, messaging conditional on a Match.
 
 **Pause the account.** The account is fully paused. The user may still sign in; use of the Service is then limited to reactivating the account. The profile is no longer shown on Discover or in the Home page suggestions for the duration of the pause. No new Like, Flash, or message is recorded for this account during the pause; a member who attempts such an interaction is informed of this. Matches, conversations, and interactions that already exist are not deleted; they become usable again upon reactivation. Likes, Flashes, and messages that would have been sent during the pause are not kept.
 
@@ -151,17 +151,23 @@ This status may be shown to other members through a visual indicator (green dot)
 
 The processing of last_active_at is described in Section 8.1.
 
-### Article 4 — "Founding Member" Offer
+### Article 4 — Trial Period and "Founding Member" status
 
-The Founding Member offer is honorary. It is strictly reserved for the first 500 registered members, subject to availability. As soon as this cap is reached, the offer is no longer available. Founding Member numbers are assigned sequentially and are never reassigned.
+**4.1 Founding Members (the first 500 accounts)**
 
-For a period of six (6) months from the activation of the offer on the account, the functional perks are granted free of charge, with no fixed-term commitment, no automatic renewal, and no credit card requested at any point. Depending on the features actually deployed, they include in particular: unlimited Likes and Flashes, as well as a profile visibility boost during the first month.
+An honorary "Founding Member" status is granted to the first 500 accounts created on the Service, subject to availability. Once this limit is reached, the status is no longer granted to new members. Founding Member numbers are assigned sequentially and are never reassigned.
 
-At the end of these six months, the functional perks end. The account then remains on the free basic offer. The Founding Member title and its associated number remain visible on an honorary basis for as long as the account is active.
+During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages, unlimited Likes and Flashes, and a profile visibility boost during the first month after signup.
 
-Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost and cannot be reassigned. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account; see also Section 8.2.
+This status is honorary: beyond the Trial Period benefits described above, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
 
-This offer does not constitute a sales contract, a subscription, or financial consideration. It does not give rise to any refund, transfer, or conversion into cash.
+**4.2 Other users**
+
+Any user creating an account beyond the first 500 benefits from a one (1) month Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
+
+**4.3 At the end of the Trial Period**
+
+At the end of their Trial Period — six months for a Founding Member, one month for any other user — and absent a subscription to a paid plan, the user keeps free access to creating and managing their profile, to Discover, to Like, to Flash, to forming Matches, and to reading messages already received. Only sending new messages then becomes subject to holding an active paid plan, under the conditions of Section 2.4.
 
 ### Article 5 — Boost and Premium Status
 
@@ -173,7 +179,7 @@ Each member may freely choose, at any time and at no cost, from the account menu
 
 **Detailed mode** (default mode). The full matching journey remains displayed, with its different stages (To review, On hold, Match, Ongoing conversation, Broken matches). Sending a message to another member requires a mutual match (a shared Like or Flash), in accordance with the mechanism described in Section 3.7.1.
 
-**Simplified mode.** The Discover and My Matches pages are shown in a streamlined form: only conversations that have actually started (a message sent by both parties) appear in My Matches. A "Message" button lets a member write directly to another member who is also in simplified mode, without a prior Like or Flash. By activating this mode, the member expressly consents to receiving, from other members also in simplified mode, a first message without having themselves expressed reciprocal interest beforehand.
+**Simplified mode.** The Discover and My Matches pages are shown in a streamlined form: only conversations that have actually started (a message sent by both parties) appear in My Matches. A "Message" button lets a member write directly to another member who is also in simplified mode, without a prior Like or Flash, subject to holding an active subscription at the end of their Trial Period (Article 4), under the conditions of Section 2.3. By activating this mode, the member expressly consents to receiving, from other members also in simplified mode, a first message without having themselves expressed reciprocal interest beforehand.
 
 This choice is reversible at any time from the account menu. As of the date of these Terms, it has no bearing on subscription status (Founding Member, Premium, or basic offer): it is offered free of charge to all members, in accordance with Section 2.3. This may change under the conditions set out in Section 2.4.
 
@@ -245,9 +251,9 @@ In the event of a dispute, and after an attempt at amicable resolution (contact 
 
 **Flash.** A priority action, stronger than a simple Like, sending a clear and direct signal to the targeted person to indicate immediate interest.
 
-**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). It is this mutual confirmation that opens access to messaging.
+**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). It is this mutual confirmation that opens access to messaging, subject, at the end of their Trial Period (Article 4), to holding an active subscription allowing messages to be sent (Section 2.3).
 
-**Messaging and Consent.** As a safety measure and to prevent unsolicited contact, sending messages is strictly conditional on a prior Match. It is therefore not possible to chat with a member without having received, or had accepted in return, their Like/Flash.
+**Messaging and Consent.** As a safety measure and to prevent unsolicited contact, sending messages is strictly conditional on a prior Match. It is therefore not possible to chat with a member without having received, or had accepted in return, their Like/Flash. In addition to this condition, sending messages is also conditional, at the end of their Trial Period (Article 4), on holding an active paid subscription (Sections 2.3 and 2.4).
 
 **To Review.** The status of a profile whose Like or Flash has been received and has not yet been decided on. The user may then decline the profile, put it on hold, or confirm a Match.
 
@@ -288,7 +294,10 @@ No. The Service is exclusively reserved for adults.
 No. One account per person and per email address, per Section 3.3.
 
 **Will the Service become paid?**
-The core of the Service will remain free. Paid options may possibly be offered later; they will be optional, announced in advance, and governed by separate General Terms of Sale. Anyone who pays nothing keeps the basic services.
+Creating a profile, discovering members, Like, Flash and forming Matches remain free. Sending messages is offered free of charge during the Trial Period defined in Article 4 (six months for Founding Members, one month for other users); beyond that, it requires an active subscription, the terms and pricing of which are set out in separate General Terms of Sale, provided before any subscription and any payment.
+
+**Can I still view and read messages already received without a subscription?**
+Yes. At the end of their Trial Period (Article 4), only sending new messages is reserved for subscribers; viewing Matches and messages already received remains accessible free of charge (Section 2.3).
 
 **How does deleting my account work?**
 It is requested from your profile. The profile is no longer visible. Data is irretrievably erased after a 30-day purge period (Section 8.2).
