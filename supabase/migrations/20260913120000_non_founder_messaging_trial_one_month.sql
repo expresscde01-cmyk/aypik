@@ -1,15 +1,20 @@
--- Période d'essai messagerie : 6 mois pour un Fondateur (inchangé,
--- founder_premium_until / created_at + 6 mois), 1 mois pour tout autre
--- compte, toujours depuis la date d'inscription individuelle.
--- Avant : non-Fondateur = 1 mois trial_full + 5 mois trial_simplified
--- (messagerie jusqu'à 6 mois). Après : simplified_free_until = +1 mois
--- → post_trial dès J+30, donc insert_chat_message exige un plan payant.
+-- Période d'essai messagerie, décomptée depuis la date d'inscription
+-- propre à chaque compte (memberships.created_at), jamais depuis la date
+-- du 500e Fondateur ni depuis une fenêtre globale :
+--   Fondateur : 6 mois (founder_premium_until, sinon created_at + 6 mois)
+--   tout autre compte : 1 mois → post_trial dès J+30
+-- Avant ce correctif, un non-Fondateur avait encore 5 mois de
+-- trial_simplified (messagerie jusqu'à 6 mois).
+-- Définition alignée sur pg_get_functiondef en production (13/09/2026),
+-- où la fonction a d'abord été appliquée manuellement dans l'éditeur SQL.
+-- CREATE OR REPLACE FUNCTION est idempotent : la rejouer ne change pas
+-- le comportement si le corps est identique.
 CREATE OR REPLACE FUNCTION public._account_access_phase(p_user_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-STABLE
-SET search_path = public
-AS $$
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
 DECLARE
   m memberships%ROWTYPE;
   v_full_until timestamptz;
@@ -53,4 +58,4 @@ BEGIN
       OR public.has_active_premium(p_user_id)
   );
 END;
-$$;
+$function$;
