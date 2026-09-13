@@ -170,7 +170,11 @@ Pas de patch code tant que ce contrat n’est pas changé explicitement.
 
 - [`docs/DB_AUDIT.md`](DB_AUDIT.md) aligné sur l’audit live (plus de colonnes `*live*` en attente).
 - Scripts `COLLER-DB-AUDIT.sql` / `COLLER-DB-CLEAN-PREVIEW.sql` **retirés** (chemin SQL Editor abandonné).
-- Migration `20260907064440_…` : **en prod**, absente de ce dossier — à rapatrier, pas à réécrire.
+- Migration `20260907064440_…` : **en prod** et dans Git.
+
+### 2026-09-13 — collages Editor 12/09 (offres)
+
+Les noms `essentiel_and_addon_offers`, `essentiel_and_addon_status_and_reminders` et `suggest_profiles_gate_geo_addons` n’ont jamais eu de fichier git homonyme. Ils sont absorbés par les migrations horodatées (voir `20260913220000_editor_offer_sql_absorbed.sql`). **Staging : rejouer `supabase/migrations/` dans l’ordre, ne pas rapatrier ces 3 noms depuis la prod.**
 
 ---
 
@@ -178,5 +182,4 @@ Pas de patch code tant que ce contrat n’est pas changé explicitement.
 
 1. **MCP lecture** : datation des 17+11 comptes orphelins (requête §4). Purge seulement après.
 2. **Notifications** : rien en base. Changer le contrat digest seulement si produit le demande.
-3. Rapatrier le fichier SQL `20260907064440_rls_select_auth_uid_wrap_and_drop_redundant_indexes.sql` dans Git pour coller au tracking prod.
-4. Rien d’autre en attente côté base.
+3. Rien d’autre en attente côté base pour le suivi des offres / collages 12/09.
