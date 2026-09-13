@@ -44,13 +44,13 @@ export const FOUNDER_AFTER_6_MONTHS_COPY_A =
 export const FOUNDER_AFTER_6_MONTHS_COPY_B =
   'Tu restes libre d’annuler en 1 clic, de migrer vers l’offre Freemium ou de soutenir la communauté avec l’offre Premium à 19,99 € / mois. Aucune obligation.';
 
-export function founderAfter6MonthsCopyC(): string {
-  return t('landing.after6MonthsBody');
+export function founderAfter6MonthsCopyC(price: string): string {
+  return t('landing.after6MonthsBody', { price });
 }
 
 /** Dernier corps validé — à réafficher dans l’encart après 6 mois. */
-export function founderAfter6MonthsBody(): string {
-  return t('landing.after6MonthsBody');
+export function founderAfter6MonthsBody(price: string): string {
+  return t('landing.after6MonthsBody', { price });
 }
 
 /** Statut minimal pour nommer l’offre choisie à l’inscription. */
@@ -105,7 +105,7 @@ export function offerShortName(status: OfferStatusLike): string {
 }
 
 /** Archive nommée (A = git, B = utilisateur, C = dernier validé). */
-export function founderAfter6MonthsArchive(): {
+export function founderAfter6MonthsArchive(price = ''): {
   A: string;
   B: string;
   C: string;
@@ -113,6 +113,6 @@ export function founderAfter6MonthsArchive(): {
   return {
     A: FOUNDER_AFTER_6_MONTHS_COPY_A,
     B: FOUNDER_AFTER_6_MONTHS_COPY_B,
-    C: t('landing.after6MonthsBody'),
+    C: founderAfter6MonthsCopyC(price),
   };
 }

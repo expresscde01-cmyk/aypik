@@ -209,7 +209,13 @@ function FreemiumClaimCard({
   );
 }
 
-function OptionalPremiumNote({ months }: { months: number }) {
+function OptionalPremiumNote({
+  months,
+  price,
+}: {
+  months: number;
+  price: string;
+}) {
   const { t } = useTranslation();
   if (SITE_FREE_MODE) return null;
 
@@ -224,7 +230,7 @@ function OptionalPremiumNote({ months }: { months: number }) {
             {t('membership.afterMonthsTitle', { months })}
           </p>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-            {founderAfter6MonthsBody()}
+            {founderAfter6MonthsBody(price)}
           </p>
         </div>
       </div>
@@ -427,7 +433,7 @@ export function MembershipPanel({
       )}
 
       {!SITE_FREE_MODE && periodActive && (
-        <OptionalPremiumNote months={status.founder_premium_months} />
+        <OptionalPremiumNote months={status.founder_premium_months} price={priceLabel} />
       )}
 
       <div className="space-y-3 pt-1">
