@@ -487,7 +487,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                   des profils « femme », et réciproquement ;
                 </li>
                 <li>
-                  un écart d&apos;âge entre les deux membres, apprécié dans
+                  un écart d&apos;âge raisonnable entre les deux membres, apprécié dans
                   les deux sens, sans qu&apos;un profil mineur puisse jamais
                   être proposé (le Service est réservé aux personnes
                   majeures, article 3.1) ;
@@ -1289,7 +1289,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Pour tous les membres, quelle que soit l&apos;offre : le
                 genre recherché (un homme se voit proposer des profils de
-                femmes, et réciproquement), un écart d&apos;âge entre les
+                femmes, et réciproquement), un écart d&apos;âge raisonnable entre les
                 deux profils, et le fait qu&apos;Aypik s&apos;adresse
                 exclusivement aux personnes sans enfants. Ces critères ne
                 sont pas optionnels. Le périmètre géographique et les
