@@ -248,6 +248,17 @@ export function regionsAreNeighbors(a: string, b: string): boolean {
   return Boolean(REGION_NEIGHBORS[a]?.includes(b));
 }
 
+/** Corse, DOM-TOM ou région inconnue : pas de voisine terrestre → fallback national. */
+export function locationLacksLandNeighbors(
+  location: string | null | undefined
+): boolean {
+  if (!location?.trim()) return false;
+  const region = regionFromDept(parseLocation(location).dept);
+  if (!region) return true;
+  const neighbors = REGION_NEIGHBORS[region];
+  return !neighbors || neighbors.length === 0;
+}
+
 export type GeoProximityFlags = {
   same_city: boolean;
   same_department: boolean;

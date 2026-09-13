@@ -27,6 +27,7 @@ import {
 } from '@/components/membership/PremiumTeasers';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
+import { canPersonalizeSearch, effectiveSuggestionPrefs } from '@/lib/offerAccess';
 import {
   formatPremiumPriceLabel,
   isFounderPeriodActive,
@@ -94,7 +95,6 @@ import ProfilePhoto from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import { unreadMessagesLabel } from '@/components/UnreadBadge';
 import { userErrorMessage } from '@/lib/userError';
-import { isSimplifiedDiscoverMode } from '@/lib/discoverMode';
 import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 import {
   fetchLikeFlashEdges,
@@ -1189,7 +1189,7 @@ export default function DiscoveryPage({
   const filtersActive = !sortEnabled;
   const [openProfile, setOpenProfile] = useState<Candidate | null>(null);
   const [chatPeer, setChatPeer] = useState<Candidate | null>(null);
-  const canFilter = status.can_use_advanced_filters;
+  const canFilter = canPersonalizeSearch(status);
   const geoFilterActive = isGeoFilterActive(geoPerimeter);
   const hasActiveFilter = geoFilterActive || minOverlap > 0;
   /**
@@ -1295,14 +1295,19 @@ export default function DiscoveryPage({
   });
 
   const catalogPrefs = useMemo(() => {
+    const personalized = effectiveSuggestionPrefs(
+      status,
+      prefs,
+      myProfile?.location
+    );
     const base = sortEnabled
-      ? { ...prefs, geoPerimeter: 'anywhere' as const, minOverlap: 0 }
-      : prefs;
+      ? { ...personalized, geoPerimeter: 'anywhere' as const, minOverlap: 0 }
+      : personalized;
     if (!geoExclusiveApplies(base.geoPerimeter)) {
       return { ...base, geoExclusive: false };
     }
     return base;
-  }, [sortEnabled, prefs]);
+  }, [sortEnabled, prefs, status, myProfile?.location]);
   const prefsKey = `${catalogPrefs.geoPerimeter}|${catalogPrefs.franceWorldChoice}|${(catalogPrefs.franceWorldCodes || []).join(',')}|${(catalogPrefs.internationalCountries || []).join(',')}|${(catalogPrefs.worldZones || []).join(',')}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}`;
   const newMonths = newProfilesWindowMonths(signupCount);
   const catalogSort: DiscoveryCatalogSortId = sortEnabled
@@ -1587,25 +1592,32 @@ export default function DiscoveryPage({
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      {status.can_use_advanced_filters ? (
-        <div
-          className={`space-y-2${sortEnabled ? ' discovery-filters--off' : ''}`}
+      <div
+          className={`space-y-2${sortEnabled || !canFilter ? ' discovery-filters--off' : ''}`}
           onClickCapture={(event) => {
-            if (!sortEnabled) return;
-            event.preventDefault();
-            event.stopPropagation();
+            if (sortEnabled || !canFilter) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
           }}
           onPointerDownCapture={(event) => {
-            if (!sortEnabled) return;
-            event.preventDefault();
-            event.stopPropagation();
+            if (sortEnabled || !canFilter) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
           }}
         >
           <AdvancedFiltersTeaser
-            locked={false}
+            locked={!canFilter}
             expanded={filtersActive && showFilters}
-            inactive={sortEnabled}
-            onToggle={handleFiltersToggle}
+            inactive={sortEnabled || !canFilter}
+            onToggle={
+              canFilter
+                ? handleFiltersToggle
+                : () => {
+                    if (!SITE_FREE_MODE) setShowFiltersHint(true);
+                  }
+            }
             activeCount={
               filtersActive
                 ? [geoFilterActive, minOverlap > 0].filter(Boolean).length
@@ -1633,15 +1645,15 @@ export default function DiscoveryPage({
                       : t('discover.exclusiveHint')}
                 </span>
                 <GeoPerimeterSelect
-                  value={geoPerimeter}
-                  disabled={!filtersActive}
+                  value={canFilter ? geoPerimeter : catalogPrefs.geoPerimeter}
+                  disabled={!filtersActive || !canFilter}
                   isLocked={(id) =>
                     (id === 'international' && isInternationalLocked(status)) ||
                     (id === 'la_france_dans_le_monde' &&
                       isFrancophoneLocked(status))
                   }
                   onChange={(next) => {
-                    if (!filtersActive) return;
+                    if (!filtersActive || !canFilter) return;
                     // Pays francophone / International : options payantes
                     // après la fenêtre gratuite (parcours de conversion,
                     // section 3 ter) — le serveur applique aussi ce
@@ -1675,9 +1687,9 @@ export default function DiscoveryPage({
                   <FranceStrataSelect
                     value={geoPerimeter}
                     exclusive={geoExclusive}
-                    disabled={!filtersActive}
+                    disabled={!filtersActive || !canFilter}
                     onChange={(next) => {
-                      if (!filtersActive) return;
+                      if (!filtersActive || !canFilter) return;
                       if (isGeoPerimeterFilter(next)) {
                         setPrefs((prev) => ({
                           ...prev,
@@ -1689,7 +1701,7 @@ export default function DiscoveryPage({
                       }
                     }}
                     onExclusiveChange={(next) => {
-                      if (!filtersActive) return;
+                      if (!filtersActive || !canFilter) return;
                       setPrefs((prev) => ({ ...prev, geoExclusive: next }));
                     }}
                   />
@@ -1698,9 +1710,9 @@ export default function DiscoveryPage({
                   <WorldZoneSelect
                     value={worldZones}
                     countries={internationalCountries}
-                    disabled={!filtersActive}
+                    disabled={!filtersActive || !canFilter}
                     onChange={(next) => {
-                      if (!filtersActive) return;
+                      if (!filtersActive || !canFilter) return;
                       setPrefs((prev) => ({
                         ...prev,
                         worldZones: next.worldZones,
@@ -1713,9 +1725,9 @@ export default function DiscoveryPage({
                   <FranceWorldSelect
                     value={franceWorldChoice}
                     codes={franceWorldCodes}
-                    disabled={!filtersActive}
+                    disabled={!filtersActive || !canFilter}
                     onChange={(next) => {
-                      if (!filtersActive) return;
+                      if (!filtersActive || !canFilter) return;
                       setPrefs((prev) => ({
                         ...prev,
                         franceWorldChoice: next.choice,
@@ -1729,9 +1741,9 @@ export default function DiscoveryPage({
                 {t('discover.interestsInCommonMin')}
                 <InterestOverlapSelect
                   value={minOverlap}
-                  disabled={!filtersActive}
+                  disabled={!filtersActive || !canFilter}
                   onChange={(next) => {
-                    if (!filtersActive) return;
+                    if (!filtersActive || !canFilter) return;
                     setPrefs((prev) => ({ ...prev, minOverlap: next }));
                   }}
                 />
@@ -1739,16 +1751,8 @@ export default function DiscoveryPage({
             </div>
           )}
         </div>
-      ) : (
-        <AdvancedFiltersTeaser
-          locked={!status.can_use_advanced_filters}
-          onAskPremium={() => setShowFiltersHint(true)}
-          priceLabel={priceLabel}
-          status={status}
-        />
-      )}
 
-      {showFiltersHint && !status.can_use_advanced_filters && !SITE_FREE_MODE && (
+      {showFiltersHint && !canFilter && !SITE_FREE_MODE && (
         <SoftPremiumBanner
           title={t('discover.advancedFilters')}
           description={
@@ -2222,7 +2226,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             >
               <Heart className="w-4 h-4 text-white" fill="white" />
             </DiscoveryActionButton>
-            {isSimplifiedDiscoverMode(c.discover_mode) ? (
+            {c.open_messaging ? (
               <DiscoveryActionButton
                 tooltip={t('discover.dialogueTooltip')}
                 onClick={(e) => {

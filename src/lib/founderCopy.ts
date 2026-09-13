@@ -4,11 +4,15 @@ import { t } from '../i18n/t.ts';
  * Mode site entièrement gratuit (Fondateur / FREE).
  * Passer à `false` pour restaurer l’UI payante : encart « Après tes 6 mois »,
  * cartes Premium/Boost, prix landing, teasers et CGU tarifaires.
+ *
+ * La bascule produit vers le payant est liée au numerus clausus (1000 Fondateurs
+ * actifs simultanés), pas à une date calendaire. Elle reste manuelle ici : ne pas
+ * inverser ce flag automatiquement si le seuil n’est pas atteint.
  */
 export const SITE_FREE_MODE: boolean = true;
 
 /** Numerus clausus Fondateur (aligné sur platform_settings.founder_max_slots). */
-export const FOUNDER_MAX_SLOTS = 500;
+export const FOUNDER_MAX_SLOTS = 1000;
 
 export function founderSlotsSubtitle(): string {
   return t('landing.founderSlotsSubtitle', { maxSlots: FOUNDER_MAX_SLOTS });
@@ -86,6 +90,7 @@ export function offerLabel(status: OfferStatusLike): string {
   if (status.plan === 'premium') return t('common.offer.premium');
   if (status.plan === 'confort') return t('common.offer.confort');
   if (status.plan === 'essentiel') return t('common.offer.essentiel');
+  if (status.plan === 'basique') return t('common.offer.basique');
   return t('common.offer.freemium');
 }
 
@@ -95,6 +100,7 @@ export function offerShortName(status: OfferStatusLike): string {
   if (status.plan === 'premium') return t('common.offer.shortPremium');
   if (status.plan === 'confort') return t('common.offer.shortConfort');
   if (status.plan === 'essentiel') return t('common.offer.shortEssentiel');
+  if (status.plan === 'basique') return t('common.offer.shortBasique');
   return t('common.offer.shortFreemium');
 }
 

@@ -39,7 +39,7 @@ Sitio web: https://www.o2switch.fr
 
 **2.1 Objeto**
 
-Los presentes Términos de Servicio (los "Términos") definen las condiciones de acceso y uso del Servicio Aypik: creación de perfil, descubrimiento de miembros, expresión de interés (Like, Flash), formación de Matches, mensajería condicionada a un Match y, al finalizar su Período de prueba (artículo 4), a la contratación de una suscripción de pago activa, así como la configuración de visibilidad de la cuenta.
+Los presentes Términos de Servicio (los "Términos") definen las condiciones de acceso y uso del Servicio Aypik: creación de perfil, descubrimiento de miembros, expresión de interés (Like, Flash), formación de Matches, acceso a la mensajería (modo Diálogo) según la oferta del remitente y, en su caso, sujeto a un Match cuando el perfil del destinatario pertenece a una oferta que garantiza que no será contactado sin reciprocidad (Confort, Premium o un Miembro Fundador durante su Período de prueba), salvo si ese destinatario ha activado él mismo el modo Simplificado (glosario «Mensajería y consentimiento»), al finalizar su Período de prueba (artículo 4), a la contratación de una suscripción de pago activa, así como la configuración de visibilidad de la cuenta.
 
 Estos Términos no constituyen condiciones generales de venta. Las eventuales ofertas de pago, en particular la que permite el envío de mensajes al finalizar el Período de prueba mencionado en el artículo 4, se rigen por Condiciones Generales de Venta (CGV) distintas, mencionadas en el apartado 2.4.
 
@@ -51,7 +51,7 @@ Registrarse, crear una cuenta o utilizar el Servicio implica la aceptación plen
 
 Permanecen disponibles de forma gratuita, sin obligación de pago ni de tarjeta bancaria: la creación y gestión de un perfil, la consulta de los perfiles compatibles mostrados en Descubrir y en las sugerencias, la expresión de interés (Like, Flash) y la formación de Matches.
 
-El envío de mensajes a un miembro con el que se ha hecho Match está incluido de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, un mes para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Más allá de ese período, el envío de nuevos mensajes queda reservado a los usuarios que dispongan de una suscripción activa, en las condiciones y tarifas establecidas en las Condiciones Generales de Venta mencionadas en el apartado 2.4.
+El envío de mensajes (modo Diálogo) está incluido de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Esta ventana no es renovable. Más allá de ese período, el envío de nuevos mensajes queda reservado a los usuarios que dispongan de una suscripción activa (Basique, Essentiel, Confort o Premium), en las condiciones y tarifas establecidas en las Condiciones Generales de Venta mencionadas en el apartado 2.4. La apertura de un Diálogo sin Match depende del destinatario (perfil abierto o protegido), según el apartado 2.1.
 
 La consulta de los Matches ya formados y de los mensajes ya recibidos sigue siendo accesible sin pago. El usuario que no desee contratar una suscripción conserva acceso completo a la creación de perfil, a Descubrir, al Like, al Flash y a la formación de Matches; solo el envío de nuevos mensajes, al finalizar su Período de prueba (artículo 4), está sujeto a esta condición.
 
@@ -101,15 +101,21 @@ El editor podrá rechazar el registro, o suspender o eliminar, sin previo aviso 
 
 Los usuarios se comprometen a un uso leal, respetuoso y considerado del Servicio: sin acoso, insultos, comentarios de odio, contenido ilícito, suplantación de identidad, prospección comercial no autorizada ni comportamiento que pueda comprometer la seguridad de terceros.
 
-La mensajería solo se abre tras un Match, con el fin de limitar los contactos no solicitados. Un Like permanece discreto hasta que es correspondido. Los plazos y las etiquetas relativas a los perfiles en espera, así como los estados "Primer mensaje" y "Conversación en curso", se detallan en el Anexo A (Glosario), en aras de la transparencia y para evitar cualquier ambigüedad sobre el cierre de las interacciones.
+La apertura de un Diálogo sin Match solo es posible cuando el perfil del destinatario está abierto, según el apartado 2.1 y el glosario «Mensajería y consentimiento». Un Match, cuando existe, abre siempre el Diálogo. Un Like permanece discreto hasta que es correspondido. Los plazos y las etiquetas relativas a los perfiles en espera, así como los estados "Primer mensaje" y "Conversación en curso", se detallan en el Anexo A (Glosario), en aras de la transparencia y para evitar cualquier ambigüedad sobre el cierre de las interacciones.
 
 En el marco de una obligación de medios, el editor podrá moderar, ocultar o eliminar contenido, y advertir, suspender o eliminar una cuenta, sin previo aviso cuando la gravedad de los hechos lo justifique. Puede enviarse una denuncia a aypik.contact@gmail.com.
 
 Un usuario cuya cuenta haya sido suspendida o eliminada por incumplimiento de estos Términos podrá impugnar esta decisión escribiendo a aypik.contact@gmail.com, exponiendo los puntos que desee que se tengan en cuenta. El editor examina estas impugnaciones en un plazo razonable.
 
-**3.5 Género y Criterios de Emparejamiento**
+**3.5 Criterios de emparejamiento**
 
-El género (hombre o mujer), que debe indicarse en el registro, determina los criterios de emparejamiento: a una cuenta "hombre" se le muestran perfiles "mujer", y viceversa.
+Los perfiles mostrados en Descubrir y en las sugerencias de la página de Inicio se seleccionan según criterios permanentes, independientes de la oferta contratada:
+
+- el género (hombre o mujer), que debe indicarse en el registro: a una cuenta "hombre" se le muestran perfiles "mujer", y viceversa;
+- una diferencia de edad entre ambos miembros, apreciada en los dos sentidos, sin que un perfil menor de edad pueda jamás mostrarse (el Servicio está reservado a personas adultas, apartado 3.1);
+- únicamente perfiles de personas sin hijos, de conformidad con el objeto del Servicio.
+
+Otros filtros (perímetro geográfico, intereses) dependen de la oferta y, en su caso, de la configuración del miembro, según el apartado 3.7.1.
 
 **3.6 Contraseña**
 
@@ -119,7 +125,7 @@ El usuario puede cambiar su contraseña en cualquier momento desde la configurac
 
 *3.7.1 Filtrado de las Sugerencias*
 
-Los perfiles mostrados en Descubrir y en las sugerencias de la página de Inicio se determinan según los criterios de emparejamiento (apartado 3.5) y los mecanismos descritos en el glosario (Like, Flash, Match).
+Los perfiles mostrados en Descubrir y en las sugerencias de la página de Inicio se determinan según los criterios permanentes de emparejamiento (apartado 3.5), sea cual sea la oferta contratada, y los mecanismos descritos en el glosario (Like, Flash, Match).
 
 Un perfil al que el usuario ya haya enviado un Like o un Flash deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio. Esta exclusión no elimina la interacción ya registrada: el perfil sigue siendo gestionable desde Mis Matches, según su estado (Por revisar, Match, archivado, etc.).
 
@@ -153,9 +159,9 @@ El tratamiento de last_active_at se describe en el apartado 8.1.
 
 ### Artículo 4 — Período de prueba y estatus «Miembro Fundador»
 
-**4.1 Miembros Fundadores (las primeras 500 cuentas)**
+**4.1 Miembros Fundadores (hasta 1000 cuentas activas)**
 
-Se otorga un estatus honorífico de «Miembro Fundador» a las primeras 500 cuentas creadas en el Servicio, dentro del límite de plazas disponibles. Una vez alcanzado este límite, el estatus deja de otorgarse a los nuevos inscritos. Los números de Miembro Fundador se asignan de forma secuencial y nunca se reasignan.
+Se otorga un estatus honorífico de «Miembro Fundador» dentro del límite de 1000 cuentas activas simultáneamente (cuentas no eliminadas, con independencia de la frecuencia de conexión). La inactividad nunca libera una plaza. Una plaza solo se libera si el titular elimina su cuenta. Los números se asignan entre los números disponibles del 1 al 1000; un número liberado por una eliminación puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope. Un mismo número puede, por tanto, ser ostentado por varias personas sucesivas a lo largo del tiempo. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: el Servicio permanece en fase de lanzamiento mientras no se alcancen simultáneamente 1000 cuentas de Miembro Fundador activas.
 
 Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes, Likes y Flashes ilimitados, y un impulso de visibilidad del perfil durante el primer mes tras el registro.
 
@@ -163,25 +169,15 @@ Este estatus es honorífico: más allá de las ventajas del Período de prueba d
 
 **4.2 Otros usuarios**
 
-Todo usuario que cree una cuenta más allá de las primeras 500 se beneficia de un Período de prueba de un (1) mes a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, impulso de visibilidad) reservadas a los Miembros Fundadores en el apartado 4.1.
+Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador disponible (tope de 1000 cuentas de Miembro Fundador activas alcanzado) se beneficia de un Período de prueba de una (1) semana a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, impulso de visibilidad) reservadas a los Miembros Fundadores en el apartado 4.1.
 
 **4.3 Al finalizar el Período de prueba**
 
-Al finalizar su Período de prueba —seis meses para un Miembro Fundador, un mes para cualquier otro usuario— y a falta de contratación de un plan de pago, el usuario conserva acceso gratuito a la creación y gestión de su perfil, a Descubrir, al Like, al Flash, a la formación de Matches y a la lectura de los mensajes ya recibidos. Solo el envío de nuevos mensajes queda entonces sujeto a la contratación de un plan de pago activo, en las condiciones del apartado 2.4.
+Al finalizar su Período de prueba —seis meses para un Miembro Fundador, una semana para cualquier otro usuario— y a falta de contratación de un plan de pago, el usuario conserva acceso gratuito a la creación y gestión de su perfil, a Descubrir, al Like, al Flash, a la formación de Matches y a la lectura de los mensajes ya recibidos. Solo el envío de nuevos mensajes queda entonces sujeto a la contratación de un plan de pago activo, en las condiciones del apartado 2.4.
 
 ### Artículo 5 — Boost y Estatus Premium
 
 La insignia "Premium" es la etiqueta visual de las ventajas de Fundador durante su período de activación de 6 meses (Artículo 4): muestra visualmente, en el perfil, que estas ventajas (Likes y Flashes ilimitados, Boost gratuito el primer mes) están actualmente activas. Desaparece al finalizar los 6 meses, a diferencia del título honorífico "Miembro Fundador" y su número, que permanecen mostrados mientras la cuenta esté activa (Artículo 4). La validez del Boost puede consultarse en cualquier momento desde la página "Mi Perfil".
-
-### Artículo 5 bis — Modos de visualización "simplificado" y "detallado"
-
-Cada miembro puede elegir libremente, en cualquier momento y sin coste, desde el menú de la cuenta, entre dos modos de visualización de las páginas Descubrir y Mis Matches.
-
-**Modo detallado** (modo predeterminado). Se mantiene visible el recorrido completo de puesta en contacto, con sus distintas etapas (Por estudiar, En espera, Match, Conversación en curso, Matches rotos). Enviar un mensaje a otro miembro requiere una puesta en contacto recíproca (Like o Flash compartido), conforme al funcionamiento descrito en el Artículo 3.7.1.
-
-**Modo simplificado.** Las páginas Descubrir y Mis Matches se muestran de forma simplificada: en Mis Matches solo aparecen las conversaciones realmente iniciadas (mensaje enviado por ambas partes). Un botón "Diálogo" permite escribir directamente a otro miembro que también esté en modo simplificado, sin Like ni Flash previo, siempre que, al finalizar su Período de prueba (artículo 4), se disponga de una suscripción activa en las condiciones del apartado 2.3. Al activar este modo, el usuario consiente expresamente en recibir, por parte de otros miembros también en modo simplificado, un primer mensaje sin haber expresado él mismo un interés recíproco previamente.
-
-Esta elección es reversible en cualquier momento desde el menú de la cuenta. A la fecha de estos Términos, no tiene ninguna incidencia sobre el estatus de suscripción (Fundador, Premium u oferta básica): se ofrece de forma gratuita a todos los miembros, conforme al Artículo 2.3. Este funcionamiento puede evolucionar en las condiciones previstas en el Artículo 2.4.
 
 ### Artículo 6 — Propiedad Intelectual y Contenido del Usuario
 
@@ -233,7 +229,7 @@ Los modos de visibilidad descritos en el apartado 3.7, incluida la opción "Paus
 
 Para el usuario, esta eliminación es definitiva: el perfil deja de ser visible y de utilizarse. Por motivos técnicos y de seguridad (corrección de un error de tratamiento, obligaciones legales), los datos pueden conservarse internamente durante un período de purga de treinta (30) días, transcurrido el cual se borran de forma irrecuperable. Determinados registros estrictamente necesarios (por ejemplo, futuras facturas, o conservación exigida por la ley) podrán, en su caso, conservarse durante más tiempo, de forma separada.
 
-El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente y no puede reasignarse.
+El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente para esa cuenta. El número así liberado puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope de 1000 Miembros Fundadores activos.
 
 El editor podrá dar de baja una cuenta en caso de incumplimiento grave o reiterado de estos Términos.
 
@@ -251,9 +247,9 @@ En caso de litigio, y tras un intento de resolución amistosa (contacto: aypik.c
 
 **Flash.** Una acción prioritaria, más fuerte que un simple Like, que envía una señal clara y directa a la persona destinataria para indicar un interés inmediato.
 
-**Match.** Una relación recíproca establecida entre dos miembros, que confirma que se ha establecido un interés mutuo (ya sea por Likes cruzados o por un Flash aceptado). Es esta confirmación mutua la que abre el acceso a la mensajería, siempre que, al finalizar su Período de prueba (artículo 4), se disponga de una suscripción activa que permita el envío de mensajes (apartado 2.3).
+**Match.** Una relación recíproca establecida entre dos miembros, que confirma que se ha establecido un interés mutuo (ya sea por Likes cruzados o por un Flash aceptado). Un Match abre siempre el Diálogo entre los dos perfiles, independientemente de sus ofertas. El envío de mensajes sigue sujeto a la capacidad de envío del remitente al finalizar su Período de prueba (artículo 4), según el apartado 2.3.
 
-**Mensajería y Consentimiento.** Como medida de seguridad y para evitar contactos no solicitados, el envío de mensajes está estrictamente condicionado a un Match previo. Por tanto, no es posible conversar con un miembro sin haber recibido, o haber visto aceptado a cambio, su Like/Flash. Además de esta condición, el envío de mensajes también está condicionado, al finalizar su Período de prueba (artículo 4), a la contratación de una suscripción de pago activa (apartados 2.3 y 2.4).
+**Mensajería y Consentimiento.** La apertura de un Diálogo sin Match solo es posible cuando el perfil del destinatario está abierto (Gratis, Basique, Essentiel). Un destinatario Confort, Premium o Miembro Fundador durante su Período de prueba solo es contactable tras un Match (Like o Flash recíproco), salvo si ha activado el modo Simplificado: entonces es contactable sin Match, como un perfil Essentiel. Esa elección solo rige en recepción: nunca permite escribir a otro perfil que siga protegido sin Match. Un Match, cuando existe, abre siempre el Diálogo. Además, el remitente debe disponer de capacidad de envío (la semana de prueba Gratis, o un plan de pago activo) al finalizar su Período de prueba (artículo 4), según los apartados 2.3 y 2.4.
 
 **Por Revisar.** El estado de un perfil cuyo Like o Flash se ha recibido y aún no ha sido decidido. El usuario puede entonces rechazar el perfil, ponerlo en espera o confirmar un Match.
 
@@ -290,11 +286,14 @@ Un perfil en estado de "espera" (ya sea por parte del usuario o del otro miembro
 **¿Puedo registrarme si soy menor de 18 años?**
 No. El Servicio está exclusivamente reservado para personas adultas.
 
+**¿Según qué criterios se me proponen los perfiles en Descubrir?**
+Para todos los miembros, sea cual sea la oferta: el género buscado (a un hombre se le muestran perfiles de mujeres, y viceversa), una diferencia de edad entre ambos perfiles, y el hecho de que Aypik se dirige exclusivamente a personas sin hijos. Estos criterios no son opcionales. El perímetro geográfico y los intereses pueden, según la oferta, personalizarse (apartado 3.7.1).
+
 **¿Puedo crear varias cuentas?**
 No. Una cuenta por persona y por dirección de correo electrónico, conforme al apartado 3.3.
 
 **¿El Servicio se convertirá en un servicio de pago?**
-La creación de perfil, el descubrimiento de miembros, el Like, el Flash y la formación de Matches siguen siendo gratuitos. El envío de mensajes se ofrece de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para los Miembros Fundadores, un mes para los demás usuarios); más allá de ese período, requiere una suscripción activa, cuyas condiciones y tarifas se detallan en Condiciones Generales de Venta distintas, comunicadas antes de cualquier contratación y de cualquier pago.
+La creación de perfil, el descubrimiento de miembros, el Like, el Flash y la formación de Matches siguen siendo gratuitos. El envío de mensajes se ofrece de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para los Miembros Fundadores, una semana para los demás usuarios); más allá de ese período, requiere una suscripción activa, cuyas condiciones y tarifas se detallan en Condiciones Generales de Venta distintas, comunicadas antes de cualquier contratación y de cualquier pago.
 
 **¿Puedo seguir consultando y leyendo los mensajes ya recibidos sin suscripción?**
 Sí. Al finalizar su Período de prueba (artículo 4), solo el envío de nuevos mensajes está reservado a los suscriptores; la consulta de los Matches y de los mensajes ya recibidos sigue siendo accesible sin pago (apartado 2.3).
@@ -303,7 +302,7 @@ Sí. Al finalizar su Período de prueba (artículo 4), solo el envío de nuevos 
 Se solicita desde tu perfil. El perfil deja de ser visible. Los datos se borran de forma irrecuperable tras un período de purga de 30 días (apartado 8.2).
 
 **¿Qué ocurre con la insignia de Miembro Fundador si cancelo mi cuenta?**
-El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente y no puede reasignarse.
+El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente para esa cuenta. El número así liberado puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope de 1000 Miembros Fundadores activos.
 
 **¿Puede reaparecer en Descubrir un perfil al que ya le he dado Like o Flash?**
 No. Deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio (apartado 3.7.1). La interacción sigue siendo gestionable desde Mis Matches.

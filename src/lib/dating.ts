@@ -72,9 +72,9 @@ export function minPartnerAge(age: number): number {
   return Math.floor(age / 2) + 7;
 }
 
-/** Partner is allowed if their age is not below the viewer's half-plus-seven. */
+/** Partner is allowed if their age is not below max(18, viewer's half-plus-seven). */
 export function isWithinAgeGap(myAge: number, partnerAge: number): boolean {
-  return partnerAge >= minPartnerAge(myAge);
+  return partnerAge >= Math.max(MIN_USER_AGE, minPartnerAge(myAge));
 }
 
 /** Latest YYYY-MM-DD a partner may have been born to be at least `minAge` today. */

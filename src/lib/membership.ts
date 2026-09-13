@@ -7,6 +7,7 @@ import { t } from '../i18n/t.ts';
 
 export type MembershipPlan =
   | 'free'
+  | 'basique'
   | 'essentiel'
   | 'confort'
   | 'premium'
@@ -21,12 +22,43 @@ export type AccessPhase =
   | 'trial_simplified'
   | 'post_trial';
 
+export const DEFAULT_BASIQUE_PRICE_CENTS = 999;
 export const DEFAULT_ESSENTIEL_PRICE_CENTS = 1499;
 export const DEFAULT_CONFORT_PRICE_CENTS = 1999;
 export const DEFAULT_PREMIUM_PRICE_CENTS = 2499;
 export const DEFAULT_VISIBILITE_PRICE_CENTS = 299;
 export const DEFAULT_FRANCOPHONE_PRICE_CENTS = 299;
 export const DEFAULT_INTERNATIONAL_PRICE_CENTS = 599;
+/** Mise à niveau International depuis Francophone déjà inclus (Confort). */
+export const DEFAULT_INTERNATIONAL_UPGRADE_PRICE_CENTS = 299;
+
+/** Prix réellement proposé pour l’addon International, selon ce que le compte a déjà. */
+export function internationalAddonPriceCents(
+  status: Pick<
+    MembershipStatus,
+    | 'plan'
+    | 'has_francophone_access'
+    | 'has_international_access'
+    | 'francophone_until'
+    | 'international_until'
+  >
+): number {
+  if (
+    status.plan === 'premium' ||
+    status.has_international_access ||
+    Boolean(status.international_until)
+  ) {
+    return 0;
+  }
+  if (
+    status.plan === 'confort' ||
+    status.has_francophone_access ||
+    Boolean(status.francophone_until)
+  ) {
+    return DEFAULT_INTERNATIONAL_UPGRADE_PRICE_CENTS;
+  }
+  return DEFAULT_INTERNATIONAL_PRICE_CENTS;
+}
 
 const VALID_PHASES: AccessPhase[] = [
   'founder_full',
@@ -70,6 +102,8 @@ export interface MembershipStatus {
   premium_price_cents: number;
   /** Tarif Confort de référence (centimes), ex. 1999 = 19,99 € */
   confort_price_cents: number;
+  /** Tarif Basique de référence (centimes), ex. 999 = 9,99 € */
+  basique_price_cents: number;
   /** Tarif Essentiel de référence (centimes), ex. 1499 = 14,99 € */
   essentiel_price_cents: number;
   /** Tarifs des 3 options à la carte (centimes) */
@@ -90,7 +124,7 @@ export interface MembershipStatus {
   simplified_free_until: string | null;
   /** True uniquement à partir de l’échéance des 6 mois propre à ce compte. */
   payment_visible: boolean;
-  /** Accès à l’envoi de nouveaux messages (Essentiel/Confort/Premium, ou encore en période gratuite). */
+  /** Accès à l’envoi de nouveaux messages (Basique et plus, ou semaine d’essai Gratuit). */
   has_messaging_access: boolean;
   /** Accès aux réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître) — Visibilité ou Premium. */
   has_visibility_access: boolean;
@@ -116,15 +150,16 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   founders_taken: 0,
   founders_max: FOUNDER_MAX_SLOTS,
   founders_remaining: FOUNDER_MAX_SLOTS,
-  free_daily_likes: 10,
+  free_daily_likes: 5,
   likes_used_today: 0,
-  likes_remaining_today: 10,
+  likes_remaining_today: 5,
   can_see_who_liked: false,
   can_use_advanced_filters: false,
   unlimited_likes: false,
   premium_price_cents: DEFAULT_PREMIUM_PRICE_CENTS,
   confort_price_cents: DEFAULT_CONFORT_PRICE_CENTS,
   essentiel_price_cents: DEFAULT_ESSENTIEL_PRICE_CENTS,
+  basique_price_cents: DEFAULT_BASIQUE_PRICE_CENTS,
   visibilite_price_cents: DEFAULT_VISIBILITE_PRICE_CENTS,
   francophone_price_cents: DEFAULT_FRANCOPHONE_PRICE_CENTS,
   international_price_cents: DEFAULT_INTERNATIONAL_PRICE_CENTS,
@@ -154,6 +189,7 @@ export function membershipRequiredError(): string {
 const VALID_PLANS: MembershipPlan[] = [
   'free',
   'founder',
+  'basique',
   'essentiel',
   'confort',
   'premium',
@@ -189,6 +225,10 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     typeof d.essentiel_price_cents === 'number'
       ? d.essentiel_price_cents
       : DEFAULT_ESSENTIEL_PRICE_CENTS;
+  const basique_price_cents =
+    typeof d.basique_price_cents === 'number'
+      ? d.basique_price_cents
+      : DEFAULT_BASIQUE_PRICE_CENTS;
   const visibilite_price_cents =
     typeof d.visibilite_price_cents === 'number'
       ? d.visibilite_price_cents
@@ -240,7 +280,7 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     founders_remaining:
       typeof d.founders_remaining === 'number' ? d.founders_remaining : 500,
     free_daily_likes:
-      typeof d.free_daily_likes === 'number' ? d.free_daily_likes : 10,
+      typeof d.free_daily_likes === 'number' ? d.free_daily_likes : 5,
     likes_used_today:
       typeof d.likes_used_today === 'number' ? d.likes_used_today : 0,
     likes_remaining_today: unlimited_likes
@@ -249,14 +289,27 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
         ? null
         : typeof d.likes_remaining_today === 'number'
           ? d.likes_remaining_today
-          : 10,
-    can_see_who_liked: Boolean(d.can_see_who_liked) || has_premium,
+          : 5,
+    can_see_who_liked:
+      Boolean(d.can_see_who_liked) ||
+      plan === 'confort' ||
+      plan === 'premium' ||
+      on_founder_trial,
     can_use_advanced_filters:
-      Boolean(d.can_use_advanced_filters) || has_premium,
-    unlimited_likes,
+      Boolean(d.can_use_advanced_filters) ||
+      on_founder_trial ||
+      plan === 'essentiel' ||
+      plan === 'confort' ||
+      plan === 'premium',
+    unlimited_likes:
+      Boolean(d.unlimited_likes) ||
+      plan === 'confort' ||
+      plan === 'premium' ||
+      on_founder_trial,
     premium_price_cents,
     confort_price_cents,
     essentiel_price_cents,
+    basique_price_cents,
     visibilite_price_cents,
     francophone_price_cents,
     international_price_cents,
@@ -338,6 +391,12 @@ export function isFounderPeriodActive(status: MembershipStatus): boolean {
   return isFounderPrivilegeActive(status);
 }
 
+/** Confort, Premium, ou Fondateur en fenêtre : peut lever sa protection en réception (mode Simplifié). */
+export function canOptOutMessagingProtection(status: MembershipStatus): boolean {
+  if (isFounderPeriodActive(status)) return true;
+  return status.plan === 'confort' || status.plan === 'premium';
+}
+
 /**
  * Abonnement Premium payant encore actif (hors période Fondateur gratuite).
  * Seul ce statut ouvre le formulaire et la collecte de témoignages.
@@ -355,6 +414,7 @@ export function isPaidPremiumActive(status: MembershipStatus): boolean {
 export function isPaidTierActive(status: MembershipStatus): boolean {
   if (status.on_founder_trial || isFounderPeriodActive(status)) return false;
   return (
+    status.plan === 'basique' ||
     status.plan === 'essentiel' ||
     status.plan === 'confort' ||
     status.plan === 'premium'
@@ -379,9 +439,12 @@ export function isPostTrialLocked(status: MembershipStatus): boolean {
   return status.phase === 'post_trial' && !status.has_premium;
 }
 
-/** Verrouillé pour l’envoi de nouveaux messages après la Période d’essai. */
+/** Verrouillé pour l’envoi de nouveaux messages (essai Gratuit écoulé, sans palier payant). */
 export function isMessagingLocked(status: MembershipStatus): boolean {
-  return status.phase === 'post_trial' && !status.has_premium;
+  if (isFounderPeriodActive(status)) return false;
+  if (status.has_messaging_access === false) return true;
+  if (isPaidTierActive(status)) return false;
+  return status.phase === 'post_trial';
 }
 
 /** Verrouillé pour les réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître). */

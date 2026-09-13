@@ -195,10 +195,17 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 d&apos;accès et d&apos;utilisation du Service {BRAND_NAME} :
                 création de profil, découverte de membres, expressions
                 d&apos;intérêt (Like, Flash), constitution de Matchs,
-                messagerie conditionnée à un Match et, à l&apos;issue de sa
-                Période d&apos;essai (article 4), à la souscription
-                d&apos;une offre payante active, ainsi que paramètres de
-                visibilité du compte.
+                accès à la messagerie (mode Dialogue) selon l&apos;offre
+                souscrite par l&apos;expéditeur et, le cas échéant, sous
+                réserve de l&apos;existence d&apos;un Match lorsque le
+                profil du destinataire relève d&apos;une offre garantissant
+                sa non-sollicitation sans réciprocité (Confort, Premium,
+                ou Membre Fondateur pendant sa Période d&apos;essai), sauf
+                si ce destinataire a lui-même activé le mode Simplifié
+                (annexe « Messagerie et consentement »), à
+                l&apos;issue de sa Période d&apos;essai (article 4), à la
+                souscription d&apos;une offre payante active, ainsi que
+                paramètres de visibilité du compte.
               </p>
               <p>
                 Les présentes CGU ne constituent pas des conditions générales
@@ -231,15 +238,20 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 intérêt (Like, Flash) et la constitution de Matchs.
               </p>
               <p>
-                L&apos;envoi de messages à un membre matché est inclus
+                L&apos;envoi de messages (mode Dialogue) est inclus
                 gratuitement pendant la Période d&apos;essai définie à
-                l&apos;article 4 (six mois pour un Membre Fondateur, un mois
-                pour tout autre utilisateur), décomptée individuellement pour
-                chaque utilisateur à compter de la création de son compte.
-                Au-delà, l&apos;envoi de nouveaux messages est réservé aux
-                utilisateurs disposant d&apos;un abonnement actif, dans les
-                conditions et selon les tarifs précisés par les Conditions
-                Générales de Vente (CGV) visées à l&apos;article 2.4.
+                l&apos;article 4 (six mois pour un Membre Fondateur, une
+                semaine pour tout autre utilisateur), décomptée
+                individuellement pour chaque utilisateur à compter de la
+                création de son compte. Cette fenêtre n&apos;est pas
+                renouvelable. Au-delà, l&apos;envoi de nouveaux messages
+                est réservé aux utilisateurs disposant d&apos;un
+                abonnement actif (Basique, Essentiel, Confort ou Premium),
+                dans les conditions et selon les tarifs précisés par les
+                Conditions Générales de Vente (CGV) visées à l&apos;article
+                2.4. L&apos;ouverture d&apos;un Dialogue sans Match dépend
+                du destinataire (profil ouvert ou protégé), selon
+                l&apos;article 2.1.
               </p>
               <p>
                 La consultation des Matchs déjà formés et des messages déjà
@@ -432,8 +444,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 sécurité d&apos;autrui.
               </p>
               <p>
-                La messagerie n&apos;est ouverte qu&apos;après Match, afin de
-                limiter les contacts non sollicités. Le Like demeure discret
+                L&apos;ouverture d&apos;un Dialogue sans Match n&apos;est
+                possible que lorsque le profil du destinataire est ouvert,
+                dans les conditions de l&apos;article 2.1 et de l&apos;annexe
+                « Messagerie et consentement ». Un Match, lorsqu&apos;il
+                existe, ouvre toujours le Dialogue. Le Like demeure discret
                 jusqu&apos;à réciprocité. Les délais et libellés liés aux
                 profils mis en attente, ainsi qu&apos;aux statuts « 1er mot »
                 et « Discussion en cours », sont précisés à l&apos;Annexe A
@@ -458,13 +473,35 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                3.5 Genre et critères de mise en relation
+                3.5 Critères de mise en relation
               </p>
               <p>
-                Le genre (homme ou femme), renseigné obligatoirement à
-                l&apos;inscription, détermine les critères de mise en relation :
-                un compte « homme » se voit proposer des profils « femme », et
-                réciproquement.
+                Les profils proposés sur Découvrir et dans les suggestions
+                de l&apos;Accueil sont sélectionnés selon des critères
+                permanents, indépendants de l&apos;offre souscrite :
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  le genre (homme ou femme), renseigné obligatoirement à
+                  l&apos;inscription : un compte « homme » se voit proposer
+                  des profils « femme », et réciproquement ;
+                </li>
+                <li>
+                  un écart d&apos;âge entre les deux membres, apprécié dans
+                  les deux sens, sans qu&apos;un profil mineur puisse jamais
+                  être proposé (le Service est réservé aux personnes
+                  majeures, article 3.1) ;
+                </li>
+                <li>
+                  uniquement des profils de personnes sans enfants,
+                  conformément à l&apos;objet du Service.
+                </li>
+              </ul>
+              <p>
+                D&apos;autres filtres (périmètre géographique, centres
+                d&apos;intérêt) dépendent de l&apos;offre et, le cas échéant,
+                des réglages du membre, dans les conditions de l&apos;article
+                3.7.1.
               </p>
             </div>
             <div>
@@ -486,9 +523,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Les profils proposés sur Découvrir et dans les suggestions
-                de l&apos;Accueil sont établis selon les critères de mise en
-                relation (article 3.5) et le fonctionnement décrit au
-                glossaire (Like, Flash, Match).
+                de l&apos;Accueil sont établis selon les critères permanents
+                de mise en relation (article 3.5), quelle que soit l&apos;offre
+                souscrite, et le fonctionnement décrit au glossaire (Like,
+                Flash, Match).
               </p>
               <p>
                 Un profil auquel l&apos;utilisateur a déjà adressé un Like
@@ -572,7 +610,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 interactions déjà enregistrées (Likes, Flashs) sont
                 conservés. L&apos;utilisateur peut continuer d&apos;utiliser
                 le Service, y compris Mes Matchs et, dans les conditions de
-                l&apos;article 2.3, la messagerie conditionnée à un Match.
+                l&apos;article 2.3, la messagerie.
               </p>
               <p>
                 <span className="font-semibold text-gray-900">
@@ -635,16 +673,25 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
-                4.1 Membres Fondateurs (les {FOUNDER_MAX_SLOTS} premiers
-                comptes)
+                4.1 Membres Fondateurs (jusqu&apos;à {FOUNDER_MAX_SLOTS}{' '}
+                comptes actifs)
               </p>
               <p>
-                Un statut honorifique de « Membre Fondateur » est attribué aux{' '}
-                {FOUNDER_MAX_SLOTS} premiers comptes créés sur le Service, dans
-                la limite des places disponibles. Dès que ce plafond est
-                atteint, le statut n&apos;est plus attribué aux nouveaux
-                inscrits. Les numéros de Membre Fondateur sont attribués de
-                façon séquentielle et ne sont jamais réattribués.
+                Un statut honorifique de « Membre Fondateur » est attribué dans
+                la limite de {FOUNDER_MAX_SLOTS} comptes actifs simultanément
+                (comptes non supprimés, indépendamment de la fréquence de
+                connexion). L&apos;inactivité ne libère jamais une place. Une
+                place n&apos;est libérée qu&apos;en cas de suppression du
+                compte par son titulaire. Les numéros sont attribués parmi les
+                numéros disponibles entre 1 et {FOUNDER_MAX_SLOTS} ; un numéro
+                libéré par une suppression peut être attribué à un nouvel
+                inscrit tant que le plafond n&apos;est pas atteint. Un même
+                numéro peut donc, dans le temps, être détenu par plusieurs
+                personnes successives. Le passage du Service en mode payant
+                n&apos;est pas déclenché par une date calendaire fixe : le
+                Service reste en phase de lancement tant que{' '}
+                {FOUNDER_MAX_SLOTS} comptes Fondateur actifs ne sont pas
+                simultanément atteints.
               </p>
               <p>
                 Pendant une Période d&apos;essai de six (6) mois à compter de
@@ -672,9 +719,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 4.2 Autres utilisateurs
               </p>
               <p>
-                Tout utilisateur créant un compte au-delà des{' '}
-                {FOUNDER_MAX_SLOTS} premiers bénéficie d&apos;une Période
-                d&apos;essai d&apos;un (1) mois à compter de la création de
+                Tout utilisateur créant un compte alors qu&apos;aucune place
+                Fondateur n&apos;est disponible (plafond de {FOUNDER_MAX_SLOTS}{' '}
+                comptes Fondateur actifs atteint) bénéficie d&apos;une Période
+                d&apos;essai d&apos;une (1) semaine à compter de la création de
                 son compte, pendant laquelle l&apos;envoi de messages est
                 inclus gratuitement, sans carte bancaire ni engagement. Cette
                 Période d&apos;essai n&apos;inclut pas les avantages
@@ -689,7 +737,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 À l&apos;issue de sa Période d&apos;essai — six mois pour un
-                Membre Fondateur, un mois pour tout autre utilisateur — et à
+                Membre Fondateur, une semaine pour tout autre utilisateur — et à
                 défaut de souscription à une offre payante, l&apos;utilisateur
                 conserve un accès gratuit à la création et la gestion de son
                 profil, à Découvrir, au Like, au Flash, à la constitution de
@@ -716,56 +764,6 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               affichés tant que le compte est actif (article 4). La validité
               du Boost est consultable à tout moment depuis la page « Mon
               profil ».
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-base font-bold text-gray-900">
-              Article 5 bis — Modes d&apos;affichage « simplifié » et «
-              détaillé »
-            </h3>
-            <p>
-              Chaque membre peut choisir librement, à tout moment et sans
-              frais, depuis le menu du compte, entre deux modes
-              d&apos;affichage des pages Découvrir et Mes Matchs.
-            </p>
-            <p>
-              <span className="font-semibold text-gray-900">
-                Mode détaillé
-              </span>{' '}
-              (mode par défaut). Le parcours complet de mise en relation
-              reste affiché, avec ses différentes étapes (À étudier, Mis en
-              attente, Match, Discussion en cours, Matchs rompus).
-              L&apos;envoi d&apos;un message à un autre membre suppose une
-              mise en relation réciproque (Like ou Flash partagé),
-              conformément au fonctionnement décrit à l&apos;article 3.7.1.
-            </p>
-            <p>
-              <span className="font-semibold text-gray-900">
-                Mode simplifié.
-              </span>{' '}
-              Les pages Découvrir et Mes Matchs sont présentées de façon
-              épurée : seules les discussions effectivement engagées
-              (message envoyé par les deux parties) apparaissent dans Mes
-              Matchs. Un bouton « Dialogue » permet d&apos;écrire
-              directement à un autre membre également en mode simplifié,
-              sans Like ni Flash préalable, sous réserve, à l&apos;issue de
-              sa Période d&apos;essai (article 4), de disposer d&apos;un
-              abonnement actif dans les conditions de l&apos;article 2.3. En
-              activant ce mode,
-              l&apos;utilisateur consent expressément à recevoir, de la
-              part d&apos;autres membres également en mode simplifié, un
-              premier message sans avoir lui-même exprimé d&apos;intérêt
-              réciproque au préalable.
-            </p>
-            <p>
-              Ce choix est réversible à tout moment depuis le menu du
-              compte. Il n&apos;a, à la date des présentes CGU, aucune
-              incidence sur le statut d&apos;abonnement (Fondateur, Premium
-              ou offre de base) : il est proposé gratuitement à
-              l&apos;ensemble des membres, conformément à l&apos;article
-              2.3. Ce fonctionnement est susceptible d&apos;évoluer dans
-              les conditions prévues à l&apos;article 2.4.
             </p>
           </section>
 
@@ -952,7 +950,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le statut de Membre Fondateur et son numéro associé sont
                 strictement liés au compte actif. En cas de désinscription
                 ou de suppression du compte, le badge est définitivement
-                perdu et ne pourra pas être réattribué.
+                perdu pour ce compte. Le numéro ainsi libéré peut être
+                attribué à un nouvel inscrit tant que le plafond de{' '}
+                {FOUNDER_MAX_SLOTS} Membres Fondateurs actifs n&apos;est pas
+                atteint.
               </p>
               <p>
                 L&apos;éditeur peut résilier un compte en cas de manquement
@@ -1055,10 +1056,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Relation bilatérale établie entre deux membres, actant
                 qu&apos;un intérêt mutuel a été confirmé (qu&apos;il
                 provienne de Likes croisés ou d&apos;un Flash accepté).
-                C&apos;est cette validation mutuelle qui ouvre l&apos;accès
-                à la messagerie, sous réserve, à l&apos;issue de sa Période
-                d&apos;essai (article 4), de disposer d&apos;un abonnement
-                actif permettant l&apos;envoi de messages (article 2.3).
+                Un Match ouvre toujours le Dialogue entre les deux profils,
+                indépendamment de leurs offres. L&apos;envoi de messages
+                reste soumis à la capacité d&apos;envoi de
+                l&apos;expéditeur à l&apos;issue de sa Période
+                d&apos;essai (article 4), selon l&apos;article 2.3.
               </p>
             </div>
             <div>
@@ -1067,14 +1069,21 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Par mesure de sécurité et de prévention des contacts non
-                sollicités, l&apos;envoi de messages est strictement
-                conditionné à un Match préalable. Il est donc impossible de
-                dialoguer avec un membre sans avoir reçu ou vu son
-                Like/Flash accepté en retour. En complément de cette
-                condition, l&apos;envoi de messages est également
-                conditionné, à l&apos;issue de sa Période d&apos;essai
-                (article 4), à la souscription d&apos;une offre payante
-                active (articles 2.3 et 2.4).
+                sollicités, l&apos;ouverture d&apos;un Dialogue sans Match
+                n&apos;est possible que lorsque le profil du destinataire
+                est ouvert (Gratuit, Basique, Essentiel). Un destinataire
+                Confort, Premium ou Membre Fondateur pendant sa Période
+                d&apos;essai n&apos;est joignable qu&apos;après un Match
+                (Like ou Flash réciproque), sauf s&apos;il a activé le mode
+                Simplifié : il devient alors joignable sans Match, comme un
+                profil Essentiel. Ce choix ne joue qu&apos;en réception : il
+                ne permet jamais d&apos;écrire à un autre profil resté
+                protégé sans Match. Un Match, lorsqu&apos;il
+                existe, ouvre toujours le Dialogue. En complément,
+                l&apos;expéditeur doit disposer de la capacité d&apos;envoi
+                (semaine d&apos;essai Gratuit, ou palier payant actif)
+                à l&apos;issue de sa Période d&apos;essai (article 4),
+                selon les articles 2.3 et 2.4.
               </p>
             </div>
             <div>
@@ -1274,11 +1283,42 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
+                Selon quels critères les profils me sont-ils proposés dans
+                Découvrir&nbsp;?
+              </p>
+              <p>
+                Pour tous les membres, quelle que soit l&apos;offre : le
+                genre recherché (un homme se voit proposer des profils de
+                femmes, et réciproquement), un écart d&apos;âge entre les
+                deux profils, et le fait qu&apos;Aypik s&apos;adresse
+                exclusivement aux personnes sans enfants. Ces critères ne
+                sont pas optionnels. Le périmètre géographique et les
+                centres d&apos;intérêt peuvent, selon l&apos;offre, être
+                personnalisés (article 3.7.1).
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
                 Puis-je créer plusieurs comptes&nbsp;?
               </p>
               <p>
                 Non. Un seul compte par personne et par adresse e-mail, selon
                 l&apos;article 3.3.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                Quelles sont les offres payantes&nbsp;?
+              </p>
+              <p>
+                Quatre paliers : Basique (9,99&nbsp;€/mois), Essentiel
+                (14,99&nbsp;€/mois), Confort (19,99&nbsp;€/mois) et Premium
+                (24,99&nbsp;€/mois), plus des options à la carte
+                (Visibilité, portée Francophone ou International — choix
+                exclusif — et Boost 24&nbsp;h). Le détail à jour figure sur
+                la page des offres. Les CGV ci-dessous décrivent les
+                modalités de souscription, de résiliation et de
+                rétractation.
               </p>
             </div>
             <div>
@@ -1290,7 +1330,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Flash et la constitution de Matchs restent gratuits.
                 L&apos;envoi de messages est offert pendant la Période
                 d&apos;essai définie à l&apos;article 4 (six mois pour les
-                Membres Fondateurs, un mois pour les autres utilisateurs) ;
+                Membres Fondateurs, une semaine pour les autres utilisateurs) ;
                 au-delà, il nécessite un abonnement actif, dont les
                 conditions et tarifs sont précisés par des CGV distinctes,
                 communiquées avant toute souscription et tout paiement.
@@ -1327,7 +1367,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le statut de Membre Fondateur et son numéro associé sont
                 strictement liés au compte actif. En cas de désinscription
                 ou de suppression du compte, le badge est définitivement
-                perdu et ne pourra pas être réattribué.
+                perdu pour ce compte. Le numéro ainsi libéré peut être
+                attribué à un nouvel inscrit tant que le plafond de{' '}
+                {FOUNDER_MAX_SLOTS} Membres Fondateurs actifs n&apos;est pas
+                atteint.
               </p>
             </div>
             <div>
@@ -1402,6 +1445,89 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Il indique que le membre est considéré comme en ligne
                 (article 3.8). Ce point n&apos;apparaît pas si ce membre a
                 activé Incognito.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900">
+              Conditions Générales de Vente (CGV)
+            </h3>
+            <p className="text-xs text-gray-500">
+              Squelette publié pour information. À faire relire par un
+              professionnel du droit avant toute commercialisation.
+            </p>
+            <div>
+              <p className="font-semibold text-gray-900">1. Objet</p>
+              <p>
+                Les présentes CGV régissent les offres payantes du Service
+                Aypik : Basique, Essentiel, Confort, Premium, options à la
+                carte (Visibilité, Pays francophone, International) et Boost
+                24 h. Le détail à jour des droits et tarifs figure sur la
+                page des offres du Service.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                2. Souscription, paiement, durée
+              </p>
+              <p>
+                Les abonnements sont sans engagement de durée, renouvelés
+                mensuellement, et résiliables en un clic depuis le profil.
+                L&apos;accès payant reste actif jusqu&apos;à la fin de la
+                période déjà réglée. Le paiement est assuré par des
+                prestataires (carte via Stripe, PayPal). Aypik ne stocke pas
+                les données de carte.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3. Rétractation et Boost
+              </p>
+              <p>
+                Les règles de rétractation applicables aux services
+                numériques fournis immédiatement s&apos;articulent avec la
+                Période d&apos;essai visée à l&apos;article 4 des CGU. Le
+                Boost 24 h est un achat unique, non remboursable une fois
+                activé.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4. Membre Fondateur
+              </p>
+              <p>
+                Le statut de Membre Fondateur est une offre promotionnelle
+                distincte (6 mois offerts, jusqu&apos;à {FOUNDER_MAX_SLOTS}{' '}
+                comptes actifs). À l&apos;issue de cette période, le compte
+                bascule vers l&apos;offre Gratuite, sauf souscription d&apos;un
+                palier payant. Le badge et le numéro restent affichés tant que
+                le compte n&apos;est pas supprimé.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                5. Modification des tarifs
+              </p>
+              <p>
+                Les tarifs et le contenu des offres peuvent évoluer. La
+                version à jour est celle affichée sur la page des offres.
+                Une modification en cours d&apos;abonnement est notifiée
+                avant son application.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                6. Portée Francophone / International
+              </p>
+              <p>
+                Francophone et International forment un choix exclusif à
+                deux paliers, non cumulables. International englobe déjà
+                Francophone. Le tarif International est de 5,99&nbsp;€
+                depuis Essentiel (aucune extension incluse) et de
+                2,99&nbsp;€ depuis Confort (mise à niveau : Francophone est
+                déjà inclus dans l&apos;abonnement). Il est inclus dans
+                Premium.
               </p>
             </div>
           </section>

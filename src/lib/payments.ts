@@ -10,6 +10,7 @@ function paymentsDisabledMessage(): string {
 
 export type PaymentMethodChoice = 'card' | 'paypal';
 export type PaymentPlanTier =
+  | 'basique'
   | 'essentiel'
   | 'confort'
   | 'premium'

@@ -11,15 +11,17 @@ import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutMod
 import { offerCardDomId, type HighlightOffer } from '@/lib/conversionNav';
 import { useTranslation } from 'react-i18next';
 
-export type TierPlan = 'essentiel' | 'confort' | 'premium';
+export type TierPlan = 'basique' | 'essentiel' | 'confort' | 'premium';
 
-const TIER_OFFER_NAME_KEY: Record<TierPlan, string> = {
+const TIER_OFFER_NAME_KEY = {
+  basique: 'common.offer.shortBasique',
   essentiel: 'common.offer.shortEssentiel',
   confort: 'common.offer.shortConfort',
   premium: 'common.offer.shortPremium',
-};
+} as const;
 
 const TIER_HIGHLIGHT: Record<TierPlan, HighlightOffer> = {
+  basique: 'basique',
   essentiel: 'simplifie',
   confort: 'detaille',
   premium: 'premium',
@@ -54,21 +56,30 @@ export function PremiumConversionCard({
   const lockReason = disabledReason ?? t('membership.founderIncludesPremium');
   const offerName = t(TIER_OFFER_NAME_KEY[plan]);
   const premiumPerks =
-    plan === 'essentiel'
-      ? [t('membership.benefitMessaging')]
-      : [
-          t('membership.benefitWhoLiked'),
-          t('membership.benefitGeoInterests'),
-          t('membership.benefitUnlimitedLikes'),
-          ...(plan === 'premium' ? [t('membership.benefitFullAccess')] : []),
-        ];
+    plan === 'basique'
+      ? [t('membership.benefitMessaging'), t('membership.benefitQuotaBasique')]
+      : plan === 'essentiel'
+        ? [
+            t('membership.benefitMessaging'),
+            t('membership.benefitGeoInterests'),
+            t('membership.benefitQuotaEssentiel'),
+          ]
+        : [
+            t('membership.benefitWhoLiked'),
+            t('membership.benefitGeoInterests'),
+            t('membership.benefitUnlimitedLikes'),
+            ...(plan === 'confort' ? [t('membership.benefitFrancophone')] : []),
+            ...(plan === 'premium' ? [t('membership.benefitFullAccess')] : []),
+          ];
 
   const priceCents =
     plan === 'premium'
       ? status.premium_price_cents
       : plan === 'essentiel'
         ? status.essentiel_price_cents
-        : status.confort_price_cents;
+        : plan === 'basique'
+          ? status.basique_price_cents
+          : status.confort_price_cents;
   const priceLabel = formatPremiumPriceLabel(
     priceCents,
     status.premium_currency,

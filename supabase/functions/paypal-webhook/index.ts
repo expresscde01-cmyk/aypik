@@ -1,17 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { activatePaidOffer, parsePlan, type PlanTier } from "../_shared/plans.ts";
 
 type SupabaseAdmin = ReturnType<typeof createClient>;
 
-/**
- * Le palier acheté (confort | premium) est déterminé à la création de
- * l'abonnement (cf. create-paypal-subscription) et stocké dans
- * payment_subscriptions.plan — c'est la source de vérité.
- */
 async function getPlanForSubscription(
   admin: SupabaseAdmin,
   subscriptionId: string | undefined
-): Promise<"confort" | "premium"> {
+): Promise<PlanTier> {
   if (!subscriptionId) return "confort";
   const { data } = await admin
     .from("payment_subscriptions")
@@ -19,7 +15,7 @@ async function getPlanForSubscription(
     .eq("provider", "paypal")
     .eq("provider_subscription_id", subscriptionId)
     .maybeSingle();
-  return data?.plan === "premium" ? "premium" : "confort";
+  return parsePlan(data?.plan);
 }
 
 /**
@@ -48,12 +44,7 @@ Deno.serve(async (req) => {
     ) {
       if (userId && subscriptionId) {
         const plan = await getPlanForSubscription(admin, subscriptionId);
-        await admin.rpc("activate_paid_premium", {
-          p_user_id: userId,
-          p_provider: "paypal",
-          p_period_end: null,
-          p_plan: plan,
-        });
+        await activatePaidOffer(admin, userId, plan, "paypal", null);
         await admin
           .from("payment_subscriptions")
           .update({ status: "active" })

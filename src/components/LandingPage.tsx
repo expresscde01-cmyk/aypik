@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type PointerEvent } from 'react';
 import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalChrome';
+import { OfferSummaryCards } from '@/components/membership/OfferSummaryCards';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
   HeaderTaglineWidthProbe,
@@ -365,27 +366,7 @@ export default function LandingPage({
     ],
     accent: 'founder' as const,
   };
-  const paidOffers = [
-    {
-      id: 'premium' as const,
-      title: t('landing.premiumTitle'),
-      description: t('landing.premiumDesc'),
-      accent: 'premium' as const,
-    },
-    {
-      id: 'boost' as const,
-      title: t('landing.boostTitle'),
-      description: t('landing.boostDesc'),
-      accent: 'boost' as const,
-    },
-    {
-      id: 'freemium' as const,
-      title: t('landing.freemiumTitle'),
-      description: t('landing.freemiumDesc'),
-      accent: 'freemium' as const,
-    },
-  ];
-  const offers = SITE_FREE_MODE ? [founderOffer] : [founderOffer, ...paidOffers];
+  const offers = [founderOffer];
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
@@ -483,8 +464,10 @@ export default function LandingPage({
 
       {!SITE_FREE_MODE && <TestimonialsSection variant="landing" />}
 
-      {/* Offres : Fondateur seul en mode gratuit ; Premium / Boost / Freemium si SITE_FREE_MODE === false */}
-      <section className="max-w-3xl mx-auto w-full px-4 pb-16 sm:pb-20">
+      {/* Offres : Fondateur en lancement ; cartes + comparatif si SITE_FREE_MODE === false */}
+      <section
+        className={`${SITE_FREE_MODE ? 'max-w-3xl' : 'max-w-5xl'} mx-auto w-full px-4 pb-16 sm:pb-20`}
+      >
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
             {SITE_FREE_MODE ? t('landing.offersTitleFree') : t('landing.offersTitlePaid')}
@@ -495,7 +478,7 @@ export default function LandingPage({
               : t('landing.offersSubtitlePaid')}
           </p>
         </div>
-        <div className={SITE_FREE_MODE ? 'max-w-md mx-auto' : 'grid gap-4 sm:grid-cols-2'}>
+        <div className="max-w-md mx-auto">
           {offers.map((offer) => (
             <OfferCard
               key={offer.id}
@@ -507,6 +490,13 @@ export default function LandingPage({
             />
           ))}
         </div>
+        {!SITE_FREE_MODE && (
+          <div className="mt-8">
+            <OfferSummaryCards
+              onChooseFree={() => onAuthClick?.('signup')}
+            />
+          </div>
+        )}
       </section>
 
       <SiteFooter />

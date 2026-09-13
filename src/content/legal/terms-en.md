@@ -39,7 +39,7 @@ Website: https://www.o2switch.fr
 
 **2.1 Purpose**
 
-These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, messaging conditional on a Match and, at the end of their Trial Period (Article 4), on holding an active paid subscription, as well as account visibility settings.
+These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, access to messaging (Dialogue mode) according to the sender's plan and, where applicable, subject to a Match when the recipient's profile belongs to a plan that guarantees they will not be contacted without reciprocity (Confort, Premium, or a Founding Member during their Trial Period), unless that recipient has themselves turned on Simplified mode (see the “Messaging and Consent” glossary), at the end of their Trial Period (Article 4), on holding an active paid subscription, as well as account visibility settings.
 
 These Terms do not constitute general terms of sale. Any paid offers, in particular the one allowing messages to be sent at the end of the Trial Period referred to in Article 4, are governed by separate General Terms of Sale, referred to in Section 2.4.
 
@@ -51,7 +51,7 @@ Registering, creating an account, or using the Service constitutes full and comp
 
 The following remain available free of charge, with no payment or credit card required: creating and managing a profile, viewing compatible profiles shown in Discover and suggestions, expressing interest (Like, Flash) and forming Matches.
 
-Sending messages to a matched member is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one month for any other user), counted individually for each user from the date their account was created. Beyond that, sending new messages is reserved for users with an active subscription, under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4.
+Sending messages (Dialogue mode) is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. This window is not renewable. Beyond that, sending new messages is reserved for users with an active subscription (Basique, Essentiel, Confort or Premium), under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4. Opening a Dialogue without a Match depends on the recipient (open or protected profile), as described in Section 2.1.
 
 Viewing Matches already formed and messages already received remains accessible free of charge. A user who does not wish to subscribe keeps full access to creating a profile, to Discover, to Like, to Flash and to forming Matches; only sending new messages, at the end of their Trial Period (Article 4), is subject to this condition.
 
@@ -101,15 +101,21 @@ The publisher may refuse registration, or suspend or delete, without prior notic
 
 Users agree to fair, respectful, and considerate use of the Service: no harassment, insults, hateful remarks, unlawful content, identity theft, unauthorized commercial solicitation, or behavior likely to compromise the safety of others.
 
-Messaging is only opened after a Match, in order to limit unsolicited contact. A Like remains discreet until it is reciprocated. The timeframes and labels relating to profiles put on hold, as well as the "First message" and "Conversation in progress" statuses, are set out in Appendix A (Glossary), for the sake of transparency and to avoid any ambiguity about the closing of interactions.
+Opening a Dialogue without a Match is only possible when the recipient's profile is open, under Section 2.1 and the “Messaging and Consent” glossary. A Match, when it exists, always opens Dialogue. A Like remains discreet until it is reciprocated. The timeframes and labels relating to profiles put on hold, as well as the "First message" and "Conversation in progress" statuses, are set out in Appendix A (Glossary), for the sake of transparency and to avoid any ambiguity about the closing of interactions.
 
 As part of a best-efforts obligation, the publisher may moderate, hide, or remove content, and warn, suspend, or delete an account, without prior notice where the severity of the facts justifies it. A report may be sent to aypik.contact@gmail.com.
 
 A user whose account has been suspended or deleted for breach of these Terms may challenge this decision by writing to aypik.contact@gmail.com, explaining the points they wish to have taken into account. The publisher reviews such challenges within a reasonable time.
 
-**3.5 Gender and Matching Criteria**
+**3.5 Matching Criteria**
 
-Gender (man or woman), which must be provided at registration, determines the matching criteria: a "man" account is shown "woman" profiles, and vice versa.
+Profiles shown on Discover and in the Home page suggestions are selected according to permanent criteria, independent of the member's plan:
+
+- gender (man or woman), which must be provided at registration: a "man" account is shown "woman" profiles, and vice versa;
+- an age gap between the two members, applied in both directions, without a minor profile ever being shown (the Service is reserved for adults, Section 3.1);
+- only profiles of people without children, in line with the purpose of the Service.
+
+Other filters (geographic perimeter, interests) depend on the plan and, where applicable, the member's settings, under Section 3.7.1.
 
 **3.6 Password**
 
@@ -119,7 +125,7 @@ The user may change their password at any time from their profile settings (Prof
 
 *3.7.1 Filtering of Suggestions*
 
-The profiles shown on Discover and in the Home page suggestions are determined according to the matching criteria (Section 3.5) and the mechanics described in the glossary (Like, Flash, Match).
+The profiles shown on Discover and in the Home page suggestions are determined according to the permanent matching criteria (Section 3.5), regardless of the member's plan, and the mechanics described in the glossary (Like, Flash, Match).
 
 A profile to which the user has already sent a Like or a Flash is no longer shown on Discover or in the Home page suggestions. This exclusion does not remove the interaction already recorded: the profile remains manageable from My Matches, according to its status (To review, Match, archived, etc.).
 
@@ -153,9 +159,9 @@ The processing of last_active_at is described in Section 8.1.
 
 ### Article 4 — Trial Period and "Founding Member" status
 
-**4.1 Founding Members (the first 500 accounts)**
+**4.1 Founding Members (up to 1000 active accounts)**
 
-An honorary "Founding Member" status is granted to the first 500 accounts created on the Service, subject to availability. Once this limit is reached, the status is no longer granted to new members. Founding Member numbers are assigned sequentially and are never reassigned.
+An honorary "Founding Member" status is granted within a limit of 1000 concurrently active accounts (accounts that have not been deleted, regardless of how often the member signs in). Inactivity never frees a slot. A slot is freed only when the account holder deletes their account. Numbers are assigned from the available numbers between 1 and 1000; a number freed by a deletion may be given to a new signup for as long as the cap has not been reached. The same number may therefore, over time, be held by successive people. Switching the Service to paid mode is not triggered by a fixed calendar date: the Service remains in its launch phase until 1000 active Founding Member accounts are reached at the same time.
 
 During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages, unlimited Likes and Flashes, and a profile visibility boost during the first month after signup.
 
@@ -163,25 +169,15 @@ This status is honorary: beyond the Trial Period benefits described above, it do
 
 **4.2 Other users**
 
-Any user creating an account beyond the first 500 benefits from a one (1) month Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
+Any user creating an account when no Founding Member slot is available (the cap of 1000 active Founding Member accounts has been reached) benefits from a one (1) week Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
 
 **4.3 At the end of the Trial Period**
 
-At the end of their Trial Period — six months for a Founding Member, one month for any other user — and absent a subscription to a paid plan, the user keeps free access to creating and managing their profile, to Discover, to Like, to Flash, to forming Matches, and to reading messages already received. Only sending new messages then becomes subject to holding an active paid plan, under the conditions of Section 2.4.
+At the end of their Trial Period — six months for a Founding Member, one week for any other user — and absent a subscription to a paid plan, the user keeps free access to creating and managing their profile, to Discover, to Like, to Flash, to forming Matches, and to reading messages already received. Only sending new messages then becomes subject to holding an active paid plan, under the conditions of Section 2.4.
 
 ### Article 5 — Boost and Premium Status
 
 The "Premium" badge is the display label for the Founder perks during their 6-month activation period (Article 4): it visually shows, on the profile, that these perks (unlimited Likes and Flashes, free Boost in the first month) are currently active. It disappears at the end of the 6 months, unlike the honorary "Founding Member" title and its number, which remain displayed for as long as the account is active (Article 4). The validity of the Boost may be checked at any time from the "My Profile" page.
-
-### Article 5 bis — "Simplified" and "Detailed" Display Modes
-
-Each member may freely choose, at any time and at no cost, from the account menu, between two display modes for the Discover and My Matches pages.
-
-**Detailed mode** (default mode). The full matching journey remains displayed, with its different stages (To review, On hold, Match, Ongoing conversation, Broken matches). Sending a message to another member requires a mutual match (a shared Like or Flash), in accordance with the mechanism described in Section 3.7.1.
-
-**Simplified mode.** The Discover and My Matches pages are shown in a streamlined form: only conversations that have actually started (a message sent by both parties) appear in My Matches. A "Message" button lets a member write directly to another member who is also in simplified mode, without a prior Like or Flash, subject to holding an active subscription at the end of their Trial Period (Article 4), under the conditions of Section 2.3. By activating this mode, the member expressly consents to receiving, from other members also in simplified mode, a first message without having themselves expressed reciprocal interest beforehand.
-
-This choice is reversible at any time from the account menu. As of the date of these Terms, it has no bearing on subscription status (Founding Member, Premium, or basic offer): it is offered free of charge to all members, in accordance with Section 2.3. This may change under the conditions set out in Section 2.4.
 
 ### Article 6 — Intellectual Property and User Content
 
@@ -233,7 +229,7 @@ The visibility modes described in Section 3.7, including "Pause the account," do
 
 For the user, this deletion is permanent: the profile is no longer visible and is no longer used. For technical and security reasons (correcting a handling error, legal obligations), data may be kept internally for a purge period of thirty (30) days, after which it is irretrievably erased. Certain strictly necessary records (for example, future invoices, or retention required by law) may, where applicable, be kept for longer, in a segregated manner.
 
-Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost and cannot be reassigned.
+Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost for that account. The number thus freed may be given to a new signup for as long as the cap of 1000 active Founding Members has not been reached.
 
 The publisher may terminate an account in the event of a serious or repeated breach of these Terms.
 
@@ -251,9 +247,9 @@ In the event of a dispute, and after an attempt at amicable resolution (contact 
 
 **Flash.** A priority action, stronger than a simple Like, sending a clear and direct signal to the targeted person to indicate immediate interest.
 
-**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). It is this mutual confirmation that opens access to messaging, subject, at the end of their Trial Period (Article 4), to holding an active subscription allowing messages to be sent (Section 2.3).
+**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). A Match always opens Dialogue between the two profiles, regardless of their plans. Sending messages remains subject to the sender's send capacity at the end of their Trial Period (Article 4), under Section 2.3.
 
-**Messaging and Consent.** As a safety measure and to prevent unsolicited contact, sending messages is strictly conditional on a prior Match. It is therefore not possible to chat with a member without having received, or had accepted in return, their Like/Flash. In addition to this condition, sending messages is also conditional, at the end of their Trial Period (Article 4), on holding an active paid subscription (Sections 2.3 and 2.4).
+**Messaging and Consent.** Opening a Dialogue without a Match is only possible when the recipient's profile is open (Free, Basique, Essentiel). A Confort, Premium or Founding Member during their Trial Period can be reached only after a Match (reciprocal Like or Flash), unless they have turned on Simplified mode: they then become reachable without a Match, like an Essentiel profile. That choice applies only to receiving messages: it never allows writing to another still-protected profile without a Match. A Match, when it exists, always opens Dialogue. In addition, the sender must have send capacity (the Free one-week trial, or an active paid plan) at the end of their Trial Period (Article 4), under Sections 2.3 and 2.4.
 
 **To Review.** The status of a profile whose Like or Flash has been received and has not yet been decided on. The user may then decline the profile, put it on hold, or confirm a Match.
 
@@ -290,11 +286,14 @@ A profile placed in "on hold" status (whether by you or by the other member) wit
 **Can I sign up if I'm under 18?**
 No. The Service is exclusively reserved for adults.
 
+**How are profiles chosen for me on Discover?**
+For every member, regardless of plan: the gender sought (a man is shown women's profiles, and vice versa), an age gap between the two profiles, and the fact that Aypik is exclusively for people without children. These criteria are not optional. Geographic perimeter and interests may, depending on the plan, be customised (Section 3.7.1).
+
 **Can I create multiple accounts?**
 No. One account per person and per email address, per Section 3.3.
 
 **Will the Service become paid?**
-Creating a profile, discovering members, Like, Flash and forming Matches remain free. Sending messages is offered free of charge during the Trial Period defined in Article 4 (six months for Founding Members, one month for other users); beyond that, it requires an active subscription, the terms and pricing of which are set out in separate General Terms of Sale, provided before any subscription and any payment.
+Creating a profile, discovering members, Like, Flash and forming Matches remain free. Sending messages is offered free of charge during the Trial Period defined in Article 4 (six months for Founding Members, one week for other users); beyond that, it requires an active subscription, the terms and pricing of which are set out in separate General Terms of Sale, provided before any subscription and any payment.
 
 **Can I still view and read messages already received without a subscription?**
 Yes. At the end of their Trial Period (Article 4), only sending new messages is reserved for subscribers; viewing Matches and messages already received remains accessible free of charge (Section 2.3).
@@ -303,7 +302,7 @@ Yes. At the end of their Trial Period (Article 4), only sending new messages is 
 It is requested from your profile. The profile is no longer visible. Data is irretrievably erased after a 30-day purge period (Section 8.2).
 
 **What happens to the Founding Member badge if I cancel my account?**
-Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost and cannot be reassigned.
+Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost for that account. The number thus freed may be given to a new signup for as long as the cap of 1000 active Founding Members has not been reached.
 
 **Can a profile I've already liked or flashed reappear on Discover?**
 No. It is no longer shown on Discover or in the Home page suggestions (Section 3.7.1). The interaction remains manageable from My Matches.

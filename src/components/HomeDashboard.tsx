@@ -32,6 +32,7 @@ import {
   type SuggestedProfile,
 } from '@/lib/suggestions';
 import { loadSuggestionPrefs } from '@/lib/suggestionPrefs';
+import { effectiveSuggestionPrefs } from '@/lib/offerAccess';
 import { isInternationalPerimeter } from '@/lib/geoProximity';
 import { formatInternationalGeoFacts } from '@/lib/worldGeo';
 import { useAuth } from '@/lib/auth';
@@ -153,7 +154,8 @@ export default function HomeDashboard({
     queryKey: queryKeys.homeSuggestions(
       user?.id,
       suggestionPrefsEpoch,
-      profileEpoch
+      profileEpoch,
+      status.plan
     ),
     enabled: Boolean(user?.id),
     queryFn: async () => {
@@ -164,7 +166,11 @@ export default function HomeDashboard({
         .maybeSingle();
 
       const meProfile = me as Profile | null;
-      const prefs = loadSuggestionPrefs(user!.id);
+      const prefs = effectiveSuggestionPrefs(
+        status,
+        loadSuggestionPrefs(user!.id),
+        meProfile?.location
+      );
       const list = await fetchSuggestedProfiles({
         limit: HOME_SUGGESTIONS_MAX,
         myInterests: (meProfile?.interests || []) as string[],
