@@ -195,17 +195,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 d&apos;accès et d&apos;utilisation du Service {BRAND_NAME} :
                 création de profil, découverte de membres, expressions
                 d&apos;intérêt (Like, Flash), constitution de Matchs,
-                messagerie conditionnée à un Match et, hors période de
-                l&apos;offre Membre Fondateur définie à l&apos;article 4, à
-                la souscription d&apos;une offre payante active, ainsi que
-                paramètres de visibilité du compte.
+                messagerie conditionnée à un Match et, à l&apos;issue de sa
+                Période d&apos;essai (article 4), à la souscription
+                d&apos;une offre payante active, ainsi que paramètres de
+                visibilité du compte.
               </p>
               <p>
                 Les présentes CGU ne constituent pas des conditions générales
                 de vente. Les éventuelles offres payantes, notamment celle
-                permettant l&apos;envoi de messages au-delà de la période
-                Fondateur, font l&apos;objet de Conditions Générales de Vente
-                (CGV) distinctes, visées à l&apos;article 2.4.
+                permettant l&apos;envoi de messages à l&apos;issue de la
+                Période d&apos;essai visée à l&apos;article 4, font
+                l&apos;objet de Conditions Générales de Vente (CGV)
+                distinctes, visées à l&apos;article 2.4.
               </p>
             </div>
             <div>
@@ -228,30 +229,33 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 profil, la consultation des profils compatibles proposés dans
                 Découvrir et les suggestions, l&apos;expression d&apos;un
                 intérêt (Like, Flash) et la constitution de Matchs.
-                L&apos;envoi de messages à un membre matché est inclus
-                gratuitement pendant la durée de l&apos;offre Membre Fondateur
-                définie à l&apos;article 4.
               </p>
               <p>
-                En dehors de cette période, et pour les membres n&apos;ayant
-                pas bénéficié de cette offre, l&apos;envoi de nouveaux
-                messages est réservé aux utilisateurs disposant d&apos;un
-                abonnement actif, dans les conditions et selon les tarifs
-                précisés par les Conditions Générales de Vente (CGV) visées à
-                l&apos;article 2.4. La consultation des Matchs déjà formés et
-                des messages déjà reçus demeure accessible sans paiement.
-                L&apos;utilisateur qui ne souhaite pas souscrire
-                d&apos;abonnement conserve un accès complet à la création de
-                profil, à la découverte, au Like, au Flash et à la
-                constitution de Matchs ; seul l&apos;envoi de nouveaux
-                messages, hors période Fondateur, est concerné par cette
+                L&apos;envoi de messages à un membre matché est inclus
+                gratuitement pendant la Période d&apos;essai définie à
+                l&apos;article 4 (six mois pour un Membre Fondateur, un mois
+                pour tout autre utilisateur), décomptée individuellement pour
+                chaque utilisateur à compter de la création de son compte.
+                Au-delà, l&apos;envoi de nouveaux messages est réservé aux
+                utilisateurs disposant d&apos;un abonnement actif, dans les
+                conditions et selon les tarifs précisés par les Conditions
+                Générales de Vente (CGV) visées à l&apos;article 2.4.
+              </p>
+              <p>
+                La consultation des Matchs déjà formés et des messages déjà
+                reçus demeure accessible sans paiement. L&apos;utilisateur
+                qui ne souhaite pas souscrire d&apos;abonnement conserve un
+                accès complet à la création de profil, à la découverte, au
+                Like, au Flash et à la constitution de Matchs ; seul
+                l&apos;envoi de nouveaux messages, à l&apos;issue de sa
+                Période d&apos;essai (article 4), est concerné par cette
                 condition.
               </p>
             </div>
             <div>
               <p className="font-semibold text-gray-900">2.4 Offres payantes</p>
               <p>
-                Au-delà de l&apos;offre Membre Fondateur visée à
+                À l&apos;issue de la Période d&apos;essai visée à
                 l&apos;article 4, l&apos;éditeur propose ou pourra proposer
                 des offres payantes, notamment pour permettre l&apos;envoi de
                 messages illimité, ainsi que, le cas échéant, des
@@ -276,8 +280,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                   ni fermeture de compte, ni perte d&apos;accès à la création
                   de profil, à la découverte de membres, au Like, au Flash et
                   à la constitution de Matchs, décrits à l&apos;article 2.3.
-                  Il limite en revanche, hors période Fondateur, la
-                  possibilité d&apos;envoyer de nouveaux messages.
+                  Il limite en revanche, à l&apos;issue de sa Période
+                  d&apos;essai (article 4), la possibilité d&apos;envoyer de
+                  nouveaux messages.
                 </li>
               </ul>
               <p>
@@ -626,53 +631,74 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
-              Article 4 — Offre « Membre Fondateur »
+              Article 4 — Période d&apos;essai et statut « Membre Fondateur »
             </h3>
-            <p>
-              L&apos;offre Membre Fondateur est honorifique. Elle est
-              strictement réservée aux {FOUNDER_MAX_SLOTS} premiers membres
-              inscrits, dans la limite des places disponibles. Dès que ce
-              plafond est atteint, l&apos;offre n&apos;est plus proposée. Les
-              numéros de Membre Fondateur sont attribués de façon séquentielle
-              et ne sont jamais réattribués.
-            </p>
-            <p>
-              Pendant une période de six (6) mois à compter de
-              l&apos;activation de l&apos;offre sur le compte, les avantages
-              fonctionnels sont consentis à titre gracieux, sans engagement
-              de durée, sans tacite reconduction et sans aucune demande de
-              carte bancaire. Ils comprennent notamment, selon les
-              fonctionnalités effectivement déployées : likes et Flash
-              illimités, ainsi qu&apos;un boost de visibilité du profil
-              pendant le premier mois.
-            </p>
-            <p>
-              À l&apos;issue de ces six mois, les avantages fonctionnels
-              cessent, en ce compris les likes et Flash illimités et le
-              boost de visibilité, ainsi que l&apos;accès gratuit à
-              l&apos;envoi de messages. Le compte demeure actif sur
-              l&apos;offre de base gratuite décrite à l&apos;article 2.3 ;
-              l&apos;envoi de nouveaux messages est alors soumis, comme pour
-              tout membre n&apos;ayant pas bénéficié de l&apos;offre
-              Fondateur, à la souscription d&apos;une offre payante active
-              dans les conditions de l&apos;article 2.4. Le titre de Membre
-              Fondateur et le numéro associé restent visibles à titre
-              honorifique tant que le compte est actif.
-            </p>
-            <p>
-              Le statut de Membre Fondateur et son numéro associé sont
-              strictement liés au compte actif. En cas de désinscription ou
-              de suppression du compte, le badge est définitivement perdu et
-              ne pourra pas être réattribué. Un compte dont la visibilité
-              est restreinte ou qui est mis en pause au sens de
-              l&apos;article 3.7 demeure un compte actif ; voir également
-              l&apos;article 8.2.
-            </p>
-            <p>
-              Cette offre ne constitue ni un contrat de vente, ni un
-              abonnement, ni une contrepartie financière. Elle n&apos;ouvre
-              droit à aucun remboursement, cession ou conversion en numéraire.
-            </p>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.1 Membres Fondateurs (les {FOUNDER_MAX_SLOTS} premiers
+                comptes)
+              </p>
+              <p>
+                Un statut honorifique de « Membre Fondateur » est attribué aux{' '}
+                {FOUNDER_MAX_SLOTS} premiers comptes créés sur le Service, dans
+                la limite des places disponibles. Dès que ce plafond est
+                atteint, le statut n&apos;est plus attribué aux nouveaux
+                inscrits. Les numéros de Membre Fondateur sont attribués de
+                façon séquentielle et ne sont jamais réattribués.
+              </p>
+              <p>
+                Pendant une Période d&apos;essai de six (6) mois à compter de
+                la création de son compte, le Membre Fondateur bénéficie, à
+                titre gracieux, sans engagement de durée, sans tacite
+                reconduction et sans aucune demande de carte bancaire : de
+                l&apos;envoi de messages, de likes et Flash illimités, ainsi
+                que d&apos;un boost de visibilité du profil pendant le premier
+                mois suivant l&apos;inscription.
+              </p>
+              <p>
+                Ce statut est honorifique : au-delà des avantages de la
+                Période d&apos;essai décrits ci-dessus, il n&apos;ouvre droit
+                à aucun remboursement, cession ou conversion en numéraire. Le
+                titre et le numéro associé restent affichés tant que le
+                compte est actif ; ils sont définitivement perdus en cas de
+                désinscription ou de suppression du compte, dans les
+                conditions de l&apos;article 8.2. Un compte dont la visibilité
+                est restreinte ou qui est mis en pause au sens de
+                l&apos;article 3.7 demeure un compte actif.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.2 Autres utilisateurs
+              </p>
+              <p>
+                Tout utilisateur créant un compte au-delà des{' '}
+                {FOUNDER_MAX_SLOTS} premiers bénéficie d&apos;une Période
+                d&apos;essai d&apos;un (1) mois à compter de la création de
+                son compte, pendant laquelle l&apos;envoi de messages est
+                inclus gratuitement, sans carte bancaire ni engagement. Cette
+                Période d&apos;essai n&apos;inclut pas les avantages
+                complémentaires (likes et Flash illimités, boost de
+                visibilité) réservés aux Membres Fondateurs à l&apos;article
+                4.1.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                4.3 À l&apos;issue de la Période d&apos;essai
+              </p>
+              <p>
+                À l&apos;issue de sa Période d&apos;essai — six mois pour un
+                Membre Fondateur, un mois pour tout autre utilisateur — et à
+                défaut de souscription à une offre payante, l&apos;utilisateur
+                conserve un accès gratuit à la création et la gestion de son
+                profil, à Découvrir, au Like, au Flash, à la constitution de
+                Matchs et à la lecture des messages déjà reçus. Seul
+                l&apos;envoi de nouveaux messages est alors soumis à la
+                souscription d&apos;une offre payante active, dans les
+                conditions de l&apos;article 2.4.
+              </p>
+            </div>
           </section>
 
           <section className="space-y-3">
@@ -721,11 +747,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Les pages Découvrir et Mes Matchs sont présentées de façon
               épurée : seules les discussions effectivement engagées
               (message envoyé par les deux parties) apparaissent dans Mes
-              Matchs.               Un bouton « Dialogue » permet d&apos;écrire
+              Matchs. Un bouton « Dialogue » permet d&apos;écrire
               directement à un autre membre également en mode simplifié,
-              sans Like ni Flash préalable, sous réserve, hors période
-              Membre Fondateur, de disposer d&apos;un abonnement actif dans
-              les conditions de l&apos;article 2.3. En activant ce mode,
+              sans Like ni Flash préalable, sous réserve, à l&apos;issue de
+              sa Période d&apos;essai (article 4), de disposer d&apos;un
+              abonnement actif dans les conditions de l&apos;article 2.3. En
+              activant ce mode,
               l&apos;utilisateur consent expressément à recevoir, de la
               part d&apos;autres membres également en mode simplifié, un
               premier message sans avoir lui-même exprimé d&apos;intérêt
@@ -1029,9 +1056,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 qu&apos;un intérêt mutuel a été confirmé (qu&apos;il
                 provienne de Likes croisés ou d&apos;un Flash accepté).
                 C&apos;est cette validation mutuelle qui ouvre l&apos;accès
-                à la messagerie, sous réserve, hors période Membre Fondateur,
-                de disposer d&apos;un abonnement actif permettant
-                l&apos;envoi de messages (article 2.3).
+                à la messagerie, sous réserve, à l&apos;issue de sa Période
+                d&apos;essai (article 4), de disposer d&apos;un abonnement
+                actif permettant l&apos;envoi de messages (article 2.3).
               </p>
             </div>
             <div>
@@ -1045,9 +1072,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 dialoguer avec un membre sans avoir reçu ou vu son
                 Like/Flash accepté en retour. En complément de cette
                 condition, l&apos;envoi de messages est également
-                conditionné, hors période Membre Fondateur, à la
-                souscription d&apos;une offre payante active (articles 2.3
-                et 2.4).
+                conditionné, à l&apos;issue de sa Période d&apos;essai
+                (article 4), à la souscription d&apos;une offre payante
+                active (articles 2.3 et 2.4).
               </p>
             </div>
             <div>
@@ -1261,11 +1288,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 La création de profil, la découverte de membres, le Like, le
                 Flash et la constitution de Matchs restent gratuits.
-                L&apos;envoi de messages est offert pendant la période de
-                l&apos;offre Membre Fondateur (article 4) ; au-delà, il
-                nécessite un abonnement actif, dont les conditions et tarifs
-                sont précisés par des CGV distinctes, communiquées avant
-                toute souscription et tout paiement.
+                L&apos;envoi de messages est offert pendant la Période
+                d&apos;essai définie à l&apos;article 4 (six mois pour les
+                Membres Fondateurs, un mois pour les autres utilisateurs) ;
+                au-delà, il nécessite un abonnement actif, dont les
+                conditions et tarifs sont précisés par des CGV distinctes,
+                communiquées avant toute souscription et tout paiement.
               </p>
             </div>
             <div>
@@ -1274,10 +1302,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 sans abonnement&nbsp;?
               </p>
               <p>
-                Oui. Hors période Fondateur, seul l&apos;envoi de nouveaux
-                messages est réservé aux abonnés ; la consultation des Matchs
-                et des messages déjà reçus reste accessible sans paiement
-                (article 2.3).
+                Oui. À l&apos;issue de sa Période d&apos;essai (article 4),
+                seul l&apos;envoi de nouveaux messages est réservé aux
+                abonnés ; la consultation des Matchs et des messages déjà
+                reçus reste accessible sans paiement (article 2.3).
               </p>
             </div>
             <div>
