@@ -18,6 +18,20 @@ export function founderSlotsSubtitle(): string {
   return t('landing.founderSlotsSubtitle', { maxSlots: FOUNDER_MAX_SLOTS });
 }
 
+/** Landing, bandeau, carte condensée — une fois le numerus clausus atteint. */
+export function founderOfferClosedShort(): string {
+  return t('landing.founderOfferClosed');
+}
+
+/** CGU article 4.1 — paragraphe de clôture, une fois le seuil atteint. */
+export function founderOfferClosedLegal(): string {
+  return t('legal.founderOfferClosed');
+}
+
+export function founderOfferShortMessage(closed: boolean): string {
+  return closed ? founderOfferClosedShort() : founderSlotsSubtitle();
+}
+
 export function founderBenefitNoCard(): string {
   return t('landing.founderBenefitNoCard');
 }
@@ -28,6 +42,10 @@ export function founderBenefitUnlimitedLikes(): string {
 
 export function founderBenefitBoostFirstMonth(): string {
   return t('landing.founderBenefitBoost');
+}
+
+export function founderBenefitLifetimeDiscount(): string {
+  return t('landing.founderBenefitLifetimeDiscount');
 }
 
 export function founderBenefitFlash(): string {

@@ -10,6 +10,7 @@ import {
   submitContactForm,
   validateContactForm,
 } from '@/lib/contact';
+import LaunchTicker from '@/components/LaunchTicker';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { useTranslation, Trans } from 'react-i18next';
 
@@ -66,6 +67,9 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-white to-amber-50">
+      <div className="sticky top-0 z-20">
+        <LaunchTicker />
+      </div>
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-24 -right-24 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />

@@ -96,9 +96,13 @@ export default function DiscoverModeSwitcher({
       </div>
       <p className="text-[11px] leading-snug text-gray-500">
         {t(
-          messagingOptOut
-            ? 'profile.discoverModeHintProtected'
-            : 'profile.discoverModeHint'
+          mode === 'simplifie'
+            ? messagingOptOut
+              ? 'profile.discoverModeSimplifiedHint'
+              : 'profile.discoverModeSimplifiedHintOpen'
+            : messagingOptOut
+              ? 'profile.discoverModeDetailedHint'
+              : 'profile.discoverModeDetailedHintOpen'
         )}
       </p>
     </div>

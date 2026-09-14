@@ -17,8 +17,10 @@ import {
   SITE_FREE_MODE,
   founderAfter6MonthsBody,
   founderBenefitBoostFirstMonth,
+  founderBenefitLifetimeDiscount,
   founderBenefitNoCard,
   founderBenefitUnlimitedLikes,
+  founderOfferClosedShort,
   founderSlotsSubtitle,
   isFounderOffer,
   offerShortName,
@@ -65,7 +67,7 @@ function FounderActiveBanner({
             </h2>
             <p className="mt-2 text-sm sm:text-base font-medium text-gray-500 leading-snug">
               {SITE_FREE_MODE
-                ? t('membership.founderSlotsTaken', { maxSlots: FOUNDER_MAX_SLOTS })
+                ? founderOfferClosedShort()
                 : t('membership.founderSlotsTakenPaid', { maxSlots: FOUNDER_MAX_SLOTS })}
             </p>
           </div>
@@ -126,6 +128,9 @@ function FounderActiveBanner({
             </li>
           ))}
         </ul>
+        <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-bold text-amber-950 leading-snug shadow-sm">
+          {founderBenefitLifetimeDiscount()}
+        </p>
 
         {showCta && (
           <div className="flex justify-end pt-1">
@@ -364,7 +369,13 @@ export function MembershipPanel({
             {t('membership.yourPlan')}
           </h2>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            {t('membership.founderIntro')}
+            {founderAvailable
+              ? t('membership.founderIntro')
+              : SITE_FREE_MODE
+                ? founderOfferClosedShort()
+                : t('membership.founderSlotsTakenPaid', {
+                    maxSlots: FOUNDER_MAX_SLOTS,
+                  })}
           </p>
         </div>
 

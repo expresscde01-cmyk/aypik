@@ -1,5 +1,6 @@
 import {
   FOUNDER_MAX_SLOTS,
+  SITE_FREE_MODE,
   isFounderPrivilegeActive,
 } from '@/lib/founderCopy';
 import { dateLocale } from '../i18n/format.ts';
@@ -276,9 +277,18 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
       typeof d.boost_ends_at === 'string' ? d.boost_ends_at : null,
     founders_taken:
       typeof d.founders_taken === 'number' ? d.founders_taken : 0,
-    founders_max: typeof d.founders_max === 'number' ? d.founders_max : 500,
+    founders_max:
+      typeof d.founders_max === 'number' ? d.founders_max : FOUNDER_MAX_SLOTS,
     founders_remaining:
-      typeof d.founders_remaining === 'number' ? d.founders_remaining : 500,
+      typeof d.founders_remaining === 'number'
+        ? d.founders_remaining
+        : Math.max(
+            0,
+            (typeof d.founders_max === 'number'
+              ? d.founders_max
+              : FOUNDER_MAX_SLOTS) -
+              (typeof d.founders_taken === 'number' ? d.founders_taken : 0)
+          ),
     free_daily_likes:
       typeof d.free_daily_likes === 'number' ? d.free_daily_likes : 5,
     likes_used_today:
@@ -426,7 +436,7 @@ export function isFounderOfferOpen(status: MembershipStatus): boolean {
   return status.founders_remaining > 0;
 }
 
-/** Alias métier : offre Fondateur encore ouverte (< 500 inscrits). */
+/** Alias métier : offre Fondateur encore ouverte (places restantes). */
 export function isFounderAvailable(status: MembershipStatus): boolean {
   return isFounderOfferOpen(status);
 }
@@ -441,6 +451,7 @@ export function isPostTrialLocked(status: MembershipStatus): boolean {
 
 /** Verrouillé pour l’envoi de nouveaux messages (essai Gratuit écoulé, sans palier payant). */
 export function isMessagingLocked(status: MembershipStatus): boolean {
+  if (SITE_FREE_MODE) return false;
   if (isFounderPeriodActive(status)) return false;
   if (status.has_messaging_access === false) return true;
   if (isPaidTierActive(status)) return false;
@@ -449,15 +460,18 @@ export function isMessagingLocked(status: MembershipStatus): boolean {
 
 /** Verrouillé pour les réglages Article 3.7.2 (Incognito, Pause, Ne plus apparaître). */
 export function isVisibilityLocked(status: MembershipStatus): boolean {
+  if (SITE_FREE_MODE) return false;
   return status.phase === 'post_trial' && !status.has_visibility_access;
 }
 
 /** Verrouillé pour le mode Pays francophone. */
 export function isFrancophoneLocked(status: MembershipStatus): boolean {
+  if (SITE_FREE_MODE) return false;
   return status.phase === 'post_trial' && !status.has_francophone_access;
 }
 
 /** Verrouillé pour le mode International (et donc le sélecteur de langue). */
 export function isInternationalLocked(status: MembershipStatus): boolean {
+  if (SITE_FREE_MODE) return false;
   return status.phase === 'post_trial' && !status.has_international_access;
 }

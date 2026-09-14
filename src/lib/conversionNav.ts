@@ -1,3 +1,5 @@
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
+
 export const HIGHLIGHT_OFFER_PARAM = 'highlightOffer';
 
 export const HIGHLIGHT_OFFERS = [
@@ -45,6 +47,7 @@ export function consumeHighlightOfferFromUrl(): HighlightOffer | null {
 
 /** Ouvre l’onglet Profil et met en avant la carte d’offre visée. */
 export function openHighlightOffer(offer: HighlightOffer) {
+  if (SITE_FREE_MODE) return;
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
   url.searchParams.set('open', 'profile');
