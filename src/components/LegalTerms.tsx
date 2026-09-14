@@ -2,12 +2,14 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BRAND_NAME, BRAND_BASELINE } from '@/components/BrandLockup';
 import { FOUNDER_MAX_SLOTS, SITE_FREE_MODE } from '@/lib/founderCopy';
+import { useFounderSlots } from '@/lib/useFounderSlots';
 import {
   ContactLink,
   SUPPORT_EMAIL,
   legalDocLabel,
 } from '@/components/LegalChrome';
 import LegalMarkdown from '@/components/LegalMarkdown';
+import LaunchTicker from '@/components/LaunchTicker';
 import LegalTranslationBanner from '@/components/LegalTranslationBanner';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { currentLocale } from '@/i18n/documentMeta';
@@ -31,9 +33,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const locale = currentLocale();
   const docLabel = legalDocLabel();
+  const { closed: founderOfferClosed } = useFounderSlots();
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50">
-      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <div className="sticky top-0 z-20">
+      <header className="bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
             type="button"
@@ -49,8 +53,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
           <LanguageSwitcher compact />
         </div>
       </header>
-
-      {locale !== 'fr' && <LegalTranslationBanner variant="sticky" />}
+      <LaunchTicker />
+      {locale !== 'fr' && <LegalTranslationBanner variant="stack" />}
+      </div>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {locale !== 'fr' ? (
@@ -61,6 +66,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <LegalMarkdown
               source={locale === 'es' ? termsEs : termsEn}
               locale={locale}
+              founderOfferClosed={founderOfferClosed}
             />
           </article>
         ) : (
@@ -203,10 +209,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 ou Membre Fondateur pendant sa Période d&apos;essai), sauf
                 si ce destinataire a lui-même activé le mode Simplifié
                 (annexe « Messagerie et consentement »), à
-                l&apos;issue de sa Période d&apos;essai (article 4), à la
-                souscription d&apos;une offre payante active, ainsi que
+                l&apos;issue de sa Période d&apos;essai (article 4)
+                {!SITE_FREE_MODE && (
+                  <>, à la souscription d&apos;une offre payante active</>
+                )}
+                , ainsi que
                 paramètres de visibilité du compte.
               </p>
+              {!SITE_FREE_MODE && (
               <p>
                 Les présentes CGU ne constituent pas des conditions générales
                 de vente. Les éventuelles offres payantes, notamment celle
@@ -215,6 +225,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 l&apos;objet de Conditions Générales de Vente (CGV)
                 distinctes, visées à l&apos;article 2.4.
               </p>
+              )}
             </div>
             <div>
               <p className="font-semibold text-gray-900">2.2 Acceptation</p>
@@ -237,6 +248,18 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Découvrir et les suggestions, l&apos;expression d&apos;un
                 intérêt (Like, Flash) et la constitution de Matchs.
               </p>
+              {SITE_FREE_MODE ? (
+              <p>
+                L&apos;envoi de messages (mode Dialogue) est inclus
+                pendant la Période d&apos;essai définie à l&apos;article 4
+                (six mois pour un Membre Fondateur, une semaine pour tout
+                autre utilisateur), décomptée individuellement pour chaque
+                utilisateur à compter de la création de son compte. Aucune
+                souscription payante n&apos;est proposée ni exigée tant que
+                le Service est en mode lancement gratuit.
+              </p>
+              ) : (
+              <>
               <p>
                 L&apos;envoi de messages (mode Dialogue) est inclus
                 gratuitement pendant la Période d&apos;essai définie à
@@ -263,7 +286,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Période d&apos;essai (article 4), est concerné par cette
                 condition.
               </p>
+              </>
+              )}
             </div>
+            {!SITE_FREE_MODE && (
             <div>
               <p className="font-semibold text-gray-900">2.4 Offres payantes</p>
               <p>
@@ -303,6 +329,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 paiement ne lui est demandé au titre de cette offre.
               </p>
             </div>
+            )}
             <div>
               <p className="font-semibold text-gray-900">
                 2.5 Modification des CGU
@@ -713,6 +740,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 est restreinte ou qui est mis en pause au sens de
                 l&apos;article 3.7 demeure un compte actif.
               </p>
+              {founderOfferClosed ? (
+                <p>{t('legal.founderOfferClosed')}</p>
+              ) : null}
             </div>
             <div>
               <p className="font-semibold text-gray-900">
@@ -735,6 +765,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p className="font-semibold text-gray-900">
                 4.3 À l&apos;issue de la Période d&apos;essai
               </p>
+              {SITE_FREE_MODE ? (
+              <p>
+                À l&apos;issue de sa Période d&apos;essai — six mois pour un
+                Membre Fondateur, une semaine pour tout autre utilisateur —
+                l&apos;utilisateur conserve l&apos;accès aux fonctionnalités
+                du Service. Aucune souscription payante n&apos;est proposée
+                ni exigée tant que le Service est en mode lancement gratuit.
+              </p>
+              ) : (
               <p>
                 À l&apos;issue de sa Période d&apos;essai — six mois pour un
                 Membre Fondateur, une semaine pour tout autre utilisateur — et à
@@ -746,6 +785,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 souscription d&apos;une offre payante active, dans les
                 conditions de l&apos;article 2.4.
               </p>
+              )}
             </div>
           </section>
 
@@ -1057,10 +1097,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 qu&apos;un intérêt mutuel a été confirmé (qu&apos;il
                 provienne de Likes croisés ou d&apos;un Flash accepté).
                 Un Match ouvre toujours le Dialogue entre les deux profils,
-                indépendamment de leurs offres. L&apos;envoi de messages
-                reste soumis à la capacité d&apos;envoi de
-                l&apos;expéditeur à l&apos;issue de sa Période
-                d&apos;essai (article 4), selon l&apos;article 2.3.
+                indépendamment de leurs offres.
+                {!SITE_FREE_MODE && (
+                  <>
+                    {' '}
+                    L&apos;envoi de messages
+                    reste soumis à la capacité d&apos;envoi de
+                    l&apos;expéditeur à l&apos;issue de sa Période
+                    d&apos;essai (article 4), selon l&apos;article 2.3.
+                  </>
+                )}
               </p>
             </div>
             <div>
@@ -1079,11 +1125,17 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 profil Essentiel. Ce choix ne joue qu&apos;en réception : il
                 ne permet jamais d&apos;écrire à un autre profil resté
                 protégé sans Match. Un Match, lorsqu&apos;il
-                existe, ouvre toujours le Dialogue. En complément,
-                l&apos;expéditeur doit disposer de la capacité d&apos;envoi
-                (semaine d&apos;essai Gratuit, ou palier payant actif)
-                à l&apos;issue de sa Période d&apos;essai (article 4),
-                selon les articles 2.3 et 2.4.
+                existe, ouvre toujours le Dialogue.
+                {!SITE_FREE_MODE && (
+                  <>
+                    {' '}
+                    En complément,
+                    l&apos;expéditeur doit disposer de la capacité d&apos;envoi
+                    (semaine d&apos;essai Gratuit, ou palier payant actif)
+                    à l&apos;issue de sa Période d&apos;essai (article 4),
+                    selon les articles 2.3 et 2.4.
+                  </>
+                )}
               </p>
             </div>
             <div>
@@ -1306,6 +1358,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 l&apos;article 3.3.
               </p>
             </div>
+            {!SITE_FREE_MODE && (
             <div>
               <p className="font-semibold text-gray-900">
                 Quelles sont les offres payantes&nbsp;?
@@ -1321,10 +1374,21 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 rétractation.
               </p>
             </div>
+            )}
             <div>
               <p className="font-semibold text-gray-900">
                 Le Service va-t-il devenir payant&nbsp;?
               </p>
+              {SITE_FREE_MODE ? (
+              <p>
+                Non pour le moment. Le Service est en mode lancement
+                gratuit : aucune offre payante n&apos;est commercialisée,
+                aucun paiement n&apos;est demandé. La création de profil, la
+                découverte de membres, le Like, le Flash, la constitution de
+                Matchs et l&apos;envoi de messages sont inclus dans les
+                conditions de la Période d&apos;essai (article 4).
+              </p>
+              ) : (
               <p>
                 La création de profil, la découverte de membres, le Like, le
                 Flash et la constitution de Matchs restent gratuits.
@@ -1335,7 +1399,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 conditions et tarifs sont précisés par des CGV distinctes,
                 communiquées avant toute souscription et tout paiement.
               </p>
+              )}
             </div>
+            {!SITE_FREE_MODE && (
             <div>
               <p className="font-semibold text-gray-900">
                 Puis-je toujours consulter et lire les messages déjà reçus
@@ -1348,6 +1414,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 reçus reste accessible sans paiement (article 2.3).
               </p>
             </div>
+            )}
             <div>
               <p className="font-semibold text-gray-900">
                 Comment se passe la suppression de mon compte&nbsp;?
@@ -1449,6 +1516,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </div>
           </section>
 
+          {!SITE_FREE_MODE && (
           <section className="space-y-3">
             <h3 className="text-base font-bold text-gray-900">
               Conditions Générales de Vente (CGV)
@@ -1531,6 +1599,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
             </div>
           </section>
+          )}
 
           <footer className="border-t border-gray-100 pt-6 text-xs text-gray-400 space-y-2">
             <p>

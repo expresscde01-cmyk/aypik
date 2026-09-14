@@ -1,6 +1,33 @@
 import type { ReactNode } from 'react';
 import type { AppLocale } from '@/i18n/locales';
 import { withLocalePrefix } from '@/i18n/path';
+import { SITE_FREE_MODE } from '@/lib/founderCopy';
+
+const PAID_BLOCK_RE =
+  /<!--\s*paid:start\s*-->[\s\S]*?<!--\s*paid:end\s*-->/gi;
+const FREE_BLOCK_RE =
+  /<!--\s*free:start\s*-->[\s\S]*?<!--\s*free:end\s*-->/gi;
+const MODE_MARKER_RE = /<!--\s*(?:paid|free):(?:start|end)\s*-->/gi;
+const FOUNDER_CLOSED_BLOCK_RE =
+  /<!--\s*founder-closed:start\s*-->[\s\S]*?<!--\s*founder-closed:end\s*-->/gi;
+const FOUNDER_CLOSED_MARKER_RE =
+  /<!--\s*founder-closed:(?:start|end)\s*-->/gi;
+
+function applyLegalMode(source: string): string {
+  if (SITE_FREE_MODE) {
+    return source.replace(PAID_BLOCK_RE, '').replace(MODE_MARKER_RE, '');
+  }
+  return source.replace(FREE_BLOCK_RE, '').replace(MODE_MARKER_RE, '');
+}
+
+function applyFounderClosed(source: string, founderOfferClosed: boolean): string {
+  if (!founderOfferClosed) {
+    return source
+      .replace(FOUNDER_CLOSED_BLOCK_RE, '')
+      .replace(FOUNDER_CLOSED_MARKER_RE, '');
+  }
+  return source.replace(FOUNDER_CLOSED_MARKER_RE, '');
+}
 
 const INLINE_RE =
   /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|https?:\/\/[^\s<]+|www\.[^\s<)]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
@@ -179,11 +206,13 @@ function renderBlock(block: string, locale: AppLocale, key: number): ReactNode {
 export default function LegalMarkdown({
   source,
   locale,
+  founderOfferClosed = false,
 }: {
   source: string;
   locale: AppLocale;
+  founderOfferClosed?: boolean;
 }) {
-  const blocks = source
+  const blocks = applyFounderClosed(applyLegalMode(source), founderOfferClosed)
     .replace(/\r\n/g, '\n')
     .trim()
     .split(/\n{2,}/)

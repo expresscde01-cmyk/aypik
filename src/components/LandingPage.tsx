@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, type PointerEvent } from 'react';
-import { Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { ChevronDown, Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalChrome';
+import LaunchTicker from '@/components/LaunchTicker';
 import { OfferSummaryCards } from '@/components/membership/OfferSummaryCards';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
@@ -11,10 +12,13 @@ import {
 import {
   SITE_FREE_MODE,
   founderBenefitBoostFirstMonth,
+  founderBenefitLifetimeDiscount,
   founderBenefitNoCard,
   founderBenefitUnlimitedLikes,
-  founderSlotsSubtitle,
+  founderOfferClosedShort,
+  founderOfferShortMessage,
 } from '@/lib/founderCopy';
+import { useFounderSlots } from '@/lib/useFounderSlots';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { currentLocale } from '@/i18n/documentMeta';
@@ -151,7 +155,8 @@ export function SiteHeader({
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-rose-100/80">
+    <div className="sticky top-0 z-20">
+    <header className="bg-white/85 backdrop-blur-md border-b border-rose-100/80">
       <div className={pcHeader ? 'w-full px-8' : 'max-w-3xl mx-auto px-4'}>
         <div className={pcHeader ? 'max-w-7xl mx-auto' : undefined}>
         <div
@@ -215,6 +220,8 @@ export function SiteHeader({
         </div>
       </div>
     </header>
+    <LaunchTicker />
+    </div>
   );
 }
 
@@ -224,6 +231,7 @@ function OfferCard({
   description,
   point,
   points,
+  highlight,
   accent,
 }: {
   title: string;
@@ -231,6 +239,7 @@ function OfferCard({
   description: string;
   point?: string;
   points?: readonly string[];
+  highlight?: string;
   accent: 'founder' | 'premium' | 'boost' | 'freemium';
 }) {
   const items = points?.length ? points : point ? [point] : [];
@@ -313,6 +322,11 @@ function OfferCard({
             {item}
           </p>
         ))}
+        {highlight ? (
+          <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-bold text-amber-950 leading-snug shadow-sm">
+            {highlight}
+          </p>
+        ) : null}
       </div>
     </article>
   );
@@ -334,6 +348,7 @@ export default function LandingPage({
 }) {
   const connected = Boolean(displayName);
   const { t } = useTranslation();
+  const { closed: founderOfferClosed } = useFounderSlots();
   const values = [
     {
       id: 'confiance' as const,
@@ -354,18 +369,26 @@ export default function LandingPage({
       Icon: VALUE_ICONS['vecu-commun'],
     },
   ];
-  const founderOffer = {
-    id: 'founder' as const,
-    title: t('landing.founderTitle'),
-    badge: t('landing.founderBadge'),
-    description: founderSlotsSubtitle(),
-    points: [
-      founderBenefitNoCard(),
-      founderBenefitUnlimitedLikes(),
-      founderBenefitBoostFirstMonth(),
-    ],
-    accent: 'founder' as const,
-  };
+  const founderOffer = founderOfferClosed
+    ? {
+        id: 'founder' as const,
+        title: t('landing.founderTitle'),
+        description: founderOfferClosedShort(),
+        points: [] as const,
+        accent: 'founder' as const,
+      }
+    : {
+        id: 'founder' as const,
+        title: t('landing.founderTitle'),
+        badge: t('landing.founderBadge'),
+        description: founderOfferShortMessage(false),
+        points: [
+          founderBenefitNoCard(),
+          founderBenefitUnlimitedLikes(),
+          founderBenefitBoostFirstMonth(),
+        ],
+        accent: 'founder' as const,
+      };
   const offers = [founderOffer];
 
   return (
@@ -386,7 +409,7 @@ export default function LandingPage({
               'radial-gradient(ellipse 90% 70% at 50% -10%, rgba(251,113,133,0.35), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 40%, rgba(251,191,36,0.22), transparent 50%), linear-gradient(180deg, #fff5f2 0%, #fffaf7 45%, #fff8f5 100%)',
           }}
         />
-        <div className="max-w-3xl mx-auto px-4 pt-14 pb-16 sm:pt-20 sm:pb-20 text-center">
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-3 sm:pt-10 sm:pb-4 text-center">
           <div className="hero-headline-stack">
             <h1
               className="hero-headline text-4xl sm:text-5xl md:text-[3.25rem] font-extrabold tracking-tight leading-[1.25] pb-1 animate-pop bg-clip-text text-transparent"
@@ -400,7 +423,7 @@ export default function LandingPage({
           </div>
 
           {/* Signature de marque sous l’accroche */}
-          <div className="mt-8 flex flex-col items-center gap-3 animate-fadeIn">
+          <div className="mt-6 flex flex-col items-center gap-3 animate-fadeIn">
             <BrandMark
               size="md"
               className="h-[67px] w-[75px] md:h-[6.5rem] md:w-[6.5rem]"
@@ -414,7 +437,7 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
             <button
               type="button"
               onClick={connected ? onPrimaryCta : () => onAuthClick?.('signup')}
@@ -432,7 +455,65 @@ export default function LandingPage({
               </button>
             )}
           </div>
+
+          <button
+            type="button"
+            className="hero-scroll-hint"
+            aria-label={t('landing.scrollToOfferAria')}
+            onClick={() => {
+              const reduce = window.matchMedia(
+                '(prefers-reduced-motion: reduce)'
+              ).matches;
+              document.getElementById('landing-offer')?.scrollIntoView({
+                behavior: reduce ? 'auto' : 'smooth',
+                block: 'start',
+              });
+            }}
+          >
+            <ChevronDown className="hero-scroll-hint-icon" aria-hidden />
+          </button>
         </div>
+      </section>
+
+      {/* Offres : Fondateur en lancement ; cartes + comparatif si SITE_FREE_MODE === false */}
+      <section
+        id="landing-offer"
+        className={`${SITE_FREE_MODE ? 'max-w-3xl' : 'max-w-5xl'} mx-auto w-full px-4 pt-1 pb-14 sm:pb-16 scroll-mt-[7.5rem]`}
+      >
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+            {SITE_FREE_MODE ? t('landing.offersTitleFree') : t('landing.offersTitlePaid')}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            {SITE_FREE_MODE
+              ? t('landing.offersSubtitleFree')
+              : t('landing.offersSubtitlePaid')}
+          </p>
+        </div>
+        <div className="max-w-md mx-auto">
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              title={offer.title}
+              badge={'badge' in offer ? offer.badge : undefined}
+              description={offer.description}
+              points={'points' in offer ? offer.points : undefined}
+              highlight={
+                founderOfferClosed
+                  ? undefined
+                  : founderBenefitLifetimeDiscount()
+              }
+              accent={offer.accent}
+            />
+          ))}
+        </div>
+        {!SITE_FREE_MODE && (
+          <div className="mt-8">
+            <OfferSummaryCards
+              onChooseFree={() => onAuthClick?.('signup')}
+            />
+          </div>
+        )}
       </section>
 
       {/* Valeurs */}
@@ -463,41 +544,6 @@ export default function LandingPage({
       </section>
 
       {!SITE_FREE_MODE && <TestimonialsSection variant="landing" />}
-
-      {/* Offres : Fondateur en lancement ; cartes + comparatif si SITE_FREE_MODE === false */}
-      <section
-        className={`${SITE_FREE_MODE ? 'max-w-3xl' : 'max-w-5xl'} mx-auto w-full px-4 pb-16 sm:pb-20`}
-      >
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            {SITE_FREE_MODE ? t('landing.offersTitleFree') : t('landing.offersTitlePaid')}
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            {SITE_FREE_MODE
-              ? t('landing.offersSubtitleFree')
-              : t('landing.offersSubtitlePaid')}
-          </p>
-        </div>
-        <div className="max-w-md mx-auto">
-          {offers.map((offer) => (
-            <OfferCard
-              key={offer.id}
-              title={offer.title}
-              badge={'badge' in offer ? offer.badge : undefined}
-              description={offer.description}
-              points={'points' in offer ? offer.points : undefined}
-              accent={offer.accent}
-            />
-          ))}
-        </div>
-        {!SITE_FREE_MODE && (
-          <div className="mt-8">
-            <OfferSummaryCards
-              onChooseFree={() => onAuthClick?.('signup')}
-            />
-          </div>
-        )}
-      </section>
 
       <SiteFooter />
     </div>

@@ -18,6 +18,7 @@ export function SoftPremiumBanner({
 }) {
   const { t } = useTranslation();
   const cta = actionLabel ?? t('membership.discoverPremium');
+  if (SITE_FREE_MODE) return null;
   return (
     <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50 to-amber-50 p-4">
       <div className="flex items-start gap-3">

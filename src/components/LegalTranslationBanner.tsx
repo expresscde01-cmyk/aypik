@@ -6,11 +6,12 @@ import { applyLocale } from '@/i18n/applyLocale';
 export default function LegalTranslationBanner({
   variant,
 }: {
-  variant: 'sticky' | 'end';
+  variant: 'sticky' | 'end' | 'stack';
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const sticky = variant === 'sticky';
+  const stacked = variant === 'stack';
 
   return (
     <aside
@@ -19,12 +20,14 @@ export default function LegalTranslationBanner({
       className={
         sticky
           ? 'sticky top-14 z-10 border-b-2 border-amber-600 bg-amber-100 shadow-md'
-          : 'mt-6 rounded-2xl border-2 border-amber-600 bg-amber-100 shadow-md'
+          : stacked
+            ? 'border-b-2 border-amber-600 bg-amber-100 shadow-md'
+            : 'mt-6 rounded-2xl border-2 border-amber-600 bg-amber-100 shadow-md'
       }
     >
       <div
         className={`flex gap-3 items-start py-3.5 ${
-          sticky ? 'max-w-2xl mx-auto px-4' : 'px-4'
+          sticky || stacked ? 'max-w-2xl mx-auto px-4' : 'px-4'
         }`}
       >
         <AlertTriangle

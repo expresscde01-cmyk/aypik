@@ -39,9 +39,11 @@ Website: https://www.o2switch.fr
 
 **2.1 Purpose**
 
-These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, access to messaging (Dialogue mode) according to the sender's plan and, where applicable, subject to a Match when the recipient's profile belongs to a plan that guarantees they will not be contacted without reciprocity (Confort, Premium, or a Founding Member during their Trial Period), unless that recipient has themselves turned on Simplified mode (see the “Messaging and Consent” glossary), at the end of their Trial Period (Article 4), on holding an active paid subscription, as well as account visibility settings.
+These Terms of Service (the "Terms") define the conditions of access to and use of the Aypik Service: profile creation, discovering members, expressing interest (Like, Flash), forming Matches, access to messaging (Dialogue mode) according to the sender's plan and, where applicable, subject to a Match when the recipient's profile belongs to a plan that guarantees they will not be contacted without reciprocity (Confort, Premium, or a Founding Member during their Trial Period), unless that recipient has themselves turned on Simplified mode (see the “Messaging and Consent” glossary), at the end of their Trial Period (Article 4)<!-- paid:start -->, on holding an active paid subscription<!-- paid:end -->, as well as account visibility settings.
 
+<!-- paid:start -->
 These Terms do not constitute general terms of sale. Any paid offers, in particular the one allowing messages to be sent at the end of the Trial Period referred to in Article 4, are governed by separate General Terms of Sale, referred to in Section 2.4.
+<!-- paid:end -->
 
 **2.2 Acceptance**
 
@@ -51,10 +53,16 @@ Registering, creating an account, or using the Service constitutes full and comp
 
 The following remain available free of charge, with no payment or credit card required: creating and managing a profile, viewing compatible profiles shown in Discover and suggestions, expressing interest (Like, Flash) and forming Matches.
 
+<!-- free:start -->
+Sending messages (Dialogue mode) is included during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. No paid subscription is offered or required while the Service is in free launch mode.
+<!-- free:end -->
+<!-- paid:start -->
 Sending messages (Dialogue mode) is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. This window is not renewable. Beyond that, sending new messages is reserved for users with an active subscription (Basique, Essentiel, Confort or Premium), under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4. Opening a Dialogue without a Match depends on the recipient (open or protected profile), as described in Section 2.1.
 
 Viewing Matches already formed and messages already received remains accessible free of charge. A user who does not wish to subscribe keeps full access to creating a profile, to Discover, to Like, to Flash and to forming Matches; only sending new messages, at the end of their Trial Period (Article 4), is subject to this condition.
+<!-- paid:end -->
 
+<!-- paid:start -->
 **2.4 Paid offers**
 
 At the end of the Trial Period referred to in Article 4, the publisher offers or may offer paid plans, in particular to allow unlimited messaging, as well as, where applicable, comfort or increased-visibility features. Where applicable:
@@ -64,6 +72,7 @@ At the end of the Trial Period referred to in Article 4, the publisher offers or
 - declining to subscribe to a paid plan does not result in account closure or loss of access to creating a profile, discovering members, Like, Flash and forming Matches, as described in Section 2.3. It does, however, limit the ability to send new messages at the end of their Trial Period (Article 4).
 
 As long as General Terms of Sale for a paid plan have not been published and accepted by the user, no payment is requested from them under that plan.
+<!-- paid:end -->
 
 **2.5 Amendments to these Terms**
 
@@ -167,13 +176,22 @@ During a six (6) month Trial Period starting from the date their account was cre
 
 This status is honorary: beyond the Trial Period benefits described above, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
 
+<!-- founder-closed:start -->
+The Founding Member offer, reserved for the first 1000 sign-ups, is no longer available, as the 1000-registration threshold has been reached. Free access to the site during its launch phase is not, however, reserved for Founding Members: the entire site remains free at this stage. Founding Members simply receive additional benefits (lifetime Founder badge, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). New members who sign up after this threshold continue to enjoy full, free access to the site during the launch phase.
+<!-- founder-closed:end -->
+
 **4.2 Other users**
 
 Any user creating an account when no Founding Member slot is available (the cap of 1000 active Founding Member accounts has been reached) benefits from a one (1) week Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
 
 **4.3 At the end of the Trial Period**
 
+<!-- free:start -->
+At the end of their Trial Period — six months for a Founding Member, one week for any other user — the user keeps access to the Service. No paid subscription is offered or required while the Service is in free launch mode.
+<!-- free:end -->
+<!-- paid:start -->
 At the end of their Trial Period — six months for a Founding Member, one week for any other user — and absent a subscription to a paid plan, the user keeps free access to creating and managing their profile, to Discover, to Like, to Flash, to forming Matches, and to reading messages already received. Only sending new messages then becomes subject to holding an active paid plan, under the conditions of Section 2.4.
+<!-- paid:end -->
 
 ### Article 5 — Boost and Premium Status
 
@@ -247,9 +265,9 @@ In the event of a dispute, and after an attempt at amicable resolution (contact 
 
 **Flash.** A priority action, stronger than a simple Like, sending a clear and direct signal to the targeted person to indicate immediate interest.
 
-**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). A Match always opens Dialogue between the two profiles, regardless of their plans. Sending messages remains subject to the sender's send capacity at the end of their Trial Period (Article 4), under Section 2.3.
+**Match.** A two-way relationship established between two members, confirming that mutual interest has been established (whether from crossed Likes or an accepted Flash). A Match always opens Dialogue between the two profiles, regardless of their plans.<!-- paid:start --> Sending messages remains subject to the sender's send capacity at the end of their Trial Period (Article 4), under Section 2.3.<!-- paid:end -->
 
-**Messaging and Consent.** Opening a Dialogue without a Match is only possible when the recipient's profile is open (Free, Basique, Essentiel). A Confort, Premium or Founding Member during their Trial Period can be reached only after a Match (reciprocal Like or Flash), unless they have turned on Simplified mode: they then become reachable without a Match, like an Essentiel profile. That choice applies only to receiving messages: it never allows writing to another still-protected profile without a Match. A Match, when it exists, always opens Dialogue. In addition, the sender must have send capacity (the Free one-week trial, or an active paid plan) at the end of their Trial Period (Article 4), under Sections 2.3 and 2.4.
+**Messaging and Consent.** Opening a Dialogue without a Match is only possible when the recipient's profile is open (Free, Basique, Essentiel). A Confort, Premium or Founding Member during their Trial Period can be reached only after a Match (reciprocal Like or Flash), unless they have turned on Simplified mode: they then become reachable without a Match, like an Essentiel profile. That choice applies only to receiving messages: it never allows writing to another still-protected profile without a Match. A Match, when it exists, always opens Dialogue.<!-- paid:start --> In addition, the sender must have send capacity (the Free one-week trial, or an active paid plan) at the end of their Trial Period (Article 4), under Sections 2.3 and 2.4.<!-- paid:end -->
 
 **To Review.** The status of a profile whose Like or Flash has been received and has not yet been decided on. The user may then decline the profile, put it on hold, or confirm a Match.
 
@@ -293,10 +311,17 @@ For every member, regardless of plan: the gender sought (a man is shown women's 
 No. One account per person and per email address, per Section 3.3.
 
 **Will the Service become paid?**
+<!-- free:start -->
+Not at the moment. The Service is in free launch mode: no paid plan is sold and no payment is requested. Creating a profile, discovering members, Like, Flash, forming Matches and sending messages are included under the Trial Period (Article 4).
+<!-- free:end -->
+<!-- paid:start -->
 Creating a profile, discovering members, Like, Flash and forming Matches remain free. Sending messages is offered free of charge during the Trial Period defined in Article 4 (six months for Founding Members, one week for other users); beyond that, it requires an active subscription, the terms and pricing of which are set out in separate General Terms of Sale, provided before any subscription and any payment.
+<!-- paid:end -->
 
+<!-- paid:start -->
 **Can I still view and read messages already received without a subscription?**
 Yes. At the end of their Trial Period (Article 4), only sending new messages is reserved for subscribers; viewing Matches and messages already received remains accessible free of charge (Section 2.3).
+<!-- paid:end -->
 
 **How does deleting my account work?**
 It is requested from your profile. The profile is no longer visible. Data is irretrievably erased after a 30-day purge period (Section 8.2).

@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
 import { isMessagingLocked } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
-import { offerLabel } from '@/lib/founderCopy';
+import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import type { Profile } from '@/components/ProfileSetup';
 import {
   type ChatMessage,
@@ -237,7 +237,9 @@ export default function ChatScreen({
       setDraft(content);
       const raw = userErrorMessage(err, t('matches.chatSendFail'));
       setError(
-        /payment_required/i.test(raw) || /payment_required/i.test(String(err))
+        !SITE_FREE_MODE &&
+          (/payment_required/i.test(raw) ||
+            /payment_required/i.test(String(err)))
           ? t('membership.chatLockedHint')
           : raw
       );

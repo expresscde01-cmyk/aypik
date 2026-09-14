@@ -44,6 +44,7 @@ export function isStripeConfigured() {
 }
 
 export function isPayPalConfigured() {
+  if (SITE_FREE_MODE) return false;
   return Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 }
 
