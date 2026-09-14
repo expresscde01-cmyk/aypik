@@ -636,6 +636,18 @@ body {
     justify-content: center;
   }
 
+  .launch-ticker-group {
+    min-width: 0;
+    padding-right: 0;
+    gap: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .launch-ticker-group + .launch-ticker-group {
+    display: none;
+  }
+
   .launch-ticker-item {
     white-space: normal;
     text-align: center;
@@ -796,11 +808,24 @@ body {
 .launch-ticker-track {
   display: flex;
   width: max-content;
-  animation: launch-ticker-scroll 36s linear infinite;
+  flex-shrink: 0;
+  animation-name: launch-ticker-scroll;
+  animation-duration: 36s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
 }
 
 .launch-ticker-track[data-paused='true'] {
   animation-play-state: paused;
+}
+
+.launch-ticker-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2.75rem;
+  padding-right: 2.75rem;
 }
 
 .launch-ticker-item {
@@ -810,8 +835,15 @@ body {
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.35;
-  padding-left: 0.85rem;
-  padding-right: 2.75rem;
+}
+
+@keyframes launch-ticker-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-1 * var(--ticker-shift, 50%)), 0, 0);
+  }
 }
 
 .launch-ticker-actions {
@@ -842,15 +874,6 @@ body {
 .launch-ticker-btn:focus-visible {
   outline: 2px solid #fb7185;
   outline-offset: 1px;
-}
-
-@keyframes launch-ticker-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 @media (max-width: 639px) {
