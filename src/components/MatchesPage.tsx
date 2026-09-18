@@ -84,6 +84,7 @@ import {
   withoutOccupiedPeers,
   dedupePeersByCanonicalStatus,
   isMatchedBoardPeer,
+  countReciprocalMatches,
 } from '@/lib/matchHistoryDisplay';
 import { matchCardDepartClass, retainDepartingMatches } from '@/lib/matchCardDepart';
 import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
@@ -2971,9 +2972,10 @@ export default function MatchesPage({
   );
   const viewerSimplified =
     parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
+  const liveMatchCount = countReciprocalMatches(matches, brokenPeerIds);
   const hasPendantStage = viewerSimplified
     ? floors.matchedChat.length > 0
-    : floors.matchedChat.length > 0 || floors.matchedQuiet.length > 0;
+    : liveMatchCount > 0;
   const hasAvantStage = viewerSimplified
     ? false
     : floors.new.length > 0 ||
@@ -4016,10 +4018,7 @@ export default function MatchesPage({
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        {t('matches.title')} (
-        {viewerSimplified
-          ? floors.matchedChat.length
-          : matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
+        {t('matches.title')} ({liveMatchCount})
       </h2>
       {viewerSimplified ? null : (
         <MatchesGlossary

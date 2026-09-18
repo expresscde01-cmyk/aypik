@@ -148,6 +148,32 @@ export function isMatchedBoardPeer(peer: {
   return peer.kind === 'match' || Boolean(peer.alreadyLiked);
 }
 
+/** Match réciproque encore actif : 1er mot ou discussion, jamais un like seul. */
+export function isLiveReciprocalMatch(peer: {
+  kind?: string;
+  alreadyLiked?: boolean;
+  waiting?: boolean;
+}): boolean {
+  return !peer.waiting && isMatchedBoardPeer(peer);
+}
+
+/** Compte les matchs (like/flash réciproques), pas les discussions en cours. */
+export function countReciprocalMatches<
+  T extends {
+    profile: { id: string };
+    kind?: string;
+    alreadyLiked?: boolean;
+    waiting?: boolean;
+  },
+>(peers: T[], brokenPeerIds: Set<string> = new Set()): number {
+  let count = 0;
+  for (const peer of dedupePeersByCanonicalStatus(peers)) {
+    if (brokenPeerIds.has(peer.profile.id)) continue;
+    if (isLiveReciprocalMatch(peer)) count += 1;
+  }
+  return count;
+}
+
 export function collectMatchedPeerIds<
   T extends {
     profile: { id: string };

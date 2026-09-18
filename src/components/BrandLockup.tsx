@@ -102,6 +102,7 @@ export function BrandHeart({ className = 'w-6 h-6' }: BrandHeartProps) {
 type BrandMarkProps = {
   size?: 'nav' | 'sm' | 'md' | 'lg';
   className?: string;
+  src?: string;
 };
 
 const MARK_BOX = {
@@ -127,21 +128,28 @@ const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
   lg: 65,
 };
 
-/** Asset UI (header, landing, auth) — indépendant du favicon SVG/ICO. */
+/** Asset UI (header, landing) — indépendant du favicon SVG/ICO. */
 const BRAND_MARK_SRC = `${import.meta.env.BASE_URL}brand-mark-transparent.png`;
+/** Cœur vagues — uniquement l’écran Connexion / Inscription. */
+export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}brand-mark-auth.png`;
 
 /**
- * Logo cœur détouré (PNG alpha) — header, landing, auth.
+ * Logo cœur détouré (PNG alpha) — header et landing.
  * Favicon onglet : pipeline SVG (build-favicons). PWA / apple-touch :
  * `public/app-icon-source.png` via scripts/build-app-icons.cjs.
- * Ne pas confondre avec ce PNG transparent (header / hero / auth)
- * ni avec brand-mark.png (tuile carte).
+ * Ne pas confondre avec ce PNG transparent (header / hero)
+ * ni avec brand-mark.png (tuile carte)
+ * ni avec brand-mark-auth.png (connexion / inscription).
  */
-export function BrandMark({ size = 'md', className = '' }: BrandMarkProps) {
+export function BrandMark({
+  size = 'md',
+  className = '',
+  src = BRAND_MARK_SRC,
+}: BrandMarkProps) {
   const px = MARK_INTRINSIC[size];
   return (
     <img
-      src={BRAND_MARK_SRC}
+      src={src}
       alt=""
       width={px}
       height={px}
@@ -209,6 +217,23 @@ export function BrandHeaderBrand({
   const showShortTag =
     stacked === true || (!hideTagline && stacked === null);
 
+  /** Sous-titre masqué : une seule ligne, pour le centrer dans le header. */
+  if (!showShortTag) {
+    return (
+      <span
+        className={`inline-flex flex-nowrap items-center gap-2 min-w-0 max-w-full ${className}`}
+      >
+        <BrandMarkNav />
+        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
+          <span className={brandClass}>{BRAND}</span>
+          {stacked === null && (
+            <span className={`hidden sm:inline ${longTagClass}`}>{baseline}</span>
+          )}
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span
       className={`inline-flex flex-col items-stretch gap-0.5 min-w-0 max-w-full ${className}`}
@@ -225,11 +250,9 @@ export function BrandHeaderBrand({
       {stacked === true ? (
         <span className={`${tagIndent} ${shortTagClass}`}>{shortTag}</span>
       ) : (
-        showShortTag && (
-          <span className={`sm:hidden ${tagIndent} ${shortTagClass}`}>
-            {shortTag}
-          </span>
-        )
+        <span className={`sm:hidden ${tagIndent} ${shortTagClass}`}>
+          {shortTag}
+        </span>
       )}
     </span>
   );
