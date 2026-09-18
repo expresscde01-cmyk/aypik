@@ -13,6 +13,7 @@ import {
   collectMatchedPeerIds,
   withoutOccupiedPeers,
   dedupePeersByCanonicalStatus,
+  countReciprocalMatches,
   removeActorFromCategoryDigest,
   splitPendingByOthers,
 } from './matchHistoryDisplay.ts';
@@ -185,6 +186,32 @@ test('reload sans overlay : inbox match + updated_at → 1er mot daté du jour',
   ]);
   assert.equal(at.get('luck'), '2026-09-12T08:00:00.000Z');
   assert.equal(at.has('old'), false);
+});
+
+test('Mes Matchs : un 1er mot compte comme un match, une discussion n’est pas exigée', () => {
+  const suzanne = {
+    profile: { id: 'suzanne' },
+    kind: 'match',
+    alreadyLiked: true,
+    waiting: false,
+  };
+  assert.equal(countReciprocalMatches([suzanne]), 1);
+  assert.equal(
+    countReciprocalMatches([
+      suzanne,
+      {
+        profile: { id: 'like-only' },
+        kind: 'like',
+        alreadyLiked: false,
+        waiting: false,
+      },
+    ]),
+    1
+  );
+  assert.equal(
+    countReciprocalMatches([suzanne], new Set(['suzanne'])),
+    0
+  );
 });
 
 test('Luck matché : plus dans à étudier ni Pas cette fois', () => {

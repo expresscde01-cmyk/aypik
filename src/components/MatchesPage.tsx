@@ -84,6 +84,7 @@ import {
   withoutOccupiedPeers,
   dedupePeersByCanonicalStatus,
   isMatchedBoardPeer,
+  countReciprocalMatches,
 } from '@/lib/matchHistoryDisplay';
 import { matchCardDepartClass, retainDepartingMatches } from '@/lib/matchCardDepart';
 import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
@@ -2971,9 +2972,8 @@ export default function MatchesPage({
   );
   const viewerSimplified =
     parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
-  const hasPendantStage = viewerSimplified
-    ? floors.matchedChat.length > 0
-    : floors.matchedChat.length > 0 || floors.matchedQuiet.length > 0;
+  const liveMatchCount = countReciprocalMatches(matches, brokenPeerIds);
+  const hasPendantStage = liveMatchCount > 0;
   const hasAvantStage = viewerSimplified
     ? false
     : floors.new.length > 0 ||
@@ -4016,10 +4016,7 @@ export default function MatchesPage({
       )}
 
       <h2 className="text-xl font-bold text-gray-900 mb-1">
-        {t('matches.title')} (
-        {viewerSimplified
-          ? floors.matchedChat.length
-          : matches.filter((m) => !brokenPeerIds.has(m.profile.id)).length})
+        {t('matches.title')} ({liveMatchCount})
       </h2>
       {viewerSimplified ? null : (
         <MatchesGlossary
@@ -4037,7 +4034,7 @@ export default function MatchesPage({
 
       {/* Étages : Pendant → Avant → Après (même découpage que le glossaire) */}
       <div className="space-y-8">
-        {viewerSimplified && floors.matchedChat.length === 0 ? (
+        {viewerSimplified && liveMatchCount === 0 ? (
           <p className="text-sm text-gray-500 text-center py-10">
             {t('matches.simplifiedEmpty')}
           </p>
@@ -4049,13 +4046,11 @@ export default function MatchesPage({
               t('matches.chipDiscussionCap'),
               floors.matchedChat
             )}
-            {viewerSimplified
-              ? null
-              : renderFloor(
-                  'matched-quiet',
-                  t('matches.chipFirstWord'),
-                  floors.matchedQuiet
-                )}
+            {renderFloor(
+              'matched-quiet',
+              t('matches.chipFirstWord'),
+              floors.matchedQuiet
+            )}
           </MatchStageBlock>
         ) : null}
         {hasAvantStage ? (
