@@ -37,7 +37,7 @@ import {
   latestBirthDateForAge,
 } from '@/lib/dating';
 import { LegalLink, SiteFooter } from '@/components/LegalChrome';
-import { BrandLockup, BrandMark } from '@/components/BrandLockup';
+import { BrandLockup, BrandMark, BRAND_MARK_AUTH_SRC } from '@/components/BrandLockup';
 import BirthDatePicker from '@/components/BirthDatePicker';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import {
@@ -298,7 +298,7 @@ export default function AuthScreen({
             aria-label={t('common.homeAria')}
           >
             <div className="mb-5 animate-pop">
-              <BrandMark size="lg" className="mx-auto" />
+              <BrandMark size="lg" className="mx-auto" src={BRAND_MARK_AUTH_SRC} />
             </div>
             <BrandLockup variant="hero" />
           </a>

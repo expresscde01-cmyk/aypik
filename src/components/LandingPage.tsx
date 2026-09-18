@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, type PointerEvent } from 'react';
 import { ChevronDown, Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
-import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
+import { BrandHeaderBrand, BrandMark, BRAND_GRADIENT_CSS, BRAND_MARK_AUTH_SRC } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalChrome';
 import LaunchTicker from '@/components/LaunchTicker';
 import { OfferSummaryCards } from '@/components/membership/OfferSummaryCards';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
 import {
   HeaderTaglineWidthProbe,
+  MobileTaglineWidthProbe,
   useHeaderTaglineCompact,
+  useMobileTaglineFits,
 } from '@/lib/useHeaderTaglineCompact';
 import {
   SITE_FREE_MODE,
@@ -138,6 +140,12 @@ export function SiteHeader({
   const connected = Boolean(displayName);
   const { compact: taglineCompact, rowRef, rightRef, probeRef } =
     useHeaderTaglineCompact();
+  const {
+    fits: mobileTaglineFits,
+    rowRef: mobileTaglineRowRef,
+    rightRef: mobileTaglineRightRef,
+    probeRef: mobileTaglineProbeRef,
+  } = useMobileTaglineFits();
   const { t } = useTranslation();
   const homeHref = withLocalePrefix(currentLocale(), '/');
   /** Même bascule que le header de l’app : largeur alignée à partir de 1024px. */
@@ -160,8 +168,15 @@ export function SiteHeader({
       <div className={pcHeader ? 'w-full px-8' : 'max-w-3xl mx-auto px-4'}>
         <div className={pcHeader ? 'max-w-7xl mx-auto' : undefined}>
         <div
-          ref={rowRef}
-          className="relative flex w-full items-start sm:items-center justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0"
+          ref={(node) => {
+            rowRef.current = node;
+            mobileTaglineRowRef.current = node;
+          }}
+          className={`relative flex w-full justify-between gap-2 sm:gap-3 pt-2.5 pb-2.5 sm:h-14 sm:py-0 ${
+            !pcHeader && !mobileTaglineFits
+              ? 'items-center'
+              : 'items-start sm:items-center'
+          }`}
         >
           <a
             href={homeHref}
@@ -177,10 +192,20 @@ export function SiteHeader({
             className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
             aria-label={t('common.homeAria')}
           >
-            <BrandHeaderBrand compact={taglineCompact} />
+            {pcHeader ? (
+              <BrandHeaderBrand compact={taglineCompact} />
+            ) : (
+              <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
+            )}
           </a>
 
-          <div ref={rightRef} className="shrink-0 flex items-center gap-2">
+          <div
+            ref={(node) => {
+              rightRef.current = node;
+              mobileTaglineRightRef.current = node;
+            }}
+            className="shrink-0 flex items-center gap-2"
+          >
             <LanguageSwitcher compact />
             {connected ? (
               <div className="flex items-center gap-2">
@@ -216,6 +241,7 @@ export function SiteHeader({
             )}
           </div>
           <HeaderTaglineWidthProbe probeRef={probeRef} />
+          <MobileTaglineWidthProbe probeRef={mobileTaglineProbeRef} />
         </div>
         </div>
       </div>
@@ -427,6 +453,7 @@ export default function LandingPage({
             <BrandMark
               size="md"
               className="h-[67px] w-[75px] md:h-[6.5rem] md:w-[6.5rem]"
+              src={BRAND_MARK_AUTH_SRC}
             />
             <p
               className="w-fit mx-auto text-xl sm:text-2xl font-extrabold uppercase tracking-[0.32em] bg-clip-text text-transparent"
