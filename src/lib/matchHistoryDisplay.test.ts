@@ -214,6 +214,23 @@ test('Mes Matchs : un 1er mot compte comme un match, une discussion n’est pas 
   );
 });
 
+test('Mes Matchs : le titre compte 1er mot + discussions, quel que soit le mode', () => {
+  const suzanne = {
+    profile: { id: 'suzanne' },
+    kind: 'match',
+    alreadyLiked: true,
+    waiting: false,
+  };
+  const chatting = {
+    profile: { id: 'lea' },
+    kind: 'match',
+    alreadyLiked: true,
+    waiting: false,
+  };
+  assert.equal(countReciprocalMatches([suzanne]), 1);
+  assert.equal(countReciprocalMatches([suzanne, chatting]), 2);
+});
+
 test('Luck matché : plus dans à étudier ni Pas cette fois', () => {
   const board = [
     {

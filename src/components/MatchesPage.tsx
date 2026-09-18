@@ -2973,7 +2973,9 @@ export default function MatchesPage({
   const viewerSimplified =
     parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
   const liveMatchCount = countReciprocalMatches(matches, brokenPeerIds);
-  const hasPendantStage = liveMatchCount > 0;
+  const hasPendantStage = viewerSimplified
+    ? floors.matchedChat.length > 0
+    : liveMatchCount > 0;
   const hasAvantStage = viewerSimplified
     ? false
     : floors.new.length > 0 ||
@@ -4034,7 +4036,7 @@ export default function MatchesPage({
 
       {/* Étages : Pendant → Avant → Après (même découpage que le glossaire) */}
       <div className="space-y-8">
-        {viewerSimplified && liveMatchCount === 0 ? (
+        {viewerSimplified && floors.matchedChat.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-10">
             {t('matches.simplifiedEmpty')}
           </p>
@@ -4046,11 +4048,13 @@ export default function MatchesPage({
               t('matches.chipDiscussionCap'),
               floors.matchedChat
             )}
-            {renderFloor(
-              'matched-quiet',
-              t('matches.chipFirstWord'),
-              floors.matchedQuiet
-            )}
+            {viewerSimplified
+              ? null
+              : renderFloor(
+                  'matched-quiet',
+                  t('matches.chipFirstWord'),
+                  floors.matchedQuiet
+                )}
           </MatchStageBlock>
         ) : null}
         {hasAvantStage ? (
