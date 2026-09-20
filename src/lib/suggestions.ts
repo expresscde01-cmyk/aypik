@@ -144,6 +144,9 @@ export async function fetchSuggestedProfiles(options?: {
     internationalCountries: prefs.internationalCountries,
     franceWorldChoice: prefs.franceWorldChoice,
     franceWorldCodes: prefs.franceWorldCodes,
+    temperamentFilter: prefs.temperamentFilter,
+    languageCodes: prefs.languageCodes,
+    minLanguageLevel: prefs.minLanguageLevel,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

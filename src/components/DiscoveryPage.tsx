@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo, Fragment, type ButtonHTMLAttributes } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo, Fragment, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Heart,
@@ -101,6 +101,19 @@ import {
   invalidateLikeFlashEdges,
 } from '@/lib/likeFlashEdges';
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
+import { matchingTargetGender } from '@/lib/dating';
+import { getTemperamentLabel } from '@/lib/temperament';
+import { languageDisplayName } from '@/lib/spokenLanguages';
+import TemperamentPicker from '@/components/TemperamentPicker';
+import SpokenLanguagePicker from '@/components/SpokenLanguagePicker';
+import {
+  isLanguageFilterActive,
+  sanitizeLanguageFilterCodes,
+  temperamentFilterKeyCount,
+  temperamentFilterKeys,
+  toggleTemperamentFilterKey,
+  type MinLanguageLevelFilter,
+} from '@/lib/discoverTraitFilters';
 import { LIKE_NOTIFICATION_EMOJI } from '@/lib/interactionCopy';
 import PortaledActionTooltip from '@/components/PortaledActionTooltip';
 import { useTranslation } from 'react-i18next';
@@ -1149,6 +1162,221 @@ function InterestOverlapSelect({
   );
 }
 
+function DiscoverFilterDisclose({
+  label,
+  summary,
+  count,
+  empty,
+  disabled,
+  onClear,
+  children,
+}: {
+  label: string;
+  summary: string;
+  count?: number;
+  empty: boolean;
+  disabled: boolean;
+  onClear: () => void;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-label={label}
+        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span className="min-w-0 flex-1 flex items-center gap-1 text-emerald-950">
+          <span
+            className={`truncate${empty ? ' font-medium' : ''}`}
+          >
+            {empty ? tStatic('discover.interestsIndifferent') : summary}
+          </span>
+          {!empty && typeof count === 'number' ? (
+            <span className="shrink-0">({count})</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-emerald-600 shrink-0 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <div className="mt-1 rounded-xl border border-gray-200 bg-white py-1 shadow-sm">
+          {!empty ? (
+            <div className="flex justify-end px-3 pt-1.5 pb-0.5">
+              <button
+                type="button"
+                className="text-[11px] leading-none text-rose-600 hover:text-rose-700 bg-transparent p-0 border-0"
+                onClick={onClear}
+              >
+                {tStatic('discover.clearSelection')}
+              </button>
+            </div>
+          ) : null}
+          <div className="px-3 pb-2.5 pt-1">{children}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MIN_LANGUAGE_LEVEL_MENU: readonly (
+  | { type: 'option'; value: MinLanguageLevelFilter }
+  | { type: 'divider' }
+)[] = [
+  { type: 'option', value: 'intermediate' },
+  { type: 'option', value: 'advanced' },
+  { type: 'option', value: 'native' },
+  { type: 'divider' },
+  { type: 'option', value: 'all' },
+];
+
+function minLanguageLevelLabel(value: MinLanguageLevelFilter): string {
+  if (value === 'intermediate') return tStatic('discover.minLevelIntermediate');
+  if (value === 'advanced') return tStatic('discover.minLevelAdvanced');
+  if (value === 'native') return tStatic('discover.minLevelNative');
+  return tStatic('discover.interestsIndifferent');
+}
+
+function LanguageMinLevelSelect({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: MinLanguageLevelFilter;
+  disabled: boolean;
+  onChange: (next: MinLanguageLevelFilter) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const current = value || 'all';
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        onClick={() => {
+          if (disabled) return;
+          setOpen((visible) => !visible);
+        }}
+      >
+        <span
+          className={`truncate text-emerald-950${current === 'all' ? ' font-medium' : ''}`}
+        >
+          {minLanguageLevelLabel(current)}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-emerald-600 shrink-0 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label={tStatic('discover.minLanguageLevel')}
+          className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white py-1 shadow-sm overflow-hidden"
+        >
+          {MIN_LANGUAGE_LEVEL_MENU.map((item, index) => {
+            if (item.type === 'divider') {
+              return (
+                <li
+                  key={`divider-${index}`}
+                  role="separator"
+                  aria-hidden
+                  className="px-2.5 py-1.5 pointer-events-none"
+                >
+                  <span className="block border-t-[3px] border-double border-gray-200" />
+                </li>
+              );
+            }
+            const selected = item.value === current;
+            const isGlobal = item.value === 'all';
+            return (
+              <li key={item.value} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? 'bg-emerald-50 text-emerald-950 font-semibold hover:bg-emerald-100 hover:text-emerald-950'
+                      : isGlobal
+                        ? 'text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-950'
+                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-950'
+                  }`}
+                  onClick={() => {
+                    onChange(item.value);
+                    setOpen(false);
+                  }}
+                >
+                  {minLanguageLevelLabel(item.value)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 type Candidate = DiscoveryCandidate;
 
 export default function DiscoveryPage({
@@ -1167,7 +1395,7 @@ export default function DiscoveryPage({
   /** Profil déjà chargé par AppShell (RPC my_profile). */
   myProfile?: Profile | null;
 } = {}) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const userId = user?.id;
   const { status, refresh, loading: membershipLoading } = useMembership();
@@ -1182,7 +1410,7 @@ export default function DiscoveryPage({
     listen: true,
     persistOnChange: false,
   });
-  const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap, worldZones, internationalCountries, franceWorldChoice, franceWorldCodes } =
+  const { geoPerimeter, geoRadiusKm, geoExclusive, minOverlap, worldZones, internationalCountries, franceWorldChoice, franceWorldCodes, temperamentFilter, languageCodes, minLanguageLevel } =
     prefs;
   const [sortEnabled, setSortEnabled] = useState(false);
   const [sortChoice, setSortChoice] = useState<SortChoice>('nouveaux');
@@ -1191,7 +1419,25 @@ export default function DiscoveryPage({
   const [chatPeer, setChatPeer] = useState<Candidate | null>(null);
   const canFilter = canPersonalizeSearch(status);
   const geoFilterActive = isGeoFilterActive(geoPerimeter);
-  const hasActiveFilter = geoFilterActive || minOverlap > 0;
+  const temperamentCount = temperamentFilterKeyCount(temperamentFilter);
+  const languageFilterActive = isLanguageFilterActive(languageCodes);
+  const hasActiveFilter =
+    geoFilterActive ||
+    minOverlap > 0 ||
+    temperamentCount > 0 ||
+    languageFilterActive;
+  const temperamentLabelGender = matchingTargetGender(myProfile?.gender);
+  const temperamentSelected = temperamentFilterKeys(temperamentFilter);
+  const temperamentSummary = temperamentSelected
+    .map((key) => getTemperamentLabel(key, temperamentLabelGender, i18n.language))
+    .filter(Boolean)
+    .join(', ');
+  const languageDrafts = sanitizeLanguageFilterCodes(languageCodes).map(
+    (code) => ({ code, level: null })
+  );
+  const languageSummary = languageDrafts
+    .map((item) => languageDisplayName(item.code, i18n.language || 'fr'))
+    .join(', ');
   /**
    * Masqués tout de suite dans la grille (like / flash / masquer).
    * Conservés pour les fetches suivants de la visite.
@@ -1301,14 +1547,21 @@ export default function DiscoveryPage({
       myProfile?.location
     );
     const base = sortEnabled
-      ? { ...personalized, geoPerimeter: 'anywhere' as const, minOverlap: 0 }
+      ? {
+          ...personalized,
+          geoPerimeter: 'anywhere' as const,
+          minOverlap: 0,
+          temperamentFilter: {},
+          languageCodes: [],
+          minLanguageLevel: 'all' as const,
+        }
       : personalized;
     if (!geoExclusiveApplies(base.geoPerimeter)) {
       return { ...base, geoExclusive: false };
     }
     return base;
   }, [sortEnabled, prefs, status, myProfile?.location]);
-  const prefsKey = `${catalogPrefs.geoPerimeter}|${catalogPrefs.franceWorldChoice}|${(catalogPrefs.franceWorldCodes || []).join(',')}|${(catalogPrefs.internationalCountries || []).join(',')}|${(catalogPrefs.worldZones || []).join(',')}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}`;
+  const prefsKey = `${catalogPrefs.geoPerimeter}|${catalogPrefs.franceWorldChoice}|${(catalogPrefs.franceWorldCodes || []).join(',')}|${(catalogPrefs.internationalCountries || []).join(',')}|${(catalogPrefs.worldZones || []).join(',')}|${catalogPrefs.geoExclusive ? 'x' : 'c'}|${catalogPrefs.geoRadiusKm}|${catalogPrefs.minOverlap}|${JSON.stringify(catalogPrefs.temperamentFilter)}|${(catalogPrefs.languageCodes || []).join(',')}|${catalogPrefs.minLanguageLevel}`;
   const newMonths = newProfilesWindowMonths(signupCount);
   const catalogSort: DiscoveryCatalogSortId = sortEnabled
     ? sortChoice
@@ -1620,7 +1873,12 @@ export default function DiscoveryPage({
             }
             activeCount={
               filtersActive
-                ? [geoFilterActive, minOverlap > 0].filter(Boolean).length
+                ? [
+                    geoFilterActive,
+                    minOverlap > 0,
+                    temperamentCount > 0,
+                    languageFilterActive,
+                  ].filter(Boolean).length
                 : 0
             }
             priceLabel={priceLabel}
@@ -1748,6 +2006,77 @@ export default function DiscoveryPage({
                   }}
                 />
               </div>
+              <div className="flex flex-col gap-1 text-sm text-gray-700">
+                {t('discover.temperamentWanted')}
+                <DiscoverFilterDisclose
+                  label={t('discover.temperamentWanted')}
+                  summary={temperamentSummary}
+                  count={temperamentCount}
+                  empty={temperamentCount === 0}
+                  disabled={!filtersActive || !canFilter}
+                  onClear={() => {
+                    if (!filtersActive || !canFilter) return;
+                    setPrefs((prev) => ({ ...prev, temperamentFilter: {} }));
+                  }}
+                >
+                  <TemperamentPicker
+                    selected={temperamentSelected}
+                    gender={temperamentLabelGender}
+                    unlimited
+                    onToggle={(key) => {
+                      if (!filtersActive || !canFilter) return;
+                      setPrefs((prev) => ({
+                        ...prev,
+                        temperamentFilter: toggleTemperamentFilterKey(
+                          prev.temperamentFilter,
+                          key
+                        ),
+                      }));
+                    }}
+                  />
+                </DiscoverFilterDisclose>
+              </div>
+              <div className="flex flex-col gap-1 text-sm text-gray-700">
+                {t('discover.spokenLanguages')}
+                <DiscoverFilterDisclose
+                  label={t('discover.spokenLanguages')}
+                  summary={languageSummary}
+                  empty={!languageFilterActive}
+                  disabled={!filtersActive || !canFilter}
+                  onClear={() => {
+                    if (!filtersActive || !canFilter) return;
+                    setPrefs((prev) => ({ ...prev, languageCodes: [] }));
+                  }}
+                >
+                  <SpokenLanguagePicker
+                    drafts={languageDrafts}
+                    showLevels={false}
+                    onChange={(next) => {
+                      if (!filtersActive || !canFilter) return;
+                      setPrefs((prev) => ({
+                        ...prev,
+                        languageCodes: next.map((row) => row.code),
+                      }));
+                    }}
+                  />
+                </DiscoverFilterDisclose>
+              </div>
+              {languageFilterActive ? (
+                <div className="flex flex-col gap-1 text-sm text-gray-700">
+                  {t('discover.minLanguageLevel')}
+                  <LanguageMinLevelSelect
+                    value={minLanguageLevel}
+                    disabled={!filtersActive || !canFilter}
+                    onChange={(next) => {
+                      if (!filtersActive || !canFilter) return;
+                      setPrefs((prev) => ({
+                        ...prev,
+                        minLanguageLevel: next,
+                      }));
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -1798,7 +2127,8 @@ export default function DiscoveryPage({
           </div>
           {filtersActive && hasActiveFilter ? (
             <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
-              {t('discover.emptyFilters')}
+              {t('discover.emptyFilters')}{' '}
+              {t('discover.emptyFiltersHint')}
             </p>
           ) : (
             <>
