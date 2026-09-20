@@ -9,6 +9,10 @@ import {
 import { candidatePassesGeoFilter, fillMissingProfileDistances } from '@/lib/suggestionMatch';
 import type { SuggestionPrefs } from '@/lib/suggestionPrefs';
 import { franceWorldAllowedIsos, parseInternationalCountries } from '@/lib/worldGeo';
+import {
+  isLanguageFilterActive,
+  temperamentFilterToRpc,
+} from '@/lib/discoverTraitFilters';
 import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
@@ -144,7 +148,10 @@ export function suggestProfilesRpcArgs(options: {
   worldZones?: SuggestionPrefs['worldZones'];
   internationalCountries?: SuggestionPrefs['internationalCountries'];
   franceWorldChoice?: SuggestionPrefs['franceWorldChoice'];
-  franceWorldCodes?: SuggestionPrefs['franceWorldCodes'];
+    franceWorldCodes?: SuggestionPrefs['franceWorldCodes'];
+  temperamentFilter?: SuggestionPrefs['temperamentFilter'];
+  languageCodes?: SuggestionPrefs['languageCodes'];
+  minLanguageLevel?: SuggestionPrefs['minLanguageLevel'];
 }): Record<string, unknown> {
   const geoReset =
     options.geoPerimeter === 'anywhere' ||
@@ -187,6 +194,18 @@ export function suggestProfilesRpcArgs(options: {
   if (excludeIds.length > 0) {
     args.p_exclude_ids = excludeIds;
   }
+  const temperament = temperamentFilterToRpc(options.temperamentFilter || {});
+  if (temperament) {
+    args.p_temperament = temperament;
+  }
+  const languageCodes = (options.languageCodes || []).filter(Boolean);
+  if (isLanguageFilterActive(languageCodes)) {
+    args.p_languages = languageCodes;
+    const minLevel = options.minLanguageLevel;
+    if (minLevel && minLevel !== 'all') {
+      args.p_min_language_level = minLevel;
+    }
+  }
   return args;
 }
 
@@ -226,6 +245,9 @@ export async function fetchDiscoveryCatalog(options: {
     internationalCountries: prefs.internationalCountries,
     franceWorldChoice: prefs.franceWorldChoice,
     franceWorldCodes: prefs.franceWorldCodes,
+    temperamentFilter: prefs.temperamentFilter,
+    languageCodes: prefs.languageCodes,
+    minLanguageLevel: prefs.minLanguageLevel,
   });
   const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 

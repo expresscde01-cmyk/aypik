@@ -8,6 +8,13 @@ import {
   type GeoRadiusKm,
 } from './geoProximity';
 import { parseFranceWorldChoice, parseFranceWorldCodes, parseInternationalCountries, parseWorldZones, FRANCE_WORLD_CHOICE_ALL, type FranceWorldChoice, type WorldZone } from './worldGeo';
+import {
+  sanitizeLanguageFilterCodes,
+  sanitizeMinLanguageLevel,
+  sanitizeTemperamentFilter,
+  type MinLanguageLevelFilter,
+  type TemperamentFilterMap,
+} from './discoverTraitFilters';
 
 export type SuggestionPrefs = {
   geoPerimeter: GeoPerimeterFilter;
@@ -30,6 +37,11 @@ export type SuggestionPrefs = {
   franceWorldChoice: FranceWorldChoice;
   /** Pays précis La France dans le monde. Tableau vide = un groupe (PARTOUT / outre-mer / francophones). */
   franceWorldCodes: string[];
+  /** Clés par famille. Objet vide = filtre inactif. */
+  temperamentFilter: TemperamentFilterMap;
+  /** Codes ISO 639-1, 8 max. Tableau vide = filtre inactif. */
+  languageCodes: string[];
+  minLanguageLevel: MinLanguageLevelFilter;
 };
 
 /** Première visite / rien de configuré : régions voisines, centres d’intérêt indifférents. */
@@ -42,6 +54,9 @@ export const DEFAULT_SUGGESTION_PREFS: SuggestionPrefs = {
   internationalCountries: [],
   franceWorldChoice: 'all',
   franceWorldCodes: [],
+  temperamentFilter: {},
+  languageCodes: [],
+  minLanguageLevel: 'all',
 };
 
 const PREFS_EVENT = 'aypik-suggestion-prefs';
@@ -131,6 +146,9 @@ export function parseSuggestionPrefs(raw: unknown): SuggestionPrefs {
     internationalCountries,
     franceWorldChoice,
     franceWorldCodes,
+    temperamentFilter: sanitizeTemperamentFilter(d.temperamentFilter),
+    languageCodes: sanitizeLanguageFilterCodes(d.languageCodes),
+    minLanguageLevel: sanitizeMinLanguageLevel(d.minLanguageLevel),
   };
 }
 

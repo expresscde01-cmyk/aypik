@@ -11,21 +11,23 @@ import {
   type SpokenLevel,
 } from '@/lib/spokenLanguages';
 
-const LEVEL_KEY: Record<SpokenLevel, string> = {
+const LEVEL_KEY = {
   beginner: 'languages.levels.beginner',
   intermediate: 'languages.levels.intermediate',
   advanced: 'languages.levels.advanced',
   native: 'languages.levels.native',
-};
+} as const;
 
 export default function SpokenLanguagePicker({
   drafts,
   onChange,
   nativeRequired,
+  showLevels = true,
 }: {
   drafts: SpokenDraft[];
   onChange: (next: SpokenDraft[]) => void;
   nativeRequired?: boolean;
+  showLevels?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language || 'fr';
@@ -147,6 +149,7 @@ export default function SpokenLanguagePicker({
       </div>
 
       {drafts.length > 0 && (
+        showLevels ? (
         <ul className="space-y-3">
           {drafts.map((item) => {
             const lockNative =
@@ -213,11 +216,34 @@ export default function SpokenLanguagePicker({
             );
           })}
         </ul>
+        ) : (
+        <ul className="flex flex-wrap gap-2">
+          {drafts.map((item) => (
+            <li key={item.code}>
+              <span className="temperament-chip temperament-chip--on">
+                {languageDisplayName(item.code, locale)}
+                <button
+                  type="button"
+                  onClick={() => remove(item.code)}
+                  aria-label={t('languages.remove', {
+                    name: languageDisplayName(item.code, locale),
+                  })}
+                  className="p-0.5 rounded-full hover:bg-white/20"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+        )
       )}
 
-      <p className="text-xs text-gray-400 leading-relaxed">
-        {t('languages.levelHelp')}
-      </p>
+      {showLevels && (
+        <p className="text-xs text-gray-400 leading-relaxed">
+          {t('languages.levelHelp')}
+        </p>
+      )}
     </div>
   );
 }

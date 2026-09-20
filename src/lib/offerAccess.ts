@@ -175,6 +175,9 @@ export function effectiveSuggestionPrefs(
       internationalCountries: [],
       franceWorldChoice: 'all',
       franceWorldCodes: [],
+      temperamentFilter: {},
+      languageCodes: [],
+      minLanguageLevel: 'all',
     };
   }
 

@@ -6,14 +6,16 @@ export default function TemperamentPicker({
   selected,
   gender,
   onToggle,
+  unlimited = false,
 }: {
   selected: readonly string[];
   gender?: ProfileGender | null;
   onToggle: (key: string) => void;
+  unlimited?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const selectedSet = new Set(selected);
-  const full = selectedSet.size >= MAX_TEMPERAMENT;
+  const full = !unlimited && selectedSet.size >= MAX_TEMPERAMENT;
   const lang = i18n.language;
 
   return (
