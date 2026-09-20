@@ -13,6 +13,7 @@ import ProfileSetup, {
   PROFILE_CARD_COLUMNS,
   type Profile,
 } from '@/components/ProfileSetup';
+import TemperamentOnboarding from '@/components/TemperamentOnboarding';
 import AccountPausedScreen from '@/components/AccountPausedScreen';
 import PhoneVerification from '@/components/PhoneVerification';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
@@ -227,7 +228,7 @@ function AppShellView() {
     setProfileLoadError(null);
     const { data, error } = await supabase
       .from('profiles')
-      .select(PROFILE_CARD_COLUMNS)
+      .select(`${PROFILE_CARD_COLUMNS}, temperament`)
       .eq('id', user.id)
       .maybeSingle();
     if (gen !== profileLoadGenRef.current) return null;
@@ -371,6 +372,12 @@ function AppShellView() {
     !profileLoading &&
     !profileLoadError &&
     (!profile || parseProfileGender(profile.gender) == null);
+  const needsTemperament =
+    !profileLoading &&
+    !profileLoadError &&
+    Boolean(profile) &&
+    parseProfileGender(profile?.gender) != null &&
+    profile?.temperament == null;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
@@ -493,6 +500,17 @@ function AppShellView() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  if (needsTemperament) {
+    return (
+      <TemperamentOnboarding
+        gender={parseProfileGender(profile?.gender)}
+        onDone={() => {
+          void reloadViewerProfile();
+        }}
+      />
     );
   }
 
