@@ -32,8 +32,19 @@ import { LegalLink } from '@/components/LegalTerms';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { useTranslation } from 'react-i18next';
 import { widgetLanguage } from '@/i18n/format';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { userErrorMessage } from '@/lib/userError';
+import { checkoutNeedsNativeLanguage } from '@/lib/isNativeLanguageRequired';
+import {
+  hasNativeSpokenLanguage,
+  parseSpokenLanguages,
+  sanitizeSpokenLanguages,
+  type SpokenDraft,
+} from '@/lib/spokenLanguages';
+import SpokenLanguagePicker from '@/components/SpokenLanguagePicker';
 
-type Step = 'choose' | 'card' | 'paypal_redirect' | 'success';
+type Step = 'native' | 'choose' | 'card' | 'paypal_redirect' | 'success';
 
 const PLAN_PRICE_FIELD: Record<
   PaymentPlanTier,
@@ -118,7 +129,10 @@ export function PaymentCheckoutModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [nativeDrafts, setNativeDrafts] = useState<SpokenDraft[]>([]);
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const nativeGate = checkoutNeedsNativeLanguage(plan);
 
   const priceCents =
     plan === 'international'
@@ -140,8 +154,26 @@ export function PaymentCheckoutModal({
       setLoading(false);
       setClientSecret(null);
       setMethod('card');
+      setNativeDrafts([]);
+      return;
     }
-  }, [open]);
+    if (!nativeGate || !user) return;
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('languages')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const langs = parseSpokenLanguages(data?.languages);
+      setNativeDrafts(langs);
+      if (!hasNativeSpokenLanguage(langs)) setStep('native');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, nativeGate, user]);
 
   if (SITE_FREE_MODE || !open) return null;
 
@@ -194,6 +226,29 @@ export function PaymentCheckoutModal({
     else await startPayPal();
   };
 
+  const saveNativeThenContinue = async () => {
+    if (!user) return;
+    const saved = sanitizeSpokenLanguages(nativeDrafts);
+    if (!hasNativeSpokenLanguage(saved)) {
+      setError(t('languages.nativeRequiredCheckout'));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ languages: saved })
+        .eq('id', user.id);
+      if (updateError) throw updateError;
+      setStep('choose');
+    } catch (err) {
+      setError(userErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -215,7 +270,9 @@ export function PaymentCheckoutModal({
               id="checkout-title"
               className="text-base font-bold text-gray-900"
             >
-              {t('membership.checkoutTitle', { offer: offerName })}
+              {step === 'native'
+                ? t('languages.checkoutTitle')
+                : t('membership.checkoutTitle', { offer: offerName })}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {t('membership.checkoutSecure')}
@@ -232,6 +289,40 @@ export function PaymentCheckoutModal({
         </div>
 
         <div className="p-5 space-y-5">
+          {step === 'native' && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {t('languages.nativeRequiredCheckout')}
+              </p>
+              <SpokenLanguagePicker
+                drafts={nativeDrafts}
+                onChange={setNativeDrafts}
+                nativeRequired
+              />
+              {error && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={
+                  loading ||
+                  !hasNativeSpokenLanguage(
+                    sanitizeSpokenLanguages(nativeDrafts)
+                  )
+                }
+                onClick={() => void saveNativeThenContinue()}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold disabled:opacity-60"
+              >
+                {loading ? t('profile.saving') : t('languages.checkoutContinue')}
+              </button>
+            </div>
+          )}
+
+          {step !== 'native' && (
+          <>
           {/* Récapitulatif */}
           <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
             <div className="flex items-baseline justify-between gap-3">
@@ -395,6 +486,8 @@ export function PaymentCheckoutModal({
                 {t('membership.paypalConfirmHint', { price: priceLabel })}
               </p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AlertCircle, Check } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/lib/auth';
+import type { Ref } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { userErrorMessage } from '@/lib/userError';
 import {
   MAX_TEMPERAMENT,
   sanitizeTemperament,
@@ -12,7 +9,7 @@ import type { ProfileGender } from '@/lib/dating';
 import TemperamentPicker from '@/components/TemperamentPicker';
 import TipBulb from '@/components/TipBulb';
 
-function toggleKey(current: string[], key: string): string[] {
+export function toggleTemperamentKey(current: string[], key: string): string[] {
   if (current.includes(key)) return current.filter((item) => item !== key);
   if (current.length >= MAX_TEMPERAMENT) return current;
   return [...current, key];
@@ -20,52 +17,31 @@ function toggleKey(current: string[], key: string): string[] {
 
 export default function TemperamentProfileCard({
   gender,
-  initialKeys,
+  selected,
+  onToggle,
+  error,
+  cardRef,
 }: {
   gender?: ProfileGender | null;
-  initialKeys?: string[] | null;
+  selected: string[];
+  onToggle: (key: string) => void;
+  error?: string | null;
+  cardRef?: Ref<HTMLDivElement>;
 }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [selected, setSelected] = useState<string[]>(() =>
-    sanitizeTemperament(initialKeys)
-  );
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSelected(sanitizeTemperament(initialKeys));
-  }, [initialKeys]);
-
-  const save = async () => {
-    if (!user) return;
-    setSaving(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ temperament: sanitizeTemperament(selected) })
-        .eq('id', user.id);
-      if (updateError) throw updateError;
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1800);
-    } catch (err) {
-      setError(userErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
+  const selectedKeys = sanitizeTemperament(selected);
 
   return (
-    <div className="mt-6 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8">
+    <div
+      ref={cardRef}
+      className="mt-6 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-bold text-gray-900">
           {t('temperament.title')}
         </h2>
         <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full whitespace-nowrap">
-          {selected.length} / {MAX_TEMPERAMENT}
+          {selectedKeys.length} / {MAX_TEMPERAMENT}
         </span>
       </div>
       <p className="text-sm text-gray-500 mt-1">{t('temperament.profileHelp')}</p>
@@ -77,12 +53,9 @@ export default function TemperamentProfileCard({
         {t('temperament.adviceBody')}
       </div>
       <TemperamentPicker
-        selected={selected}
+        selected={selectedKeys}
         gender={gender}
-        onToggle={(key) => {
-          setSaved(false);
-          setSelected((prev) => toggleKey(prev, key));
-        }}
+        onToggle={onToggle}
       />
       {error && (
         <div className="mt-5 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
@@ -90,22 +63,6 @@ export default function TemperamentProfileCard({
           <span>{error}</span>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3 mt-6">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => void save()}
-          className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold shadow-lg shadow-rose-200 hover:opacity-95 disabled:opacity-60"
-        >
-          {saving ? t('profile.saving') : t('temperament.save')}
-        </button>
-        {saved && (
-          <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
-            <Check className="w-4 h-4" />
-            {t('temperament.saved')}
-          </span>
-        )}
-      </div>
     </div>
   );
 }

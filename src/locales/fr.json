@@ -276,6 +276,7 @@
     "emailNotifications": "Recevoir les notifications et actualisations par e-mail",
     "preferenceSaved": "Préférence enregistrée",
     "saveProfile": "Enregistrer mon profil",
+    "saved": "Profil enregistré",
     "saving": "Sauvegarde...",
     "uploadingPhoto": "Envoi de la photo…",
     "deleteAccountTitle": "SUPPRESSION DU COMPTE",
@@ -1025,8 +1026,8 @@
     "later": "Plus tard",
     "save": "Enregistrer",
     "saved": "Tempérament enregistré",
-    "profileHelp": "Choisis jusqu'à 5 mots qui te décrivent le mieux. Tu pourras les modifier à tout moment.",
-    "signupHelp": "Choisis jusqu'à 5 mots qui te ressemblent. Cette étape est facultative.",
+    "profileHelp": "Choisis jusqu'à 6 mots qui te décrivent le mieux. Tu pourras les modifier à tout moment.",
+    "signupHelp": "Choisis jusqu'à 6 mots qui te ressemblent. Cette étape est facultative.",
     "adviceTitle": "Astuce",
     "adviceBody": "Être soi-même, en toute transparence, c'est la meilleure chance de construire une relation solide. Personne n'est parfait, et c'est très bien ainsi : choisis simplement ce qui te ressemble.",
     "families": {
@@ -1161,6 +1162,38 @@
       "Entrepreneuriat": "Entrepreneuriat",
       "Investissement": "Investissement",
       "Spiritualité": "Spiritualité"
+    }
+  },
+  "languages": {
+    "title": "Langues",
+    "section": "Langues",
+    "signupTitle": "Tes langues",
+    "signupHelp": "Indique les langues que tu parles. Cette étape est facultative.",
+    "signupHelpRequired": "Indique au moins une langue maternelle pour continuer.",
+    "profileHelp": "Ajoute jusqu'à 8 langues. Tu pourras les modifier à tout moment.",
+    "selection": "Sélection",
+    "later": "Plus tard",
+    "save": "Enregistrer",
+    "saved": "Langues enregistrées",
+    "searchLabel": "Rechercher une langue",
+    "searchPlaceholder": "Rechercher une langue",
+    "maxReached": "Tu as atteint le maximum de 8 langues.",
+    "needLevel": "Choisis un niveau pour enregistrer cette langue.",
+    "levelHelp": "Débutant = quelques mots. Intermédiaire = je tiens une conversation simple. Confirmé = je suis à l'aise.",
+    "levelGroup": "Niveau pour {{name}}",
+    "remove": "Retirer {{name}}",
+    "required": "Requis",
+    "nativeRequiredSignup": "Choisis au moins une langue maternelle pour continuer.",
+    "nativeRequiredProfile": "Une langue maternelle est requise pour ton profil.",
+    "nativeRequiredCheckout": "Indique une langue maternelle avant d'activer la recherche internationale.",
+    "existingReminder": "Ajoute une langue maternelle : elle est requise pour ton profil (pays hors francophonie ou offre internationale).",
+    "checkoutTitle": "Langue maternelle",
+    "checkoutContinue": "Continuer vers le paiement",
+    "levels": {
+      "beginner": "Débutant",
+      "intermediate": "Intermédiaire",
+      "advanced": "Confirmé",
+      "native": "Langue maternelle"
     }
   }
 }

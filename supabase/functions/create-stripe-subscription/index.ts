@@ -6,6 +6,10 @@ import {
   qualifiesForInternationalUpgrade,
   resolveCheckoutEnv,
 } from "../_shared/plans.ts";
+import {
+  checkoutPlanRequiresNative,
+  hasNativeSpokenLanguagePayload,
+} from "../_shared/nativeLanguage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +47,23 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    if (checkoutPlanRequiresNative(plan)) {
+      const { data: spoken } = await admin
+        .from("profiles")
+        .select("languages")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!hasNativeSpokenLanguagePayload(spoken?.languages)) {
+        return json(
+          {
+            error: "Langue maternelle requise",
+            code: "native_language_required",
+          },
+          400,
+        );
+      }
+    }
 
     const { data: membership } = await admin
       .from("memberships")

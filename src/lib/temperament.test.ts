@@ -8,7 +8,8 @@ import {
   getTemperamentLabel,
 } from './temperament.ts';
 
-test('sanitizeTemperament : clés connues, sans doublon, 5 max', () => {
+test('sanitizeTemperament : clés connues, sans doublon, 6 max', () => {
+  assert.equal(MAX_TEMPERAMENT, 6);
   assert.deepEqual(sanitizeTemperament(['calm', 'calm', 'nope', 'curious']), [
     'calm',
     'curious',
@@ -21,6 +22,7 @@ test('sanitizeTemperament : clés connues, sans doublon, 5 max', () => {
       'hyper',
       'homebody',
       'introvert',
+      'sociable',
     ]).length,
     MAX_TEMPERAMENT
   );

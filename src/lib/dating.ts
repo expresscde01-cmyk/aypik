@@ -49,6 +49,12 @@ function birthDateParts(
   };
 }
 
+/** Âge affiché sur une fiche : uniquement la valeur calculée côté serveur. */
+export function profileCardAge(profile: { age?: number | null }): number {
+  const n = Number(profile.age);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 export function ageFromBirthDate(birthDate: string): number {
   const parts = birthDateParts(birthDate);
   if (!parts) return NaN;

@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
 import { adultsOnlyMessage, isAdult, parseProfileGender } from '@/lib/dating';
 import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
+import { fetchMyProfile } from '@/lib/myProfile';
 import { useTranslation } from 'react-i18next';
 import HomeDashboard from '@/components/HomeDashboard';
 import AppTabHeader from '@/components/AppTabHeader';
 import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalChrome';
-import ProfileSetup, {
-  PROFILE_CARD_COLUMNS,
-  type Profile,
-} from '@/components/ProfileSetup';
+import ProfileSetup, { type Profile } from '@/components/ProfileSetup';
 import TemperamentOnboarding from '@/components/TemperamentOnboarding';
+import LanguagesOnboarding from '@/components/LanguagesOnboarding';
 import AccountPausedScreen from '@/components/AccountPausedScreen';
 import PhoneVerification from '@/components/PhoneVerification';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
@@ -226,11 +224,7 @@ function AppShellView() {
     const gen = ++profileLoadGenRef.current;
     setProfileLoading(true);
     setProfileLoadError(null);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`${PROFILE_CARD_COLUMNS}, temperament`)
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data, error } = await fetchMyProfile();
     if (gen !== profileLoadGenRef.current) return null;
     if (error) {
       setProfile(null);
@@ -378,6 +372,13 @@ function AppShellView() {
     Boolean(profile) &&
     parseProfileGender(profile?.gender) != null &&
     profile?.temperament == null;
+  const needsLanguages =
+    !profileLoading &&
+    !profileLoadError &&
+    Boolean(profile) &&
+    parseProfileGender(profile?.gender) != null &&
+    profile?.temperament != null &&
+    profile?.languages == null;
   const displayName =
     profile?.display_name?.trim() ||
     user?.email?.split('@')[0] ||
@@ -507,6 +508,17 @@ function AppShellView() {
     return (
       <TemperamentOnboarding
         gender={parseProfileGender(profile?.gender)}
+        onDone={() => {
+          void reloadViewerProfile();
+        }}
+      />
+    );
+  }
+
+  if (needsLanguages) {
+    return (
+      <LanguagesOnboarding
+        countryCode={profile?.country_code}
         onDone={() => {
           void reloadViewerProfile();
         }}
@@ -695,8 +707,6 @@ function AppShellView() {
               profileFocusKey={profileFocusKey}
               onDone={async () => {
                 await reloadViewerProfile();
-                mountTab('home');
-                setTab('home');
               }}
             />
           </div>

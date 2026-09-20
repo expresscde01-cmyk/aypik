@@ -37,7 +37,6 @@ export type DiscoveryCandidate = Profile & {
   distance_km: number | null;
   created_at?: string;
   updated_at?: string;
-  last_active_at?: string | null;
   activity_score?: number;
   discover_mode: DiscoverMode;
   open_messaging: boolean;
@@ -46,7 +45,6 @@ export type DiscoveryCandidate = Profile & {
 export type SuggestRow = {
   id: string;
   display_name: string;
-  birth_date: string;
   bio: string | null;
   has_children: boolean;
   location: string | null;
@@ -64,7 +62,6 @@ export type SuggestRow = {
   age: number;
   is_boosted: boolean;
   distance_km: number | string | null;
-  last_active_at: string | null;
   activity_score: number | null;
   is_founder: boolean | null;
   founder_number: number | null;
@@ -103,7 +100,6 @@ export function mapSuggestRow(
   return {
     id: row.id,
     display_name: row.display_name,
-    birth_date: row.birth_date,
     bio: row.bio || '',
     has_children: Boolean(row.has_children),
     location: row.location || '',
@@ -120,7 +116,6 @@ export function mapSuggestRow(
     distance_km: Number.isFinite(distance_km as number) ? distance_km : null,
     created_at: row.created_at,
     updated_at: row.updated_at || undefined,
-    last_active_at: row.last_active_at,
     activity_score: Number(row.activity_score) || 0,
     is_online: Boolean(row.is_online),
     country_code: row.country_code || null,
@@ -261,7 +256,6 @@ export async function fetchPlatformSignupCount(): Promise<number> {
   }
   const { count } = await supabase
     .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .is('deletion_requested_at', null);
+    .select('id', { count: 'exact', head: true });
   return typeof count === 'number' ? count : 0;
 }

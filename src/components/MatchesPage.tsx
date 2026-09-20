@@ -16,10 +16,11 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import ChatScreen from '@/components/ChatScreen';
 import {
-  ageFromBirthDate,
   isWithinAgeGap,
   MIN_USER_AGE,
+  profileCardAge,
 } from '@/lib/dating';
+import { fetchMyProfile } from '@/lib/myProfile';
 import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
@@ -835,6 +836,7 @@ async function fetchProfileBundle(ids: string[]): Promise<{
           interests: row.interests || [],
           photo_url: row.photo_url || '',
           is_online: Boolean(row.is_online),
+          age: profileCardAge(row),
           discover_mode: parseDiscoverMode(row.discover_mode),
         }));
         return { data: rows, error: null };
@@ -842,13 +844,13 @@ async function fetchProfileBundle(ids: string[]): Promise<{
       const fb = await supabase
         .from('profiles')
         .select(PROFILE_CARD_COLUMNS)
-        .in('id', chunk)
-        .is('deletion_requested_at', null);
+        .in('id', chunk);
       return {
         data:
           (fb.data as Profile[] | null)?.map((p) => ({
             ...p,
             is_online: false,
+            age: profileCardAge(p),
             discover_mode: parseDiscoverMode(p.discover_mode),
           })) ?? null,
         error: fb.error,
@@ -1225,15 +1227,12 @@ export default function MatchesPage({
     if (!user) return;
     const gen = ++matchesLoadGen.current;
     try {
-      const { data: meRow } = await supabase
-        .from('profiles')
-        .select('birth_date, gender')
-        .eq('id', user.id)
-        .maybeSingle();
+      const { data: meRow } = await fetchMyProfile();
 
-      const myAge = meRow?.birth_date
-        ? ageFromBirthDate(meRow.birth_date as string)
-        : null;
+      const myAge =
+        typeof meRow?.age === 'number' && Number.isFinite(meRow.age)
+          ? meRow.age
+          : null;
       const genderRaw = meRow?.gender;
       setMyGender(
         genderRaw === 'homme' || genderRaw === 'femme' ? genderRaw : null
@@ -1519,7 +1518,7 @@ export default function MatchesPage({
             : outgoingAt;
           return {
             profile: p,
-            age: ageFromBirthDate(p.birth_date),
+            age: profileCardAge(p),
             date_received: at || '',
             matched_at: at || '',
             kind,
@@ -1601,7 +1600,7 @@ export default function MatchesPage({
           declinedAt: row.declined_at,
           origin: row.origin,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
@@ -1650,7 +1649,7 @@ export default function MatchesPage({
           declinedAt: notice.createdAt,
           origin: notice.origin,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
@@ -1728,7 +1727,7 @@ export default function MatchesPage({
           receivedAt: row.receivedAt,
           origin: row.origin,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
@@ -1770,7 +1769,7 @@ export default function MatchesPage({
           receivedAt: notice.createdAt,
           origin: notice.origin,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
@@ -1833,7 +1832,7 @@ export default function MatchesPage({
           createdAt: row.created_at,
           origin: row.origin,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
@@ -1884,7 +1883,7 @@ export default function MatchesPage({
           origin: row.origin,
           action: row.action,
           profile,
-          age: ageFromBirthDate(profile.birth_date),
+          age: profileCardAge(profile),
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
