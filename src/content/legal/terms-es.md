@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 13 de septiembre de 2026.
+Última actualización: 20 de septiembre de 2026.
 
 ### Preámbulo
 
@@ -136,6 +136,8 @@ El usuario puede cambiar su contraseña en cualquier momento desde la configurac
 
 Los perfiles mostrados en Descubrir y en las sugerencias de la página de Inicio se determinan según los criterios permanentes de emparejamiento (apartado 3.5), sea cual sea la oferta contratada, y los mecanismos descritos en el glosario (Like, Flash, Match).
 
+Los filtros avanzados (perímetro geográfico, intereses, temperamento, idiomas hablados) permiten afinar las sugerencias. No garantizan ni un número de resultados ni la compatibilidad con otro miembro. Los filtros guardados se aplican también a las sugerencias de la página de Inicio.
+
 Un perfil al que el usuario ya haya enviado un Like o un Flash deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio. Esta exclusión no elimina la interacción ya registrada: el perfil sigue siendo gestionable desde Mis Matches, según su estado (Por revisar, Match, archivado, etc.).
 
 Cuando un Like o un Flash ha sido rechazado —por el usuario, por el otro miembro, o como resultado de la expiración automática de una puesta en espera—, el perfil en cuestión deja de mostrarse a la otra parte en Descubrir o en las sugerencias de la página de Inicio durante un período de 6 meses a partir de la fecha del rechazo. Esta ocultación se aplica en ambos sentidos. Al finalizar este período, el perfil podrá volver a mostrarse, sujeto a los demás filtros de este apartado y a los criterios de emparejamiento (apartado 3.5).
@@ -165,6 +167,12 @@ Cuando un miembro utiliza el Servicio durante una sesión activa, una marca de t
 Este estado puede mostrarse a otros miembros mediante un indicador visual (punto verde) en la foto de perfil, en particular en Descubrir, en las sugerencias de la página de Inicio y en Mis Matches. La marca de tiempo en sí no se muestra a otros miembros. En modo Incógnito, el perfil nunca se muestra como en línea, aunque el miembro esté efectivamente utilizando el Servicio.
 
 El tratamiento de last_active_at se describe en el apartado 8.1.
+
+**3.9 Temperamento e idiomas hablados**
+
+El miembro puede indicar un temperamento e idiomas hablados. Esta información es facultativa, salvo la lengua materna en los casos previstos en el presente apartado. Es visible para los demás miembros en el perfil detallado y puede utilizarse como criterio de búsqueda. El miembro se compromete a indicarla de forma sincera y exacta. Puede modificarla o eliminarla en cualquier momento desde «Mi perfil», salvo la lengua materna cuando es obligatoria.
+
+La lengua materna es obligatoria si el miembro reside en un país que no figura en la lista de países francófonos definida por Aypik, o si contrata una oferta Premium o International. Sirve para proponer puestas en relación coherentes.
 
 ### Artículo 4 — Período de prueba y estatus «Miembro Fundador»
 
@@ -211,6 +219,8 @@ El nombre Aypik, sus variaciones y su identidad visual están protegidos. Queda 
 
 El usuario conserva los derechos que posee sobre el contenido que publica (foto, biografía, intereses, mensajes y, en su caso, testimonio).
 
+Se desaconseja consignar en ellos información sensible, en particular relativa a la salud, la religión, las opiniones, el origen o la orientación.
+
 Concede al editor, mientras el contenido permanezca en el Servicio, una licencia no exclusiva, mundial, gratuita e intransferible, estrictamente limitada a lo necesario para el funcionamiento del Sitio: alojamiento, visualización a los miembros correspondientes, almacenamiento en caché, copia de seguridad técnica y, en su caso, moderación.
 
 Esta licencia finaliza, salvo copias de seguridad técnicas transitorias, con la eliminación del contenido o de la cuenta. El usuario garantiza que posee los derechos necesarios y que su contenido no vulnera los derechos de terceros.
@@ -232,6 +242,8 @@ En relación con el contenido ilícito denunciado, el editor actúa de conformid
 **8.1 Protección de Datos (RGPD)**
 
 El editor es responsable del tratamiento de los datos personales recabados para prestar el Servicio (cuenta, perfil, interacciones, mensajes, número de teléfono cuando se utiliza la verificación por SMS, la marca de tiempo last_active_at mencionada en el apartado 3.8 y los registros técnicos necesarios para la seguridad). El tratamiento se basa principalmente en la ejecución del contrato de uso (estos Términos) y, en su caso, en el consentimiento (por ejemplo, las notificaciones por correo electrónico o un testimonio) o en el interés legítimo (seguridad, prevención del fraude y de las cuentas múltiples).
+
+El temperamento y los idiomas hablados, cuando se indican, se eligen en listas propuestas por Aypik y se tratan para mostrar el perfil a los demás miembros, personalizar las sugerencias y permitir la búsqueda por criterios. Se conservan mientras exista la cuenta y se eliminan con ella, según las modalidades previstas en el apartado 8.2.
 
 Los datos no se venden. Solo pueden compartirse con proveedores estrictamente necesarios (alojador, infraestructura técnica, envío de correos electrónicos y SMS de verificación), establecidos en la Unión Europea u que ofrezcan garantías adecuadas.
 

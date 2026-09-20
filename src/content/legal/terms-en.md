@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: September 13, 2026.
+Last updated: September 20, 2026.
 
 ### Preamble
 
@@ -136,6 +136,8 @@ The user may change their password at any time from their profile settings (Prof
 
 The profiles shown on Discover and in the Home page suggestions are determined according to the permanent matching criteria (Section 3.5), regardless of the member's plan, and the mechanics described in the glossary (Like, Flash, Match).
 
+Advanced filters (geographic perimeter, interests, temperament, spoken languages) refine the suggestions. They do not guarantee a number of results, nor compatibility with another member. Saved filters also apply to the Home page suggestions.
+
 A profile to which the user has already sent a Like or a Flash is no longer shown on Discover or in the Home page suggestions. This exclusion does not remove the interaction already recorded: the profile remains manageable from My Matches, according to its status (To review, Match, archived, etc.).
 
 When a Like or a Flash has been declined — by the user, by the other member, or as a result of the automatic expiry of a hold — the profile in question is no longer shown to the other party on Discover or in the Home page suggestions for a period of 6 months from the date of the decline. This hiding applies in both directions. At the end of this period, the profile may be shown again, subject to the other filters in this Section and the matching criteria (Section 3.5).
@@ -165,6 +167,12 @@ When a member uses the Service during an active session, a last-activity timesta
 This status may be shown to other members through a visual indicator (green dot) on the profile photo, in particular on Discover, in the Home page suggestions, and in My Matches. The timestamp itself is not shown to other members. In Incognito mode, the profile is never shown as online, even if the member is actually using the Service.
 
 The processing of last_active_at is described in Section 8.1.
+
+**3.9 Temperament and Spoken Languages**
+
+The member may provide a temperament and spoken languages. This information is optional, except for a native language in the cases set out in this Section. It is visible to other members on the detailed profile and may be used as search criteria. The member agrees to provide it truthfully and accurately. It may be edited or deleted at any time from "My Profile", except for the native language when it is required.
+
+A native language is required if the member lives in a country that is not on the list of French-speaking countries defined by Aypik, or if they subscribe to a Premium or International plan. It is used to suggest coherent matches.
 
 ### Article 4 — Trial Period and "Founding Member" status
 
@@ -211,6 +219,8 @@ The name Aypik, its variations, and its visual identity are protected. Any unaut
 
 The user retains the rights they hold in the content they publish (photo, bio, interests, messages, and, where applicable, testimonial).
 
+Members are advised not to enter sensitive information there, in particular relating to health, religion, opinions, origin, or orientation.
+
 They grant the publisher, for as long as the content remains on the Service, a non-exclusive, worldwide, royalty-free, and non-transferable license, strictly limited to what is necessary for the Site to function: hosting, display to the relevant members, caching, technical backup, and, where applicable, moderation.
 
 This license ends, subject to transitory technical backup copies, upon deletion of the content or the account. The user warrants that they hold the necessary rights and that their content does not infringe the rights of third parties.
@@ -232,6 +242,8 @@ For reported unlawful content, the publisher acts in accordance with the LCEN as
 **8.1 Data Protection (GDPR)**
 
 The publisher is responsible for processing the personal data collected to provide the Service (account, profile, interactions, messages, phone number when SMS verification is used, the last_active_at timestamp referred to in Section 3.8, and technical logs necessary for security). Processing is based primarily on performance of the usage contract (these Terms) and, where applicable, on consent (for example, email notifications or a testimonial) or legitimate interest (security, prevention of fraud and multiple accounts).
+
+Temperament and spoken languages, when provided, are chosen from lists offered by Aypik and processed in order to display the profile to other members, personalize suggestions, and allow search by criteria. They are kept for as long as the account exists and deleted with it, under the terms set out in Section 8.2.
 
 Data is not sold. It may be shared only with providers that are strictly necessary (host, technical infrastructure, sending of verification emails and SMS), established within the European Union or offering appropriate safeguards.
 
