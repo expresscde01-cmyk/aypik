@@ -49,4 +49,6 @@ export const queryKeys = {
     ['suggest-profiles', 'home', userId, prefsEpoch, profileEpoch, plan] as const,
   likeFlashEdges: (userId: string) =>
     ['like-flash-edges', userId] as const,
+  liveMatchCount: (userId: string) =>
+    ['live-match-count', userId] as const,
 };

@@ -139,19 +139,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+    // updateUser() lit la session en mémoire du SDK, absente en Edge Function
+    // (« Auth session missing! ») même si Authorization est fourni. Relayer
+    // PUT /auth/v1/user avec le JWT de l’appelant déclenche le SMS phone_change.
+    const updateRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: anonKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ phone }),
     });
-    const { error: updateError } = await userClient.auth.updateUser({
-      phone,
-    });
-    if (updateError) {
-      const code = updateError.code || "sms_send_failed";
+    if (!updateRes.ok) {
+      const updateBody = (await updateRes.json().catch(() => null)) as {
+        msg?: unknown;
+        error?: unknown;
+        message?: unknown;
+        code?: unknown;
+        error_code?: unknown;
+      } | null;
+      const message =
+        (typeof updateBody?.msg === "string" && updateBody.msg) ||
+        (typeof updateBody?.message === "string" && updateBody.message) ||
+        (typeof updateBody?.error === "string" && updateBody.error) ||
+        "Envoi indisponible";
+      const code =
+        (typeof updateBody?.error_code === "string" && updateBody.error_code) ||
+        (typeof updateBody?.code === "string" && updateBody.code) ||
+        "sms_send_failed";
+      if (/auth session missing/i.test(message)) {
+        console.error("send-phone-verification: session_missing");
+      }
       const status = code === "over_sms_send_rate_limit" ? 429 : 400;
-      return json(
-        { error: updateError.message, code },
-        status,
-      );
+      return json({ error: message, code }, status);
     }
 
     return json({ ok: true });

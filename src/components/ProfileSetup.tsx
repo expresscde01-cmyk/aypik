@@ -20,6 +20,7 @@ import {
   validateProfilePhoto,
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
+import TemperamentProfileCard from '@/components/TemperamentProfileCard';
 import { FounderBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
@@ -92,6 +93,7 @@ export interface Profile {
   geoname_id?: number | null;
   world_zone?: string | null;
   discover_mode?: 'detaille' | 'simplifie';
+  temperament?: string[] | null;
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
@@ -99,7 +101,7 @@ export const PROFILE_CARD_COLUMNS =
   'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id, discover_mode';
 
 /** Profil du compte connecté (préférences e-mail en plus). */
-export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled, preferred_locale`;
+export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled, preferred_locale, temperament`;
 
 const COUNTRY_SELECT_OPTIONS = [
   ...WORLD_COUNTRIES.filter((row) => row.iso2 === 'FR'),
@@ -151,6 +153,7 @@ export default function ProfileSetup({
     useState<WorldCityHit | null>(null);
   const [cityError, setCityError] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
+  const [temperament, setTemperament] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -221,6 +224,9 @@ export default function ProfileSetup({
         }
         setCityError(null);
         setInterests(data.interests || []);
+        setTemperament(
+          Array.isArray(data.temperament) ? data.temperament : []
+        );
         setPhotoUrl(data.photo_url || '');
         if (!data.birth_date) {
           const metaDob = user.user_metadata?.birth_date;
@@ -1162,6 +1168,12 @@ export default function ProfileSetup({
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+        {!isSignup && (
+          <TemperamentProfileCard
+            gender={gender}
+            initialKeys={temperament}
+          />
+        )}
           </>
         )}
 

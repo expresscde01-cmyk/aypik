@@ -72,7 +72,7 @@ export default function HomeDashboard({
   onOpenProfile,
   onOpenPassword,
   onOpenNotifications,
-  unreadTotal = 0,
+  matchCount = 0,
   unreadBySender = {},
   profileEpoch = 0,
   suggestionPrefsEpoch = 0,
@@ -94,7 +94,7 @@ export default function HomeDashboard({
   onOpenProfile: () => void;
   onOpenPassword: () => void;
   onOpenNotifications: () => void;
-  unreadTotal?: number;
+  matchCount?: number;
   unreadBySender?: Record<string, number>;
   profileEpoch?: number;
   /** Incrémenté à chaque sortie de Découvrir : force la relecture des filtres. */
@@ -455,17 +455,16 @@ export default function HomeDashboard({
               onClick={() => onOpenMatches()}
               className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
               aria-label={
-                unreadTotal > 0
-                  ? `${t('matches.title')}, ${unreadMessagesLabel(unreadTotal)}`
+                matchCount > 0
+                  ? `${t('matches.title')} (${matchCount})`
                   : t('matches.title')
               }
             >
               <Heart className="w-4 h-4 text-rose-500" />
               {t('matches.title')}
-              {unreadTotal > 0 && (
+              {matchCount > 0 && (
                 <UnreadBadge
-                  count={unreadTotal}
-                  pulse
+                  count={matchCount}
                   className="absolute -top-1.5 -right-1.5"
                 />
               )}

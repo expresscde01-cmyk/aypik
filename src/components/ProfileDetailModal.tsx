@@ -1,5 +1,5 @@
 import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FounderBadge } from '@/components/membership/Badges';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
@@ -21,6 +21,13 @@ import MatcherWord, { CrownIcon } from '@/components/MatcherWord';
 import type { InboxDecision } from '@/lib/inboxResponses';
 import type { ProfileGender } from '@/components/ProfileSetup';
 import { displayInterest } from '@/lib/interests';
+import {
+  getTemperamentLabel,
+  orderTemperamentKeys,
+  sanitizeTemperament,
+} from '@/lib/temperament';
+import { parseProfileGender } from '@/lib/dating';
+import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 
 export type ProfileDetailCandidate = {
@@ -106,8 +113,33 @@ export default function ProfileDetailModal({
   onRestoreLink?: () => void;
   onPurgeLink?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const interests = candidate.interests || [];
+  const [temperamentKeys, setTemperamentKeys] = useState<string[]>([]);
+  const [temperamentGender, setTemperamentGender] = useState<ProfileGender | null>(
+    null
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setTemperamentKeys([]);
+    setTemperamentGender(null);
+    void (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('temperament, gender')
+        .eq('id', candidate.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setTemperamentKeys(
+        orderTemperamentKeys(sanitizeTemperament(data?.temperament))
+      );
+      setTemperamentGender(parseProfileGender(data?.gender));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [candidate.id]);
   const mutual = new Set(candidate.mutual_interests || []);
   const pendingInbox =
     Boolean(inboxHistory) &&
@@ -289,6 +321,24 @@ export default function ProfileDetailModal({
                     </span>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {temperamentKeys.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+                {t('temperament.section')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {temperamentKeys.map((key) => (
+                  <span
+                    key={key}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                  >
+                    {getTemperamentLabel(key, temperamentGender, i18n.language)}
+                  </span>
+                ))}
               </div>
             </div>
           )}
