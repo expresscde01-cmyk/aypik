@@ -93,7 +93,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 13 septembre 2026.
+              Dernière mise à jour : 20 septembre 2026.
             </p>
           </header>
 
@@ -556,6 +556,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Flash, Match).
               </p>
               <p>
+                Les filtres avancés (périmètre géographique, centres
+                d&apos;intérêt, tempérament, langues parlées) permettent
+                d&apos;affiner les suggestions. Ils ne garantissent ni un
+                nombre de résultats ni la compatibilité avec un autre
+                membre. Les filtres enregistrés s&apos;appliquent
+                également aux suggestions de la page d&apos;accueil.
+              </p>
+              <p>
                 Un profil auquel l&apos;utilisateur a déjà adressé un Like
                 ou un Flash n&apos;est plus présenté dans Découvrir ni dans
                 les suggestions de l&apos;Accueil. Cette exclusion ne
@@ -690,6 +698,29 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Le traitement de last_active_at est décrit à l&apos;article
                 8.1.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                3.9 Tempérament et langues parlées
+              </p>
+              <p>
+                Le membre peut renseigner un tempérament et des langues
+                parlées. Ces informations sont facultatives, sauf la
+                langue maternelle dans les cas prévus au présent article.
+                Elles sont visibles des autres membres sur le profil
+                détaillé et peuvent être utilisées comme critères de
+                recherche. Le membre s&apos;engage à les renseigner de
+                façon sincère et exacte. Il peut les modifier ou les
+                supprimer à tout moment depuis « Mon profil », sauf la
+                langue maternelle lorsqu&apos;elle est obligatoire.
+              </p>
+              <p>
+                La langue maternelle est obligatoire si le membre réside
+                dans un pays ne figurant pas dans la liste des pays
+                francophones définie par {BRAND_NAME}, ou s&apos;il
+                souscrit une offre Premium ou International. Elle sert à
+                proposer des mises en relation cohérentes.
               </p>
             </div>
           </section>
@@ -843,6 +874,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 d&apos;intérêt, messages, le cas échéant témoignage).
               </p>
               <p>
+                Il est déconseillé d&apos;y inscrire des informations
+                sensibles, notamment relatives à la santé, à la religion,
+                aux opinions, à l&apos;origine ou à l&apos;orientation.
+              </p>
+              <p>
                 Il concède à l&apos;éditeur, pour la durée de présence des
                 contenus sur le Service, une licence non exclusive, mondiale,
                 gratuite et non cessible, strictement limitée à ce qui est
@@ -923,6 +959,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 sur le consentement (par exemple notifications e-mail ou
                 témoignage) ou l&apos;intérêt légitime (sécurité,
                 prévention des fraudes et des comptes multiples).
+              </p>
+              <p>
+                Le tempérament et les langues parlées, lorsqu&apos;ils
+                sont renseignés, sont choisis dans des listes proposées
+                par {BRAND_NAME} et traités afin d&apos;afficher le
+                profil aux autres membres, de personnaliser les
+                suggestions et de permettre la recherche par critères. Ils
+                sont conservés tant que le compte existe et supprimés avec
+                lui, selon les modalités prévues à l&apos;article 8.2.
               </p>
               <p>
                 Les données ne sont pas vendues. Elles peuvent être
