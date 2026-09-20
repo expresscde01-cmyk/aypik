@@ -18,6 +18,10 @@ import PhoneVerification from '@/components/PhoneVerification';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
 import {
+  invalidateLiveMatchCount,
+  useLiveMatchCount,
+} from '@/lib/liveMatchCount';
+import {
   normalizeOpenMatchesOpts,
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
@@ -96,6 +100,7 @@ function AppShellView() {
   /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
   const [inboxFocusKey, setInboxFocusKey] = useState(0);
   const unread = useUnreadMessages();
+  const liveMatchCount = useLiveMatchCount();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
@@ -139,6 +144,12 @@ function AppShellView() {
       setSuggestionPrefsEpoch((n) => n + 1);
     });
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (tab !== 'home' && tab !== 'matches') return;
+    void invalidateLiveMatchCount(user.id);
+  }, [tab, user?.id]);
 
   const mountTab = useCallback((next: Tab) => {
     setMountedTabs((prev) => {
@@ -507,7 +518,7 @@ function AppShellView() {
               onOpenProfile={() => openProfileSection()}
               onOpenPassword={() => openProfileSection('password')}
               onOpenNotifications={() => openProfileSection('preferences')}
-              unreadTotal={unread.total}
+              matchCount={liveMatchCount}
               unreadBySender={unread.bySender}
               profileEpoch={profileEpoch}
               suggestionPrefsEpoch={suggestionPrefsEpoch}
@@ -698,7 +709,7 @@ function AppShellView() {
             icon={<Heart className="w-5 h-5" />}
             label={t('common.nav.matches')}
             active={tab === 'matches'}
-            badge={unread.total}
+            badge={liveMatchCount}
             onClick={() => openMatches()}
           />
           <NavButton
@@ -823,11 +834,7 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={`relative flex flex-col items-center gap-0.5 px-3 sm:px-5 py-2 rounded-lg transition-all ${
-        active
-          ? 'text-rose-500'
-          : badge > 0
-            ? 'text-rose-500'
-            : 'text-gray-400 hover:text-gray-600'
+        active ? 'text-rose-500' : 'text-gray-400 hover:text-gray-600'
       }`}
     >
       <span className="relative">
@@ -835,7 +842,6 @@ function NavButton({
         {badge > 0 && (
           <UnreadBadge
             count={badge}
-            pulse
             className="absolute -top-1.5 -right-2 text-[9px] h-[1.05rem] min-w-[1.05rem]"
           />
         )}

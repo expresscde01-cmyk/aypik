@@ -86,6 +86,7 @@ import {
   isMatchedBoardPeer,
   countReciprocalMatches,
 } from '@/lib/matchHistoryDisplay';
+import { useLiveMatchCount } from '@/lib/liveMatchCount';
 import { matchCardDepartClass, retainDepartingMatches } from '@/lib/matchCardDepart';
 import { useMatchCardDepart } from '@/lib/useMatchCardDepart';
 import {
@@ -2972,7 +2973,10 @@ export default function MatchesPage({
   );
   const viewerSimplified =
     parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
-  const liveMatchCount = countReciprocalMatches(matches, brokenPeerIds);
+  const boardMatchCount = countReciprocalMatches(matches, brokenPeerIds);
+  const liveMatchCount = useLiveMatchCount(
+    loading ? undefined : boardMatchCount
+  );
   const hasPendantStage = viewerSimplified
     ? floors.matchedChat.length > 0
     : liveMatchCount > 0;

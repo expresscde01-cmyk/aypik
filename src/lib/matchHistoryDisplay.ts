@@ -174,6 +174,53 @@ export function countReciprocalMatches<
   return count;
 }
 
+/** Sources brutes (likes/flashes/inbox/ruptures) pour le même total que le titre. */
+export type LiveReciprocalMatchSources = {
+  sentLikeIds?: Iterable<string>;
+  receivedLikeIds?: Iterable<string>;
+  sentFlashIds?: Iterable<string>;
+  receivedFlashIds?: Iterable<string>;
+  inboxRows?: { actor_id: string; decision: string }[];
+  brokenPeerIds?: Iterable<string>;
+};
+
+/**
+ * Matchs réciproques encore actifs : 1er mot + discussions.
+ * Exclut à étudier, attente, refus, rompus et archivés.
+ */
+export function collectLiveReciprocalMatchIds(
+  sources: LiveReciprocalMatchSources
+): string[] {
+  const sentLikes = new Set(sources.sentLikeIds ?? []);
+  const receivedLikes = new Set(sources.receivedLikeIds ?? []);
+  const sentFlashes = new Set(sources.sentFlashIds ?? []);
+  const receivedFlashes = new Set(sources.receivedFlashIds ?? []);
+  const broken = new Set(
+    [...(sources.brokenPeerIds ?? [])].filter(Boolean)
+  );
+  const inboxRows = sources.inboxRows ?? [];
+  const refused = new Set(
+    inboxRows
+      .filter((row) => row.decision === 'refuse' && row.actor_id)
+      .map((row) => row.actor_id)
+  );
+
+  const edgeMatchIds = new Set<string>();
+  for (const id of receivedLikes) {
+    if (sentLikes.has(id) || sentFlashes.has(id)) edgeMatchIds.add(id);
+  }
+  for (const id of receivedFlashes) {
+    if (sentLikes.has(id) || sentFlashes.has(id)) edgeMatchIds.add(id);
+  }
+
+  const live: string[] = [];
+  for (const id of matchIdsIncludingInboxDecisions(edgeMatchIds, inboxRows)) {
+    if (!id || broken.has(id) || refused.has(id)) continue;
+    live.push(id);
+  }
+  return live;
+}
+
 export function collectMatchedPeerIds<
   T extends {
     profile: { id: string };

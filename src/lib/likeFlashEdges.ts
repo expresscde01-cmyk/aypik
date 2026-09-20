@@ -82,9 +82,17 @@ export function seedSentLikeEdge(
 
 export function invalidateLikeFlashEdges(userId?: string | null) {
   if (userId) {
-    return queryClient.invalidateQueries({
-      queryKey: queryKeys.likeFlashEdges(userId),
-    });
+    return Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.likeFlashEdges(userId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.liveMatchCount(userId),
+      }),
+    ]);
   }
-  return queryClient.invalidateQueries({ queryKey: ['like-flash-edges'] });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['like-flash-edges'] }),
+    queryClient.invalidateQueries({ queryKey: ['live-match-count'] }),
+  ]);
 }

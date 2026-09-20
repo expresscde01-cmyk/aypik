@@ -14,6 +14,7 @@ import {
   withoutOccupiedPeers,
   dedupePeersByCanonicalStatus,
   countReciprocalMatches,
+  collectLiveReciprocalMatchIds,
   removeActorFromCategoryDigest,
   splitPendingByOthers,
 } from './matchHistoryDisplay.ts';
@@ -280,4 +281,57 @@ test('removeActorFromCategoryDigest : 3 → 2 → 1 → plus de digest', () => {
   assert.deepEqual(one?.ids, ['a']);
   assert.equal(one?.count, 1);
   assert.equal(removeActorFromCategoryDigest(one, 'a'), null);
+});
+
+test('collectLiveReciprocalMatchIds : 1er mot + discussion, pas à étudier ni attente', () => {
+  const ids = collectLiveReciprocalMatchIds({
+    sentLikeIds: ['quiet', 'chat'],
+    receivedLikeIds: ['quiet', 'chat', 'study', 'waiting-like'],
+    sentFlashIds: [],
+    receivedFlashIds: [],
+    inboxRows: [{ actor_id: 'waiting-like', decision: 'wait' }],
+  });
+  assert.deepEqual(ids.sort(), ['chat', 'quiet']);
+});
+
+test('collectLiveReciprocalMatchIds : rompu et archivé exclus, restore recompte', () => {
+  const sources = {
+    sentLikeIds: ['broken', 'archived', 'restored'],
+    receivedLikeIds: ['broken', 'archived', 'restored'],
+    sentFlashIds: [] as string[],
+    receivedFlashIds: [] as string[],
+    brokenPeerIds: ['broken', 'archived'],
+  };
+  assert.deepEqual(collectLiveReciprocalMatchIds(sources).sort(), [
+    'restored',
+  ]);
+  assert.deepEqual(
+    collectLiveReciprocalMatchIds({
+      ...sources,
+      brokenPeerIds: ['broken'],
+    }).sort(),
+    ['archived', 'restored']
+  );
+});
+
+test('collectLiveReciprocalMatchIds : décision inbox match sans les deux arêtes likes', () => {
+  const ids = collectLiveReciprocalMatchIds({
+    sentLikeIds: [],
+    receivedLikeIds: ['couronne'],
+    sentFlashIds: [],
+    receivedFlashIds: [],
+    inboxRows: [{ actor_id: 'couronne', decision: 'match' }],
+  });
+  assert.deepEqual(ids, ['couronne']);
+});
+
+test('collectLiveReciprocalMatchIds : like/flash croisés comptent, refus exclus', () => {
+  const ids = collectLiveReciprocalMatchIds({
+    sentLikeIds: [],
+    receivedLikeIds: ['flash-back'],
+    sentFlashIds: ['flash-back'],
+    receivedFlashIds: ['refused'],
+    inboxRows: [{ actor_id: 'refused', decision: 'refuse' }],
+  });
+  assert.deepEqual(ids, ['flash-back']);
 });
