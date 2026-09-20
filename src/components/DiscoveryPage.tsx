@@ -1164,7 +1164,7 @@ export default function DiscoveryPage({
   profileEpoch?: number;
   /** False dès qu’on quitte Découvrir : la mémoire de session se réinitialise. */
   pageActive?: boolean;
-  /** Profil déjà chargé par AppShell (PROFILE_CARD_COLUMNS). */
+  /** Profil déjà chargé par AppShell (RPC my_profile). */
   myProfile?: Profile | null;
 } = {}) {
   const { t } = useTranslation();

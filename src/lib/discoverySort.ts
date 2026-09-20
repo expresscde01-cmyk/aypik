@@ -56,7 +56,6 @@ export type DiscoverySortChoice =
 type SortableCandidate = {
   created_at?: string;
   updated_at?: string;
-  last_active_at?: string | null;
   distance_km: number | null;
   mutual_interests: string[];
   activity_score?: number;
@@ -77,8 +76,10 @@ function mutualCount(c: SortableCandidate): number {
 }
 
 function activeAtMs(c: SortableCandidate): number {
-  const raw = c.last_active_at || c.updated_at || c.created_at;
-  return raw ? Date.parse(raw) || 0 : 0;
+  if (typeof c.activity_score === 'number' && c.activity_score > 0) {
+    return c.activity_score * 1000;
+  }
+  return 0;
 }
 
 /** Tri Découvrir : résultat stable tant que les deps (liste, tri, fenêtre) ne changent pas. */

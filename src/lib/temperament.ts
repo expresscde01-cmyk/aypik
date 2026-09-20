@@ -1,7 +1,7 @@
 import { t, i18n } from '@/i18n/t';
 import { parseProfileGender } from '@/lib/dating';
 
-export const MAX_TEMPERAMENT = 5;
+export const MAX_TEMPERAMENT = 6;
 
 export type TemperamentFamilyId =
   | 'energy'

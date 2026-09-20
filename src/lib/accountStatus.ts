@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { fetchMyProfile } from '@/lib/myProfile';
 import { t } from '../i18n/t.ts';
 
 /** Statuts de compte affichés dans le header. Extensible sans changer le markup. */
@@ -122,9 +123,10 @@ export type MyAccountFlags = {
   paused_at: string | null;
   incognito_at: string | null;
   deactivated_at: string | null;
+  deletion_requested_at: string | null;
 };
 
-/** Drapeaux du compte connecté — RPC SECURITY DEFINER (pas de SELECT incognito_at). */
+/** Drapeaux du compte connecté — RPC SECURITY DEFINER. */
 export async function fetchMyAccountFlags(): Promise<MyAccountFlags | null> {
   const { data, error } = await supabase.rpc('my_account_flags');
   if (!error && data != null) {
@@ -136,27 +138,17 @@ export async function fetchMyAccountFlags(): Promise<MyAccountFlags | null> {
         paused_at: row.paused_at ?? null,
         incognito_at: row.incognito_at ?? null,
         deactivated_at: row.deactivated_at ?? null,
+        deletion_requested_at: row.deletion_requested_at ?? null,
       };
     }
   }
 
-  const { data: auth } = await supabase.auth.getUser();
-  const id = auth.user?.id;
-  if (!id) return null;
-
-  const fallback = await supabase
-    .from('profiles')
-    .select('paused_at, deactivated_at')
-    .eq('id', id)
-    .maybeSingle();
-  if (fallback.error || !fallback.data) return null;
-  const row = fallback.data as {
-    paused_at?: string | null;
-    deactivated_at?: string | null;
-  };
+  const mine = await fetchMyProfile();
+  if (!mine.data) return null;
   return {
-    paused_at: row.paused_at ?? null,
-    incognito_at: null,
-    deactivated_at: row.deactivated_at ?? null,
+    paused_at: mine.data.paused_at,
+    incognito_at: mine.data.incognito_at,
+    deactivated_at: mine.data.deactivated_at,
+    deletion_requested_at: mine.data.deletion_requested_at,
   };
 }

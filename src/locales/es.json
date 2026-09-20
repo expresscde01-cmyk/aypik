@@ -276,6 +276,7 @@
     "emailNotifications": "Recibir notificaciones y novedades por correo electrónico",
     "preferenceSaved": "Preferencia guardada",
     "saveProfile": "Guardar mi perfil",
+    "saved": "Perfil guardado",
     "saving": "Guardando...",
     "uploadingPhoto": "Subiendo foto…",
     "deleteAccountTitle": "ELIMINACIÓN DE LA CUENTA",
@@ -1025,8 +1026,8 @@
     "later": "Más tarde",
     "save": "Guardar",
     "saved": "Temperamento guardado",
-    "profileHelp": "Elige hasta 5 palabras que te describan mejor. Podrás modificarlas en cualquier momento.",
-    "signupHelp": "Elige hasta 5 palabras que se te parezcan. Este paso es facultativo.",
+    "profileHelp": "Elige hasta 6 palabras que te describan mejor. Podrás modificarlas en cualquier momento.",
+    "signupHelp": "Elige hasta 6 palabras que se te parezcan. Este paso es facultativo.",
     "adviceTitle": "Consejo",
     "adviceBody": "Ser uno mismo, con transparencia, es la mejor oportunidad de construir una relación sólida. Nadie es perfecto, y está muy bien así: elige simplemente lo que se te parece.",
     "families": {
@@ -1161,6 +1162,38 @@
       "Entrepreneuriat": "Emprendimiento",
       "Investissement": "Inversión",
       "Spiritualité": "Espiritualidad"
+    }
+  },
+  "languages": {
+    "title": "Idiomas",
+    "section": "Idiomas",
+    "signupTitle": "Tus idiomas",
+    "signupHelp": "Indica los idiomas que hablas. Este paso es facultativo.",
+    "signupHelpRequired": "Indica al menos una lengua materna para continuar.",
+    "profileHelp": "Añade hasta 8 idiomas. Podrás modificarlos en cualquier momento.",
+    "selection": "Selección",
+    "later": "Más tarde",
+    "save": "Guardar",
+    "saved": "Idiomas guardados",
+    "searchLabel": "Buscar un idioma",
+    "searchPlaceholder": "Buscar un idioma",
+    "maxReached": "Has alcanzado el máximo de 8 idiomas.",
+    "needLevel": "Elige un nivel para guardar este idioma.",
+    "levelHelp": "Principiante = algunas palabras. Intermedio = mantengo una conversación sencilla. Avanzado = me desenvuelvo con soltura.",
+    "levelGroup": "Nivel para {{name}}",
+    "remove": "Quitar {{name}}",
+    "required": "Obligatorio",
+    "nativeRequiredSignup": "Elige al menos una lengua materna para continuar.",
+    "nativeRequiredProfile": "Una lengua materna es necesaria para tu perfil.",
+    "nativeRequiredCheckout": "Indica una lengua materna antes de activar la búsqueda internacional.",
+    "existingReminder": "Añade una lengua materna: es necesaria para tu perfil (fuera del área francófona o con una oferta internacional).",
+    "checkoutTitle": "Lengua materna",
+    "checkoutContinue": "Continuar hacia el pago",
+    "levels": {
+      "beginner": "Principiante",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado",
+      "native": "Lengua materna"
     }
   }
 }

@@ -28,6 +28,13 @@ import {
 } from '@/lib/temperament';
 import { parseProfileGender } from '@/lib/dating';
 import { supabase } from '@/lib/supabase';
+import {
+  languageDisplayName,
+  orderSpokenLanguagesForDisplay,
+  parseSpokenLanguages,
+  type SpokenLanguage,
+  type SpokenLevel,
+} from '@/lib/spokenLanguages';
 import { useTranslation } from 'react-i18next';
 
 export type ProfileDetailCandidate = {
@@ -119,15 +126,17 @@ export default function ProfileDetailModal({
   const [temperamentGender, setTemperamentGender] = useState<ProfileGender | null>(
     null
   );
+  const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     setTemperamentKeys([]);
     setTemperamentGender(null);
+    setSpokenLanguages([]);
     void (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('temperament, gender')
+        .select('temperament, gender, languages')
         .eq('id', candidate.id)
         .maybeSingle();
       if (cancelled) return;
@@ -135,6 +144,7 @@ export default function ProfileDetailModal({
         orderTemperamentKeys(sanitizeTemperament(data?.temperament))
       );
       setTemperamentGender(parseProfileGender(data?.gender));
+      setSpokenLanguages(parseSpokenLanguages(data?.languages));
     })();
     return () => {
       cancelled = true;
@@ -337,6 +347,28 @@ export default function ProfileDetailModal({
                     className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                   >
                     {getTemperamentLabel(key, temperamentGender, i18n.language)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {spokenLanguages.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+                {t('languages.section')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {orderSpokenLanguagesForDisplay(spokenLanguages).map((item) => (
+                  <span
+                    key={item.code}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                  >
+                    {languageDisplayName(item.code, i18n.language)}
+                    <span className="text-gray-400">
+                      {' · '}
+                      {t(`languages.levels.${item.level as SpokenLevel}`)}
+                    </span>
                   </span>
                 ))}
               </div>

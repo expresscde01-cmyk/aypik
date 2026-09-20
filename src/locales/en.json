@@ -276,6 +276,7 @@
     "emailNotifications": "Receive notifications and updates by email",
     "preferenceSaved": "Preference saved",
     "saveProfile": "Save my profile",
+    "saved": "Profile saved",
     "saving": "Saving...",
     "uploadingPhoto": "Uploading photo…",
     "deleteAccountTitle": "ACCOUNT DELETION",
@@ -1025,8 +1026,8 @@
     "later": "Later",
     "save": "Save",
     "saved": "Temperament saved",
-    "profileHelp": "Choose up to 5 words that describe you best. You can change them at any time.",
-    "signupHelp": "Choose up to 5 words that feel like you. This step is optional.",
+    "profileHelp": "Choose up to 6 words that describe you best. You can change them at any time.",
+    "signupHelp": "Choose up to 6 words that feel like you. This step is optional.",
     "adviceTitle": "Tip",
     "adviceBody": "Being yourself, openly, is the best chance of building a solid relationship. Nobody is perfect, and that is a good thing: just choose what feels like you.",
     "families": {
@@ -1161,6 +1162,38 @@
       "Entrepreneuriat": "Entrepreneurship",
       "Investissement": "Investing",
       "Spiritualité": "Spirituality"
+    }
+  },
+  "languages": {
+    "title": "Languages",
+    "section": "Languages",
+    "signupTitle": "Your languages",
+    "signupHelp": "Add the languages you speak. This step is optional.",
+    "signupHelpRequired": "Add at least one native language to continue.",
+    "profileHelp": "Add up to 8 languages. You can change them at any time.",
+    "selection": "Selection",
+    "later": "Later",
+    "save": "Save",
+    "saved": "Languages saved",
+    "searchLabel": "Search for a language",
+    "searchPlaceholder": "Search for a language",
+    "maxReached": "You've reached the maximum of 8 languages.",
+    "needLevel": "Choose a level to save this language.",
+    "levelHelp": "Beginner = a few words. Intermediate = I can hold a simple conversation. Advanced = I'm comfortable.",
+    "levelGroup": "Level for {{name}}",
+    "remove": "Remove {{name}}",
+    "required": "Required",
+    "nativeRequiredSignup": "Choose at least one native language to continue.",
+    "nativeRequiredProfile": "A native language is required for your profile.",
+    "nativeRequiredCheckout": "Add a native language before enabling international search.",
+    "existingReminder": "Add a native language: it's required for your profile (outside the francophone area, or with an international plan).",
+    "checkoutTitle": "Native language",
+    "checkoutContinue": "Continue to payment",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "native": "Native"
     }
   }
 }

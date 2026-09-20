@@ -10,8 +10,10 @@ import {
   ImagePlus,
   Plus,
   X,
+  Loader2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { fetchMyProfile } from '@/lib/myProfile';
 import { useAuth } from '@/lib/auth';
 import { requestAccountDeletion } from '@/lib/deleteAccount';
 import { useMembership } from '@/lib/useMembership';
@@ -20,7 +22,20 @@ import {
   validateProfilePhoto,
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
-import TemperamentProfileCard from '@/components/TemperamentProfileCard';
+import TemperamentProfileCard, {
+  toggleTemperamentKey,
+} from '@/components/TemperamentProfileCard';
+import SpokenLanguagesProfileCard from '@/components/SpokenLanguagesProfileCard';
+import EmailNotificationsProfileCard from '@/components/EmailNotificationsProfileCard';
+import { isNativeLanguageRequired } from '@/lib/isNativeLanguageRequired';
+import { sanitizeTemperament } from '@/lib/temperament';
+import {
+  hasNativeSpokenLanguage,
+  parseSpokenLanguages,
+  sanitizeSpokenLanguages,
+  type SpokenDraft,
+  type SpokenLanguage,
+} from '@/lib/spokenLanguages';
 import { FounderBadge } from '@/components/membership/Badges';
 import TestimonialForm from '@/components/testimonials/TestimonialForm';
 import TestimonialsSection from '@/components/testimonials/TestimonialsSection';
@@ -75,7 +90,10 @@ export type ProfileGender = 'homme' | 'femme';
 export interface Profile {
   id: string;
   display_name: string;
-  birth_date: string;
+  /** Date de naissance : uniquement sur le profil connecté (RPC my_profile). */
+  birth_date?: string;
+  /** Âge calculé côté serveur (card_profiles / suggest_profiles / my_profile). */
+  age?: number;
   bio: string;
   has_children: boolean;
   location: string;
@@ -84,9 +102,9 @@ export interface Profile {
   gender?: ProfileGender | null;
   lat?: number | null;
   lng?: number | null;
-  last_active_at?: string | null;
   is_online?: boolean;
   email_notifications_enabled?: boolean;
+  preferred_locale?: string | null;
   deletion_requested_at?: string | null;
   country_code?: string | null;
   city_name?: string | null;
@@ -94,14 +112,57 @@ export interface Profile {
   world_zone?: string | null;
   discover_mode?: 'detaille' | 'simplifie';
   temperament?: string[] | null;
+  languages?: SpokenLanguage[] | null;
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
 export const PROFILE_CARD_COLUMNS =
-  'id, display_name, birth_date, bio, has_children, location, interests, photo_url, gender, lat, lng, deletion_requested_at, country_code, city_name, geoname_id, discover_mode';
+  'id, display_name, bio, has_children, location, interests, photo_url, gender, country_code, city_name, geoname_id, discover_mode, temperament, languages, created_at, updated_at';
 
-/** Profil du compte connecté (préférences e-mail en plus). */
-export const PROFILE_OWN_COLUMNS = `${PROFILE_CARD_COLUMNS}, email_notifications_enabled, preferred_locale, temperament`;
+type ProfileFieldKey =
+  | 'city'
+  | 'interests'
+  | 'birth'
+  | 'gender'
+  | 'children'
+  | 'temperament'
+  | 'languages'
+  | 'submit';
+
+function profileFormSnapshot(input: {
+  displayName: string;
+  birthDate: string;
+  bio: string;
+  hasChildren: boolean;
+  location: string;
+  countryCode: string;
+  interests: string[];
+  gender: ProfileGender | null;
+  temperament: string[];
+  languages: SpokenDraft[];
+  photoName: string | null;
+}): string {
+  return JSON.stringify({
+    displayName: input.displayName.trim(),
+    birthDate: input.birthDate,
+    bio: input.bio,
+    hasChildren: input.hasChildren,
+    location: input.location.trim(),
+    countryCode: input.countryCode,
+    interests: input.interests,
+    gender: input.gender,
+    temperament: sanitizeTemperament(input.temperament),
+    languages: input.languages.map((item) => ({
+      code: item.code,
+      level: item.level,
+    })),
+    photoName: input.photoName,
+  });
+}
+
+function scrollToField(el: HTMLElement | null) {
+  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
 const COUNTRY_SELECT_OPTIONS = [
   ...WORLD_COUNTRIES.filter((row) => row.iso2 === 'FR'),
@@ -154,6 +215,16 @@ export default function ProfileSetup({
   const [cityError, setCityError] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [temperament, setTemperament] = useState<string[]>([]);
+  const [spokenLanguages, setSpokenLanguages] = useState<SpokenDraft[]>([]);
+  const [persistedSpokenLanguages, setPersistedSpokenLanguages] = useState<
+    SpokenLanguage[]
+  >([]);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [temperamentError, setTemperamentError] = useState<string | null>(null);
+  const [languagesError, setLanguagesError] = useState<string | null>(null);
+  const [interestsError, setInterestsError] = useState<string | null>(null);
+  const [birthError, setBirthError] = useState<string | null>(null);
+  const [genderError, setGenderError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -173,15 +244,20 @@ export default function ProfileSetup({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const preferencesRef = useRef<HTMLDivElement>(null);
   const testimonialRef = useRef<HTMLDivElement>(null);
+  const cityFieldRef = useRef<HTMLDivElement>(null);
+  const birthFieldRef = useRef<HTMLDivElement>(null);
+  const genderFieldRef = useRef<HTMLDivElement>(null);
+  const childrenFieldRef = useRef<HTMLDivElement>(null);
+  const interestsFieldRef = useRef<HTMLDivElement>(null);
+  const temperamentCardRef = useRef<HTMLDivElement>(null);
+  const languagesCardRef = useRef<HTMLDivElement>(null);
+  const profileSaveRef = useRef<HTMLDivElement>(null);
+  const profileBaselineRef = useRef<string>('');
 
   useEffect(() => {
     (async () => {
       if (!user) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(PROFILE_OWN_COLUMNS)
-        .eq('id', user.id)
-        .maybeSingle();
+      const { data, error } = await fetchMyProfile();
 
       if (error) {
         setError(userErrorMessage(error, t('common.profileLoadError')));
@@ -224,10 +300,31 @@ export default function ProfileSetup({
         }
         setCityError(null);
         setInterests(data.interests || []);
-        setTemperament(
-          Array.isArray(data.temperament) ? data.temperament : []
-        );
+        const loadedTemperament = sanitizeTemperament(data.temperament);
+        const loadedLanguages = parseSpokenLanguages(data.languages);
+        setTemperament(loadedTemperament);
+        setSpokenLanguages(loadedLanguages);
+        setPersistedSpokenLanguages(loadedLanguages);
         setPhotoUrl(data.photo_url || '');
+        const loadedGender =
+          data.gender === 'homme' || data.gender === 'femme'
+            ? data.gender
+            : null;
+        profileBaselineRef.current = profileFormSnapshot({
+          displayName: data.display_name || '',
+          birthDate: data.birth_date || (typeof user.user_metadata?.birth_date === 'string'
+            ? user.user_metadata.birth_date
+            : ''),
+          bio: data.bio || '',
+          hasChildren: data.has_children ?? false,
+          location: data.location || '',
+          countryCode: loadedCountry,
+          interests: data.interests || [],
+          gender: loadedGender,
+          temperament: loadedTemperament,
+          languages: loadedLanguages,
+          photoName: null,
+        });
         if (!data.birth_date) {
           const metaDob = user.user_metadata?.birth_date;
           if (typeof metaDob === 'string') setBirthDate(metaDob);
@@ -350,6 +447,7 @@ export default function ProfileSetup({
 
   const toggleInterest = (interest: string) => {
     setError((prev) => (prev === interestsMinError() ? null : prev));
+    setInterestsError(null);
     const already = interests.some(
       (i) => normalizeInterestKey(i) === normalizeInterestKey(interest)
     );
@@ -421,6 +519,58 @@ export default function ProfileSetup({
   const offerChosen = status.membership_linked;
   const canEditProfile = !isSignup || offerChosen;
 
+  const currentProfileSnapshot = () =>
+    profileFormSnapshot({
+      displayName,
+      birthDate,
+      bio,
+      hasChildren,
+      location,
+      countryCode,
+      interests,
+      gender,
+      temperament,
+      languages: spokenLanguages,
+      photoName: photoFileName,
+    });
+
+  const profileDirty =
+    !isSignup &&
+    !loading &&
+    currentProfileSnapshot() !== profileBaselineRef.current;
+
+  useEffect(() => {
+    if (!profileDirty) return;
+    const onLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onLeave);
+    return () => window.removeEventListener('beforeunload', onLeave);
+  }, [profileDirty]);
+
+  const failField = (key: ProfileFieldKey, message: string) => {
+    if (isSignup || key === 'submit') setError(message);
+    else setError(null);
+    if (key === 'city') setCityError(message);
+    if (key === 'interests') setInterestsError(message);
+    if (key === 'birth') setBirthError(message);
+    if (key === 'gender') setGenderError(message);
+    if (key === 'temperament') setTemperamentError(message);
+    if (key === 'languages') setLanguagesError(message);
+    const targets: Record<ProfileFieldKey, HTMLElement | null> = {
+      city: cityFieldRef.current,
+      interests: interestsFieldRef.current,
+      birth: birthFieldRef.current,
+      gender: genderFieldRef.current,
+      children: childrenFieldRef.current,
+      temperament: temperamentCardRef.current,
+      languages: languagesCardRef.current,
+      submit: profileSaveRef.current,
+    };
+    scrollToField(targets[key]);
+  };
+
   const handleClaimOffer = async (offer: 'founder' | 'free') => {
     setError(null);
     setClaimingOffer(true);
@@ -438,11 +588,15 @@ export default function ProfileSetup({
     e.preventDefault();
     setError(null);
     setCityError(null);
+    setInterestsError(null);
+    setBirthError(null);
+    setGenderError(null);
+    setTemperamentError(null);
+    setLanguagesError(null);
+    setProfileSaved(false);
 
     if (isSignup && !status.membership_linked) {
-      setError(
-        t('profile.chooseOfferFirst')
-      );
+      setError(t('profile.chooseOfferFirst'));
       return;
     }
 
@@ -453,38 +607,56 @@ export default function ProfileSetup({
         selectedWorldCity.label === location.trim();
 
     if (!cityOk) {
-      setCityError(citySelectionRequiredError());
-      setError(citySelectionRequiredError());
+      failField('city', citySelectionRequiredError());
       return;
     }
 
     if (interests.length < MIN_INTERESTS) {
-      setError(interestsMinError());
+      failField('interests', interestsMinError());
       return;
     }
 
     if (!birthDate) {
-      setError(t('auth.needBirthDate'));
+      failField('birth', t('auth.needBirthDate'));
       return;
     }
 
     if (!isAdult(birthDate)) {
-      setError(adultsOnlyMessage());
+      failField('birth', adultsOnlyMessage());
       return;
     }
 
     if (!genderLocked && gender !== 'homme' && gender !== 'femme') {
-      setError(t('profile.genderRequired'));
+      failField('gender', t('profile.genderRequired'));
       return;
+    }
+
+    if (hasChildren) {
+      failField('children', t('profile.childfreeBlocked'));
+      return;
+    }
+
+    const sanitizedTemperament = sanitizeTemperament(temperament);
+    const completeLanguages = sanitizeSpokenLanguages(spokenLanguages);
+
+    if (!isSignup) {
+      if (spokenLanguages.some((item) => !item.level)) {
+        failField('languages', t('languages.needLevel'));
+        return;
+      }
+      if (
+        isNativeLanguageRequired({ country_code: countryCode }, status) &&
+        !hasNativeSpokenLanguage(completeLanguages)
+      ) {
+        failField('languages', t('languages.nativeRequiredProfile'));
+        return;
+      }
     }
 
     setSaving(true);
 
     try {
       if (!user) throw new Error(t('common.notConnected'));
-      if (hasChildren) {
-        throw new Error(t('profile.childfreeBlocked'));
-      }
 
       let nextPhotoUrl = photoUrl;
       if (photoFile) {
@@ -510,11 +682,13 @@ export default function ProfileSetup({
         geoname_id: number | null;
         interests: string[];
         photo_url: string;
-        email_notifications_enabled: boolean;
+        email_notifications_enabled?: boolean;
         preferred_locale: string;
         gender?: ProfileGender;
         lat?: number | null;
         lng?: number | null;
+        temperament?: string[];
+        languages?: SpokenLanguage[];
       } = {
         id: user.id,
         display_name: displayName,
@@ -527,9 +701,14 @@ export default function ProfileSetup({
         geoname_id: france ? null : selectedWorldCity!.geonameId || null,
         interests,
         photo_url: nextPhotoUrl,
-        email_notifications_enabled: emailNotificationsEnabled,
         preferred_locale: currentLocale(),
       };
+      if (isSignup) {
+        payload.email_notifications_enabled = emailNotificationsEnabled;
+      } else {
+        payload.temperament = sanitizedTemperament;
+        payload.languages = completeLanguages;
+      }
 
       if (!genderLocked) {
         payload.gender = gender!;
@@ -550,11 +729,19 @@ export default function ProfileSetup({
         payload.lng = selectedWorldCity!.lng;
       }
 
-      const { error: upsertError } = await supabase
-        .from('profiles')
-        .upsert(payload);
-
-      if (upsertError) throw upsertError;
+      if (isSignup) {
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert(payload);
+        if (upsertError) throw upsertError;
+      } else {
+        const { id, ...updateFields } = payload;
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(updateFields)
+          .eq('id', id);
+        if (updateError) throw updateError;
+      }
 
       if (!genderLocked) {
         setGenderLocked(true);
@@ -562,23 +749,46 @@ export default function ProfileSetup({
 
       setProfileExists(true);
 
-      const membership = await ensureMembershipLinked();
-      if (!membership.ok) {
-        throw new Error(membership.error || membershipRequiredError());
-      }
+      if (isSignup) {
+        const membership = await ensureMembershipLinked();
+        if (!membership.ok) {
+          throw new Error(membership.error || membershipRequiredError());
+        }
 
-      if (isSignup && membership.is_founder) {
-        // Non bloquant : l'inscription reste valide même si Resend échoue.
-        void sendFounderWelcomeEmail({ displayName });
+        if (membership.is_founder) {
+          // Non bloquant : l'inscription reste valide même si Resend échoue.
+          void sendFounderWelcomeEmail({ displayName });
+        }
       }
 
       setPhotoUrl(nextPhotoUrl);
       setPhotoFile(null);
       setPhotoFileName(null);
       setLocation(payload.location);
+      if (!isSignup) {
+        setTemperament(sanitizedTemperament);
+        setSpokenLanguages(completeLanguages);
+        setPersistedSpokenLanguages(completeLanguages);
+        profileBaselineRef.current = profileFormSnapshot({
+          displayName,
+          birthDate,
+          bio,
+          hasChildren,
+          location: payload.location,
+          countryCode,
+          interests,
+          gender: genderLocked ? gender : gender,
+          temperament: sanitizedTemperament,
+          languages: completeLanguages,
+          photoName: null,
+        });
+        setProfileSaved(true);
+        window.setTimeout(() => setProfileSaved(false), 4000);
+      }
       onDone();
     } catch (err) {
       setError(userErrorMessage(err));
+      if (!isSignup) scrollToField(profileSaveRef.current);
     } finally {
       setSaving(false);
     }
@@ -710,8 +920,19 @@ export default function ProfileSetup({
         <form
           id="profile-setup-form"
           onSubmit={handleSubmit}
-          className="bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6"
+          className={
+            isSignup
+              ? 'bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6'
+              : undefined
+          }
         >
+          <div
+            className={
+              isSignup
+                ? 'contents'
+                : 'bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6'
+            }
+          >
           {/* Photo */}
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-rose-100">
@@ -783,7 +1004,7 @@ export default function ProfileSetup({
           </div>
 
           {/* Birth date */}
-          <div>
+          <div ref={birthFieldRef}>
             <label
               htmlFor="profile-birth-date-year"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
@@ -795,13 +1016,22 @@ export default function ProfileSetup({
               required
               value={birthDate}
               maxAgeDate={latestBirthDateForAge(MIN_USER_AGE)}
-              onChange={setBirthDate}
+              onChange={(next) => {
+                setBirthDate(next);
+                setBirthError(null);
+              }}
             />
+            {birthError && (
+              <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{birthError}</span>
+              </p>
+            )}
           </div>
 
           {/* Genre obligatoire. Une fois Homme/Femme enregistré, le bloc disparaît (immuable). */}
           {!genderLocked && (
-            <div>
+            <div ref={genderFieldRef}>
               <p className="block text-sm font-semibold text-gray-700 mb-1.5">
                 {t('profile.gender')} <span className="text-rose-500">*</span>
               </p>
@@ -814,7 +1044,10 @@ export default function ProfileSetup({
                 <button
                   type="button"
                   aria-pressed={gender === 'homme'}
-                  onClick={() => setGender('homme')}
+                  onClick={() => {
+                    setGender('homme');
+                    setGenderError(null);
+                  }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                     gender === 'homme'
                       ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
@@ -826,7 +1059,10 @@ export default function ProfileSetup({
                 <button
                   type="button"
                   aria-pressed={gender === 'femme'}
-                  onClick={() => setGender('femme')}
+                  onClick={() => {
+                    setGender('femme');
+                    setGenderError(null);
+                  }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                     gender === 'femme'
                       ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
@@ -836,6 +1072,12 @@ export default function ProfileSetup({
                   {t('profile.genderFemale')}
                 </button>
               </div>
+              {genderError && (
+                <p className="mt-1.5 text-xs text-red-600 flex items-start gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>{genderError}</span>
+                </p>
+              )}
             </div>
           )}
 
@@ -868,7 +1110,7 @@ export default function ProfileSetup({
                 ))}
               </select>
             </div>
-            <div>
+            <div ref={cityFieldRef}>
               <label
                 htmlFor="profile-city"
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
@@ -935,7 +1177,10 @@ export default function ProfileSetup({
           </div>
 
           {/* Has children */}
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+          <div
+            ref={childrenFieldRef}
+            className="p-4 rounded-2xl bg-amber-50 border border-amber-200"
+          >
             <div className="flex items-start gap-3">
               <Baby className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -977,17 +1222,23 @@ export default function ProfileSetup({
           </div>
 
           {/* Interests */}
-          <div className="space-y-4">
+          <div ref={interestsFieldRef} className="space-y-4">
             <label className="block text-sm font-semibold text-gray-700">
               {t('profile.interests')}
             </label>
+            {interestsError && (
+              <p className="text-xs text-red-600 flex items-start gap-1">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{interestsError}</span>
+              </p>
+            )}
 
             {interests.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-rose-50/60 border border-rose-100">
                 {interests.map((interest) => (
                   <span
                     key={interest}
-                    className="inline-flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-semibold bg-rose-500 text-white shadow-sm shadow-rose-200"
+                    className="temperament-chip temperament-chip--on"
                   >
                     {displayInterest(interest)}
                     <button
@@ -1020,16 +1271,12 @@ export default function ProfileSetup({
                         <button
                           key={interest}
                           type="button"
+                          aria-pressed={selected}
                           onClick={() => toggleInterest(interest)}
-                          className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-all ${
-                            selected
-                              ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                          className={`temperament-chip ${
+                            selected ? 'temperament-chip--on' : ''
                           }`}
                         >
-                          {selected && (
-                            <Check className="w-3.5 h-3.5 inline mr-1" />
-                          )}
                           {displayInterest(interest)}
                         </button>
                       );
@@ -1089,7 +1336,7 @@ export default function ProfileSetup({
             </p>
           </div>
 
-          {/* Préférences de communication */}
+          {isSignup && (
           <div
             ref={preferencesRef}
             id="email-preferences"
@@ -1143,14 +1390,16 @@ export default function ProfileSetup({
               </span>
             </label>
           </div>
+          )}
 
-          {error && (
+          {isSignup && error && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
+          {isSignup && (
           <button
             type="submit"
             disabled={
@@ -1167,18 +1416,83 @@ export default function ProfileSetup({
               : t('profile.saveProfile')}
             {!saving && <ArrowRight className="w-4 h-4" />}
           </button>
+          )}
+          </div>
+          {!isSignup && (
+            <>
+              <TemperamentProfileCard
+                gender={gender}
+                selected={temperament}
+                onToggle={(key) => {
+                  setProfileSaved(false);
+                  setTemperamentError(null);
+                  setTemperament((prev) => toggleTemperamentKey(prev, key));
+                }}
+                error={temperamentError}
+                cardRef={temperamentCardRef}
+              />
+              <SpokenLanguagesProfileCard
+                countryCode={countryCode}
+                drafts={spokenLanguages}
+                onChange={(next) => {
+                  setProfileSaved(false);
+                  setLanguagesError(null);
+                  setSpokenLanguages(next);
+                }}
+                persistedLanguages={persistedSpokenLanguages}
+                error={languagesError}
+                cardRef={languagesCardRef}
+              />
+              <div ref={profileSaveRef} className="mt-6 space-y-3">
+                {error && (
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={
+                    saving ||
+                    hasChildren ||
+                    (!genderLocked && gender !== 'homme' && gender !== 'femme')
+                  }
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {photoFile
+                        ? t('profile.uploadingPhoto')
+                        : t('profile.saving')}
+                    </>
+                  ) : (
+                    <>
+                      {t('profile.saveProfile')}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+                {profileSaved && (
+                  <span className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700">
+                    <Check className="w-4 h-4" />
+                    {t('profile.saved')}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </form>
-        {!isSignup && (
-          <TemperamentProfileCard
-            gender={gender}
-            initialKeys={temperament}
-          />
-        )}
           </>
         )}
-
         {allowAccountDeletion && <ChangePasswordSection />}
-
+        {allowAccountDeletion && (
+          <EmailNotificationsProfileCard
+            initialEnabled={emailNotificationsEnabled}
+            hinted={prefsHint}
+            cardRef={preferencesRef}
+          />
+        )}
         {allowAccountDeletion && <PwaInstallCard />}
 
         {allowAccountDeletion && (

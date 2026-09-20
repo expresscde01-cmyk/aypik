@@ -37,8 +37,7 @@ import { isInternationalPerimeter } from '@/lib/geoProximity';
 import { formatInternationalGeoFacts } from '@/lib/worldGeo';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/components/ProfileSetup';
-import { ageFromBirthDate } from '@/lib/dating';
+import { fetchMyProfile } from '@/lib/myProfile';
 import { queryKeys } from '@/lib/queryClient';
 import {
   fetchLikeFlashEdges,
@@ -159,13 +158,7 @@ export default function HomeDashboard({
     ),
     enabled: Boolean(user?.id),
     queryFn: async () => {
-      const { data: me } = await supabase
-        .from('profiles')
-        .select('interests, birth_date, gender, location, lat, lng')
-        .eq('id', user!.id)
-        .maybeSingle();
-
-      const meProfile = me as Profile | null;
+      const { data: meProfile } = await fetchMyProfile();
       const prefs = effectiveSuggestionPrefs(
         status,
         loadSuggestionPrefs(user!.id),
@@ -174,9 +167,10 @@ export default function HomeDashboard({
       const list = await fetchSuggestedProfiles({
         limit: HOME_SUGGESTIONS_MAX,
         myInterests: (meProfile?.interests || []) as string[],
-        myAge: meProfile?.birth_date
-          ? ageFromBirthDate(meProfile.birth_date)
-          : undefined,
+        myAge:
+          typeof meProfile?.age === 'number' && Number.isFinite(meProfile.age)
+            ? meProfile.age
+            : undefined,
         myLocation: meProfile?.location || '',
         myLat: meProfile?.lat,
         myLng: meProfile?.lng,
