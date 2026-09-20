@@ -248,7 +248,8 @@
     "phoneSending": "Sending code...",
     "phoneSendSms": "Receive code by SMS",
     "phoneResend": "Resend code",
-    "phoneResendWait": "Resend code ({{seconds}}s)"
+    "phoneResendWait": "Resend code ({{seconds}}s)",
+    "phoneCaptchaBlocked": "Verification failed. Reload the page or disable your ad blocker."
   },
   "profile": {
     "title": "My profile",
@@ -1026,7 +1027,7 @@
     "saved": "Temperament saved",
     "profileHelp": "Choose up to 5 words that describe you best. You can change them at any time.",
     "signupHelp": "Choose up to 5 words that feel like you. This step is optional.",
-    "adviceTitle": "A small tip",
+    "adviceTitle": "Tip",
     "adviceBody": "Being yourself, openly, is the best chance of building a solid relationship. Nobody is perfect, and that is a good thing: just choose what feels like you.",
     "families": {
       "energy": "Energy",

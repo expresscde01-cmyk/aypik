@@ -23,6 +23,8 @@ const SCRIPT_ID = 'cf-turnstile-script';
 
 type TurnstileWidgetId = string;
 
+type TurnstileAppearance = 'always' | 'execute' | 'interaction-only';
+
 interface TurnstileRenderOptions {
   sitekey: string;
   callback: (token: string) => void;
@@ -30,6 +32,7 @@ interface TurnstileRenderOptions {
   'expired-callback'?: () => void;
   theme?: 'light' | 'dark' | 'auto';
   language?: string;
+  appearance?: TurnstileAppearance;
 }
 
 declare global {
@@ -92,8 +95,10 @@ const Turnstile = forwardRef<
     onVerify: (token: string) => void;
     onExpire?: () => void;
     className?: string;
+    /** Défaut Cloudflare : always. Les autres pages ne passent rien. */
+    appearance?: TurnstileAppearance;
   }
->(function Turnstile({ siteKey, onVerify, onExpire, className }, ref) {
+>(function Turnstile({ siteKey, onVerify, onExpire, className, appearance }, ref) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
@@ -129,6 +134,7 @@ const Turnstile = forwardRef<
         },
         theme: 'light',
         language,
+        ...(appearance ? { appearance } : {}),
       });
     });
 
@@ -140,7 +146,7 @@ const Turnstile = forwardRef<
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteKey, language]);
+  }, [siteKey, language, appearance]);
 
   if (!siteKey) return null;
 

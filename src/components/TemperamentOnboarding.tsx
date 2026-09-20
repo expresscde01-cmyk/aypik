@@ -10,6 +10,7 @@ import {
 } from '@/lib/temperament';
 import type { ProfileGender } from '@/lib/dating';
 import TemperamentPicker from '@/components/TemperamentPicker';
+import TipBulb from '@/components/TipBulb';
 
 function toggleKey(current: string[], key: string): string[] {
   if (current.includes(key)) return current.filter((item) => item !== key);
@@ -78,8 +79,9 @@ export default function TemperamentOnboarding({
             </span>
           </div>
           <div className="rounded-xl px-3.5 py-3 mb-5 bg-[#fff8ec] border border-[#fde7c2] border-l-4 border-l-amber-500 text-[13px] text-[#78450a] leading-relaxed">
-            <strong className="block text-[13.5px] text-[#5a3306] mb-0.5">
+            <strong className="flex items-center gap-[6px] text-[13.5px] text-[#5a3306] mb-0.5">
               {t('temperament.adviceTitle')}
+              <TipBulb />
             </strong>
             {t('temperament.adviceBody')}
           </div>

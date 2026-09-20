@@ -3033,3 +3033,25 @@ button.group[data-matched='true'] {
   opacity: 1 !important;
 }
 
+/* Turnstile interaction-only (page Vérifie ton numéro) : 0 px tant
+   qu’aucun défi n’est demandé, puis s’agrandit sans casser la carte. */
+.phone-turnstile {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.phone-turnstile iframe {
+  max-width: 100%;
+}
+
+.tip-bulb {
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.85))
+    drop-shadow(0 0 7px rgba(245, 158, 11, 0.45));
+  transform: translateY(-2px);
+}
+

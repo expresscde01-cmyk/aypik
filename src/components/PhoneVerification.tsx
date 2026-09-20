@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 /** Doit correspondre au réglage "SMS OTP Expiry" côté Supabase Dashboard. */
 const OTP_VALIDITY_SECONDS = 60;
+const CAPTCHA_WAIT_MS = 10_000;
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
@@ -41,10 +42,18 @@ export default function PhoneVerification() {
   const [info, setInfo] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaTimedOut, setCaptchaTimedOut] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [resendNeedsCaptcha, setResendNeedsCaptcha] = useState(false);
   const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
+  const resendSendLock = useRef(false);
 
   const captchaBlocking = Boolean(TURNSTILE_SITE_KEY) && !captchaToken;
+  const showTurnstile =
+    Boolean(TURNSTILE_SITE_KEY) &&
+    (step === 'enter-phone' || resendNeedsCaptcha);
+  const waitingCaptcha = showTurnstile && captchaBlocking && !captchaTimedOut;
 
   useEffect(() => {
     return () => {
@@ -52,8 +61,20 @@ export default function PhoneVerification() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!showTurnstile || captchaToken) {
+      setCaptchaTimedOut(false);
+      return;
+    }
+    setCaptchaTimedOut(false);
+    const id = window.setTimeout(() => setCaptchaTimedOut(true), CAPTCHA_WAIT_MS);
+    return () => window.clearTimeout(id);
+  }, [showTurnstile, captchaToken, captchaResetKey]);
+
   const resetCaptcha = () => {
     setCaptchaToken(null);
+    setCaptchaTimedOut(false);
+    setCaptchaResetKey((n) => n + 1);
     turnstileRef.current?.reset();
   };
 
@@ -71,8 +92,8 @@ export default function PhoneVerification() {
     }, 1000);
   };
 
-  const sendCode = async (target: string) => {
-    if (TURNSTILE_SITE_KEY && !captchaToken) {
+  const sendCode = async (target: string, token: string | null = captchaToken) => {
+    if (TURNSTILE_SITE_KEY && !token) {
       setError(t('auth.needCaptcha'));
       return;
     }
@@ -80,9 +101,10 @@ export default function PhoneVerification() {
     setError(null);
     setInfo(null);
     try {
-      await requestPhoneVerificationSms(target, captchaToken);
+      await requestPhoneVerificationSms(target, token);
       setE164(target);
       setStep('enter-code');
+      setResendNeedsCaptcha(false);
       setInfo(t('auth.phoneCodeSent', { phone: formatE164ForDisplay(target) }));
       startCooldown();
     } catch (err) {
@@ -92,6 +114,18 @@ export default function PhoneVerification() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!resendNeedsCaptcha || !captchaToken || !e164 || loading) return;
+    if (resendSendLock.current) return;
+    resendSendLock.current = true;
+    setResendNeedsCaptcha(false);
+    void sendCode(e164, captchaToken).finally(() => {
+      resendSendLock.current = false;
+    });
+    // sendCode relit l'état courant ; on ne le met pas en deps (boucle).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resendNeedsCaptcha, captchaToken, e164, loading]);
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +166,12 @@ export default function PhoneVerification() {
   };
 
   const handleResend = async () => {
-    if (!e164 || cooldown > 0 || loading || captchaBlocking) return;
+    if (!e164 || cooldown > 0 || loading || resendNeedsCaptcha) return;
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError(null);
+      setResendNeedsCaptcha(true);
+      return;
+    }
     await sendCode(e164);
   };
 
@@ -141,7 +180,29 @@ export default function PhoneVerification() {
     setCode('');
     setError(null);
     setInfo(null);
+    setResendNeedsCaptcha(false);
+    resetCaptcha();
   };
+
+  const captchaError = captchaTimedOut ? t('auth.phoneCaptchaBlocked') : error;
+
+  const turnstileWidget = showTurnstile ? (
+    <Turnstile
+      key={captchaResetKey}
+      ref={turnstileRef}
+      siteKey={TURNSTILE_SITE_KEY}
+      appearance="interaction-only"
+      onVerify={(token) => {
+        setCaptchaToken(token);
+        setCaptchaTimedOut(false);
+      }}
+      onExpire={() => {
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
+      }}
+      className="phone-turnstile"
+    />
+  ) : null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
@@ -188,24 +249,20 @@ export default function PhoneVerification() {
                 </p>
               </div>
 
-              {error && <ErrorBanner message={error} />}
+              {captchaError && <ErrorBanner message={captchaError} />}
 
-              {TURNSTILE_SITE_KEY && (
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onVerify={setCaptchaToken}
-                  onExpire={() => setCaptchaToken(null)}
-                  className="flex justify-center"
-                />
-              )}
+              {turnstileWidget}
 
               <button
                 type="submit"
                 disabled={loading || captchaBlocking}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? t('auth.phoneSending') : t('auth.phoneSendSms')}
+                {loading
+                  ? t('auth.phoneSending')
+                  : waitingCaptcha
+                    ? t('auth.phoneVerifying')
+                    : t('auth.phoneSendSms')}
               </button>
             </form>
           )}
@@ -247,35 +304,31 @@ export default function PhoneVerification() {
                 </div>
               )}
 
-              {error && <ErrorBanner message={error} />}
+              {captchaError && <ErrorBanner message={captchaError} />}
 
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? t('auth.phoneVerifying') : t('auth.phoneValidate')}
+                {loading && !resendNeedsCaptcha
+                  ? t('auth.phoneVerifying')
+                  : t('auth.phoneValidate')}
               </button>
 
-              {TURNSTILE_SITE_KEY && (
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onVerify={setCaptchaToken}
-                  onExpire={() => setCaptchaToken(null)}
-                  className="flex justify-center"
-                />
-              )}
+              {resendNeedsCaptcha ? turnstileWidget : null}
 
               <button
                 type="button"
                 onClick={() => void handleResend()}
-                disabled={cooldown > 0 || loading || captchaBlocking}
+                disabled={cooldown > 0 || loading || resendNeedsCaptcha}
                 className="w-full text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {cooldown > 0
                   ? t('auth.phoneResendWait', { seconds: cooldown })
-                  : t('auth.phoneResend')}
+                  : resendNeedsCaptcha
+                    ? t('auth.phoneVerifying')
+                    : t('auth.phoneResend')}
               </button>
             </form>
           )}

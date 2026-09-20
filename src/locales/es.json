@@ -248,7 +248,8 @@
     "phoneSending": "Enviando código...",
     "phoneSendSms": "Recibir código por SMS",
     "phoneResend": "Reenviar código",
-    "phoneResendWait": "Reenviar código ({{seconds}} s)"
+    "phoneResendWait": "Reenviar código ({{seconds}} s)",
+    "phoneCaptchaBlocked": "No se pudo verificar. Recarga la página o desactiva el bloqueador de anuncios."
   },
   "profile": {
     "title": "Mi perfil",
@@ -1026,7 +1027,7 @@
     "saved": "Temperamento guardado",
     "profileHelp": "Elige hasta 5 palabras que te describan mejor. Podrás modificarlas en cualquier momento.",
     "signupHelp": "Elige hasta 5 palabras que se te parezcan. Este paso es facultativo.",
-    "adviceTitle": "Un pequeño consejo",
+    "adviceTitle": "Consejo",
     "adviceBody": "Ser uno mismo, con transparencia, es la mejor oportunidad de construir una relación sólida. Nadie es perfecto, y está muy bien así: elige simplemente lo que se te parece.",
     "families": {
       "energy": "Energía",
