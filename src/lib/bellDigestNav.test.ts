@@ -4,7 +4,12 @@ import {
   firstExchangeNotificationCopy,
   firstDigestTone,
   formatDigestNameList,
+  followUpNotificationCopy,
+  FOLLOW_UP_MAX_AGE_MS,
+  FOLLOW_UP_MIN_AGE_MS,
+  isFollowUpInWindow,
   newProfilesNotificationCopy,
+  partitionQuietDigestIds,
   resolveDigestPeople,
   sliceDigestPeople,
   waitingProfilesNotificationCopy,
@@ -20,6 +25,7 @@ import {
   collectUnreadActorIds,
   digestPinIdsFromEntries,
   digestRecapSort,
+  firstWordBellOpenActorId,
   observeRubricMembers,
   filterServerDigestIds,
   likeFloorForActor,
@@ -76,6 +82,63 @@ test('visite d’un prénom : il sort du digest ; le dernier vide la notif', () 
 test('visite : même règle pour À découvrir et En attente', () => {
   assert.deepEqual(omitVisitedDigestIds(['a', 'b'], ['a']), ['b']);
   assert.deepEqual(omitVisitedDigestIds(['c', 'd'], ['c', 'd']), []);
+});
+
+test('1er mot : chip ouvre toujours la personne, carte seulement si Simplifié + 1 pin', () => {
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: false,
+      pulseCategory: 'first',
+      actorId: 'suzanne',
+      pinActorIds: ['suzanne'],
+    }),
+    'suzanne'
+  );
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: true,
+      pulseCategory: 'first',
+      actorId: 'suzanne',
+      pinActorIds: ['suzanne', 'lucy'],
+    }),
+    'suzanne'
+  );
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: true,
+      pulseCategory: 'first',
+      actorId: null,
+      pinActorIds: ['suzanne'],
+    }),
+    'suzanne'
+  );
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: false,
+      pulseCategory: 'first',
+      actorId: null,
+      pinActorIds: ['suzanne'],
+    }),
+    null
+  );
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: true,
+      pulseCategory: 'first',
+      actorId: '',
+      pinActorIds: ['suzanne', 'lucy'],
+    }),
+    null
+  );
+  assert.equal(
+    firstWordBellOpenActorId({
+      simplified: true,
+      pulseCategory: 'wait',
+      actorId: null,
+      pinActorIds: ['suzanne'],
+    }),
+    null
+  );
 });
 
 test('clic digest new/wait/first : pulse + pinIds = texte', () => {
@@ -403,6 +466,77 @@ test('1er mot : match one-way (message reçu) reste dans le digest, comme Mes Ma
     ).body,
     /écrire ou à répondre à Sabine, Lucy, Alexandra et Sandrine/
   );
+});
+
+test('digest silencieux : j’ai écrit sans réponse → relance, pas 1er mot', () => {
+  const now = Date.parse('2026-09-21T12:00:00.000Z');
+  const inWindow = now - FOLLOW_UP_MIN_AGE_MS - 60 * 60 * 1000;
+  const { firstWordIds, followUpIds } = partitionQuietDigestIds(
+    ['suzanne', 'alexandra', 'paul'],
+    ['suzanne', 'paul'],
+    ['alexandra'],
+    { suzanne: inWindow, paul: inWindow },
+    now
+  );
+  assert.deepEqual(firstWordIds, ['alexandra']);
+  assert.deepEqual(followUpIds, ['suzanne', 'paul']);
+  const copy = followUpNotificationCopy(['Suzanne']);
+  assert.equal(copy.title, 'Relance possible');
+  assert.match(copy.body, /Suzanne n'a pas encore répondu/);
+  assert.equal(/1er mot|premier mot|lancer la conversation/i.test(copy.title), false);
+  assert.equal(/1er mot|premier mot|lancer la conversation/i.test(copy.body), false);
+});
+
+test('relance : 72 h mini, 14 j max, un nouvel envoi remet le délai à zéro', () => {
+  const now = Date.parse('2026-09-21T12:00:00.000Z');
+  const tooSoon = now - FOLLOW_UP_MIN_AGE_MS + 1000;
+  const inWindow = now - FOLLOW_UP_MIN_AGE_MS - 1000;
+  const tooLate = now - FOLLOW_UP_MAX_AGE_MS - 1000;
+  assert.equal(isFollowUpInWindow(tooSoon, now), false);
+  assert.equal(isFollowUpInWindow(inWindow, now), true);
+  assert.equal(isFollowUpInWindow(tooLate, now), false);
+  assert.equal(isFollowUpInWindow(null, now), false);
+  const split = partitionQuietDigestIds(
+    ['soon', 'ok', 'late', 'fresh-write'],
+    ['soon', 'ok', 'late', 'fresh-write'],
+    [],
+    {
+      soon: tooSoon,
+      ok: inWindow,
+      late: tooLate,
+      'fresh-write': now,
+    },
+    now
+  );
+  assert.deepEqual(split.firstWordIds, []);
+  assert.deepEqual(split.followUpIds, ['ok']);
+});
+
+test('relance : aucune mention de 1er mot dans FR / EN / ES', async () => {
+  const { i18n } = await import('./../i18n/t.ts');
+  const forbidden = [
+    '1er mot',
+    'premier mot',
+    'lancer la conversation',
+    'first message',
+    'start the conversation',
+    '1er mensaje',
+    'primer mensaje',
+    'iniciar la conversación',
+  ];
+  for (const lng of ['fr', 'en', 'es'] as const) {
+    await i18n.changeLanguage(lng);
+    const copy = followUpNotificationCopy(['Suzanne']);
+    const blob = `${copy.title} ${copy.body}`.toLowerCase();
+    for (const phrase of forbidden) {
+      assert.equal(
+        blob.includes(phrase.toLowerCase()),
+        false,
+        `${lng}: « ${phrase} » dans « ${copy.title} / ${copy.body} »`
+      );
+    }
+  }
+  await i18n.changeLanguage('fr');
 });
 
 test('Pas cette fois : stock = 1, pas 1 par refus ; un nouveau refus = +1', () => {

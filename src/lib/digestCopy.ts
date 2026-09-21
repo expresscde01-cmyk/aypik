@@ -97,6 +97,34 @@ export function waitingProfilesNotificationCopy(names: string[]): {
 /** Au moins une a déjà écrit (badge non lu / message reçu) vs personne n’a encore écrit. */
 export type FirstDigestTone = 'write' | 'reply' | 'mixed';
 
+/** Délai après mon dernier message avant d’afficher « Relance possible ». */
+export const FOLLOW_UP_MIN_AGE_MS = 72 * 60 * 60 * 1000;
+/** Au-delà, plus de proposition de relance (jusqu’à un nouvel envoi). */
+export const FOLLOW_UP_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+
+export function isFollowUpInWindow(
+  lastSentAtMs: number | null | undefined,
+  nowMs: number,
+  minAgeMs = FOLLOW_UP_MIN_AGE_MS,
+  maxAgeMs = FOLLOW_UP_MAX_AGE_MS
+): boolean {
+  if (lastSentAtMs == null || !Number.isFinite(lastSentAtMs)) return false;
+  const age = nowMs - lastSentAtMs;
+  return age >= minAgeMs && age <= maxAgeMs;
+}
+
+function lastSentMsOf(
+  id: string,
+  lastSentAt: Readonly<Record<string, number>> | ReadonlyMap<string, number>
+): number | null {
+  if (lastSentAt instanceof Map) {
+    const value = lastSentAt.get(id);
+    return value == null ? null : value;
+  }
+  const value = lastSentAt[id];
+  return value == null ? null : value;
+}
+
 export function firstDigestTone(
   ids: readonly string[],
   wroteToMe: Iterable<string>
@@ -114,6 +142,50 @@ export function firstDigestTone(
   if (reply === 0) return 'write';
   if (write === 0) return 'reply';
   return 'mixed';
+}
+
+/** Matchs silencieux : relance (j’ai écrit, pas de réponse) vs 1er mot. */
+export function partitionQuietDigestIds(
+  ids: readonly string[],
+  wroteFromMe: Iterable<string>,
+  wroteToMe: Iterable<string>,
+  lastSentAt: Readonly<Record<string, number>> | ReadonlyMap<string, number> = {},
+  nowMs = Date.now()
+): { firstWordIds: string[]; followUpIds: string[] } {
+  const fromMe = new Set(
+    [...wroteFromMe].filter((id): id is string => Boolean(id))
+  );
+  const toMe = new Set(
+    [...wroteToMe].filter((id): id is string => Boolean(id))
+  );
+  const firstWordIds: string[] = [];
+  const followUpIds: string[] = [];
+  for (const id of ids) {
+    if (!id) continue;
+    if (fromMe.has(id) && !toMe.has(id)) {
+      if (isFollowUpInWindow(lastSentMsOf(id, lastSentAt), nowMs)) {
+        followUpIds.push(id);
+      }
+      continue;
+    }
+    firstWordIds.push(id);
+  }
+  return { firstWordIds, followUpIds };
+}
+
+export function followUpNotificationCopy(names: string[]): {
+  title: string;
+  body: string;
+} {
+  return {
+    title: t('notifications.digestFollowTitle'),
+    body: bodyWithNames(
+      names,
+      (list) => t('notifications.digestFollowOne', { names: list }),
+      (list) => t('notifications.digestFollowMany', { names: list }),
+      t('notifications.digestFollowEmpty')
+    ),
+  };
 }
 
 export function firstExchangeNotificationCopy(

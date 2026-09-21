@@ -130,6 +130,7 @@ export default function AppTabHeader({
         <NotificationsBell
           onOpenInbox={onOpenInbox}
           active={notificationsActive}
+          discoverMode={discoverMode}
         />
       </div>
     </div>
@@ -154,6 +155,7 @@ export default function AppTabHeader({
         <NotificationsBell
           onOpenInbox={onOpenInbox}
           active={notificationsActive}
+          discoverMode={discoverMode}
         />
         {accountMenu}
         <OwnerBoostIndicator />

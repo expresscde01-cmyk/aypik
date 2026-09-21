@@ -73,14 +73,31 @@ test('recalcul type chargement : un de chaque côté ajoute le pair', () => {
   assert.equal(twoWay.has(valentine), true);
 });
 
-test('RPC flags : two_way et wrote_to_me remplissent les bons ensembles', () => {
-  const { twoWay, wroteToMe } = peerSetsFromDialogueFlagRows([
-    { peer_id: valentine, two_way: true, wrote_to_me: true },
+test('RPC flags : two_way, wrote_to_me et wrote_from_me remplissent les bons ensembles', () => {
+  const { twoWay, wroteToMe, wroteFromMe, lastSentAt } = peerSetsFromDialogueFlagRows([
+    {
+      peer_id: valentine,
+      two_way: true,
+      wrote_to_me: true,
+      last_sent_at: '2026-09-20T10:00:00.000Z',
+    },
     { peer_id: 'other', two_way: false, wrote_to_me: true },
+    {
+      peer_id: 'mine-only',
+      two_way: false,
+      wrote_to_me: false,
+      last_sent_at: '2026-09-18T08:00:00.000Z',
+    },
     { peer_id: null, two_way: true, wrote_to_me: true },
   ]);
   assert.equal(twoWay.has(valentine), true);
   assert.equal(twoWay.has('other'), false);
   assert.equal(wroteToMe.has(valentine), true);
   assert.equal(wroteToMe.has('other'), true);
+  assert.equal(wroteFromMe.has(valentine), true);
+  assert.equal(wroteFromMe.has('other'), false);
+  assert.equal(wroteFromMe.has('mine-only'), true);
+  assert.equal(lastSentAt[valentine], Date.parse('2026-09-20T10:00:00.000Z'));
+  assert.equal(lastSentAt['mine-only'], Date.parse('2026-09-18T08:00:00.000Z'));
+  assert.equal(lastSentAt.other, undefined);
 });

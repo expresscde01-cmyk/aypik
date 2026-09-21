@@ -35,6 +35,8 @@ import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
 import { withNotificationPeriod } from '@/lib/interactionCopy';
 import {
   firstDigestTone,
+  followUpNotificationCopy,
+  partitionQuietDigestIds,
   resolveDigestPeople,
   sliceDigestPeople,
 } from '@/lib/digestCopy';
@@ -51,6 +53,7 @@ import {
   likeFloorForActor,
   omitUnreadMessageSenders,
   omitVisitedDigestIds,
+  firstWordBellOpenActorId,
   openDigestOpts,
   openLikeOpts,
   readRubricBaseline,
@@ -64,6 +67,7 @@ import {
   ghostClickIgnoreUntil,
   shouldIgnoreBellClick,
 } from '@/lib/bellGhostClick';
+import { isSimplifiedDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { t } from '@/i18n/t';
 import { useTranslation } from 'react-i18next';
 
@@ -203,6 +207,15 @@ type PanelRow =
       count: number;
       soleId?: string | null;
       soleName?: string | null;
+    }
+  | {
+      key: string;
+      kind: 'cat_follow';
+      tone: 'match';
+      at: number;
+      count: number;
+      soleId?: string | null;
+      soleName?: string | null;
     };
 
 /** Forme attendue si la fusion « À découvrir » + social est un jour réactivée (actuellement désactivée, voir `mergeNewWithSocial`). */
@@ -275,7 +288,11 @@ function DigestNamedRow({
                   type="button"
                   className="digest-person-chip"
                   aria-label={`Ouvrir la fiche de ${p.name}`}
-                  onClick={() => onOpenPerson(p.id)}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenPerson(p.id);
+                  }}
                 >
                   {photo ? (
                     <img
@@ -298,7 +315,11 @@ function DigestNamedRow({
               <button
                 type="button"
                 className="digest-person-chip digest-person-chip--more"
-                onClick={onOpenAll}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenAll();
+                }}
               >
                 et {extra} autre{extra > 1 ? 's' : ''}
               </button>
@@ -318,8 +339,8 @@ function sortRowsForTone(tone: NotifTone, rows: PanelRow[]): PanelRow[] {
     }
     if (tone === 'match') {
       const recap = digestRecapSort(
-        a.kind === 'cat_first',
-        b.kind === 'cat_first'
+        a.kind === 'cat_first' || a.kind === 'cat_follow',
+        b.kind === 'cat_first' || b.kind === 'cat_follow'
       );
       if (recap !== 0) return recap;
     }
@@ -330,10 +351,12 @@ function sortRowsForTone(tone: NotifTone, rows: PanelRow[]): PanelRow[] {
 export default function NotificationsBell({
   onOpenInbox,
   active = true,
+  discoverMode = null,
 }: {
   onOpenInbox?: (actorId?: string | null, opts?: OpenMatchesOpts) => void;
   /** Une seule cloche écoute le temps réel social : celle de l’onglet visible. */
   active?: boolean;
+  discoverMode?: DiscoverMode | null;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -357,6 +380,12 @@ export default function NotificationsBell({
   const [peersWhoWroteToMe, setPeersWhoWroteToMe] = useState<Set<string>>(
     () => new Set()
   );
+  const [peersIWroteTo, setPeersIWroteTo] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [lastSentAtByPeer, setLastSentAtByPeer] = useState<
+    Record<string, number>
+  >({});
   const [actorNames, setActorNames] = useState<Record<string, string>>({});
   const [actorPhotos, setActorPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -563,14 +592,12 @@ export default function NotificationsBell({
           }
           return [...seen.values()];
         })();
+    const listedIds = listed.map((m) => m.id);
+    const withoutVisited = isSimplifiedDiscoverMode(discoverMode)
+      ? listedIds
+      : omitVisitedDigestIds(listedIds, clearedDigestIds);
     const kept = new Set(
-      omitUnreadMessageSenders(
-        omitVisitedDigestIds(
-          listed.map((m) => m.id),
-          clearedDigestIds
-        ),
-        unreadMessages.bySender
-      )
+      omitUnreadMessageSenders(withoutVisited, unreadMessages.bySender)
     );
     return listed.filter((m) => kept.has(m.id));
   }, [
@@ -581,14 +608,44 @@ export default function NotificationsBell({
     actorNames,
     clearedDigestIds,
     unreadMessages.bySender,
+    discoverMode,
   ]);
 
-  const hasFirstAlert = quietMatches.length > 0 && !firstDismissed;
-  const firstSole = quietMatches.length === 1 ? quietMatches[0] : null;
+  const quietPartition = useMemo(() => {
+    const ids = quietMatches.map((m) => m.id);
+    if (!isSimplifiedDiscoverMode(discoverMode)) {
+      return { firstWordIds: ids, followUpIds: [] as string[] };
+    }
+    return partitionQuietDigestIds(
+      ids,
+      peersIWroteTo,
+      [
+        ...peersWhoWroteToMe,
+        ...Object.entries(unreadMessages.bySender)
+          .filter(([, n]) => n > 0)
+          .map(([id]) => id),
+      ],
+      lastSentAtByPeer
+    );
+  }, [
+    quietMatches,
+    discoverMode,
+    peersIWroteTo,
+    peersWhoWroteToMe,
+    unreadMessages.bySender,
+    lastSentAtByPeer,
+  ]);
+
+  const eligibleQuietCount =
+    quietPartition.firstWordIds.length + quietPartition.followUpIds.length;
+  const hasFirstAlert =
+    eligibleQuietCount > 0 &&
+    !firstDismissed &&
+    (!isSimplifiedDiscoverMode(discoverMode) || socialListReady);
   const prevQuietCountRef = useRef(0);
 
   useEffect(() => {
-    const n = quietMatches.length;
+    const n = eligibleQuietCount;
     if (n > 0) {
       prevQuietCountRef.current = n;
       return;
@@ -598,7 +655,7 @@ export default function NotificationsBell({
       setFirstDismissed(false);
     }
     prevQuietCountRef.current = 0;
-  }, [quietMatches.length, user]);
+  }, [eligibleQuietCount, user]);
 
   useEffect(() => {
     if (!hasFirstAlert || !user) return;
@@ -763,8 +820,17 @@ export default function NotificationsBell({
   const discoverRecapCount = discoverPinIds.length;
   const discoverPeople = resolveDigestPeople(discoverPinIds, digestNameById);
   const waitPeople = resolveDigestPeople(waitPinIds, digestNameById);
-  const firstMemberIds = quietMatches.map((m) => m.id);
-  const firstPeople = resolveDigestPeople(firstMemberIds, digestNameById);
+  const firstMemberIds = isSimplifiedDiscoverMode(discoverMode)
+    ? [...quietPartition.firstWordIds, ...quietPartition.followUpIds]
+    : quietMatches.map((m) => m.id);
+  const firstWordPeople = resolveDigestPeople(
+    quietPartition.firstWordIds,
+    digestNameById
+  );
+  const followUpPeople = resolveDigestPeople(
+    quietPartition.followUpIds,
+    digestNameById
+  );
 
   const socialItems = items.filter((n) => {
     if (!isVisibleSocial(n)) return false;
@@ -910,15 +976,32 @@ export default function NotificationsBell({
     }
 
     if (hasFirstAlert) {
-      rows.push({
-        key: 'cat-first',
-        kind: 'cat_first',
-        tone: 'match',
-        at: 0,
-        count: quietMatches.length,
-        soleId: firstSole?.id ?? null,
-        soleName: firstSole?.displayName ?? null,
-      });
+      if (firstWordPeople.length > 0) {
+        rows.push({
+          key: 'cat-first',
+          kind: 'cat_first',
+          tone: 'match',
+          at: 0,
+          count: firstWordPeople.length,
+          soleId:
+            firstWordPeople.length === 1 ? firstWordPeople[0].id : null,
+          soleName:
+            firstWordPeople.length === 1 ? firstWordPeople[0].name : null,
+        });
+      }
+      if (followUpPeople.length > 0) {
+        rows.push({
+          key: 'cat-follow',
+          kind: 'cat_follow',
+          tone: 'match',
+          at: 1,
+          count: followUpPeople.length,
+          soleId:
+            followUpPeople.length === 1 ? followUpPeople[0].id : null,
+          soleName:
+            followUpPeople.length === 1 ? followUpPeople[0].name : null,
+        });
+      }
     }
 
     const blocks: { tone: NotifTone; rows: PanelRow[] }[] = [];
@@ -938,8 +1021,8 @@ export default function NotificationsBell({
     hasFirstAlert,
     activeCatNew,
     activeCatWait,
-    quietMatches,
-    firstSole,
+    firstWordPeople,
+    followUpPeople,
     discoverRecapCount,
     waitPinIds,
     mergeNewWithSocial,
@@ -1060,6 +1143,14 @@ export default function NotificationsBell({
       ]);
       setPeersWithTwoWay(dialogue.twoWay);
       setPeersWhoWroteToMe(dialogue.wroteToMe);
+      setPeersIWroteTo(dialogue.wroteFromMe);
+      setLastSentAtByPeer((prev) => {
+        const next = { ...dialogue.lastSentAt };
+        for (const [id, ms] of Object.entries(prev)) {
+          if (next[id] == null || ms > next[id]) next[id] = ms;
+        }
+        return next;
+      });
       setSocialListReady(true);
       setItems(
         list.filter((n) => {
@@ -1210,6 +1301,21 @@ export default function NotificationsBell({
           );
         }
         applyInboxDecisionLocally(detail);
+        if (detail?.actorId && !detail.decision) {
+          const sentId = detail.actorId;
+          const sentAt = Date.now();
+          setPeersIWroteTo((prev) => {
+            if (prev.has(sentId)) return prev;
+            const next = new Set(prev);
+            next.add(sentId);
+            return next;
+          });
+          setLastSentAtByPeer((prev) =>
+            prev[sentId] != null && prev[sentId] >= sentAt
+              ? prev
+              : { ...prev, [sentId]: sentAt }
+          );
+        }
         void (async () => {
           try {
             await sweepStaleSocialNotifications(detail?.actorId ?? null);
@@ -1254,6 +1360,10 @@ export default function NotificationsBell({
     setSocialListReady(false);
     setActorNames({});
     setActorPhotos({});
+    setPeersWithTwoWay(new Set());
+    setPeersWhoWroteToMe(new Set());
+    setPeersIWroteTo(new Set());
+    setLastSentAtByPeer({});
     setNewDismissed(
       user
         ? sessionStorage.getItem(categoryNotifSessionKey(user.id, 'new')) ===
@@ -1445,15 +1555,37 @@ export default function NotificationsBell({
   };
 
   const openCategory = (category: MatchPulseCategory, pinActorIds: string[] = []) => {
-    closePanel();
     onOpenInbox?.(null, openDigestOpts(category, pinActorIds));
+    closePanel();
   };
 
   const openDigestPerson = (category: MatchPulseCategory, actorId: string) => {
     if (!actorId) return;
-    clearDigestActor(actorId);
-    closePanel();
+    if (
+      !(
+        isSimplifiedDiscoverMode(discoverMode) &&
+        category === 'first'
+      )
+    ) {
+      clearDigestActor(actorId);
+    }
     onOpenInbox?.(actorId, openDigestOpts(category, [actorId]));
+    closePanel();
+  };
+
+  const openFirstDigestCards = (ids: string[]) => {
+    const target = firstWordBellOpenActorId({
+      simplified: isSimplifiedDiscoverMode(discoverMode),
+      pulseCategory: 'first',
+      actorId: null,
+      pinActorIds: ids,
+    });
+    if (target) {
+      openDigestPerson('first', target);
+      return;
+    }
+    if (isSimplifiedDiscoverMode(discoverMode)) return;
+    openCategory('first', ids);
   };
 
   const openMergedNew = (row: Extract<PanelRow, { kind: 'merged_new' }>) => {
@@ -1770,9 +1902,9 @@ export default function NotificationsBell({
                       }
 
                       if (row.kind === 'cat_first') {
-                        const slice = sliceDigestPeople(firstPeople);
+                        const slice = sliceDigestPeople(firstWordPeople);
                         const tone = firstDigestTone(
-                          firstPeople.map((p) => p.id),
+                          firstWordPeople.map((p) => p.id),
                           [
                             ...peersWhoWroteToMe,
                             ...Object.entries(unreadMessages.bySender)
@@ -1781,7 +1913,7 @@ export default function NotificationsBell({
                           ]
                         );
                         const copy = firstExchangeNotificationCopy(
-                          firstPeople.map((p) => p.name),
+                          firstWordPeople.map((p) => p.name),
                           tone
                         );
                         return (
@@ -1797,9 +1929,42 @@ export default function NotificationsBell({
                             bodyClass="text-emerald-800/80"
                             toneClass={notifToneClass('match')}
                             onOpenAll={() =>
-                              openCategory(
-                                'first',
-                                quietMatches.map((m) => m.id)
+                              openFirstDigestCards(
+                                firstWordPeople.map((p) => p.id)
+                              )
+                            }
+                            onOpenPerson={(id) =>
+                              openDigestPerson('first', id)
+                            }
+                            icon={
+                              <span className="mt-0.5 relative w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              </span>
+                            }
+                          />
+                        );
+                      }
+
+                      if (row.kind === 'cat_follow') {
+                        const slice = sliceDigestPeople(followUpPeople);
+                        const copy = followUpNotificationCopy(
+                          followUpPeople.map((p) => p.name)
+                        );
+                        return (
+                          <DigestNamedRow
+                            key={row.key}
+                            title={copy.title}
+                            body={copy.body}
+                            people={slice.shown}
+                            extra={slice.extra}
+                            photos={actorPhotos}
+                            initialClass="bg-emerald-600"
+                            titleClass="text-emerald-900"
+                            bodyClass="text-emerald-800/80"
+                            toneClass={notifToneClass('match')}
+                            onOpenAll={() =>
+                              openFirstDigestCards(
+                                followUpPeople.map((p) => p.id)
                               )
                             }
                             onOpenPerson={(id) =>

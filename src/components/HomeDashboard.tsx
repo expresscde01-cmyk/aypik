@@ -352,6 +352,7 @@ export default function HomeDashboard({
                 <NotificationsBell
                   onOpenInbox={onOpenMatches}
                   active={notificationsActive}
+                  discoverMode={discoverMode}
                 />
                 {accountMenu}
                 <OwnerBoostIndicator />
@@ -402,6 +403,7 @@ export default function HomeDashboard({
               <NotificationsBell
                 onOpenInbox={onOpenMatches}
                 active={notificationsActive}
+                discoverMode={discoverMode}
               />
               {accountMenu}
               <OwnerBoostIndicator iconOnlyOnMobile />

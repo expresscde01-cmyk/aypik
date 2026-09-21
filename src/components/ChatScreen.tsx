@@ -35,6 +35,8 @@ type ChatScreenProps = {
   onMatchHidden?: () => void;
   /** Échange dans les deux sens : passe la fiche en « Discussion en cours ». */
   onDialogueStarted?: (peerId: string) => void;
+  /** Au moins un message envoyé par moi (relance, pas encore réciproque). */
+  onMessageSent?: (peerId: string) => void;
 };
 
 export default function ChatScreen({
@@ -42,6 +44,7 @@ export default function ChatScreen({
   onClose,
   onMatchHidden,
   onDialogueStarted,
+  onMessageSent,
 }: ChatScreenProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -60,6 +63,8 @@ export default function ChatScreen({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const onDialogueStartedRef = useRef(onDialogueStarted);
   onDialogueStartedRef.current = onDialogueStarted;
+  const onMessageSentRef = useRef(onMessageSent);
+  onMessageSentRef.current = onMessageSent;
 
   const promoteIfTwoWay = (rows: ChatMessage[]) => {
     if (!user) return;
@@ -232,6 +237,7 @@ export default function ChatScreen({
         return nextMessages;
       });
       promoteIfTwoWay(nextMessages);
+      onMessageSentRef.current?.(peer.id);
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setDraft(content);

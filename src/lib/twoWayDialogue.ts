@@ -19,20 +19,42 @@ export type PeerDialogueFlagRow = {
   peer_id?: string | null;
   two_way?: boolean | null;
   wrote_to_me?: boolean | null;
+  last_sent_at?: string | null;
 };
+
+export function parseLastSentAtMs(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const ms = Date.parse(value);
+    return Number.isFinite(ms) ? ms : null;
+  }
+  return null;
+}
 
 export function peerSetsFromDialogueFlagRows(
   rows: PeerDialogueFlagRow[]
-): { twoWay: Set<string>; wroteToMe: Set<string> } {
+): {
+  twoWay: Set<string>;
+  wroteToMe: Set<string>;
+  wroteFromMe: Set<string>;
+  lastSentAt: Record<string, number>;
+} {
   const twoWay = new Set<string>();
   const wroteToMe = new Set<string>();
+  const wroteFromMe = new Set<string>();
+  const lastSentAt: Record<string, number> = {};
   for (const row of rows) {
     const peer = row.peer_id;
     if (!peer) continue;
     if (row.two_way) twoWay.add(peer);
     if (row.wrote_to_me) wroteToMe.add(peer);
+    // La RPC ne renvoie que des conversations avec au moins un message :
+    // s’ils ne m’ont pas écrit, c’est moi qui ai écrit.
+    if (row.two_way || !row.wrote_to_me) wroteFromMe.add(peer);
+    const sentMs = parseLastSentAtMs(row.last_sent_at);
+    if (sentMs != null) lastSentAt[peer] = sentMs;
   }
-  return { twoWay, wroteToMe };
+  return { twoWay, wroteToMe, wroteFromMe, lastSentAt };
 }
 
 export function peersWithTwoWayDialogueFromRows(
