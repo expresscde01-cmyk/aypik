@@ -105,6 +105,25 @@ export function openDigestOpts(
   };
 }
 
+/**
+ * Profil à ouvrir depuis le digest « 1er mot ».
+ * Chip (`actorId`) : toujours cette personne.
+ * Carte sans actorId : Simplifié + un seul pin → cette personne.
+ * Détaillé, ou plusieurs pins : null (pas d’ouverture arbitraire).
+ */
+export function firstWordBellOpenActorId(input: {
+  simplified: boolean;
+  pulseCategory?: MatchPulseCategory | null;
+  actorId?: string | null;
+  pinActorIds?: string[] | null;
+}): string | null {
+  const actorId = (input.actorId || '').trim();
+  if (actorId) return actorId;
+  if (input.pulseCategory !== 'first' || !input.simplified) return null;
+  const pins = uniquePinIds(input.pinActorIds || []);
+  return pins.length === 1 ? pins[0] : null;
+}
+
 /** Clic Like/Flash individuel → même étage + pin de cette fiche. */
 export function openLikeOpts(
   actorId: string,

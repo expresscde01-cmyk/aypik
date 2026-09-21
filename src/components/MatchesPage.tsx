@@ -33,7 +33,7 @@ import { queryLikeFlashEdges } from '@/lib/likeFlashEdges';
 import {
   fetchSocialNotifications,
 } from '@/lib/suggestions';
-import { fetchPeersWithTwoWayDialogue } from '@/lib/messaging';
+import { fetchPeerDialogueFlags } from '@/lib/messaging';
 import {
   formatInteractionDate,
   matchRoleFromDates,
@@ -106,6 +106,7 @@ import {
   scrollYUnderStickyHeader,
 } from '@/lib/scrollUnderSticky';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
+import { firstWordBellOpenActorId } from '@/lib/matchesNav';
 import {
   fetchDeclinedArchives,
   fetchPendingDeclinedNotices,
@@ -1181,8 +1182,12 @@ export default function MatchesPage({
   const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
     () => new Set()
   );
+  const [peersIWroteTo, setPeersIWroteTo] = useState<Set<string>>(
+    () => new Set()
+  );
   /** Échanges déjà confirmés deux sens (évite un refetch légèrement en retard). */
   const twoWayDialogueRef = useRef<Set<string>>(new Set());
+  const wroteFromMeRef = useRef<Set<string>>(new Set());
   const [myGender, setMyGender] = useState<ProfileGender | null>(null);
   const pendingFocusRef = useRef<{
     actorId: string;
@@ -1216,6 +1221,21 @@ export default function MatchesPage({
       releasePinnedActor(profileId);
     },
     [visitDigestActor, releasePinnedActor]
+  );
+
+  /** Simplifié + pas d’échange réciproque : le digest suit les messages, pas « fiche ouverte ». */
+  const visitMatchIfDigestAllows = useCallback(
+    (profileId?: string | null) => {
+      if (!profileId) return;
+      if (
+        parseDiscoverMode(viewerDiscoverMode) === 'simplifie' &&
+        !peersWithChat.has(profileId)
+      ) {
+        return;
+      }
+      interactWithMatchCard(profileId);
+    },
+    [viewerDiscoverMode, peersWithChat, interactWithMatchCard]
   );
 
   const founderActive = isFounderPeriodActive(status);
@@ -1474,14 +1494,23 @@ export default function MatchesPage({
       const forceWait = restoredWaitActorsRef.current;
 
       let peersChat = new Set<string>();
+      let wroteFromMe = new Set<string>();
       try {
-        peersChat = await fetchPeersWithTwoWayDialogue();
+        const flags = await fetchPeerDialogueFlags();
+        peersChat = flags.twoWay;
+        wroteFromMe = flags.wroteFromMe;
       } catch {
         peersChat = new Set();
+        wroteFromMe = new Set();
       }
       setPeersWithChat(() => {
         const next = new Set(peersChat);
         for (const id of twoWayDialogueRef.current) next.add(id);
+        return next;
+      });
+      setPeersIWroteTo(() => {
+        const next = new Set(wroteFromMe);
+        for (const id of wroteFromMeRef.current) next.add(id);
         return next;
       });
 
@@ -2167,6 +2196,44 @@ export default function MatchesPage({
     }
 
     if (pending.pulseCategory && !pending.highlight) {
+      const viewerSimplified =
+        parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
+      const firstWordTargetId = firstWordBellOpenActorId({
+        simplified: viewerSimplified,
+        pulseCategory: pending.pulseCategory,
+        actorId: pending.actorId,
+        pinActorIds: pending.pinActorIds,
+      });
+
+      if (viewerSimplified && pending.pulseCategory === 'first') {
+        if (!firstWordTargetId) {
+          pendingFocusRef.current = null;
+          onFocusActorConsumed?.();
+          setOpenProfile(null);
+          return;
+        }
+        const foundCard = matches.find(
+          (m) => m.profile.id === firstWordTargetId
+        );
+        if (!foundCard) {
+          if (!pending.attempts) {
+            pending.attempts = 1;
+            void loadMatches();
+            return;
+          }
+          pendingFocusRef.current = null;
+          onFocusActorConsumed?.();
+          visitDigestActor(firstWordTargetId);
+          setError(t('errors.profileGone'));
+          setOpenProfile(null);
+          return;
+        }
+        pendingFocusRef.current = null;
+        onFocusActorConsumed?.();
+        setOpenProfile(foundCard);
+        return;
+      }
+
       // Exclusif : A remplace B et inversement
       setPulseCategory(pending.pulseCategory);
       setUnreadMailbox(false);
@@ -2279,6 +2346,10 @@ export default function MatchesPage({
     loadPendingDeclined,
     loadDeclinedArchives,
     interactWithMatchCard,
+    viewerDiscoverMode,
+    loadMatches,
+    visitDigestActor,
+    t,
   ]);
 
   const handleMatchBack = useCallback(
@@ -3995,7 +4066,14 @@ export default function MatchesPage({
           peer={chatPeer}
           onDialogueStarted={(peerId) => {
             twoWayDialogueRef.current.add(peerId);
+            wroteFromMeRef.current.add(peerId);
             setPeersWithChat((prev) => {
+              if (prev.has(peerId)) return prev;
+              const next = new Set(prev);
+              next.add(peerId);
+              return next;
+            });
+            setPeersIWroteTo((prev) => {
               if (prev.has(peerId)) return prev;
               const next = new Set(prev);
               next.add(peerId);
@@ -4003,8 +4081,17 @@ export default function MatchesPage({
             });
             interactWithMatchCard(peerId);
           }}
+          onMessageSent={(peerId) => {
+            wroteFromMeRef.current.add(peerId);
+            setPeersIWroteTo((prev) => {
+              if (prev.has(peerId)) return prev;
+              const next = new Set(prev);
+              next.add(peerId);
+              return next;
+            });
+          }}
           onClose={() => {
-            interactWithMatchCard(chatPeer.id);
+            visitMatchIfDigestAllows(chatPeer.id);
             setChatPeer(null);
             void loadMatches();
             void unread.refresh();
@@ -4131,14 +4218,23 @@ export default function MatchesPage({
             viewerGender: myGender,
           }}
           unreadCount={unread.bySender[openProfile.profile.id] || 0}
+          openChatLabel={
+            viewerSimplified &&
+            (openProfile.kind === 'match' || openProfile.alreadyLiked) &&
+            !peersWithChat.has(openProfile.profile.id)
+              ? peersIWroteTo.has(openProfile.profile.id)
+                ? t('matches.followUpChat')
+                : t('matches.writeFirstWord')
+              : undefined
+          }
           onClose={() => {
-            interactWithMatchCard(openProfile.profile.id);
+            visitMatchIfDigestAllows(openProfile.profile.id);
             setOpenProfile(null);
           }}
           onLike={() => void handleMatchBack(openProfile)}
           onFlash={() => undefined}
           onSkip={() => {
-            interactWithMatchCard(openProfile.profile.id);
+            visitMatchIfDigestAllows(openProfile.profile.id);
             setOpenProfile(null);
           }}
           onInboxDecision={
@@ -4168,7 +4264,7 @@ export default function MatchesPage({
             openProfile.alreadyLiked ||
             (unread.bySender[openProfile.profile.id] || 0) > 0
               ? () => {
-                  interactWithMatchCard(openProfile.profile.id);
+                  visitMatchIfDigestAllows(openProfile.profile.id);
                   setChatPeer(openProfile.profile);
                   setOpenProfile(null);
                 }

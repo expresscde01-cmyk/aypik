@@ -88,6 +88,7 @@ export default function ProfileDetailModal({
   onFlash,
   onSkip,
   onOpenChat,
+  openChatLabel,
   onInboxDecision,
   onDeclinedArchive,
   onDeclinedDelete,
@@ -112,6 +113,8 @@ export default function ProfileDetailModal({
   onFlash: () => void;
   onSkip: () => void;
   onOpenChat?: () => void;
+  /** Libellé du bouton d’ouverture du chat (défaut : matches.openConversation). */
+  openChatLabel?: string;
   onInboxDecision?: (decision: InboxDecision) => void;
   onDeclinedArchive?: () => void;
   onDeclinedDelete?: () => void;
@@ -490,7 +493,7 @@ export default function ProfileDetailModal({
                   className="btn-open-conversation w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  {t('matches.openConversation')}
+                  {openChatLabel || t('matches.openConversation')}
                 </button>
               ) : null}
 

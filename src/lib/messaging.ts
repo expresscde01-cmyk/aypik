@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { peerSetsFromDialogueFlagRows } from '@/lib/twoWayDialogue';
+import { peerSetsFromDialogueFlagRows, parseLastSentAtMs } from '@/lib/twoWayDialogue';
 import { dateLocale } from '../i18n/format.ts';
 
 export type ChatMessage = {
@@ -35,10 +35,40 @@ function logSupabaseError(context: string, error: unknown) {
 export type PeerDialogueFlags = {
   twoWay: Set<string>;
   wroteToMe: Set<string>;
+  wroteFromMe: Set<string>;
+  lastSentAt: Record<string, number>;
 };
 
 function emptyDialogueFlags(): PeerDialogueFlags {
-  return { twoWay: new Set(), wroteToMe: new Set() };
+  return {
+    twoWay: new Set(),
+    wroteToMe: new Set(),
+    wroteFromMe: new Set(),
+    lastSentAt: {},
+  };
+}
+
+async function fetchLastSentAtByPeer(
+  userId: string
+): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('recipient_id, created_at')
+    .eq('sender_id', userId);
+  if (error) {
+    logSupabaseError('fetchLastSentAtByPeer', error);
+    return {};
+  }
+  const map: Record<string, number> = {};
+  for (const row of data || []) {
+    const peer = (row as { recipient_id?: string | null }).recipient_id;
+    const ms = parseLastSentAtMs(
+      (row as { created_at?: string | null }).created_at
+    );
+    if (!peer || ms == null) continue;
+    if (map[peer] == null || ms > map[peer]) map[peer] = ms;
+  }
+  return map;
 }
 
 /** Un aller-retour : 2 booléens par pair (échange réel / l’autre m’a écrit). */
@@ -51,13 +81,19 @@ export async function fetchPeerDialogueFlags(): Promise<PeerDialogueFlags> {
     logSupabaseError('fetchPeerDialogueFlags', error);
     return emptyDialogueFlags();
   }
-  return peerSetsFromDialogueFlagRows(
-    (data || []) as {
-      peer_id?: string | null;
-      two_way?: boolean | null;
-      wrote_to_me?: boolean | null;
-    }[]
-  );
+  const rows = (data || []) as {
+    peer_id?: string | null;
+    two_way?: boolean | null;
+    wrote_to_me?: boolean | null;
+    last_sent_at?: string | null;
+  }[];
+  const flags = peerSetsFromDialogueFlagRows(rows);
+  const lastSentAtColumnAbsent =
+    rows.length > 0 && rows.every((row) => row.last_sent_at === undefined);
+  if (lastSentAtColumnAbsent && flags.wroteFromMe.size > 0) {
+    flags.lastSentAt = await fetchLastSentAtByPeer(auth.user.id);
+  }
+  return flags;
 }
 
 /** Interlocuteurs avec un échange réel (un message de chaque côté). */
@@ -388,7 +424,7 @@ export async function sendMessage(params: {
   if (!data) {
     throw new Error('Envoi : aucune ligne renvoyée');
   }
-  emitInboxUpdated();
+  emitInboxUpdated({ actorId: params.recipientId });
   return data as ChatMessage;
 }
 

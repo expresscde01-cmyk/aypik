@@ -2382,6 +2382,10 @@ button.group[data-matched='true'] {
   outline: none;
 }
 
+.digest-person-chip:active {
+  background: #f5f5f4;
+}
+
 .digest-person-chip-photo,
 .digest-person-chip-initial {
   width: 1.25rem;
