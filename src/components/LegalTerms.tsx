@@ -256,7 +256,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 autre utilisateur), décomptée individuellement pour chaque
                 utilisateur à compter de la création de son compte. Aucune
                 souscription payante n&apos;est proposée ni exigée tant que
-                le Service est en mode lancement gratuit.
+                le Service est en phase de lancement.
               </p>
               ) : (
               <>
@@ -802,7 +802,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Membre Fondateur, une semaine pour tout autre utilisateur —
                 l&apos;utilisateur conserve l&apos;accès aux fonctionnalités
                 du Service. Aucune souscription payante n&apos;est proposée
-                ni exigée tant que le Service est en mode lancement gratuit.
+                ni exigée tant que le Service est en phase de lancement. À
+                l&apos;issue de cette phase de lancement, une souscription
+                payante pourra être proposée, mais elle ne sera jamais
+                obligatoire : le compte basculera simplement vers l&apos;offre
+                Gratuit.
               </p>
               ) : (
               <p>
@@ -1426,12 +1430,17 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               {SITE_FREE_MODE ? (
               <p>
-                Non pour le moment. Le Service est en mode lancement
-                gratuit : aucune offre payante n&apos;est commercialisée,
-                aucun paiement n&apos;est demandé. La création de profil, la
+                Non pour le moment. Le Service est en phase de lancement :
+                aucune offre payante n&apos;est commercialisée, aucun
+                paiement n&apos;est demandé. La création de profil, la
                 découverte de membres, le Like, le Flash, la constitution de
                 Matchs et l&apos;envoi de messages sont inclus dans les
-                conditions de la Période d&apos;essai (article 4).
+                conditions de la Période d&apos;essai (article 4). Même à
+                l&apos;issue de cette phase de lancement, une souscription
+                payante pourra éventuellement être proposée, mais elle ne
+                sera jamais obligatoire : à défaut de souscription, le
+                compte reste utilisable via l&apos;offre Gratuit (article
+                4.3).
               </p>
               ) : (
               <p>
