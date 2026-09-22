@@ -314,13 +314,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                   expressément avant toute souscription et tout paiement ;
                 </li>
                 <li>
-                  le refus de souscrire une offre payante n&apos;entraîne
-                  ni fermeture de compte, ni perte d&apos;accès à la création
-                  de profil, à la découverte de membres, au Like, au Flash et
-                  à la constitution de Matchs, décrits à l&apos;article 2.3.
-                  Il limite en revanche, à l&apos;issue de sa Période
-                  d&apos;essai (article 4), la possibilité d&apos;envoyer de
-                  nouveaux messages.
+                  Refuser de payer ne ferme pas le compte : l&apos;utilisateur
+                  conserve l&apos;accès à son profil, à Découvrir, à
+                  l&apos;expression d&apos;un intérêt (Like, Flash) et à la
+                  constitution de Matchs. Après l&apos;essai, cela limite
+                  seulement l&apos;envoi de nouveaux messages.
                 </li>
               </ul>
               <p>
