@@ -93,7 +93,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 20 septembre 2026.
+              Dernière mise à jour : 23 septembre 2026.
             </p>
           </header>
 
@@ -255,8 +255,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 (six mois pour un Membre Fondateur, une semaine pour tout
                 autre utilisateur), décomptée individuellement pour chaque
                 utilisateur à compter de la création de son compte. Aucune
-                souscription payante n&apos;est proposée ni exigée tant que
-                le Service est en phase de lancement.
+                souscription payante n&apos;est proposée tant que le Service
+                est en phase de lancement. À l&apos;issue de cette phase, des
+                offres payantes optionnelles pourront être proposées ;
+                aucune souscription ne sera toutefois jamais exigée pour
+                conserver son compte et accéder aux fonctionnalités
+                gratuites décrites au premier alinéa du présent article. À
+                défaut de souscription, le compte bascule vers l&apos;offre
+                Gratuit (article 4.3).
               </p>
               ) : (
               <>
@@ -760,14 +766,29 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Ce statut est honorifique : au-delà des avantages de la
-                Période d&apos;essai décrits ci-dessus, il n&apos;ouvre droit
-                à aucun remboursement, cession ou conversion en numéraire. Le
+                Période d&apos;essai décrits ci-dessus et de la Réduction
+                Fondateur prévue ci-dessous, il n&apos;ouvre droit à aucun
+                remboursement, cession ou conversion en numéraire. Le
                 titre et le numéro associé restent affichés tant que le
                 compte est actif ; ils sont définitivement perdus en cas de
                 désinscription ou de suppression du compte, dans les
                 conditions de l&apos;article 8.2. Un compte dont la visibilité
                 est restreinte ou qui est mis en pause au sens de
                 l&apos;article 3.7 demeure un compte actif.
+              </p>
+              <p>
+                Réduction Fondateur. Tout Membre Fondateur bénéficie, tant
+                que son compte demeure actif au sens de l&apos;article 3.7,
+                d&apos;une réduction de 50 % sur le prix de toute offre
+                payante qui viendrait à être proposée sur le Service,
+                appliquée au tarif public en vigueur au moment de la
+                souscription. Cette réduction n&apos;emporte aucune
+                obligation de souscription. Elle est personnelle, non
+                cessible et non cumulable avec toute autre promotion, sauf
+                mention contraire. Elle est définitivement perdue en cas de
+                suppression du compte, dans les conditions de
+                l&apos;article 8.2, et n&apos;est pas transmise au titulaire
+                ultérieur du même numéro de Fondateur.
               </p>
               {founderOfferClosed ? (
                 <p>{t('legal.founderOfferClosed')}</p>
