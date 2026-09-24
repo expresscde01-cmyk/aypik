@@ -1,10 +1,9 @@
+BEGIN;
+
 -- Un numéro de Fondateur n'est jamais réattribué.
 -- 1000 places actives : si une place se libère, le suivant reçoit
 -- max(numéros déjà attribués) + 1, même au-delà de 1000.
 -- La trace ne contient que le numéro, jamais d'user_id.
--- Une seule transaction : tout passe, ou rien.
-
-BEGIN;
 
 CREATE TABLE public.founder_numbers_issued (
   founder_number integer PRIMARY KEY

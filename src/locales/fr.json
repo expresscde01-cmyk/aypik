@@ -174,7 +174,7 @@
     "founderTitle": "Membre Fondateur",
     "founderBadge": "Offre limitée",
     "founderSlotsSubtitle": "6 mois offerts — Offre exclusive réservée à {{maxSlots}} Membres Fondateurs.",
-    "founderOfferClosed": "L'offre Membre Fondateur est complète — merci à nos 1000 premiers membres ! Le site reste gratuit pendant sa phase de lancement : inscrivez-vous dès maintenant pour en profiter.",
+    "founderOfferClosed": "L'offre Membre Fondateur est complète : les 1000 numéros ont été attribués. La phase de lancement est terminée et le passage au payant est définitif.",
     "founderBenefitNoCard": "Inscription sans carte bancaire et sans engagement",
     "founderBenefitLikes": "Likes et Flash illimités offerts avec notification immédiate",
     "founderBenefitBoost": "Boost offert le 1er mois pour une visibilité maximale auprès de tous les membres",
@@ -772,8 +772,8 @@
     "purchasesDisabledLaunch": "Les achats sont désactivés pendant le lancement.",
     "schemaCacheError": "L'activation de l'offre n'est pas encore disponible. Réessaie dans quelques secondes.",
     "offerNotSaved": "Offre non enregistrée ({{error}}).",
-    "founderSlotsTaken": "Les {{maxSlots}} places Fondateur sont actuellement occupées.",
-    "founderSlotsTakenPaid": "Les {{maxSlots}} places Fondateur sont actuellement occupées. Choisis l’offre Gratuite ou un palier payant pour continuer.",
+    "founderSlotsTaken": "Les {{maxSlots}} numéros Fondateur ont été attribués. Une suppression ne libère pas de place.",
+    "founderSlotsTakenPaid": "Les {{maxSlots}} numéros Fondateur ont été attribués. La phase de lancement est terminée. Choisis l’offre Gratuite ou un palier payant pour continuer.",
     "founderDaysLeft_one": "Dans {{count}} jour, tes {{months}} mois à 0 € se terminent. Tu pourras rester en freemium, ou reconduire en soutien à {{price}}.",
     "founderDaysLeft_other": "Dans {{count}} jours, tes {{months}} mois à 0 € se terminent. Tu pourras rester en freemium, ou reconduire en soutien à {{price}}.",
     "founderBadgeVisible": "Badge Membre Fondateur{{number}} — visible sur ton profil.",
@@ -942,7 +942,7 @@
     "officialNotice": "Document officiel disponible en français — traduction à venir.",
     "officialNoticeTitle": "Traduction non officielle",
     "readOfficialFrench": "Lire la version officielle en français",
-    "founderOfferClosed": "L'offre Membre Fondateur, réservée aux 1000 premiers inscrits, n'est plus disponible, le seuil des 1000 inscriptions étant atteint. L'accès gratuit au site pendant sa phase de lancement n'est toutefois pas réservé aux Membres Fondateurs : l'ensemble du site reste gratuit à ce stade. Les Membres Fondateurs bénéficient simplement d'avantages supplémentaires (badge Fondateur conservé à vie, réduction de 50 % à vie sur l'ensemble du site, Likes et Flash illimités offerts pendant leur période de lancement, Boost offert le premier mois). Les nouveaux inscrits après ce seuil continuent de bénéficier d'un accès complet et gratuit au site pendant la phase de lancement."
+    "founderOfferClosed": "L'offre Membre Fondateur, réservée aux 1000 premiers comptes, n'est plus disponible : les 1000 numéros ont été attribués. La phase de lancement est terminée et le passage du Service en mode payant est définitif. Les Membres Fondateurs conservent les avantages déjà accordés (badge Fondateur tant que le compte existe, réduction de 50 % à vie sur l'ensemble du site, Likes et Flash illimités offerts pendant leur période de lancement, Boost offert le premier mois). La suppression d'un compte ne libère pas de numéro."
   },
   "emails": {
     "legalFooterAccount": "Tu reçois cet e-mail car tu as un compte sur Aypik.",
