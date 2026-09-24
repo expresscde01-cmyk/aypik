@@ -176,21 +176,21 @@ A native language is required if the member lives in a country that is not on th
 
 ### Article 4 — Trial Period and "Founding Member" status
 
-**4.1 Founding Members (up to 1000 active accounts)**
+**4.1 Founding Members (first 1000 accounts)**
 
-An honorary "Founding Member" status is granted within a limit of 1000 concurrently active accounts (accounts that have not been deleted, regardless of how often the member signs in). Inactivity never frees a slot. A slot is freed only when the account holder deletes their account. Numbers are assigned in sequence and are never reassigned: deletion of the account results in the permanent loss of the badge and its number. Switching the Service to paid mode is not triggered by a fixed calendar date: the Service remains in its launch phase until 1000 active Founding Member accounts are reached at the same time.
+An honorary "Founding Member" status is granted to the first 1000 accounts created. Numbers are assigned in sequence, from 1 to 1000, and are never reassigned: deletion of an account results in the permanent loss of the badge and its number, without freeing a slot. Inactivity or pausing the account does not free a slot. Switching the Service to paid mode is not triggered by a fixed calendar date: it becomes definitive when the 1000th number is assigned.
 
 During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages, unlimited Likes and Flashes, and a profile visibility boost during the first month after signup.
 
 This status is honorary: beyond the Trial Period benefits described above, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
 
 <!-- founder-closed:start -->
-The Founding Member offer, reserved for the first 1000 sign-ups, is no longer available, as the 1000-registration threshold has been reached. Free access to the site during its launch phase is not, however, reserved for Founding Members: the entire site remains free at this stage. Founding Members simply receive additional benefits (lifetime Founder badge, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). New members who sign up after this threshold continue to enjoy full, free access to the site during the launch phase.
+The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). Deleting an account does not free a number.
 <!-- founder-closed:end -->
 
 **4.2 Other users**
 
-Any user creating an account when no Founding Member slot is available (the cap of 1000 active Founding Member accounts has been reached) benefits from a one (1) week Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
+Any user creating an account when no Founding Member slot is available (all 1000 numbers have been assigned) benefits from a one (1) week Trial Period starting from the date their account was created, during which sending messages is included free of charge, with no credit card and no commitment. This Trial Period does not include the additional benefits (unlimited Likes and Flashes, visibility boost) reserved for Founding Members under Section 4.1.
 
 **4.3 At the end of the Trial Period**
 

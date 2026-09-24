@@ -5,9 +5,9 @@ import { t } from '../i18n/t.ts';
  * Passer à `false` pour restaurer l’UI payante : encart « Après tes 6 mois »,
  * cartes Premium/Boost, prix landing, teasers et CGU tarifaires.
  *
- * La bascule produit vers le payant est liée au numerus clausus (1000 Fondateurs
- * actifs simultanés), pas à une date calendaire. Elle reste manuelle ici : ne pas
- * inverser ce flag automatiquement si le seuil n’est pas atteint.
+ * La bascule produit vers le payant est liée à l’attribution du 1000e numéro
+ * Fondateur, pas à une date calendaire. Elle est définitive. Elle reste manuelle
+ * ici : ne pas inverser ce flag automatiquement si le seuil n’est pas atteint.
  */
 export const SITE_FREE_MODE: boolean = true;
 

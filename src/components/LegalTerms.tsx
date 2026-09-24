@@ -735,23 +735,19 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             </h3>
             <div>
               <p className="font-semibold text-gray-900">
-                4.1 Membres Fondateurs (jusqu&apos;à {FOUNDER_MAX_SLOTS}{' '}
-                comptes actifs)
+                4.1 Membres Fondateurs ({FOUNDER_MAX_SLOTS} premiers comptes)
               </p>
               <p>
-                Un statut honorifique de « Membre Fondateur » est attribué dans
-                la limite de {FOUNDER_MAX_SLOTS} comptes actifs simultanément
-                (comptes non supprimés, indépendamment de la fréquence de
-                connexion). L&apos;inactivité ne libère jamais une place. Une
-                place n&apos;est libérée qu&apos;en cas de suppression du
-                compte par son titulaire. Les numéros sont attribués
-                successivement et ne sont jamais réattribués : la suppression
-                du compte emporte la perte définitive du badge et de son
-                numéro. Le passage du Service en mode payant
-                n&apos;est pas déclenché par une date calendaire fixe : le
-                Service reste en phase de lancement tant que{' '}
-                {FOUNDER_MAX_SLOTS} comptes Fondateur actifs ne sont pas
-                simultanément atteints.
+                Un statut honorifique de « Membre Fondateur » est attribué aux{' '}
+                {FOUNDER_MAX_SLOTS} premiers comptes créés. Les numéros sont
+                attribués successivement, de 1 à {FOUNDER_MAX_SLOTS}, et ne
+                sont jamais réattribués : la suppression d&apos;un compte
+                emporte la perte définitive du badge et de son numéro, sans
+                libérer de place. L&apos;inactivité ou la mise en pause du
+                compte ne libère aucune place. Le passage du Service en mode
+                payant n&apos;est pas déclenché par une date calendaire fixe :
+                il devient définitif à l&apos;attribution du {FOUNDER_MAX_SLOTS}
+                e numéro.
               </p>
               <p>
                 Pendant une Période d&apos;essai de six (6) mois à compter de
@@ -797,8 +793,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Tout utilisateur créant un compte alors qu&apos;aucune place
-                Fondateur n&apos;est disponible (plafond de {FOUNDER_MAX_SLOTS}{' '}
-                comptes Fondateur actifs atteint) bénéficie d&apos;une Période
+                Fondateur n&apos;est disponible (les {FOUNDER_MAX_SLOTS}{' '}
+                numéros ont été attribués) bénéficie d&apos;une Période
                 d&apos;essai d&apos;une (1) semaine à compter de la création de
                 son compte, pendant laquelle l&apos;envoi de messages est
                 inclus gratuitement, sans carte bancaire ni engagement. Cette
@@ -1630,8 +1626,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Le statut de Membre Fondateur est une offre promotionnelle
-                distincte (6 mois offerts, jusqu&apos;à {FOUNDER_MAX_SLOTS}{' '}
-                comptes actifs). À l&apos;issue de cette période, le compte
+                distincte (6 mois offerts, {FOUNDER_MAX_SLOTS} premiers
+                comptes). À l&apos;issue de cette période, le compte
                 bascule vers l&apos;offre Gratuite, sauf souscription d&apos;un
                 palier payant. Le badge et le numéro restent affichés tant que
                 le compte n&apos;est pas supprimé.

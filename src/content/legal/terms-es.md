@@ -176,21 +176,21 @@ La lengua materna es obligatoria si el miembro reside en un país que no figura 
 
 ### Artículo 4 — Período de prueba y estatus «Miembro Fundador»
 
-**4.1 Miembros Fundadores (hasta 1000 cuentas activas)**
+**4.1 Miembros Fundadores (1000 primeras cuentas)**
 
-Se otorga un estatus honorífico de «Miembro Fundador» dentro del límite de 1000 cuentas activas simultáneamente (cuentas no eliminadas, con independencia de la frecuencia de conexión). La inactividad nunca libera una plaza. Una plaza solo se libera si el titular elimina su cuenta. Los números se asignan de forma sucesiva y nunca se reasignan: la eliminación de la cuenta conlleva la pérdida permanente de la insignia y de su número. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: el Servicio permanece en fase de lanzamiento mientras no se alcancen simultáneamente 1000 cuentas de Miembro Fundador activas.
+Se otorga un estatus honorífico de «Miembro Fundador» a las 1000 primeras cuentas creadas. Los números se asignan de forma sucesiva, del 1 al 1000, y nunca se reasignan: la eliminación de una cuenta conlleva la pérdida permanente de la insignia y de su número, sin liberar una plaza. La inactividad o la puesta en pausa de la cuenta no libera ninguna plaza. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: se vuelve definitivo con la asignación del número 1000.
 
 Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes, Likes y Flashes ilimitados, y un impulso de visibilidad del perfil durante el primer mes tras el registro.
 
 Este estatus es honorífico: más allá de las ventajas del Período de prueba descritas anteriormente, no da derecho a ningún reembolso, cesión o conversión en efectivo. El título y el número asociado permanecen visibles mientras la cuenta esté activa; se pierden definitivamente en caso de baja o eliminación de la cuenta, en las condiciones del apartado 8.2. Una cuenta cuya visibilidad esté restringida o que esté en pausa a efectos del apartado 3.7 sigue siendo una cuenta activa.
 
 <!-- founder-closed:start -->
-La oferta de Miembro Fundador, reservada a los 1000 primeros inscritos, ya no está disponible, al haberse alcanzado el umbral de las 1000 inscripciones. El acceso gratuito al sitio durante su fase de lanzamiento no está, sin embargo, reservado a los Miembros Fundadores: el conjunto del sitio permanece gratuito en esta etapa. Los Miembros Fundadores se benefician simplemente de ventajas adicionales (insignia de Fundador conservada de por vida, 50 % de descuento de por vida en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, Boost ofrecido el primer mes). Los nuevos inscritos después de este umbral siguen beneficiándose de un acceso completo y gratuito al sitio durante la fase de lanzamiento.
+La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, Boost ofrecido el primer mes). Eliminar una cuenta no libera un número.
 <!-- founder-closed:end -->
 
 **4.2 Otros usuarios**
 
-Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador disponible (tope de 1000 cuentas de Miembro Fundador activas alcanzado) se beneficia de un Período de prueba de una (1) semana a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, impulso de visibilidad) reservadas a los Miembros Fundadores en el apartado 4.1.
+Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador disponible (los 1000 números se han asignado) se beneficia de un Período de prueba de una (1) semana a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, impulso de visibilidad) reservadas a los Miembros Fundadores en el apartado 4.1.
 
 **4.3 Al finalizar el Período de prueba**
 

@@ -174,7 +174,7 @@
     "founderTitle": "Founding Member",
     "founderBadge": "Limited offer",
     "founderSlotsSubtitle": "6 months free — An exclusive offer for {{maxSlots}} Founding Members.",
-    "founderOfferClosed": "The Founding Member offer is complete — thank you to our first 1000 members! The site remains free during its launch phase: sign up now to enjoy it.",
+    "founderOfferClosed": "The Founding Member offer is complete: all 1000 numbers have been assigned. The launch phase has ended, and the switch to paid mode is definitive.",
     "founderBenefitNoCard": "Sign up with no credit card and no commitment",
     "founderBenefitLikes": "Unlimited Likes and Flashes included, with instant notification",
     "founderBenefitBoost": "Free Boost in your first month for maximum visibility to all members",
@@ -772,8 +772,8 @@
     "purchasesDisabledLaunch": "Purchases are disabled during the launch.",
     "schemaCacheError": "Plan activation isn't available yet. Please try again in a few seconds.",
     "offerNotSaved": "Plan not saved ({{error}}).",
-    "founderSlotsTaken": "All {{maxSlots}} Founding Member spots are currently taken.",
-    "founderSlotsTakenPaid": "All {{maxSlots}} Founding Member spots are currently taken. Choose the Free plan or a paid plan to continue.",
+    "founderSlotsTaken": "All {{maxSlots}} Founding Member numbers have been assigned. Deleting an account does not free a number.",
+    "founderSlotsTakenPaid": "All {{maxSlots}} Founding Member numbers have been assigned. The launch phase has ended. Choose the Free plan or a paid plan to continue.",
     "founderDaysLeft_one": "In {{count}} day, your {{months}} months at €0 will end. You can stay on Freemium, or renew in support at {{price}}.",
     "founderDaysLeft_other": "In {{count}} days, your {{months}} months at €0 will end. You can stay on Freemium, or renew in support at {{price}}.",
     "founderBadgeVisible": "Founding Member badge{{number}} — visible on your profile.",
@@ -942,7 +942,7 @@
     "officialNotice": "This is an unofficial, informative translation. Only the French version of these Terms of Service (Conditions Générales d’Utilisation) is legally binding. In the event of any discrepancy or conflict, the French version shall prevail.",
     "officialNoticeTitle": "Unofficial translation",
     "readOfficialFrench": "Read the official French version",
-    "founderOfferClosed": "The Founding Member offer, reserved for the first 1000 sign-ups, is no longer available, as the 1000-registration threshold has been reached. Free access to the site during its launch phase is not, however, reserved for Founding Members: the entire site remains free at this stage. Founding Members simply receive additional benefits (lifetime Founder badge, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). New members who sign up after this threshold continue to enjoy full, free access to the site during the launch phase."
+    "founderOfferClosed": "The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). Deleting an account does not free a number."
   },
   "emails": {
     "legalFooterAccount": "You're receiving this email because you have an account on Aypik.",
