@@ -35,6 +35,7 @@ import {
   isInternationalLocked,
 } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
+import { isSimplifiedDiscoverMode } from '@/lib/discoverMode';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
   geoPerimeterFilterLabel,
@@ -2307,6 +2308,7 @@ export default function DiscoveryPage({
       {chatPeer && (
         <ChatScreen
           peer={chatPeer}
+          simplified={isSimplifiedDiscoverMode(myProfile?.discover_mode)}
           onDialogueStarted={() => {
             invalidateLikeFlashEdges(userId || '');
           }}

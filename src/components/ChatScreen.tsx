@@ -37,6 +37,8 @@ type ChatScreenProps = {
   onDialogueStarted?: (peerId: string) => void;
   /** Au moins un message envoyé par moi (relance, pas encore réciproque). */
   onMessageSent?: (peerId: string) => void;
+  /** Mode Simplifié : la boîte « Gestion du match » n’archive pas. */
+  simplified?: boolean;
 };
 
 export default function ChatScreen({
@@ -45,6 +47,7 @@ export default function ChatScreen({
   onMatchHidden,
   onDialogueStarted,
   onMessageSent,
+  simplified = false,
 }: ChatScreenProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -491,6 +494,7 @@ export default function ChatScreen({
         <MatchManageModal
           peer={peer}
           mode="manage"
+          simplified={simplified}
           busy={manageBusy}
           error={manageError}
           onClose={() => setShowManage(false)}

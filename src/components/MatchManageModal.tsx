@@ -28,6 +28,7 @@ export default function MatchManageModal({
   onBreak,
   onRestore,
   onPurge,
+  simplified = false,
 }: {
   peer: Pick<Profile, 'display_name' | 'photo_url'>;
   mode: MatchManageMode;
@@ -40,6 +41,8 @@ export default function MatchManageModal({
   onBreak?: () => void;
   onRestore?: () => void;
   onPurge?: () => void;
+  /** Mode Simplifié : pas d’archivage sur la boîte « Gestion du match ». */
+  simplified?: boolean;
 }) {
   const { t } = useTranslation();
   const [confirmPurge, setConfirmPurge] = useState(false);
@@ -66,11 +69,14 @@ export default function MatchManageModal({
         ? t('matches.manageKindTitle', { kind: kindLabel, name })
         : t('matches.manageTitle', { name });
 
+  const manageWithoutArchive = simplified && mode === 'manage';
   const description =
     mode === 'broken' ? (
       t('matches.manageRestoreHint')
     ) : mode === 'waiting' ? (
       t('matches.waitingArchiveHint', { kind: kindLabel })
+    ) : manageWithoutArchive ? (
+      t('matches.manageDeleteHint')
     ) : (
       t('matches.manageRestoreHint')
     );
@@ -131,14 +137,16 @@ export default function MatchManageModal({
 
         {showArchivePurge ? (
           <div className="p-4 flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onArchive}
-              className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
-            >
-              {busy ? '…' : t('matches.archive')}
-            </button>
+            {manageWithoutArchive ? null : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onArchive}
+                className="btn-archive w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+              >
+                {busy ? '…' : t('matches.archive')}
+              </button>
+            )}
             <button
               type="button"
               disabled={busy}

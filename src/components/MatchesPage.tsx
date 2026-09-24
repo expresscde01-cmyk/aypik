@@ -4064,6 +4064,7 @@ export default function MatchesPage({
       {chatPeer && (
         <ChatScreen
           peer={chatPeer}
+          simplified={viewerSimplified}
           onDialogueStarted={(peerId) => {
             twoWayDialogueRef.current.add(peerId);
             wroteFromMeRef.current.add(peerId);
