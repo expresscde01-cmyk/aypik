@@ -675,7 +675,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 statut de Membre Fondateur et le numéro associé ne sont
                 pas perdus. Seule la suppression définitive du compte,
                 dans les conditions de l&apos;article 8.2, emporte la
-                perte définitive de ce badge et de ce numéro.
+                perte définitive du badge et de son numéro.
               </p>
             </div>
             <div>

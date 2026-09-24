@@ -158,7 +158,7 @@ El usuario selecciona un único modo de visibilidad a la vez, desde el menú de 
 
 **Pausar la cuenta.** La cuenta queda totalmente en pausa. El usuario puede seguir iniciando sesión; el uso del Servicio queda entonces limitado a la reactivación de la cuenta. El perfil deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio mientras dure la pausa. No se registra ningún Like, Flash ni mensaje nuevo para esta cuenta durante la pausa; se informa de ello a cualquier miembro que intente dicha interacción. Los Matches, conversaciones e interacciones ya existentes no se eliminan; vuelven a estar disponibles al reactivar la cuenta. Los Likes, Flashes y mensajes que se hubieran enviado durante la pausa no se conservan.
 
-Una cuenta para la que el usuario haya elegido uno de los modos anteriores, incluido "Pausar la cuenta", sigue siendo una cuenta activa a efectos de estos Términos. El estatus de Miembro Fundador y el número asociado no se pierden. Solo la eliminación definitiva de la cuenta, en las condiciones del apartado 8.2, conlleva la pérdida permanente de esta insignia y de este número.
+Una cuenta para la que el usuario haya elegido uno de los modos anteriores, incluido "Pausar la cuenta", sigue siendo una cuenta activa a efectos de estos Términos. El estatus de Miembro Fundador y el número asociado no se pierden. Solo la eliminación definitiva de la cuenta, en las condiciones del apartado 8.2, conlleva la pérdida permanente de la insignia y de su número.
 
 **3.8 Presencia en Línea**
 
