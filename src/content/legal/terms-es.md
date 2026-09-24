@@ -178,7 +178,7 @@ La lengua materna es obligatoria si el miembro reside en un país que no figura 
 
 **4.1 Miembros Fundadores (hasta 1000 cuentas activas)**
 
-Se otorga un estatus honorífico de «Miembro Fundador» dentro del límite de 1000 cuentas activas simultáneamente (cuentas no eliminadas, con independencia de la frecuencia de conexión). La inactividad nunca libera una plaza. Una plaza solo se libera si el titular elimina su cuenta. Los números se asignan entre los números disponibles del 1 al 1000; un número liberado por una eliminación puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope. Un mismo número puede, por tanto, ser ostentado por varias personas sucesivas a lo largo del tiempo. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: el Servicio permanece en fase de lanzamiento mientras no se alcancen simultáneamente 1000 cuentas de Miembro Fundador activas.
+Se otorga un estatus honorífico de «Miembro Fundador» dentro del límite de 1000 cuentas activas simultáneamente (cuentas no eliminadas, con independencia de la frecuencia de conexión). La inactividad nunca libera una plaza. Una plaza solo se libera si el titular elimina su cuenta. Los números se asignan de forma sucesiva y nunca se reasignan: la eliminación de la cuenta conlleva la pérdida permanente de la insignia y de su número. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: el Servicio permanece en fase de lanzamiento mientras no se alcancen simultáneamente 1000 cuentas de Miembro Fundador activas.
 
 Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes, Likes y Flashes ilimitados, y un impulso de visibilidad del perfil durante el primer mes tras el registro.
 
@@ -259,7 +259,7 @@ Los modos de visibilidad descritos en el apartado 3.7, incluida la opción "Paus
 
 Para el usuario, esta eliminación es definitiva: el perfil deja de ser visible y de utilizarse. Por motivos técnicos y de seguridad (corrección de un error de tratamiento, obligaciones legales), los datos pueden conservarse internamente durante un período de purga de treinta (30) días, transcurrido el cual se borran de forma irrecuperable. Determinados registros estrictamente necesarios (por ejemplo, futuras facturas, o conservación exigida por la ley) podrán, en su caso, conservarse durante más tiempo, de forma separada.
 
-El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente para esa cuenta. El número así liberado puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope de 1000 Miembros Fundadores activos.
+El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente y no podrá reasignarse.
 
 El editor podrá dar de baja una cuenta en caso de incumplimiento grave o reiterado de estos Términos.
 
@@ -339,7 +339,7 @@ Sí. Al finalizar su Período de prueba (artículo 4), solo el envío de nuevos 
 Se solicita desde tu perfil. El perfil deja de ser visible. Los datos se borran de forma irrecuperable tras un período de purga de 30 días (apartado 8.2).
 
 **¿Qué ocurre con la insignia de Miembro Fundador si cancelo mi cuenta?**
-El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente para esa cuenta. El número así liberado puede asignarse a un nuevo inscrito mientras no se haya alcanzado el tope de 1000 Miembros Fundadores activos.
+El estatus de Miembro Fundador y su número asociado están estrictamente vinculados a la cuenta activa. En caso de cancelación o eliminación de la cuenta, la insignia se pierde de forma permanente y no podrá reasignarse.
 
 **¿Puede reaparecer en Descubrir un perfil al que ya le he dado Like o Flash?**
 No. Deja de mostrarse en Descubrir o en las sugerencias de la página de Inicio (apartado 3.7.1). La interacción sigue siendo gestionable desde Mis Matches.
