@@ -553,6 +553,7 @@
     "manageTitle": "Manage your match with {{name}}",
     "manageBrokenTitle": "Match ended with {{name}}",
     "manageRestoreHint": "Archive this match or permanently delete this connection.",
+    "manageDeleteHint": "Permanently delete this connection.",
     "restore": "Restore",
     "deletePermanently": "Delete permanently",
     "deleteLinkConfirm": "Are you sure you want to delete this link? This action cannot be undone.",

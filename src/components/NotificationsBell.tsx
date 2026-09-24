@@ -616,7 +616,7 @@ export default function NotificationsBell({
     if (!isSimplifiedDiscoverMode(discoverMode)) {
       return { firstWordIds: ids, followUpIds: [] as string[] };
     }
-    return partitionQuietDigestIds(
+    const split = partitionQuietDigestIds(
       ids,
       peersIWroteTo,
       [
@@ -627,6 +627,11 @@ export default function NotificationsBell({
       ],
       lastSentAtByPeer
     );
+    const followUp = new Set(split.followUpIds);
+    return {
+      firstWordIds: ids.filter((id) => !followUp.has(id)),
+      followUpIds: split.followUpIds,
+    };
   }, [
     quietMatches,
     discoverMode,

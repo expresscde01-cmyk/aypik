@@ -178,7 +178,7 @@ A native language is required if the member lives in a country that is not on th
 
 **4.1 Founding Members (up to 1000 active accounts)**
 
-An honorary "Founding Member" status is granted within a limit of 1000 concurrently active accounts (accounts that have not been deleted, regardless of how often the member signs in). Inactivity never frees a slot. A slot is freed only when the account holder deletes their account. Numbers are assigned from the available numbers between 1 and 1000; a number freed by a deletion may be given to a new signup for as long as the cap has not been reached. The same number may therefore, over time, be held by successive people. Switching the Service to paid mode is not triggered by a fixed calendar date: the Service remains in its launch phase until 1000 active Founding Member accounts are reached at the same time.
+An honorary "Founding Member" status is granted within a limit of 1000 concurrently active accounts (accounts that have not been deleted, regardless of how often the member signs in). Inactivity never frees a slot. A slot is freed only when the account holder deletes their account. Numbers are assigned in sequence and are never reassigned: deletion of the account results in the permanent loss of the badge and its number. Switching the Service to paid mode is not triggered by a fixed calendar date: the Service remains in its launch phase until 1000 active Founding Member accounts are reached at the same time.
 
 During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages, unlimited Likes and Flashes, and a profile visibility boost during the first month after signup.
 
@@ -259,7 +259,7 @@ The visibility modes described in Section 3.7, including "Pause the account," do
 
 For the user, this deletion is permanent: the profile is no longer visible and is no longer used. For technical and security reasons (correcting a handling error, legal obligations), data may be kept internally for a purge period of thirty (30) days, after which it is irretrievably erased. Certain strictly necessary records (for example, future invoices, or retention required by law) may, where applicable, be kept for longer, in a segregated manner.
 
-Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost for that account. The number thus freed may be given to a new signup for as long as the cap of 1000 active Founding Members has not been reached.
+Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost and cannot be reassigned.
 
 The publisher may terminate an account in the event of a serious or repeated breach of these Terms.
 
@@ -339,7 +339,7 @@ Yes. At the end of their Trial Period (Article 4), only sending new messages is 
 It is requested from your profile. The profile is no longer visible. Data is irretrievably erased after a 30-day purge period (Section 8.2).
 
 **What happens to the Founding Member badge if I cancel my account?**
-Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost for that account. The number thus freed may be given to a new signup for as long as the cap of 1000 active Founding Members has not been reached.
+Founding Member status and its associated number are strictly tied to the active account. In the event of account cancellation or deletion, the badge is permanently lost and cannot be reassigned.
 
 **Can a profile I've already liked or flashed reappear on Discover?**
 No. It is no longer shown on Discover or in the Home page suggestions (Section 3.7.1). The interaction remains manageable from My Matches.

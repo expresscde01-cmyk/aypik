@@ -744,12 +744,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 (comptes non supprimés, indépendamment de la fréquence de
                 connexion). L&apos;inactivité ne libère jamais une place. Une
                 place n&apos;est libérée qu&apos;en cas de suppression du
-                compte par son titulaire. Les numéros sont attribués parmi les
-                numéros disponibles entre 1 et {FOUNDER_MAX_SLOTS} ; un numéro
-                libéré par une suppression peut être attribué à un nouvel
-                inscrit tant que le plafond n&apos;est pas atteint. Un même
-                numéro peut donc, dans le temps, être détenu par plusieurs
-                personnes successives. Le passage du Service en mode payant
+                compte par son titulaire. Les numéros sont attribués
+                successivement et ne sont jamais réattribués : la suppression
+                du compte emporte la perte définitive du badge et de son
+                numéro. Le passage du Service en mode payant
                 n&apos;est pas déclenché par une date calendaire fixe : le
                 Service reste en phase de lancement tant que{' '}
                 {FOUNDER_MAX_SLOTS} comptes Fondateur actifs ne sont pas
@@ -787,8 +785,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 cessible et non cumulable avec toute autre promotion, sauf
                 mention contraire. Elle est définitivement perdue en cas de
                 suppression du compte, dans les conditions de
-                l&apos;article 8.2, et n&apos;est pas transmise au titulaire
-                ultérieur du même numéro de Fondateur.
+                l&apos;article 8.2.
               </p>
               {founderOfferClosed ? (
                 <p>{t('legal.founderOfferClosed')}</p>
@@ -1058,10 +1055,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le statut de Membre Fondateur et son numéro associé sont
                 strictement liés au compte actif. En cas de désinscription
                 ou de suppression du compte, le badge est définitivement
-                perdu pour ce compte. Le numéro ainsi libéré peut être
-                attribué à un nouvel inscrit tant que le plafond de{' '}
-                {FOUNDER_MAX_SLOTS} Membres Fondateurs actifs n&apos;est pas
-                atteint.
+                perdu et ne pourra pas être réattribué.
               </p>
               <p>
                 L&apos;éditeur peut résilier un compte en cas de manquement
@@ -1507,10 +1501,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le statut de Membre Fondateur et son numéro associé sont
                 strictement liés au compte actif. En cas de désinscription
                 ou de suppression du compte, le badge est définitivement
-                perdu pour ce compte. Le numéro ainsi libéré peut être
-                attribué à un nouvel inscrit tant que le plafond de{' '}
-                {FOUNDER_MAX_SLOTS} Membres Fondateurs actifs n&apos;est pas
-                atteint.
+                perdu et ne pourra pas être réattribué.
               </p>
             </div>
             <div>

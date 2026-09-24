@@ -49,3 +49,5 @@ scripts/preview-*.cjs
 public/*-preview.png
 src/assets/
 
+
+Claude outputs/

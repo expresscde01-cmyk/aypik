@@ -19,7 +19,7 @@ Fichier **gitignoré** : un agent cloud ne peut pas le déposer sur le PC.
 
 ## PC Windows (Cursor local)
 
-Après modification front :
+Après toute modification front (interface, textes affichés, locales, CGU), lancer `npm run deploy` dans le même tour, sans attendre que l’utilisateur le demande :
 
 ```powershell
 npm run deploy
