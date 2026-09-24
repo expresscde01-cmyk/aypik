@@ -158,7 +158,7 @@ The user selects a single visibility mode at a time, from the account menu ("Vis
 
 **Pause the account.** The account is fully paused. The user may still sign in; use of the Service is then limited to reactivating the account. The profile is no longer shown on Discover or in the Home page suggestions for the duration of the pause. No new Like, Flash, or message is recorded for this account during the pause; a member who attempts such an interaction is informed of this. Matches, conversations, and interactions that already exist are not deleted; they become usable again upon reactivation. Likes, Flashes, and messages that would have been sent during the pause are not kept.
 
-An account for which the user has chosen one of the modes above, including "Pause the account," remains an active account within the meaning of these Terms. Founding Member status and the associated number are not lost. Only permanent deletion of the account, under the conditions of Section 8.2, results in the permanent loss of this badge and this number.
+An account for which the user has chosen one of the modes above, including "Pause the account," remains an active account within the meaning of these Terms. Founding Member status and the associated number are not lost. Only permanent deletion of the account, under the conditions of Section 8.2, results in the permanent loss of the badge and its number.
 
 **3.8 Online Presence**
 

@@ -552,7 +552,7 @@
     "manageMatch": "Gérer ce match",
     "manageTitle": "Gestion du match avec {{name}}",
     "manageBrokenTitle": "Match rompu avec {{name}}",
-    "manageRestoreHint": "Rétablis ce match ou supprime définitivement ce lien.",
+    "manageRestoreHint": "Archive ce match ou supprime définitivement ce lien.",
     "restore": "Rétablir",
     "deletePermanently": "Supprimer définitivement",
     "deleteLinkConfirm": "Veux-tu vraiment supprimer ce lien ? Cette action est irréversible.",
