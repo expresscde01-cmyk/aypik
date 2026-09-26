@@ -9,12 +9,22 @@ import {
   FOLLOW_UP_MIN_AGE_MS,
   isFollowUpInWindow,
   newProfilesNotificationCopy,
+  applyBellDialogueRefresh,
+  explainFirstWordChain,
+  firstWordDigestAlert,
+  firstWordDismissedAfterSessionStart,
+  firstWordNotificationIds,
+  matchesPageEffectsFired,
+  shouldFullLoadMatchesOnPageOpen,
+  shouldRetryBellDialogue,
   partitionQuietDigestIds,
+  switchBellDialogueAccount,
   resolveDigestPeople,
   sliceDigestPeople,
   waitingProfilesNotificationCopy,
 } from './digestCopy.ts';
 import { removeActorFromCategoryDigest } from './matchHistoryDisplay.ts';
+import { peerDialogueFlagsFromRpc } from './twoWayDialogue.ts';
 import {
   absorbRubricConsultation,
   bellHeaderBadgeCount,
@@ -60,12 +70,12 @@ test('digest En attente exclut les archives locales', () => {
   assert.deepEqual(waitIds, ['c']);
 });
 
-test('digest 1er mot = matchs silencieux', () => {
+test('[règle produit] digest 1er mot = matchs silencieux', () => {
   const firstIds = digestPinIdsFromEntries(entries, 'first');
   assert.deepEqual(firstIds, ['e']);
 });
 
-test('visite d’un prénom : il sort du digest ; le dernier vide la notif', () => {
+test('visite : À découvrir et En attente perdent le prénom déjà ouvert', () => {
   const firstIds = ['valentine', 'lucy'];
   assert.deepEqual(omitVisitedDigestIds(firstIds, ['valentine']), ['lucy']);
   assert.deepEqual(omitVisitedDigestIds(['lucy'], ['lucy']), []);
@@ -435,7 +445,7 @@ test('clic d’un nom : pin 1 fiche + étage du digest', () => {
   assert.deepEqual(opts.pinActorIds, ['e']);
 });
 
-test('message non lu : le profil sort de 1er mot et En attente', () => {
+test('message non lu : le profil sort de En attente', () => {
   const unread = { test2: 2, lucy: 0 };
   assert.deepEqual(
     omitUnreadMessageSenders(['test2', 'lucy', 'sabine'], unread),
@@ -468,7 +478,583 @@ test('1er mot : match one-way (message reçu) reste dans le digest, comme Mes Ma
   );
 });
 
-test('digest silencieux : j’ai écrit sans réponse → relance, pas 1er mot', () => {
+test('ouverture directe en Simplifié : un match silencieux affiche 1er mot sans passer par le Détaillé', () => {
+  const silent = {
+    simplified: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: [] as string[],
+    wroteToMe: [] as string[],
+  };
+  const beforeLoad = firstWordDigestAlert({
+    ...silent,
+    dialogueReady: false,
+  });
+  assert.equal(beforeLoad.showFirstWord, false);
+  assert.deepEqual(beforeLoad.firstWordIds, ['sandrine']);
+
+  const afterLoad = firstWordDigestAlert({
+    ...silent,
+    dialogueReady: true,
+  });
+  assert.equal(afterLoad.showFirstWord, true);
+  assert.deepEqual(afterLoad.firstWordIds, ['sandrine']);
+  assert.equal(afterLoad.alert, true);
+
+  const alreadyWrote = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: ['sandrine'],
+    wroteToMe: [],
+    lastSentAt: { sandrine: Date.now() },
+  });
+  assert.equal(alreadyWrote.showFirstWord, true);
+  assert.deepEqual(alreadyWrote.firstWordIds, ['sandrine']);
+  assert.deepEqual(alreadyWrote.followUpIds, []);
+});
+
+test('accueil sans Mes Matchs : un match silencieux affiche 1er mot en Simplifié et en Détaillé', () => {
+  const silent = {
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: [] as string[],
+    wroteToMe: [] as string[],
+    dialogueReady: true,
+    matchesReady: true,
+  };
+  const simplified = firstWordDigestAlert({ ...silent, simplified: true });
+  assert.equal(simplified.showFirstWord, true);
+  assert.deepEqual(simplified.firstWordIds, ['sandrine']);
+
+  const detailed = firstWordDigestAlert({ ...silent, simplified: false });
+  assert.equal(detailed.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, ['sandrine']);
+
+  const matchListFailed = firstWordDigestAlert({
+    ...silent,
+    simplified: true,
+    matchesReady: false,
+  });
+  assert.equal(matchListFailed.showFirstWord, false);
+  assert.equal(matchListFailed.alert, false);
+});
+
+test('Détaillé affiche 1er mot pendant que le Simplifié est arrêté par le verrou ou le snapshot', () => {
+  const silent = {
+    quietIds: ['sandrine'],
+    wroteFromMe: [] as string[],
+    wroteToMe: [] as string[],
+    dismissed: false,
+  };
+  const detailedWhileGatesClosed = firstWordDigestAlert({
+    ...silent,
+    simplified: false,
+    dialogueReady: false,
+    matchesReady: false,
+  });
+  assert.equal(detailedWhileGatesClosed.showFirstWord, true);
+
+  const lockStop = explainFirstWordChain({
+    ...silent,
+    dialogueReady: false,
+    matchesReady: true,
+  });
+  assert.equal(lockStop.stop, 'verrou-dialogue');
+  assert.equal(lockStop.detailedShow, true);
+  assert.equal(lockStop.simplifiedShow, false);
+  assert.equal(lockStop.detailedEligible, 1);
+  assert.equal(lockStop.simplifiedEligible, 1);
+  assert.deepEqual(lockStop.exclusions, [
+    { id: 'sandrine', reason: 'verrou socialListReady' },
+  ]);
+
+  const snapshotStop = explainFirstWordChain({
+    ...silent,
+    dialogueReady: true,
+    matchesReady: false,
+  });
+  assert.equal(snapshotStop.stop, 'snapshot-matchs');
+  assert.equal(snapshotStop.detailedShow, true);
+  assert.equal(snapshotStop.simplifiedShow, false);
+  assert.deepEqual(snapshotStop.exclusions, [
+    { id: 'sandrine', reason: 'snapshot matchs absent' },
+  ]);
+
+  const dismissed = explainFirstWordChain({
+    ...silent,
+    dialogueReady: true,
+    matchesReady: true,
+    dismissed: true,
+  });
+  assert.equal(dismissed.stop, 'fermee-session');
+  assert.equal(dismissed.hidesDetailedToo, true);
+  assert.equal(dismissed.detailedShow, false);
+  assert.equal(dismissed.simplifiedShow, false);
+
+  const freshWrite = explainFirstWordChain({
+    ...silent,
+    dialogueReady: true,
+    matchesReady: true,
+    wroteFromMe: ['sandrine'],
+    lastSentAt: { sandrine: Date.now() },
+  });
+  assert.equal(freshWrite.stop, 'affiche');
+  assert.equal(freshWrite.detailedShow, true);
+  assert.equal(freshWrite.simplifiedShow, true);
+  assert.deepEqual(freshWrite.exclusions, []);
+
+  const swallowedRpc = applyBellDialogueRefresh(
+    switchBellDialogueAccount('user-1'),
+    {
+      ok: true,
+      accountId: 'user-1',
+      wroteFromMe: [],
+      wroteToMe: [],
+    }
+  );
+  assert.equal(swallowedRpc.ready, true);
+  const afterEmptyFlags = explainFirstWordChain({
+    ...silent,
+    dialogueReady: swallowedRpc.ready,
+    matchesReady: true,
+  });
+  assert.equal(afterEmptyFlags.stop, 'affiche');
+  assert.equal(afterEmptyFlags.simplifiedShow, true);
+});
+
+test('accueil : 1er mot sans effets de Mes Matchs, puis la page réutilise la liste', () => {
+  assert.deepEqual(matchesPageEffectsFired(false), []);
+  const onHome = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: true,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: [],
+    wroteToMe: [],
+  });
+  assert.equal(onHome.showFirstWord, true);
+  const detailed = firstWordDigestAlert({
+    simplified: false,
+    dialogueReady: false,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: [],
+    wroteToMe: [],
+  });
+  assert.equal(detailed.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, onHome.firstWordIds);
+
+  assert.equal(
+    shouldFullLoadMatchesOnPageOpen({
+      alreadyLoaded: true,
+      openedBefore: false,
+      inFlight: false,
+    }),
+    false
+  );
+  assert.equal(
+    shouldFullLoadMatchesOnPageOpen({
+      alreadyLoaded: true,
+      openedBefore: true,
+      inFlight: false,
+    }),
+    true
+  );
+  assert.deepEqual(matchesPageEffectsFired(true).length > 0, true);
+});
+
+test('[règle produit] erreur Supabase sur peer_dialogue_flags : 1er mot reste affiché en Simplifié', () => {
+  const rpcError = {
+    message: 'permission denied',
+    code: '42501',
+    details: null,
+  };
+  assert.throws(() =>
+    peerDialogueFlagsFromRpc(rpcError, [
+      {
+        peer_id: 'sandrine',
+        two_way: false,
+        wrote_to_me: false,
+        last_sent_at: new Date().toISOString(),
+      },
+    ])
+  );
+  let gate = switchBellDialogueAccount('me');
+  gate = applyBellDialogueRefresh(gate, { ok: false, accountId: 'me' });
+  assert.equal(gate.ready, false);
+  assert.deepEqual(gate.wroteFromMe, []);
+  const shownOnFailure = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dialogueFailed: gate.failed,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+    lastSentAt: gate.lastSentAt,
+  });
+  assert.equal(shownOnFailure.showFirstWord, true);
+  assert.equal(shownOnFailure.alert, true);
+  assert.deepEqual(shownOnFailure.firstWordIds, ['sandrine']);
+});
+
+test('liste vide sans erreur sur peer_dialogue_flags : le verrou s’ouvre', () => {
+  const flags = peerDialogueFlagsFromRpc(null, []);
+  assert.equal(flags.wroteFromMe.size, 0);
+  assert.equal(flags.wroteToMe.size, 0);
+  let gate = switchBellDialogueAccount('me');
+  gate = applyBellDialogueRefresh(gate, {
+    ok: true,
+    accountId: 'me',
+    wroteFromMe: flags.wroteFromMe,
+    wroteToMe: flags.wroteToMe,
+    lastSentAt: flags.lastSentAt,
+  });
+  assert.equal(gate.ready, true);
+  const shown = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+    lastSentAt: gate.lastSentAt,
+  });
+  assert.equal(shown.showFirstWord, true);
+  assert.deepEqual(shown.firstWordIds, ['sandrine']);
+});
+
+test('plus de 1000 dialogues : la liste complète ouvre le verrou, PGRST116 le laisse fermé', () => {
+  const peers = Array.from({ length: 1001 }, (_, index) => ({
+    peer_id: `peer-${index}`,
+    two_way: false,
+    wrote_to_me: false,
+    last_sent_at: '2026-09-01T12:00:00.000Z',
+  }));
+  const flags = peerDialogueFlagsFromRpc(null, peers);
+  assert.equal(flags.wroteFromMe.size, 1001);
+  const open = applyBellDialogueRefresh(switchBellDialogueAccount('me'), {
+    ok: true,
+    accountId: 'me',
+    wroteFromMe: flags.wroteFromMe,
+    wroteToMe: flags.wroteToMe,
+    lastSentAt: flags.lastSentAt,
+  });
+  assert.equal(open.ready, true);
+  const shown = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: open.ready,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine', 'peer-0'],
+    wroteFromMe: open.wroteFromMe,
+    wroteToMe: open.wroteToMe,
+    lastSentAt: open.lastSentAt,
+    nowMs: Date.parse('2026-09-26T12:00:00.000Z'),
+  });
+  assert.equal(shown.showFirstWord, true);
+  assert.deepEqual(shown.firstWordIds, ['sandrine', 'peer-0']);
+  assert.deepEqual(shown.followUpIds, []);
+
+  const absentProfile = peerDialogueFlagsFromRpc(null, [
+    {
+      peer_id: 'profil-supprime',
+      two_way: false,
+      wrote_to_me: true,
+      last_sent_at: null,
+    },
+  ]);
+  assert.equal(absentProfile.wroteFromMe.has('profil-supprime'), false);
+  assert.equal(absentProfile.wroteToMe.has('profil-supprime'), true);
+
+  assert.throws(() =>
+    peerDialogueFlagsFromRpc(
+      {
+        message: 'The maximum number of rows returned is 1000',
+        code: 'PGRST116',
+        details: null,
+      },
+      null
+    )
+  );
+  const closed = applyBellDialogueRefresh(switchBellDialogueAccount('me'), {
+    ok: false,
+    accountId: 'me',
+  });
+  assert.equal(closed.ready, false);
+  assert.equal(closed.failed, true);
+  const shownDespiteError = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: closed.ready,
+    dialogueFailed: closed.failed,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: closed.wroteFromMe,
+    wroteToMe: closed.wroteToMe,
+  });
+  assert.equal(shownDespiteError.showFirstWord, true);
+  assert.equal(shownDespiteError.alert, true);
+  assert.deepEqual(shownDespiteError.firstWordIds, ['sandrine']);
+});
+
+test('[règle produit] échec du chargement : les matchs connus restent dans 1er mot', () => {
+  let gate = switchBellDialogueAccount('me');
+  gate = applyBellDialogueRefresh(gate, { ok: false, accountId: 'me' });
+  assert.equal(gate.ready, false);
+  assert.equal(gate.failed, true);
+  assert.deepEqual(gate.wroteFromMe, []);
+
+  const shown = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dialogueFailed: gate.failed,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+    lastSentAt: gate.lastSentAt,
+  });
+  assert.equal(shown.showFirstWord, true);
+  assert.equal(shown.alert, true);
+  assert.deepEqual(shown.firstWordIds, ['sandrine']);
+
+  const detailed = firstWordDigestAlert({
+    simplified: false,
+    dialogueReady: gate.ready,
+    dialogueFailed: gate.failed,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+  });
+  assert.equal(detailed.showFirstWord, true);
+});
+
+test('échec puis second chargement : 1er mot apparaît en Simplifié sans relancer l’app', () => {
+  let gate = switchBellDialogueAccount('me');
+  gate = applyBellDialogueRefresh(gate, { ok: false, accountId: 'me' });
+  const shownOnFailure = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dialogueFailed: gate.failed,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+  });
+  assert.equal(shownOnFailure.showFirstWord, true);
+  assert.deepEqual(shownOnFailure.firstWordIds, ['sandrine']);
+
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: false,
+      reason: 'visible',
+      visibilityState: 'visible',
+    }),
+    true
+  );
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: false,
+      reason: 'online',
+    }),
+    true
+  );
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: true,
+      reason: 'visible',
+      visibilityState: 'visible',
+    }),
+    false
+  );
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'autre',
+      gate,
+      inFlight: false,
+      reason: 'online',
+    }),
+    false
+  );
+
+  gate = applyBellDialogueRefresh(gate, {
+    ok: true,
+    accountId: 'me',
+    wroteFromMe: [],
+    wroteToMe: [],
+    lastSentAt: {},
+  });
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: false,
+      reason: 'visible',
+      visibilityState: 'visible',
+    }),
+    false
+  );
+  const shown = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+  });
+  assert.equal(shown.showFirstWord, true);
+  assert.deepEqual(shown.firstWordIds, ['sandrine']);
+});
+
+test('arrière-plan : aucun nouvel essai ; premier plan : un essai si le verrou est fermé', () => {
+  const gate = applyBellDialogueRefresh(switchBellDialogueAccount('me'), {
+    ok: false,
+    accountId: 'me',
+  });
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: false,
+      reason: 'visible',
+      visibilityState: 'hidden',
+    }),
+    false
+  );
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate,
+      inFlight: false,
+      reason: 'visible',
+      visibilityState: 'visible',
+    }),
+    true
+  );
+  const open = applyBellDialogueRefresh(gate, {
+    ok: true,
+    accountId: 'me',
+    wroteFromMe: [],
+    wroteToMe: [],
+    lastSentAt: {},
+  });
+  assert.equal(
+    shouldRetryBellDialogue({
+      accountId: 'me',
+      gate: open,
+      inFlight: false,
+      reason: 'visible',
+      visibilityState: 'visible',
+    }),
+    false
+  );
+});
+
+test('changement de compte : B n’affiche rien tant que son chargement n’a pas réussi, sans données de A', () => {
+  const sentAt = Date.parse('2026-09-26T08:00:00.000Z');
+  let gate = switchBellDialogueAccount('compte-a');
+  gate = applyBellDialogueRefresh(gate, {
+    ok: true,
+    accountId: 'compte-a',
+    wroteFromMe: ['sandrine'],
+    wroteToMe: [],
+    lastSentAt: { sandrine: sentAt },
+  });
+  assert.equal(gate.ready, true);
+  assert.deepEqual(gate.wroteFromMe, ['sandrine']);
+
+  gate = switchBellDialogueAccount('compte-b');
+  assert.equal(gate.accountId, 'compte-b');
+  assert.equal(gate.ready, false);
+  assert.deepEqual(gate.wroteFromMe, []);
+  assert.deepEqual(gate.lastSentAt, {});
+
+  const beforeLoad = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dismissed: false,
+    quietIds: ['sandrine'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+    lastSentAt: gate.lastSentAt,
+  });
+  assert.equal(beforeLoad.showFirstWord, false);
+  assert.equal(beforeLoad.alert, false);
+
+  const stale = applyBellDialogueRefresh(gate, {
+    ok: true,
+    accountId: 'compte-a',
+    wroteFromMe: ['sandrine'],
+    wroteToMe: [],
+    lastSentAt: { sandrine: sentAt },
+  });
+  assert.equal(stale.ready, false);
+  assert.deepEqual(stale.wroteFromMe, []);
+  assert.equal(stale.accountId, 'compte-b');
+
+  gate = applyBellDialogueRefresh(stale, {
+    ok: true,
+    accountId: 'compte-b',
+    wroteFromMe: [],
+    wroteToMe: [],
+    lastSentAt: {},
+  });
+  const afterLoad = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: gate.ready,
+    dismissed: false,
+    quietIds: ['lea'],
+    wroteFromMe: gate.wroteFromMe,
+    wroteToMe: gate.wroteToMe,
+  });
+  assert.equal(afterLoad.showFirstWord, true);
+  assert.deepEqual(afterLoad.firstWordIds, ['lea']);
+  assert.equal(afterLoad.firstWordIds.includes('sandrine'), false);
+});
+
+test('[règle produit] message non lu et visite ne retirent personne de 1er mot', () => {
+  assert.deepEqual(firstWordNotificationIds(['lea', 'paul']), ['lea', 'paul']);
+  const alert = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: true,
+    dismissed: false,
+    quietIds: ['lea', 'paul'],
+    wroteFromMe: [],
+    wroteToMe: ['lea'],
+  });
+  assert.deepEqual(alert.firstWordIds, ['lea', 'paul']);
+  assert.deepEqual(alert.followUpIds, []);
+  const detailed = firstWordDigestAlert({
+    simplified: false,
+    dialogueReady: false,
+    dismissed: false,
+    quietIds: ['lea', 'paul'],
+    wroteFromMe: [],
+    wroteToMe: ['lea'],
+  });
+  assert.deepEqual(detailed.firstWordIds, ['lea', 'paul']);
+});
+
+test('[règle produit] 1er mot revient à chaque session et à chaque reconnexion', () => {
+  assert.equal(firstWordDismissedAfterSessionStart(true), false);
+  assert.equal(firstWordDismissedAfterSessionStart(false), false);
+});
+
+test('[règle produit] digest silencieux : j’ai écrit sans réponse reste dans 1er mot, et dans Relance pendant la fenêtre', () => {
   const now = Date.parse('2026-09-21T12:00:00.000Z');
   const inWindow = now - FOLLOW_UP_MIN_AGE_MS - 60 * 60 * 1000;
   const { firstWordIds, followUpIds } = partitionQuietDigestIds(
@@ -478,7 +1064,7 @@ test('digest silencieux : j’ai écrit sans réponse → relance, pas 1er mot',
     { suzanne: inWindow, paul: inWindow },
     now
   );
-  assert.deepEqual(firstWordIds, ['alexandra']);
+  assert.deepEqual(firstWordIds, ['suzanne', 'alexandra', 'paul']);
   assert.deepEqual(followUpIds, ['suzanne', 'paul']);
   const copy = followUpNotificationCopy(['Suzanne']);
   assert.equal(copy.title, 'Relance possible');
@@ -487,7 +1073,103 @@ test('digest silencieux : j’ai écrit sans réponse → relance, pas 1er mot',
   assert.equal(/1er mot|premier mot|lancer la conversation/i.test(copy.body), false);
 });
 
-test('relance : 72 h mini, 14 j max, un nouvel envoi remet le délai à zéro', () => {
+const FIRST_WORD_NOW = Date.parse('2026-09-21T12:00:00.000Z');
+
+function firstWordInBothModes(input: {
+  wroteFromMe?: string[];
+  wroteToMe?: string[];
+  lastSentAt?: Record<string, number>;
+}) {
+  const shared = {
+    dialogueReady: true,
+    matchesReady: true,
+    dismissed: false,
+    quietIds: ['lea'],
+    wroteFromMe: input.wroteFromMe ?? [],
+    wroteToMe: input.wroteToMe ?? [],
+    lastSentAt: input.lastSentAt ?? {},
+    nowMs: FIRST_WORD_NOW,
+  };
+  return {
+    simplified: firstWordDigestAlert({ ...shared, simplified: true }),
+    detailed: firstWordDigestAlert({ ...shared, simplified: false }),
+  };
+}
+
+test('[règle produit] 1er mot : personne n’a écrit, le match reste', () => {
+  const { simplified, detailed } = firstWordInBothModes({});
+  assert.deepEqual(simplified.firstWordIds, ['lea']);
+  assert.deepEqual(simplified.followUpIds, []);
+  assert.equal(simplified.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, ['lea']);
+  assert.deepEqual(detailed.followUpIds, []);
+  assert.equal(detailed.showFirstWord, true);
+});
+
+test('[règle produit] 1er mot : j’ai écrit seul, avant 72 h, le match reste', () => {
+  const { simplified, detailed } = firstWordInBothModes({
+    wroteFromMe: ['lea'],
+    lastSentAt: { lea: FIRST_WORD_NOW - FOLLOW_UP_MIN_AGE_MS + 1000 },
+  });
+  assert.deepEqual(simplified.firstWordIds, ['lea']);
+  assert.deepEqual(simplified.followUpIds, []);
+  assert.equal(simplified.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, ['lea']);
+  assert.deepEqual(detailed.followUpIds, []);
+});
+
+test('[règle produit] 1er mot : j’ai écrit seul, entre 72 h et 14 jours, 1er mot et Relance', () => {
+  const { simplified, detailed } = firstWordInBothModes({
+    wroteFromMe: ['lea'],
+    lastSentAt: { lea: FIRST_WORD_NOW - FOLLOW_UP_MIN_AGE_MS - 1000 },
+  });
+  assert.deepEqual(simplified.firstWordIds, ['lea']);
+  assert.deepEqual(simplified.followUpIds, ['lea']);
+  assert.equal(simplified.showFirstWord, true);
+  assert.equal(simplified.alert, true);
+  assert.deepEqual(detailed.firstWordIds, ['lea']);
+  assert.deepEqual(detailed.followUpIds, []);
+  assert.equal(detailed.showFirstWord, true);
+});
+
+test('[règle produit] 1er mot : j’ai écrit seul, après 14 jours, le match reste sans Relance', () => {
+  const { simplified, detailed } = firstWordInBothModes({
+    wroteFromMe: ['lea'],
+    lastSentAt: { lea: FIRST_WORD_NOW - FOLLOW_UP_MAX_AGE_MS - 1000 },
+  });
+  assert.deepEqual(simplified.firstWordIds, ['lea']);
+  assert.deepEqual(simplified.followUpIds, []);
+  assert.equal(simplified.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, ['lea']);
+  assert.deepEqual(detailed.followUpIds, []);
+});
+
+test('[règle produit] 1er mot : l’autre a écrit seul, le match reste', () => {
+  const { simplified, detailed } = firstWordInBothModes({
+    wroteToMe: ['lea'],
+  });
+  assert.deepEqual(simplified.firstWordIds, ['lea']);
+  assert.deepEqual(simplified.followUpIds, []);
+  assert.equal(simplified.showFirstWord, true);
+  assert.deepEqual(detailed.firstWordIds, ['lea']);
+  assert.deepEqual(detailed.followUpIds, []);
+});
+
+test('[règle produit] 1er mot : les deux ont écrit, le match sort', () => {
+  const { simplified, detailed } = firstWordInBothModes({
+    wroteFromMe: ['lea'],
+    wroteToMe: ['lea'],
+  });
+  assert.deepEqual(simplified.firstWordIds, []);
+  assert.deepEqual(simplified.followUpIds, []);
+  assert.equal(simplified.showFirstWord, false);
+  assert.equal(simplified.alert, false);
+  assert.deepEqual(detailed.firstWordIds, []);
+  assert.deepEqual(detailed.followUpIds, []);
+  assert.equal(detailed.showFirstWord, false);
+});
+
+test('[règle produit] relance : 72 h mini, 14 j max, un nouvel envoi remet le délai à zéro', () => {
   const now = Date.parse('2026-09-21T12:00:00.000Z');
   const tooSoon = now - FOLLOW_UP_MIN_AGE_MS + 1000;
   const inWindow = now - FOLLOW_UP_MIN_AGE_MS - 1000;
@@ -508,7 +1190,7 @@ test('relance : 72 h mini, 14 j max, un nouvel envoi remet le délai à zéro', 
     },
     now
   );
-  assert.deepEqual(split.firstWordIds, []);
+  assert.deepEqual(split.firstWordIds, ['soon', 'ok', 'late', 'fresh-write']);
   assert.deepEqual(split.followUpIds, ['ok']);
 });
 

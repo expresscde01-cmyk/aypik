@@ -34,11 +34,17 @@ import { removeActorFromCategoryDigest } from '@/lib/matchHistoryDisplay';
 import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
 import { withNotificationPeriod } from '@/lib/interactionCopy';
 import {
+  applyBellDialogueRefresh,
+  emptyBellDialogueGate,
+  firstWordDismissedAfterSessionStart,
+  firstWordNotificationIds,
+  shouldRetryBellDialogue,
   firstDigestTone,
+  firstWordDigestAlert,
   followUpNotificationCopy,
-  partitionQuietDigestIds,
   resolveDigestPeople,
   sliceDigestPeople,
+  switchBellDialogueAccount,
 } from '@/lib/digestCopy';
 import {
   absorbRubricConsultation,
@@ -371,7 +377,10 @@ export default function NotificationsBell({
     markResolved,
     clearedDigestIds,
     clearDigestActor,
+    resetForAccount,
   } = useMatchesInboxSync();
+  const dialogueGateRef = useRef(emptyBellDialogueGate());
+  const dialogueRetryInFlightRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<SocialNotification[]>([]);
   const [peersWithTwoWay, setPeersWithTwoWay] = useState<Set<string>>(
@@ -437,6 +446,7 @@ export default function NotificationsBell({
   const waitOtherBaselineRef = useRef(emptyRubricBaseline());
   const [, bumpBellSeen] = useState(0);
   const [socialListReady, setSocialListReady] = useState(false);
+  const [socialListFailed, setSocialListFailed] = useState(false);
 
   /** Matchs verts Mes Matchs + résolus serveur / optimistes. */
   const isActorResolved = (id: string | null | undefined) => {
@@ -592,13 +602,7 @@ export default function NotificationsBell({
           }
           return [...seen.values()];
         })();
-    const listedIds = listed.map((m) => m.id);
-    const withoutVisited = isSimplifiedDiscoverMode(discoverMode)
-      ? listedIds
-      : omitVisitedDigestIds(listedIds, clearedDigestIds);
-    const kept = new Set(
-      omitUnreadMessageSenders(withoutVisited, unreadMessages.bySender)
-    );
+    const kept = new Set(firstWordNotificationIds(listed.map((m) => m.id)));
     return listed.filter((m) => kept.has(m.id));
   }, [
     snapshotReady,
@@ -606,35 +610,33 @@ export default function NotificationsBell({
     items,
     twoWayPeers,
     actorNames,
-    clearedDigestIds,
-    unreadMessages.bySender,
-    discoverMode,
   ]);
 
   const quietPartition = useMemo(() => {
     const ids = quietMatches.map((m) => m.id);
-    if (!isSimplifiedDiscoverMode(discoverMode)) {
-      return { firstWordIds: ids, followUpIds: [] as string[] };
-    }
-    const split = partitionQuietDigestIds(
-      ids,
-      peersIWroteTo,
-      [
+    return firstWordDigestAlert({
+      simplified: isSimplifiedDiscoverMode(discoverMode),
+      dialogueReady: socialListReady,
+      dialogueFailed: socialListFailed,
+      matchesReady: syncHasSnapshot,
+      dismissed: firstDismissed,
+      quietIds: ids,
+      wroteFromMe: peersIWroteTo,
+      wroteToMe: [
         ...peersWhoWroteToMe,
         ...Object.entries(unreadMessages.bySender)
           .filter(([, n]) => n > 0)
           .map(([id]) => id),
       ],
-      lastSentAtByPeer
-    );
-    const followUp = new Set(split.followUpIds);
-    return {
-      firstWordIds: ids.filter((id) => !followUp.has(id)),
-      followUpIds: split.followUpIds,
-    };
+      lastSentAt: lastSentAtByPeer,
+    });
   }, [
     quietMatches,
     discoverMode,
+    socialListReady,
+    socialListFailed,
+    syncHasSnapshot,
+    firstDismissed,
     peersIWroteTo,
     peersWhoWroteToMe,
     unreadMessages.bySender,
@@ -643,10 +645,8 @@ export default function NotificationsBell({
 
   const eligibleQuietCount =
     quietPartition.firstWordIds.length + quietPartition.followUpIds.length;
-  const hasFirstAlert =
-    eligibleQuietCount > 0 &&
-    !firstDismissed &&
-    (!isSimplifiedDiscoverMode(discoverMode) || socialListReady);
+  const hasFirstAlert = quietPartition.alert;
+
   const prevQuietCountRef = useRef(0);
 
   useEffect(() => {
@@ -1140,27 +1140,37 @@ export default function NotificationsBell({
   }, [user, matchedIds]);
 
   const refresh = useCallback(async () => {
+    const accountId = user?.id ?? null;
+    if (!accountId) return;
     try {
       await sweepStaleSocialNotifications();
       const [list, dialogue] = await Promise.all([
         fetchSocialNotifications(25),
         fetchPeerDialogueFlags(),
       ]);
-      setPeersWithTwoWay(dialogue.twoWay);
-      setPeersWhoWroteToMe(dialogue.wroteToMe);
-      setPeersIWroteTo(dialogue.wroteFromMe);
-      setLastSentAtByPeer((prev) => {
-        const next = { ...dialogue.lastSentAt };
-        for (const [id, ms] of Object.entries(prev)) {
-          if (next[id] == null || ms > next[id]) next[id] = ms;
-        }
-        return next;
+      const next = applyBellDialogueRefresh(dialogueGateRef.current, {
+        ok: true,
+        accountId,
+        wroteFromMe: dialogue.wroteFromMe,
+        wroteToMe: dialogue.wroteToMe,
+        lastSentAt: dialogue.lastSentAt,
       });
-      setSocialListReady(true);
+      if (next.accountId !== accountId) return;
+      dialogueGateRef.current = next;
+      setPeersWithTwoWay(dialogue.twoWay);
+      setPeersWhoWroteToMe(new Set(next.wroteToMe));
+      setPeersIWroteTo(new Set(next.wroteFromMe));
+      setLastSentAtByPeer((prev) => {
+        const merged = { ...next.lastSentAt };
+        for (const [id, ms] of Object.entries(prev)) {
+          if (merged[id] == null || ms > merged[id]) merged[id] = ms;
+        }
+        return merged;
+      });
       setItems(
         list.filter((n) => {
-          if (isDismissedDeclinedNotification(n, user?.id)) return false;
-          if (isWaitingNoticeDismissed(n, user?.id)) return false;
+          if (isDismissedDeclinedNotification(n, accountId)) return false;
+          if (isWaitingNoticeDismissed(n, accountId)) return false;
           if (
             (n.kind === 'like_received' || n.kind === 'flash_received') &&
             n.actor_id &&
@@ -1171,6 +1181,8 @@ export default function NotificationsBell({
           return true;
         })
       );
+      setSocialListReady(true);
+      setSocialListFailed(false);
 
       const actorIds = [
         ...new Set(
@@ -1184,6 +1196,7 @@ export default function NotificationsBell({
           .from('profiles')
           .select('id, display_name')
           .in('id', actorIds);
+        if (dialogueGateRef.current.accountId !== accountId) return;
         const map: Record<string, string> = {};
         for (const p of profiles || []) {
           const id = (p as { id: string }).id;
@@ -1195,7 +1208,13 @@ export default function NotificationsBell({
         setActorNames((prev) => ({ ...prev, ...map }));
       }
     } catch {
-      /* silencieux : inbox optionnelle */
+      if (dialogueGateRef.current.accountId !== accountId) return;
+      const next = applyBellDialogueRefresh(dialogueGateRef.current, {
+        ok: false,
+        accountId,
+      });
+      dialogueGateRef.current = next;
+      setSocialListFailed(next.failed);
     }
   }, [user?.id]);
 
@@ -1335,6 +1354,19 @@ export default function NotificationsBell({
   );
 
   useEffect(() => {
+    const accountId = user?.id ?? null;
+    resetForAccount(accountId);
+    dialogueGateRef.current = switchBellDialogueAccount(accountId);
+    dialogueRetryInFlightRef.current = false;
+    setSocialListReady(false);
+    setSocialListFailed(false);
+    setItems([]);
+    setPeersWithTwoWay(new Set());
+    setPeersWhoWroteToMe(new Set());
+    setPeersIWroteTo(new Set());
+    setLastSentAtByPeer({});
+    setActorNames({});
+    setActorPhotos({});
     primedRef.current = false;
     categoryPrimedRef.current = false;
     prevMessageTotalRef.current = 0;
@@ -1362,13 +1394,6 @@ export default function NotificationsBell({
       ? readRubricBaseline(user.id, 'waitOther')
       : emptyRubricBaseline();
     bumpBellSeen((n) => n + 1);
-    setSocialListReady(false);
-    setActorNames({});
-    setActorPhotos({});
-    setPeersWithTwoWay(new Set());
-    setPeersWhoWroteToMe(new Set());
-    setPeersIWroteTo(new Set());
-    setLastSentAtByPeer({});
     setNewDismissed(
       user
         ? sessionStorage.getItem(categoryNotifSessionKey(user.id, 'new')) ===
@@ -1381,14 +1406,19 @@ export default function NotificationsBell({
           '1'
         : false
     );
+    if (user) {
+      sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'first'));
+    }
     setFirstDismissed(
       user
-        ? sessionStorage.getItem(categoryNotifSessionKey(user.id, 'first')) ===
-          '1'
+        ? firstWordDismissedAfterSessionStart(
+            sessionStorage.getItem(categoryNotifSessionKey(user.id, 'first')) ===
+              '1'
+          )
         : false
     );
     prevQuietCountRef.current = 0;
-  }, [user?.id]);
+  }, [resetForAccount, user?.id]);
 
   useEffect(() => {
     if (!unreadMessages.ready) return;
@@ -1443,6 +1473,57 @@ export default function NotificationsBell({
       void supabase.removeChannel(channel);
     };
   }, [user, active, refresh, refreshCategoryNotifs]);
+
+  useEffect(() => {
+    const accountId = user?.id ?? null;
+    if (!accountId || !active) return;
+    let timer: number | null = null;
+    const schedule = (reason: 'visible' | 'online') => {
+      if (
+        !shouldRetryBellDialogue({
+          accountId,
+          gate: dialogueGateRef.current,
+          inFlight: dialogueRetryInFlightRef.current,
+          reason,
+          visibilityState: document.visibilityState,
+        })
+      ) {
+        return;
+      }
+      if (timer != null) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = null;
+        if (
+          !shouldRetryBellDialogue({
+            accountId,
+            gate: dialogueGateRef.current,
+            inFlight: dialogueRetryInFlightRef.current,
+            reason,
+            visibilityState: document.visibilityState,
+          })
+        ) {
+          return;
+        }
+        dialogueRetryInFlightRef.current = true;
+        void refresh().finally(() => {
+          if (dialogueGateRef.current.accountId === accountId) {
+            dialogueRetryInFlightRef.current = false;
+          }
+        });
+      }, 400);
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') schedule('visible');
+    };
+    const onOnline = () => schedule('online');
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    return () => {
+      if (timer != null) window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
+    };
+  }, [user?.id, active, refresh]);
 
   const closePanel = useCallback(() => {
     setOpen(false);
