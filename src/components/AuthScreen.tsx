@@ -110,7 +110,6 @@ export default function AuthScreen({
       return;
     }
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError(t('auth.needCaptcha'));
       return;
     }
     if (resetBusy) return;
@@ -210,7 +209,6 @@ export default function AuthScreen({
     }
 
     if (TURNSTILE_SITE_KEY && !captchaToken) {
-      setError(t('auth.needCaptcha'));
       return;
     }
 
@@ -461,9 +459,15 @@ export default function AuthScreen({
                 ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
                 onVerify={setCaptchaToken}
-                onExpire={() => setCaptchaToken(null)}
+                onExpire={resetCaptcha}
                 className="flex justify-center"
               />
+            )}
+
+            {TURNSTILE_SITE_KEY && !captchaToken && (
+              <p className="text-sm text-gray-500 text-center">
+                {t('auth.captchaChecking')}
+              </p>
             )}
 
             {info && (
@@ -494,7 +498,10 @@ export default function AuthScreen({
                     <button
                       type="button"
                       onClick={() => void handleForgotPassword()}
-                      disabled={resetBusy}
+                      disabled={
+                        resetBusy ||
+                        (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
+                      }
                       className="font-semibold underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
                     >
                       {resetBusy ? t('auth.sendingLink') : t('auth.forgotPassword')}

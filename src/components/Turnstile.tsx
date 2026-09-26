@@ -102,14 +102,20 @@ const Turnstile = forwardRef<
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
+  const onVerifyRef = useRef(onVerify);
+  const onExpireRef = useRef(onExpire);
+  const suppressExpireRef = useRef(false);
   const [error, setError] = useState(false);
   const language = widgetLanguage();
 
+  onVerifyRef.current = onVerify;
+  onExpireRef.current = onExpire;
+
   useImperativeHandle(ref, () => ({
     reset: () => {
-      if (window.turnstile && widgetIdRef.current) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
+      if (!window.turnstile || !widgetIdRef.current) return;
+      suppressExpireRef.current = true;
+      window.turnstile.reset(widgetIdRef.current);
     },
   }));
 
@@ -123,14 +129,16 @@ const Turnstile = forwardRef<
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         callback: (token: string) => {
+          suppressExpireRef.current = false;
           setError(false);
-          onVerify(token);
+          onVerifyRef.current(token);
         },
         'error-callback': () => {
           setError(true);
         },
         'expired-callback': () => {
-          onExpire?.();
+          if (suppressExpireRef.current) return;
+          onExpireRef.current?.();
         },
         theme: 'light',
         language,

@@ -221,6 +221,7 @@
     "needPassword": "Introduce tu contraseña.",
     "needBirthDate": "Indica tu fecha de nacimiento.",
     "needCaptcha": "Completa el CAPTCHA antes de continuar.",
+    "captchaChecking": "Comprobación de seguridad en curso, espera unos segundos…",
     "invalidEmail": "Dirección de correo electrónico no válida.",
     "resetTitle": "Nueva contraseña",
     "resetSubtitle": "Elige una contraseña para desbloquear tu cuenta y volver a iniciar sesión.",

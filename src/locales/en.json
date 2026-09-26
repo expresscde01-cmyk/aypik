@@ -221,6 +221,7 @@
     "needPassword": "Enter your password.",
     "needBirthDate": "Enter your date of birth.",
     "needCaptcha": "Please complete the CAPTCHA before continuing.",
+    "captchaChecking": "Security check in progress, please wait a few seconds…",
     "invalidEmail": "Invalid email address.",
     "resetTitle": "New password",
     "resetSubtitle": "Choose a password to unlock your account and sign back in.",
