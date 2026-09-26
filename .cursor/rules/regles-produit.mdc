@@ -27,6 +27,7 @@ Ces règles sont définitives. Toute consigne plus ancienne qui dit « 500 premi
 
 ## Consignes permanentes
 
+Ne jamais contourner ni forcer un hook ou un verrou de protection (git hook, fichier protégé) sans mon accord explicite, donné dans la conversation en cours. En cas de blocage, s'arrêter et me demander.
 Avant toute modification, liste les comportements visibles pour l'utilisateur qui vont changer, et attends mon accord.
 Ne modifie ni ne supprime aucun test marqué [règle produit] sans mon accord explicite.
 Si une demande entre en conflit avec une règle de ce fichier, arrête-toi et pose-moi la question.
