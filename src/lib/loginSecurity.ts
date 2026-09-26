@@ -13,7 +13,7 @@ export {
 /** Seuil serveur (record_login_failure) — ne pas utiliser pour un verrouillage local. */
 export const LOGIN_FAILURE_LIMIT = 4;
 
-/** Affiché uniquement après un notify_lock réussi (e-mail « Déblocage de votre compte Aypik »). */
+/** Affiché uniquement après un notify_lock réussi (e-mail « Déblocage de ton compte Aypik »). */
 export function accountLockedMessage(): string {
   return t('auth.accountLocked');
 }

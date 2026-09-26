@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   escapeHtml,
   isEmailNotificationsEnabled,
+  resendFromAddress,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
 import { emailT, profileEmailLocale } from "../_shared/i18n.ts";
@@ -115,9 +116,7 @@ Deno.serve(async (req) => {
       )
       : null;
 
-    const from =
-      Deno.env.get("RESEND_FROM_EMAIL") ??
-      "Aypik <onboarding@resend.dev>";
+    const from = resendFromAddress();
 
     const subject = founderNumber
       ? emailT(locale, "welcomeSubjectFounder", { number: founderNumber })

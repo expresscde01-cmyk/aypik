@@ -38,7 +38,18 @@ export function LegalLink({
   children?: ReactNode;
   className?: string;
 }) {
-  const label = children ?? legalDocLabel();
+  const blank =
+    children == null ||
+    children === false ||
+    (typeof children === 'string' && children.trim() === '') ||
+    (Array.isArray(children) &&
+      children.every(
+        (child) =>
+          child == null ||
+          child === false ||
+          (typeof child === 'string' && child.trim() === '')
+      ));
+  const label = blank ? legalDocLabel() : children;
   return (
     <button
       type="button"

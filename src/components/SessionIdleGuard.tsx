@@ -286,11 +286,11 @@ export default function SessionIdleGuard() {
               id="session-idle-desc"
               className="text-sm text-gray-600 leading-relaxed"
             >
-              Vous allez être déconnecté dans{' '}
+              Tu vas être déconnecté·e dans{' '}
               <span className="font-semibold text-gray-900 tabular-nums">
                 {secondsLeft} s
               </span>{' '}
-              pour inactivité. Cliquez ci-dessous pour rester connecté.
+              pour inactivité. Clique ci-dessous pour rester connecté.
             </p>
           </div>
         </div>

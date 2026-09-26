@@ -3,7 +3,6 @@
  * À importer depuis les Edge Functions : `../_shared/email.ts`
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { emailT, type EmailLocale } from "./i18n.ts";
 
 export function getPublicSiteUrl(): string {
   const raw =
@@ -13,6 +12,7 @@ export function getPublicSiteUrl(): string {
   return raw.replace(/\/$/, "");
 }
 
+/** Lien de reset hébergé sur le site (évite les Redirect URLs Auth). */
 export function buildPasswordRecoveryPageUrl(
   tokenHash: string,
   siteUrl = getPublicSiteUrl(),
@@ -28,6 +28,7 @@ export function preferencesUrl(siteUrl = getPublicSiteUrl()): string {
   return `${siteUrl}/?open=preferences`;
 }
 
+/** HMAC-SHA256(secret, message), retourne un hex complet (64 caractères). */
 async function hmacHex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -43,6 +44,12 @@ async function hmacHex(secret: string, message: string): Promise<string> {
     .join("");
 }
 
+/**
+ * Lien de désabonnement en un clic (RFC 8058) : ne nécessite pas de connexion,
+ * pointe directement vers l'edge function `unsubscribe` qui désactive
+ * `profiles.email_notifications_enabled` pour cet utilisateur.
+ * Retourne `null` si UNSUBSCRIBE_SECRET n'est pas configuré (pas de lien signé possible).
+ */
 export async function buildUnsubscribeUrl(userId: string): Promise<string | null> {
   const secret = Deno.env.get("UNSUBSCRIBE_SECRET");
   if (!secret || !userId) return null;
@@ -52,6 +59,7 @@ export async function buildUnsubscribeUrl(userId: string): Promise<string | null
   return `${base}/functions/v1/unsubscribe?${params.toString()}`;
 }
 
+/** Vérifie la signature d'un lien de désabonnement (comparaison en temps constant). */
 export async function verifyUnsubscribeSignature(
   userId: string,
   sig: string,
@@ -67,6 +75,10 @@ export async function verifyUnsubscribeSignature(
   return diff === 0;
 }
 
+/**
+ * Vérifie si le destinataire autorise les e-mails de notification.
+ * Absence de ligne / null → true (opt-out explicite uniquement).
+ */
 export async function isEmailNotificationsEnabled(
   admin: SupabaseClient,
   userId: string,
@@ -79,6 +91,7 @@ export async function isEmailNotificationsEnabled(
 
   if (error) {
     console.error("email_notifications_enabled lookup failed", error.message);
+    // En cas d'erreur de lecture, on n'envoie pas (précaution).
     return false;
   }
 
@@ -94,37 +107,40 @@ export function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export const PASSWORD_RESET_SUBJECT = "Réinitialisation de votre mot de passe";
+const AUTH_EMAIL_BUTTON_STYLE =
+  "display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;";
+
+function authEmailButton(href: string, label: string): string {
+  return `<p style="margin:0 0 16px;"><a href="${href}" style="${AUTH_EMAIL_BUTTON_STYLE}">${label}</a></p>`;
+}
+
+export const PASSWORD_RESET_SUBJECT = "Réinitialisation de ton mot de passe";
 
 export function buildPasswordResetBodyHtml(resetUrl: string): string {
   const url = escapeHtml(resetUrl);
   return `
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Bonjour,</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
-      Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le lien ci-dessous pour en définir un nouveau :
+      Tu as demandé à réinitialiser ton mot de passe. Choisis-en un nouveau avec le bouton ci-dessous.
     </p>
-    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;word-break:break-all;">
-      <a href="${url}">${url}</a>
-    </p>
+    ${authEmailButton(url, "Choisir un nouveau mot de passe")}
     <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
-      Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+      Si tu n'es pas à l'origine de cette demande, ignore cet e-mail.
     </p>
   `;
 }
-export const ACCOUNT_UNLOCK_SUBJECT = "Déblocage de votre compte Aypik";
+export const ACCOUNT_UNLOCK_SUBJECT = "Déblocage de ton compte Aypik";
 
 export function buildAccountUnlockBodyHtml(unlockUrl: string): string {
   const url = escapeHtml(unlockUrl);
   return `
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">Bonjour,</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
-      Votre compte a été temporairement bloqué pour des raisons de sécurité. Cliquez sur le lien ci-dessous pour le débloquer :
+      Ton compte a été temporairement bloqué pour des raisons de sécurité. Débloque-le avec le bouton ci-dessous.
     </p>
-    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;word-break:break-all;">
-      <a href="${url}">${url}</a>
-    </p>
+    ${authEmailButton(url, "Débloquer mon compte")}
     <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
-      Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer cet e-mail.
+      Si tu n'es pas à l'origine de cette demande, ignore cet e-mail.
     </p>
   `;
 }
@@ -159,6 +175,7 @@ export async function sendResendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  /** En-têtes additionnels transmis tels quels à Resend (ex: List-Unsubscribe). */
   headers?: Record<string, string>;
 }): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
   const from =
@@ -197,47 +214,59 @@ export async function sendResendEmail(params: {
   };
 }
 
+/**
+ * Pied de page légal + liens de gestion (tous les e-mails sortants).
+ * `unsubscribeUrl` : lien réel de désabonnement en un clic (voir buildUnsubscribeUrl).
+ * S'il est absent, on retombe sur la page de préférences (comportement précédent).
+ */
 export function buildEmailLegalFooter(
   siteUrl = getPublicSiteUrl(),
   unsubscribeUrl?: string | null,
-  locale: EmailLocale = "fr",
 ): string {
   const prefs = escapeHtml(preferencesUrl(siteUrl));
   const unsub = escapeHtml(unsubscribeUrl || preferencesUrl(siteUrl));
+  const home = escapeHtml(siteUrl);
 
   return `
   <hr style="border:none;border-top:1px solid #fce7f3;margin:28px 0 16px;" />
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">
-    ${emailT(locale, "legalFooterAccount")}
+    Tu reçois cet e-mail car tu as un compte sur
+    <a href="${home}" style="color:#e11d48;text-decoration:underline;">Aypik</a>.
   </p>
   <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;line-height:1.55;">
     <a href="${prefs}" style="color:#e11d48;text-decoration:underline;">
-      ${emailT(locale, "legalFooterManagePrefs")}
+      Gérer mes préférences depuis mon profil
     </a>
     &nbsp;·&nbsp;
     <a href="${unsub}" style="color:#e11d48;text-decoration:underline;">
-      ${emailT(locale, "legalFooterDisable")}
+      Désactiver les notifications par e-mail
     </a>
   </p>
   <p style="margin:0;color:#9ca3af;font-size:11px;line-height:1.5;">
-    ${emailT(locale, "legalFooterRgpd")}
+    Conformément au RGPD et à la réglementation applicable, tu peux à tout moment
+    désactiver les e-mails de notification depuis ta page de profil Aypik
+    (section Préférences) ou via le lien de désabonnement ci-dessus. Les e-mails
+    strictement nécessaires au fonctionnement du service (sécurité, facturation)
+    peuvent rester envoyés le cas échéant.
   </p>`;
 }
 
+/**
+ * Enveloppe le contenu HTML d’un e-mail Aypik avec le footer légal.
+ */
 export function wrapTransactionalEmailHtml(params: {
   title: string;
   bodyHtml: string;
   siteUrl?: string;
+  /** Lien de désabonnement en un clic ; à défaut, retombe sur la page de préférences. */
   unsubscribeUrl?: string | null;
-  locale?: EmailLocale;
 }): string {
   const siteUrl = params.siteUrl ?? getPublicSiteUrl();
   const title = escapeHtml(params.title);
-  const locale = params.locale ?? "fr";
-  const footer = buildEmailLegalFooter(siteUrl, params.unsubscribeUrl, locale);
+  const footer = buildEmailLegalFooter(siteUrl, params.unsubscribeUrl);
 
   return `<!DOCTYPE html>
-<html lang="${locale}">
+<html lang="fr">
 <head><meta charset="UTF-8" /><title>${title}</title></head>
 <body style="margin:0;padding:0;background:#fff7f5;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff7f5;padding:32px 16px;">

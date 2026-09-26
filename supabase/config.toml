@@ -441,6 +441,10 @@ verify_jwt = false
 [functions.login-security]
 verify_jwt = false
 
+# Send Email hook Auth. Appelée par GoTrue, sans JWT utilisateur.
+[functions.auth-email-hook]
+verify_jwt = false
+
 # Formulaire de contact public (Turnstile + Resend).
 [functions.contact]
 verify_jwt = false

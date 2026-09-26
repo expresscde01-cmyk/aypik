@@ -241,7 +241,7 @@ export default function PhoneVerification() {
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-                    placeholder="06 52 28 94 11"
+                    placeholder="06 39 98 00 00"
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-gray-400">

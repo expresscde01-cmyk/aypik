@@ -1663,7 +1663,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
 
           <footer className="border-t border-gray-100 pt-6 text-xs text-gray-400 space-y-2">
             <p>
-              Vous avez des questions ?{' '}
+              Tu as des questions ?{' '}
               <ContactLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
             </p>
             <p>

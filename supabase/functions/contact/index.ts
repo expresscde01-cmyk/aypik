@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {
   escapeHtml,
+  resendFromAddress,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
 
@@ -85,9 +86,7 @@ Deno.serve(async (req) => {
 
     const categoryLabel = CATEGORY_LABELS[category];
     const to = Deno.env.get("CONTACT_TO_EMAIL")?.trim() || SUPPORT_EMAIL;
-    const from =
-      Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
-      "Aypik <onboarding@resend.dev>";
+    const from = resendFromAddress();
     const subject = `[Aypik] ${categoryLabel} — ${name}`;
     const html = wrapTransactionalEmailHtml({
       title: "Nouveau message de contact",
