@@ -19,6 +19,7 @@ import {
 import ContactPage from '@/components/ContactPage';
 import BrandLockupCopyGuard from '@/components/BrandLockupCopyGuard';
 import SessionIdleGuard from '@/components/SessionIdleGuard';
+import { appScreenForSession } from '@/lib/passwordRecoveryRoute';
 import { peekAuthNotice } from '@/lib/sessionIdle';
 import LanguageProvider from '@/i18n/LanguageProvider';
 import LocaleBetaBanner from '@/i18n/LocaleBetaBanner';
@@ -121,9 +122,12 @@ function activeAppRoute(opts: {
   if (opts.maintenanceGate === 'checking') return 'checking';
   if (opts.showLegal) return 'legal';
   if (isContactPage()) return 'contact';
-  if (opts.loading) return 'loading';
-  if (opts.hasSession && opts.passwordRecovery) return 'recovery';
-  if (opts.hasSession) return 'app';
+  const sessionScreen = appScreenForSession({
+    loading: opts.loading,
+    passwordRecovery: opts.passwordRecovery,
+    hasSession: opts.hasSession,
+  });
+  if (sessionScreen !== 'landing') return sessionScreen;
   if (opts.showAuth) return 'auth';
   return 'landing';
 }
