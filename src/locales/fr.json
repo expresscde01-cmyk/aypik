@@ -221,6 +221,7 @@
     "needPassword": "Saisis ton mot de passe.",
     "needBirthDate": "Indique ta date de naissance.",
     "needCaptcha": "Merci de valider le CAPTCHA avant de continuer.",
+    "captchaChecking": "Vérification de sécurité en cours, patiente quelques secondes…",
     "invalidEmail": "Adresse e-mail invalide.",
     "resetTitle": "Nouveau mot de passe",
     "resetSubtitle": "Choisis un mot de passe pour débloquer ton compte et te reconnecter.",
