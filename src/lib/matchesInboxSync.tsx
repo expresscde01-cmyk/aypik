@@ -42,7 +42,7 @@ type MatchesInboxSyncValue = {
   /** Profils dont la fiche / conversation a été ouverte : sortent des digests nommés. */
   clearedDigestIds: Set<string>;
   /** Publie l’état courant des cartes Mes Matchs. */
-  publish: (entries: MatchesInboxEntry[]) => void;
+  publish: (entries: MatchesInboxEntry[], accountId?: string | null) => void;
   /** Marque un profil comme résolu (match / refus) sans attendre le rechargement. */
   markResolved: (
     profileId: string,
@@ -50,6 +50,11 @@ type MatchesInboxSyncValue = {
   ) => void;
   /** Visite d’une fiche ou d’une conversation : retire le prénom des notifs digest. */
   clearDigestActor: (profileId: string) => void;
+  /**
+   * Premier appel : mémorise le compte. Compte différent : vide le snapshot,
+   * pour qu’aucune fiche de l’ancien compte ne reste dans la cloche.
+   */
+  resetForAccount: (accountId: string | null) => void;
 };
 
 const MatchesInboxSyncContext = createContext<MatchesInboxSyncValue | null>(
@@ -98,7 +103,28 @@ export function MatchesInboxSyncProvider({
   const enteredNewRef = useRef<Set<string>>(new Set());
   const enteredWaitRef = useRef<Set<string>>(new Set());
   const enteredFirstRef = useRef<Set<string>>(new Set());
+  const boundAccountRef = useRef<string | null | undefined>(undefined);
   const [, bump] = useState(0);
+
+  const resetForAccount = useCallback((accountId: string | null) => {
+    if (boundAccountRef.current === undefined) {
+      boundAccountRef.current = accountId;
+      return;
+    }
+    if (boundAccountRef.current === accountId) return;
+    boundAccountRef.current = accountId;
+    matchedRef.current = new Set();
+    refusedRef.current = new Set();
+    waitRef.current = new Set();
+    enteredNewRef.current = new Set();
+    enteredWaitRef.current = new Set();
+    enteredFirstRef.current = new Set();
+    setEntries([]);
+    setHasSnapshot(false);
+    setClearedDigestIds(new Set());
+    persistClearedDigestIds(new Set());
+    bump((n) => n + 1);
+  }, []);
 
   const clearEntered = (profileId: string) => {
     enteredNewRef.current.delete(profileId);
@@ -112,7 +138,14 @@ export function MatchesInboxSyncProvider({
     wait: waitRef.current,
   });
 
-  const publish = useCallback((next: MatchesInboxEntry[]) => {
+  const publish = useCallback((next: MatchesInboxEntry[], accountId?: string | null) => {
+    if (
+      accountId != null &&
+      boundAccountRef.current !== undefined &&
+      boundAccountRef.current !== accountId
+    ) {
+      return;
+    }
     for (const e of next) {
       if (e.status === 'matched' || e.status === 'matched-chat') {
         matchedRef.current.add(e.id);
@@ -219,8 +252,17 @@ export function MatchesInboxSyncProvider({
       publish,
       markResolved,
       clearDigestActor,
+      resetForAccount,
     };
-  }, [entries, hasSnapshot, clearedDigestIds, publish, markResolved, clearDigestActor]);
+  }, [
+    entries,
+    hasSnapshot,
+    clearedDigestIds,
+    publish,
+    markResolved,
+    clearDigestActor,
+    resetForAccount,
+  ]);
 
   return (
     <MatchesInboxSyncContext.Provider value={value}>
@@ -248,6 +290,7 @@ export function useMatchesInboxSync(): MatchesInboxSyncValue {
       publish: () => undefined,
       markResolved: () => undefined,
       clearDigestActor: () => undefined,
+      resetForAccount: () => undefined,
     };
   }
   return ctx;

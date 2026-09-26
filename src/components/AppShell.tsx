@@ -25,6 +25,7 @@ import {
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
+import { MatchesBoardProvider } from '@/lib/matchesBoard';
 import { flushDiscoverPrefs, subscribeSuggestionPrefs } from '@/lib/suggestionPrefs';
 import { setProfilePaused } from '@/lib/profilePause';
 import { setProfileIncognito } from '@/lib/profileIncognito';
@@ -535,6 +536,7 @@ function AppShellView() {
   }
 
   return (
+    <MatchesBoardProvider profileEpoch={profileEpoch}>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 min-h-0">
         {mountedTabs.has('home') && (
@@ -754,6 +756,7 @@ function AppShellView() {
         </div>
       </nav>
     </div>
+    </MatchesBoardProvider>
   );
 }
 

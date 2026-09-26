@@ -57,6 +57,15 @@ export function peerSetsFromDialogueFlagRows(
   return { twoWay, wroteToMe, wroteFromMe, lastSentAt };
 }
 
+/** Erreur Supabase : échec. Liste vide sans erreur : personne n’a écrit. */
+export function peerDialogueFlagsFromRpc(
+  error: unknown,
+  rows: PeerDialogueFlagRow[] | null | undefined
+): ReturnType<typeof peerSetsFromDialogueFlagRows> {
+  if (error) throw error;
+  return peerSetsFromDialogueFlagRows(rows ?? []);
+}
+
 export function peersWithTwoWayDialogueFromRows(
   rows: { sender_id?: string; recipient_id?: string }[],
   me: string
