@@ -243,7 +243,7 @@
     "accountLockedCheckMail": "For security reasons, this account is locked. Check your inbox for the unlock link, or use \"Forgot password\" if you didn't receive it.",
     "resetEmailSent": "If an account exists for this address, a reset email has just been sent.",
     "loginTimeout": "Sign-in is taking longer than expected, please try again.",
-    "phoneInvalidFrance": "Invalid number. Enter a French number, e.g. 06 52 28 94 11.",
+    "phoneInvalidFrance": "Invalid number. Enter a French number, e.g. 06 39 98 00 00.",
     "phoneCodeDigits": "The code must contain 6 digits.",
     "phoneSending": "Sending code...",
     "phoneSendSms": "Receive code by SMS",

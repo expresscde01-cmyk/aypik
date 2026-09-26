@@ -2,7 +2,7 @@
   "legalFooterAccount": "Tu reçois cet e-mail car tu as un compte sur Aypik.",
   "legalFooterManagePrefs": "Gérer mes préférences depuis mon profil",
   "legalFooterDisable": "Désactiver les notifications par e-mail",
-  "legalFooterRgpd": "Conformément au RGPD et à la réglementation applicable, vous pouvez à tout moment désactiver les e-mails de notification depuis votre page de profil Aypik (section Préférences). Les e-mails strictement nécessaires au fonctionnement du service (sécurité, facturation) peuvent rester envoyés le cas échéant.",
+  "legalFooterRgpd": "Conformément au RGPD et à la réglementation applicable, tu peux à tout moment désactiver les e-mails de notification depuis ta page de profil Aypik (section Préférences). Les e-mails strictement nécessaires au fonctionnement du service (sécurité, facturation) peuvent rester envoyés le cas échéant.",
   "welcomeSubjectFounder": "Bienvenue sur Aypik — Membre Fondateur #{{number}}",
   "welcomeSubject": "Bienvenue sur Aypik",
   "welcomeHello": "Bienvenue, {{name}} !",

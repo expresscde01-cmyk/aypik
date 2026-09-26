@@ -2,7 +2,7 @@
  * Normalisation / validation minimale des numéros de téléphone pour la
  * vérification par SMS. On ne vise que la France pour l'instant (comme le
  * reste du site), avec tolérance sur les formats de saisie courants :
- * "06 52 28 94 11", "0652289411", "+33652289411", "0033652289411".
+ * "06 39 98 00 00", "0639980000", "+33639980000", "0033639980000".
  */
 
 /** Retire tout ce qui n'est pas un chiffre ou un "+" initial. */
@@ -39,7 +39,7 @@ export function toE164France(raw: string): string | null {
   return `+33${national}`;
 }
 
-/** Format d'affichage lisible à partir d'un E.164 français : "+33 6 52 28 94 11". */
+/** Format d'affichage lisible à partir d'un E.164 français : "+33 6 39 98 00 00". */
 export function formatE164ForDisplay(e164: string): string {
   const match = /^\+33(\d)(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164);
   if (!match) return e164;

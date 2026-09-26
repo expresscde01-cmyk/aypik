@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   escapeHtml,
   getPublicSiteUrl,
+  resendFromAddress,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
 import {
@@ -55,8 +56,7 @@ Deno.serve(async (req) => {
 
     const candidates = Array.isArray(data) ? (data as InviteRow[]) : [];
     const siteUrl = getPublicSiteUrl();
-    const from = Deno.env.get("RESEND_FROM_EMAIL") ??
-      "Aypik <onboarding@resend.dev>";
+    const from = resendFromAddress();
 
     let sent = 0;
     let failed = 0;

@@ -243,7 +243,7 @@
     "accountLockedCheckMail": "Por motivos de seguridad, esta cuenta está bloqueada. Revisa tu correo para el enlace de desbloqueo, o usa «¿Olvidaste tu contraseña?» si no lo has recibido.",
     "resetEmailSent": "Si existe una cuenta con esta dirección, se acaba de enviar un correo de restablecimiento.",
     "loginTimeout": "El inicio de sesión está tardando más de lo esperado, inténtalo de nuevo.",
-    "phoneInvalidFrance": "Número no válido. Introduce un número francés, ej. 06 52 28 94 11.",
+    "phoneInvalidFrance": "Número no válido. Introduce un número francés, ej. 06 39 98 00 00.",
     "phoneCodeDigits": "El código debe contener 6 dígitos.",
     "phoneSending": "Enviando código...",
     "phoneSendSms": "Recibir código por SMS",
