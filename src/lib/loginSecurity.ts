@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { withClientTimeout } from '@/lib/loginClientTimeout';
+import {
+  getRecoveryTokenFromUrl,
+  type RecoveryToken,
+} from '@/lib/passwordRecoveryRoute';
 import { t } from '../i18n/t.ts';
+
+export { getRecoveryTokenFromUrl } from '@/lib/passwordRecoveryRoute';
 
 export {
   LOGIN_CLIENT_TIMEOUT_MS,
@@ -60,11 +66,6 @@ export function recoveryRedirectUrl(): string {
   }
 }
 
-type RecoveryToken = {
-  tokenHash: string;
-  type: 'recovery' | 'magiclink';
-};
-
 function paramsFromLocation(): URLSearchParams {
   const query = new URLSearchParams(window.location.search);
   const hash = window.location.hash.replace(/^#/, '');
@@ -74,16 +75,6 @@ function paramsFromLocation(): URLSearchParams {
     if (!query.has(key)) query.set(key, value);
   });
   return query;
-}
-
-export function getRecoveryTokenFromUrl(): RecoveryToken | null {
-  if (typeof window === 'undefined') return null;
-  const params = paramsFromLocation();
-  const tokenHash = params.get('token_hash') || params.get('token');
-  if (!tokenHash) return null;
-  const rawType = (params.get('type') || 'recovery').toLowerCase();
-  const type = rawType === 'magiclink' ? 'magiclink' : 'recovery';
-  return { tokenHash, type };
 }
 
 /** Jeton lu une fois, pour le remount Strict Mode après replaceState. */

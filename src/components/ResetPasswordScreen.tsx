@@ -3,11 +3,19 @@ import { AlertCircle, Eye, EyeOff, Lock, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
 import { validateSignupPassword } from '@/lib/password';
+import { useAuth } from '@/lib/auth';
 import { consumeRecoveryParamsFromUrl, unlockLoginSecurity } from '@/lib/loginSecurity';
 import { BrandLockup, BrandMark } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalChrome';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+
+function isSamePasswordError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = 'code' in err ? String((err as { code?: string }).code) : '';
+  const message = err instanceof Error ? err.message : '';
+  return code === 'same_password' || /same_password|same password|should be different/i.test(message);
+}
 
 export default function ResetPasswordScreen({
   onDone,
@@ -15,6 +23,7 @@ export default function ResetPasswordScreen({
   onDone: () => void;
 }) {
   const { t } = useTranslation();
+  const { session, recoveryLinkError } = useAuth();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,14 +50,16 @@ export default function ResetPasswordScreen({
 
     setLoading(true);
     try {
+      supabase.auth.stopAutoRefresh();
       const { error: updateError } = await supabase.auth.updateUser({
         password,
       });
-      if (updateError) throw updateError;
+      if (updateError && !isSamePasswordError(updateError)) throw updateError;
       try {
         await unlockLoginSecurity();
       } catch {
-        /* SQL pas encore appliqué : le mot de passe est déjà à jour */
+        setError(t('auth.unlockFailed'));
+        return;
       }
       onDone();
     } catch (err) {
@@ -77,9 +88,22 @@ export default function ResetPasswordScreen({
               {t('auth.resetTitle')}
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              {t('auth.resetSubtitle')}
+              {recoveryLinkError === 'locked'
+                ? t('auth.resetLinkLocked')
+                : recoveryLinkError
+                  ? t('auth.resetLinkInvalid')
+                  : t('auth.resetSubtitle')}
             </p>
 
+            {recoveryLinkError ? (
+              <button
+                type="button"
+                onClick={onDone}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all"
+              >
+                {session ? t('common.continue') : t('common.backHome')}
+              </button>
+            ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -151,6 +175,7 @@ export default function ResetPasswordScreen({
                 {loading ? t('auth.saving') : t('auth.saveUnlock')}
               </button>
             </form>
+            )}
 
             <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-6 pt-6 border-t border-gray-100">
               <ShieldCheck className="w-4 h-4" />

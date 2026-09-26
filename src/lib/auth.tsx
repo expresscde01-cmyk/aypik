@@ -5,18 +5,45 @@ import {
   clearCachedRecoveryToken,
   consumeRecoveryParamsFromUrl,
   fetchOwnLoginLocked,
-  isPasswordRecoveryRedirect,
   takeRecoveryTokenFromUrl,
 } from '@/lib/loginSecurity';
 import { revealThenVerifyLock } from '@/lib/loginSessionGate';
+import {
+  recoveryLinkFailure,
+  type RecoveryLinkFailure,
+} from '@/lib/passwordRecoveryRoute';
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
   passwordRecovery: boolean;
+  recoveryLinkError: RecoveryLinkFailure | null;
   finishPasswordRecovery: () => void;
   signOut: () => Promise<void>;
+}
+
+type RecoveryAttempt = NonNullable<ReturnType<typeof takeRecoveryTokenFromUrl>>;
+
+let recoveryVerifyKey = '';
+let recoveryVerifyTask: Promise<
+  Awaited<ReturnType<typeof supabase.auth.verifyOtp>>
+> | null = null;
+
+function verifyRecoveryToken(token: RecoveryAttempt) {
+  return supabase.auth.verifyOtp({
+    type: token.type,
+    token_hash: token.tokenHash,
+  });
+}
+
+function verifyRecoveryTokenOnce(token: RecoveryAttempt) {
+  if (recoveryVerifyTask && recoveryVerifyKey === token.tokenHash) {
+    return recoveryVerifyTask;
+  }
+  recoveryVerifyKey = token.tokenHash;
+  recoveryVerifyTask = verifyRecoveryToken(token);
+  return recoveryVerifyTask;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -24,6 +51,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
   passwordRecovery: false,
+  recoveryLinkError: null,
   finishPasswordRecovery: () => {},
   signOut: async () => {},
 });
@@ -31,12 +59,14 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [passwordRecovery, setPasswordRecovery] = useState(() => {
-    takeRecoveryTokenFromUrl();
-    return isPasswordRecoveryRedirect();
-  });
+  const [passwordRecovery, setPasswordRecovery] = useState(
+    () => takeRecoveryTokenFromUrl() != null,
+  );
+  const [recoveryLinkError, setRecoveryLinkError] =
+    useState<RecoveryLinkFailure | null>(null);
   const recoveryRef = useRef(passwordRecovery);
   const lockGateRef = useRef(0);
+  const bootDoneRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -71,42 +101,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const boot = async () => {
       const recoveryToken = takeRecoveryTokenFromUrl();
       if (recoveryToken) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          type: recoveryToken.type,
-          token_hash: recoveryToken.tokenHash,
-        });
+        const { data, error } = await verifyRecoveryTokenOnce(recoveryToken);
         if (!mounted) return;
         if (!error && data.session) {
+          bootDoneRef.current = true;
           recoveryRef.current = true;
           setPasswordRecovery(true);
+          setRecoveryLinkError(null);
+          supabase.auth.stopAutoRefresh();
           consumeRecoveryParamsFromUrl();
           await applySession(data.session, true);
           return;
         }
         consumeRecoveryParamsFromUrl();
         clearCachedRecoveryToken();
+        bootDoneRef.current = true;
+        recoveryRef.current = true;
+        setPasswordRecovery(true);
+        setRecoveryLinkError(recoveryLinkFailure(error) ?? 'invalid');
+        const { data: existing } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(existing.session);
+        setLoading(false);
+        return;
       }
 
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
+      bootDoneRef.current = true;
       consumeRecoveryParamsFromUrl();
-      const recovery = isPasswordRecoveryRedirect();
-      recoveryRef.current = recovery;
-      if (recovery) setPasswordRecovery(true);
-      await applySession(data.session, recovery);
+      await applySession(data.session, recoveryRef.current);
     };
 
     boot().catch(() => {
       if (!mounted) return;
+      bootDoneRef.current = true;
+      if (recoveryRef.current) setRecoveryLinkError('invalid');
       setSession(null);
       setLoading(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       if (!mounted) return;
+      if (
+        !bootDoneRef.current &&
+        event !== 'PASSWORD_RECOVERY' &&
+        event !== 'SIGNED_OUT'
+      ) {
+        return;
+      }
       if (event === 'PASSWORD_RECOVERY') {
         recoveryRef.current = true;
         setPasswordRecovery(true);
+        setRecoveryLinkError(null);
+        if (sess) supabase.auth.stopAutoRefresh();
         setSession(sess);
         setLoading(false);
         return;
@@ -114,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         recoveryRef.current = false;
         setPasswordRecovery(false);
+        setRecoveryLinkError(null);
         clearCachedRecoveryToken();
         setSession(null);
         setLoading(false);
@@ -136,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     recoveryRef.current = false;
     setPasswordRecovery(false);
+    setRecoveryLinkError(null);
     clearCachedRecoveryToken();
     setSession(null);
   };
@@ -143,7 +193,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const finishPasswordRecovery = () => {
     recoveryRef.current = false;
     setPasswordRecovery(false);
+    setRecoveryLinkError(null);
     clearCachedRecoveryToken();
+    void supabase.auth.startAutoRefresh();
   };
 
   return (
@@ -153,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         loading,
         passwordRecovery,
+        recoveryLinkError,
         finishPasswordRecovery,
         signOut,
       }}
