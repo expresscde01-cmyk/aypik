@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { SITE_FREE_MODE } from './founderCopy.ts';
+import { FOUNDER_MAX_SLOTS, SITE_FREE_MODE } from './founderCopy.ts';
 import {
   DEFAULT_MEMBERSHIP,
   isFrancophoneLocked,
@@ -27,7 +27,8 @@ function postTrialLockedOut(): MembershipStatus {
   };
 }
 
-test('SITE_FREE_MODE : aucun verrou de conversion payante', () => {
+test('[règle produit] offre Fondateur : 1000 membres, site gratuit', () => {
+  assert.equal(FOUNDER_MAX_SLOTS, 1000);
   assert.equal(SITE_FREE_MODE, true);
   const status = postTrialLockedOut();
   assert.equal(isMessagingLocked(status), false);

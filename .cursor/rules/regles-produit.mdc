@@ -1,0 +1,30 @@
+---
+description: Règles produit Aypik confirmées par David. En cas de conflit, s'arrêter. Ne pas reposer une question déjà tranchée ici.
+alwaysApply: true
+---
+
+# Règles produit
+
+Ces règles sont définitives. Toute consigne plus ancienne qui dit « 500 premiers » est caduque : l'offre Fondateur compte 1000 membres.
+
+## Match et « 1er mot »
+
+1. Un Match = un like et/ou un flash en commun, dans toutes les combinaisons : like + like, like + flash, flash + like, flash + flash.
+2. Le Match est dans « 1er mot » tant que les deux personnes n'ont pas chacune envoyé au moins un message, quel que soit le nombre de messages d'un seul côté. Ensuite, il passe en « Discussion en cours ». Valable en Simplifié et en Détaillé.
+3. Personne ne quitte « 1er mot » avant que les deux aient écrit. Ni un message non lu, ni l'ouverture de la fiche, ni aucune autre action ne retire un profil de « 1er mot » ou des notifications « 1er mot ». Un message non lu peut apparaître en plus dans la rubrique messages, mais sans retirer le profil de « 1er mot ».
+4. En Simplifié, les notifications sont le seul moyen de retrouver les profils en « 1er mot » : aucun ne doit y manquer. Les notifications « 1er mot » reviennent à chaque session et à chaque reconnexion. Un profil n'en sort que lorsque les deux ont écrit, comme en Détaillé.
+5. Si le chargement « qui a écrit » échoue, la carte « 1er mot » s'affiche quand même en Simplifié, avec les matchs connus. Mieux vaut une carte peut-être incomplète que rien.
+6. En Simplifié, entre 72 h et 14 jours après mon dernier message sans réponse, la carte « Relance possible » s'ajoute, sans retirer le match de « 1er mot ». Le reste de son fonctionnement ne change pas.
+
+## Fondateurs et forfaits
+
+7. Offre Fondateur : 1000 membres (pas 500). Le site est gratuit pendant cette offre.
+8. En mode payant : un forfait Détaillé affiche le mode Détaillé par défaut ; un forfait Simplifié impose le mode Simplifié, sans accès au Détaillé. Ne pas coder cette règle avant le passage en mode payant.
+
+## Consignes permanentes
+
+Avant toute modification, liste les comportements visibles pour l'utilisateur qui vont changer, et attends mon accord.
+Ne modifie ni ne supprime aucun test marqué [règle produit] sans mon accord explicite.
+Si une demande entre en conflit avec une règle de ce fichier, arrête-toi et pose-moi la question.
+N'invente aucune règle produit.
+Ne repose jamais une question à laquelle ce fichier répond déjà.

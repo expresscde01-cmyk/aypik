@@ -9,11 +9,11 @@ import {
 const me = 'test2';
 const valentine = 'valentine';
 
-test('aucun message : reste 1er mot', () => {
+test('[règle produit] aucun message : reste 1er mot', () => {
   assert.equal(hasTwoWayDialogue([], me, valentine), false);
 });
 
-test('plusieurs messages d’un seul côté (moi) : reste 1er mot', () => {
+test('[règle produit] plusieurs messages d’un seul côté (moi) : reste 1er mot', () => {
   assert.equal(
     hasTwoWayDialogue(
       [{ sender_id: me }, { sender_id: me }, { sender_id: me }],
@@ -24,7 +24,7 @@ test('plusieurs messages d’un seul côté (moi) : reste 1er mot', () => {
   );
 });
 
-test('plusieurs messages d’un seul côté (l’autre) : reste 1er mot', () => {
+test('[règle produit] plusieurs messages d’un seul côté (l’autre) : reste 1er mot', () => {
   assert.equal(
     hasTwoWayDialogue(
       [
@@ -39,7 +39,7 @@ test('plusieurs messages d’un seul côté (l’autre) : reste 1er mot', () => 
   );
 });
 
-test('un message de chaque côté : Discussion en cours', () => {
+test('[règle produit] un message de chaque côté : Discussion en cours', () => {
   assert.equal(
     hasTwoWayDialogue(
       [{ sender_id: me }, { sender_id: valentine }],
