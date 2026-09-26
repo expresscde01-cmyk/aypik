@@ -25,6 +25,10 @@ import { useMembership } from '@/lib/useMembership';
 import { isFounderPeriodActive } from '@/lib/membership';
 import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
 import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
+import { shouldFullLoadMatchesOnPageOpen } from '@/lib/digestCopy';
+import { fetchProfileBundle } from '@/lib/profileBundle';
+import { useMatchesBoard } from '@/lib/matchesBoard';
+import type { Match, ReceivedOrigin } from '@/lib/loadMatchesBoard';
 import { FounderBadge } from '@/components/membership/Badges';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { offerLabel } from '@/lib/founderCopy';
@@ -129,11 +133,7 @@ import {
   rememberMineWaitArchive,
   rememberTheirsWaitArchive,
 } from '@/lib/waitArchives';
-import {
-  useMatchesInboxSync,
-  type MatchesInboxEntry,
-  type MatchesInboxStatus,
-} from '@/lib/matchesInboxSync';
+import { useMatchesInboxSync } from '@/lib/matchesInboxSync';
 import {
   fetchMatchBreaks,
   matchBreakSource,
@@ -141,31 +141,6 @@ import {
   purgeBrokenMatch,
   type MatchBreakAction,
 } from '@/lib/matchBreaks';
-
-type MatchKind = 'match' | 'flash' | 'like';
-/** `flashes` table = Flash (éclair). Incoming like only = Like (cœur). */
-type ReceivedOrigin = 'flash' | 'like';
-
-interface Match {
-  profile: Profile;
-  age: number;
-  /** Date de réception du Like/Flash (ou du match). */
-  date_received: string;
-  matched_at: string;
-  kind: MatchKind;
-  origin: ReceivedOrigin;
-  matchedBackAt: string | null;
-  alreadyLiked: boolean;
-  matchRole: MatchRole;
-  waiting: boolean;
-  waitingAt: string | null;
-  refused: boolean;
-  /** Passé par wait avant match (wait_started_at conservé). */
-  matchedViaWait: boolean;
-  is_founder?: boolean;
-  founder_number?: number | null;
-  is_boosted?: boolean;
-}
 
 type MatchFloor = 'new' | 'wait' | 'matched-quiet' | 'matched-chat';
 
@@ -780,111 +755,6 @@ function MatchStageBlock({
   );
 }
 
-function earliestIso(...values: (string | null | undefined)[]): string | null {
-  let best: string | null = null;
-  let bestTime = Infinity;
-  for (const value of values) {
-    if (!value) continue;
-    const time = Date.parse(value);
-    if (!Number.isFinite(time) || time >= bestTime) continue;
-    bestTime = time;
-    best = value;
-  }
-  return best;
-}
-
-function isInboxEligible(myAge: number | null, theirAge: number): boolean {
-  if (!Number.isFinite(theirAge) || theirAge < MIN_USER_AGE) return false;
-  if (typeof myAge !== 'number' || !Number.isFinite(myAge)) return true;
-  if (myAge < MIN_USER_AGE) return false;
-  return isWithinAgeGap(myAge, theirAge);
-}
-
-const PROFILE_IN_CHUNK = 80;
-
-async function fetchByIdChunks<T>(
-  ids: string[],
-  run: (chunk: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
-): Promise<T[]> {
-  const unique = [...new Set(ids)].filter(Boolean);
-  const rows: T[] = [];
-  for (let i = 0; i < unique.length; i += PROFILE_IN_CHUNK) {
-    const chunk = unique.slice(i, i + PROFILE_IN_CHUNK);
-    const { data, error } = await run(chunk);
-    if (error) throw error;
-    if (data?.length) rows.push(...data);
-  }
-  return rows;
-}
-
-async function fetchProfileBundle(ids: string[]): Promise<{
-  byId: Map<string, Profile>;
-  founderMap: Map<string, number | null>;
-  boostSet: Set<string>;
-}> {
-  if (ids.length === 0) {
-    return { byId: new Map(), founderMap: new Map(), boostSet: new Set() };
-  }
-  const nowIso = new Date().toISOString();
-  const [profiles, memberships, boosts] = await Promise.all([
-    fetchByIdChunks<Profile>(ids, async (chunk) => {
-      const rpc = await supabase.rpc('card_profiles', { p_ids: chunk });
-      if (!rpc.error && rpc.data) {
-        const rows = (rpc.data as Profile[]).map((row) => ({
-          ...row,
-          bio: row.bio || '',
-          location: row.location || '',
-          interests: row.interests || [],
-          photo_url: row.photo_url || '',
-          is_online: Boolean(row.is_online),
-          age: profileCardAge(row),
-          discover_mode: parseDiscoverMode(row.discover_mode),
-        }));
-        return { data: rows, error: null };
-      }
-      const fb = await supabase
-        .from('profiles')
-        .select(PROFILE_CARD_COLUMNS)
-        .in('id', chunk);
-      return {
-        data:
-          (fb.data as Profile[] | null)?.map((p) => ({
-            ...p,
-            is_online: false,
-            age: profileCardAge(p),
-            discover_mode: parseDiscoverMode(p.discover_mode),
-          })) ?? null,
-        error: fb.error,
-      };
-    }),
-    fetchByIdChunks<{
-      user_id: string;
-      is_founder: boolean | null;
-      founder_number: number | null;
-    }>(ids, (chunk) =>
-      supabase
-        .from('memberships')
-        .select('user_id, is_founder, founder_number')
-        .in('user_id', chunk)
-    ),
-    fetchByIdChunks<{ user_id: string }>(ids, (chunk) =>
-      supabase
-        .from('profile_boosts')
-        .select('user_id')
-        .in('user_id', chunk)
-        .in('payment_status', ['paid', 'simulated'])
-        .gt('ends_at', nowIso)
-    ),
-  ]);
-  const founderMap = new Map<string, number | null>();
-  memberships.forEach((m) => {
-    if (m.is_founder) founderMap.set(m.user_id, m.founder_number ?? null);
-  });
-  const boostSet = new Set(boosts.map((b) => b.user_id));
-  const byId = new Map(profiles.map((p) => [p.id, p]));
-  return { byId, founderMap, boostSet };
-}
-
 function scrollMatchCardIntoView(elementId: string) {
   const run = () => {
     const el = document.getElementById(elementId);
@@ -1069,8 +939,27 @@ export default function MatchesPage({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { status, refresh: refreshMembership } = useMembership();
-  const { publish, markResolved, clearDigestActor } = useMatchesInboxSync();
-  const [matches, setMatches] = useState<Match[]>([]);
+  const { markResolved, clearDigestActor } = useMatchesInboxSync();
+  const {
+    matches,
+    setMatches,
+    peersWithChat,
+    setPeersWithChat,
+    peersIWroteTo,
+    setPeersIWroteTo,
+    myGender,
+    loaded: matchesLoaded,
+    inFlight: matchesInFlight,
+    error: matchesError,
+    refreshMatches: loadMatches,
+    invalidateMatchesLoad,
+    twoWayDialogueRef,
+    wroteFromMeRef,
+    restoredWaitActorsRef,
+    setPageBrokenIds,
+    bindWaitPrune,
+    noteDeparting,
+  } = useMatchesBoard();
   const [declinedArchives, setDeclinedArchives] = useState<
     DeclinedArchiveCard[]
   >([]);
@@ -1109,9 +998,7 @@ export default function MatchesPage({
   /** Modale compacte après « sens interdit » sur une fiche Mis en attente. */
   const [openWaitingManage, setOpenWaitingManage] = useState<Match | null>(null);
   const [brokenBusyId, setBrokenBusyId] = useState<string | null>(null);
-  const matchesLoadGen = useRef(0);
   const waitArchivesLoadGen = useRef(0);
-  const restoredWaitActorsRef = useRef<Set<string>>(new Set());
   const waitCycleLockRef = useRef<Set<string>>(new Set());
   const [declinedBusyId, setDeclinedBusyId] = useState<string | null>(null);
   const declinedBusyRef = useRef(false);
@@ -1179,16 +1066,6 @@ export default function MatchesPage({
       return current;
     });
   }, []);
-  const [peersWithChat, setPeersWithChat] = useState<Set<string>>(
-    () => new Set()
-  );
-  const [peersIWroteTo, setPeersIWroteTo] = useState<Set<string>>(
-    () => new Set()
-  );
-  /** Échanges déjà confirmés deux sens (évite un refetch légèrement en retard). */
-  const twoWayDialogueRef = useRef<Set<string>>(new Set());
-  const wroteFromMeRef = useRef<Set<string>>(new Set());
-  const [myGender, setMyGender] = useState<ProfileGender | null>(null);
   const pendingFocusRef = useRef<{
     actorId: string;
     openChat: boolean;
@@ -1243,367 +1120,6 @@ export default function MatchesPage({
   const likesExhausted =
     !likesUnlimited && (status.likes_remaining_today ?? 0) <= 0;
 
-  const loadMatches = useCallback(async () => {
-    if (!user) return;
-    const gen = ++matchesLoadGen.current;
-    try {
-      const { data: meRow } = await fetchMyProfile();
-
-      const myAge =
-        typeof meRow?.age === 'number' && Number.isFinite(meRow.age)
-          ? meRow.age
-          : null;
-      const genderRaw = meRow?.gender;
-      setMyGender(
-        genderRaw === 'homme' || genderRaw === 'femme' ? genderRaw : null
-      );
-
-      const edges = await queryLikeFlashEdges(
-        user.id,
-        hasConfirmedInboxDecisions() ? { staleTime: 0 } : undefined
-      );
-      const sentRes = { data: edges.sentLikes, error: null };
-      const receivedRes = { data: edges.receivedLikes, error: null };
-      const flashRes = { data: edges.receivedFlashes, error: null };
-      const sentFlashRes = { data: edges.sentFlashes, error: null };
-
-      if (sentRes.error) throw sentRes.error;
-      if (receivedRes.error) throw receivedRes.error;
-      if (flashRes.error) throw flashRes.error;
-      if (sentFlashRes.error) throw sentFlashRes.error;
-
-      const sentLikes = sentRes.data || [];
-      const receivedLikes = [...(receivedRes.data || [])];
-      const incomingFlashes = [...(flashRes.data || [])];
-      const outgoingFlashMap = new Map(
-        (sentFlashRes.data || []).map((f) => [f.to_user, f.created_at])
-      );
-      const sentSet = new Set(sentLikes.map((l) => l.to_user));
-      const sentMap = new Map(sentLikes.map((l) => [l.to_user, l.created_at]));
-
-      try {
-        const notifs = await fetchSocialNotifications(50);
-        for (const n of notifs) {
-          const actorId = n.actor_id;
-          if (!actorId) continue;
-          if (n.kind === 'flash_received') {
-            if (!incomingFlashes.some((f) => f.from_user === actorId)) {
-              incomingFlashes.push({
-                from_user: actorId,
-                created_at: n.created_at,
-              });
-            }
-          } else if (
-            n.kind === 'like_received' ||
-            n.kind === 'match_created' ||
-            /nouveau like/i.test(n.title) ||
-            /envoyé un like/i.test(n.body)
-          ) {
-            if (!receivedLikes.some((l) => l.from_user === actorId)) {
-              receivedLikes.push({
-                from_user: actorId,
-                created_at: n.created_at,
-              });
-            }
-          }
-        }
-      } catch {
-        /* likes / flashes restent la source principale */
-      }
-
-      let inboxRes: Awaited<ReturnType<typeof fetchInboxResponses>> = [];
-      let inboxOk = false;
-      try {
-        inboxRes = await fetchInboxResponses();
-        inboxOk = true;
-      } catch {
-        try {
-          inboxRes = await fetchInboxResponses();
-          inboxOk = true;
-        } catch {
-          inboxRes = [];
-        }
-      }
-      const inboxSnapshot = inboxRes;
-      inboxRes = mergeConfirmedInboxDecisions(inboxRes);
-      if (inboxOk) {
-        const departing = departingIdsRef.current;
-        dropConfirmedInboxDecisionsSeenIn(
-          inboxSnapshot.filter((row) => !departing.has(row.actor_id))
-        );
-      }
-
-      const incomingFlashMap = new Map(
-        incomingFlashes.map((f) => [f.from_user, f.created_at])
-      );
-      const receivedLikeMap = new Map(
-        receivedLikes.map((rl) => [rl.from_user, rl.created_at])
-      );
-
-      const originOf = (id: string): { origin: ReceivedOrigin; at: string } => {
-        const flashAt = incomingFlashMap.get(id);
-        if (flashAt) {
-          return { origin: 'flash', at: flashAt };
-        }
-        return { origin: 'like', at: receivedLikeMap.get(id) || '' };
-      };
-
-      const myFirstAt = (id: string): string | null =>
-        earliestIso(sentMap.get(id), outgoingFlashMap.get(id));
-
-      const theirFirstAt = (id: string): string | null =>
-        earliestIso(incomingFlashMap.get(id), receivedLikeMap.get(id));
-
-      const matchEntries: {
-        id: string;
-        at: string;
-        origin: ReceivedOrigin;
-        matchedBackAt: string;
-        matchRole: MatchRole;
-      }[] = receivedLikes
-        .filter(
-          (rl) => sentSet.has(rl.from_user) || outgoingFlashMap.has(rl.from_user)
-        )
-        .map((rl) => {
-          const src = originOf(rl.from_user);
-          const mine = myFirstAt(rl.from_user);
-          const theirs = theirFirstAt(rl.from_user) || src.at || rl.created_at;
-          const role = matchRoleFromDates(mine, theirs);
-          return {
-            id: rl.from_user,
-            at: theirs,
-            origin: src.origin,
-            matchedBackAt: mine || rl.created_at,
-            matchRole: role,
-          };
-        });
-      const matchIdSet = new Set(matchEntries.map((m) => m.id));
-
-      for (const f of incomingFlashes) {
-        if (
-          matchIdSet.has(f.from_user) ||
-          (!sentSet.has(f.from_user) && !outgoingFlashMap.has(f.from_user))
-        ) {
-          continue;
-        }
-        const mine = myFirstAt(f.from_user);
-        const role = matchRoleFromDates(mine, f.created_at);
-        matchEntries.push({
-          id: f.from_user,
-          at: f.created_at,
-          origin: 'flash',
-          matchedBackAt: mine || f.created_at,
-          matchRole: role,
-        });
-        matchIdSet.add(f.from_user);
-      }
-
-      for (const id of matchIdsIncludingInboxDecisions([], inboxRes)) {
-        matchIdSet.add(id);
-      }
-
-      const flashEntries: { id: string; at: string }[] = incomingFlashes
-        .filter((f) => !matchIdSet.has(f.from_user))
-        .map((f) => ({ id: f.from_user, at: f.created_at }));
-      const flashIdSet = new Set(flashEntries.map((f) => f.id));
-
-      const likeEntries: { id: string; at: string }[] = receivedLikes
-        .filter(
-          (rl) => !matchIdSet.has(rl.from_user) && !flashIdSet.has(rl.from_user)
-        )
-        .map((rl) => ({ id: rl.from_user, at: rl.created_at }));
-
-      const allIds = [
-        ...new Set([
-          ...matchEntries.map((m) => m.id),
-          ...flashEntries.map((f) => f.id),
-          ...likeEntries.map((l) => l.id),
-          ...matchIdSet,
-        ]),
-      ];
-
-      if (allIds.length === 0) {
-        if (gen !== matchesLoadGen.current) return;
-        setMatches([]);
-        return;
-      }
-
-      const { byId, founderMap, boostSet } = await fetchProfileBundle(allIds);
-
-      const matchAt = new Map(matchEntries.map((m) => [m.id, m.at]));
-      const matchOrigin = new Map(matchEntries.map((m) => [m.id, m.origin]));
-      const matchBackAt = new Map(
-        matchEntries.map((m) => [m.id, m.matchedBackAt])
-      );
-      const matchRoleMap = new Map(
-        matchEntries.map((m) => [m.id, m.matchRole])
-      );
-      const flashAt = new Map(flashEntries.map((f) => [f.id, f.at]));
-      const likeAt = new Map(likeEntries.map((l) => [l.id, l.at]));
-
-      const refusedActors = new Set(
-        inboxRes
-          .filter((r) => r.decision === 'refuse')
-          .map((r) => r.actor_id)
-      );
-      const waitingAtMap = new Map(
-        inboxRes
-          .filter((r) => r.decision === 'wait')
-          .map((r) => [r.actor_id, r.updated_at] as const)
-      );
-      const waitingActors = new Set(waitingAtMap.keys());
-      let matchedViaWaitPeerIds = new Set<string>();
-      let liveWaitPeerIds = new Set<string>();
-      let pendingOthersOk = false;
-      try {
-        const pendingOthers = await fetchPendingByOthers();
-        const split = splitPendingByOthers(pendingOthers);
-        matchedViaWaitPeerIds = split.matchedViaWaitPeerIds;
-        liveWaitPeerIds = new Set(split.liveWaits.map((row) => row.peer_id));
-        pendingOthersOk = true;
-      } catch {
-        matchedViaWaitPeerIds = new Set();
-      }
-      const viaWaitOwn = new Set(
-        inboxRes
-          .filter(
-            (r) => r.decision === 'match' && isMatchedViaWait(r.wait_started_at)
-          )
-          .map((r) => r.actor_id)
-      );
-      const inboxMatchAtMap = inboxMatchAtByActor(inboxRes);
-      if (inboxOk) {
-        retainMineWaitArchives(user.id, waitingActors);
-      }
-      if (pendingOthersOk) {
-        retainTheirsWaitArchives(user.id, liveWaitPeerIds);
-      }
-      if (inboxOk || pendingOthersOk) {
-        setWaitArchives((prev) =>
-          prev.filter((c) => {
-            if (c.source === 'mine') {
-              return !inboxOk || waitingActors.has(c.profile.id);
-            }
-            if (c.source === 'theirs') {
-              return !pendingOthersOk || liveWaitPeerIds.has(c.profile.id);
-            }
-            return true;
-          })
-        );
-      }
-      const forceWait = restoredWaitActorsRef.current;
-
-      let peersChat = new Set<string>();
-      let wroteFromMe = new Set<string>();
-      try {
-        const flags = await fetchPeerDialogueFlags();
-        peersChat = flags.twoWay;
-        wroteFromMe = flags.wroteFromMe;
-      } catch {
-        peersChat = new Set();
-        wroteFromMe = new Set();
-      }
-      setPeersWithChat(() => {
-        const next = new Set(peersChat);
-        for (const id of twoWayDialogueRef.current) next.add(id);
-        return next;
-      });
-      setPeersIWroteTo(() => {
-        const next = new Set(wroteFromMe);
-        for (const id of wroteFromMeRef.current) next.add(id);
-        return next;
-      });
-
-      const list: Match[] = [...byId.values()].map((p) => {
-          const kind: MatchKind = matchIdSet.has(p.id)
-            ? 'match'
-            : flashIdSet.has(p.id)
-              ? 'flash'
-              : 'like';
-          const src = originOf(p.id);
-          const origin: ReceivedOrigin =
-            src.origin === 'flash' ||
-            matchOrigin.get(p.id) === 'flash' ||
-            incomingFlashMap.has(p.id)
-              ? 'flash'
-              : 'like';
-          const at =
-            origin === 'flash'
-              ? incomingFlashMap.get(p.id) || matchAt.get(p.id) || flashAt.get(p.id)
-              : likeAt.get(p.id) || matchAt.get(p.id) || src.at;
-          const mine = myFirstAt(p.id);
-          const theirs = theirFirstAt(p.id) || at;
-          const matchRole =
-            matchRoleMap.get(p.id) || matchRoleFromDates(mine, theirs);
-          const isMatched = kind === 'match';
-          const waiting =
-            !isMatched &&
-            (forceWait.has(p.id) ||
-              (waitingActors.has(p.id) && !isWaitCleared(user.id, p.id)));
-          const inboxMatchAt = inboxMatchAtMap.get(p.id) || null;
-          const outgoingAt = matchBackAt.get(p.id) || mine || null;
-          const matchedBackAt = isMatched
-            ? inboxMatchAt || outgoingAt
-            : outgoingAt;
-          return {
-            profile: p,
-            age: profileCardAge(p),
-            date_received: at || '',
-            matched_at: at || '',
-            kind,
-            origin,
-            matchedBackAt,
-            alreadyLiked:
-              sentSet.has(p.id) ||
-              outgoingFlashMap.has(p.id) ||
-              matchIdSet.has(p.id),
-            matchRole,
-            waiting,
-            waitingAt: waiting ? waitingAtMap.get(p.id) ?? null : null,
-            refused: false,
-            matchedViaWait:
-              isMatched &&
-              (viaWaitOwn.has(p.id) || matchedViaWaitPeerIds.has(p.id)),
-            is_founder: founderMap.has(p.id),
-            founder_number: founderMap.get(p.id) ?? null,
-            is_boosted: boostSet.has(p.id),
-          };
-        })
-        .filter(
-          (m) => forceWait.has(m.profile.id) || !refusedActors.has(m.profile.id)
-        )
-        .filter((m) => isInboxEligible(myAge, m.age))
-        .sort((a, b) => {
-          const ta = new Date(a.date_received).getTime() || 0;
-          const tb = new Date(b.date_received).getTime() || 0;
-          // Plus récents en premier (haut/gauche), quel que soit l'étage
-          return tb - ta;
-        });
-
-      if (gen !== matchesLoadGen.current) return;
-      for (const m of list) {
-        if (waitingActors.has(m.profile.id)) forceWait.delete(m.profile.id);
-      }
-      setMatches((prev) =>
-        retainDepartingMatches(prev, list, departingIdsRef.current)
-      );
-      setOpenProfile((open) => {
-        if (!open) return open;
-        const next = list.find((m) => m.profile.id === open.profile.id);
-        if (!next) return open;
-        if (
-          next.waiting === open.waiting &&
-          next.refused === open.refused &&
-          next.kind === open.kind
-        ) {
-          return open;
-        }
-        return next;
-      });
-    } catch (err) {
-      setError(userErrorMessage(err));
-    }
-  }, [user, profileEpoch]);
 
   const loadDeclinedArchives = useCallback(async () => {
     if (!user) {
@@ -1940,7 +1456,6 @@ export default function MatchesPage({
       setLoading(true);
       setError(null);
       await Promise.all([
-        loadMatches(),
         loadDeclinedArchives(),
         loadPendingDeclined(),
         loadWaitArchives(),
@@ -1954,7 +1469,6 @@ export default function MatchesPage({
       active = false;
     };
   }, [
-    loadMatches,
     loadDeclinedArchives,
     loadPendingDeclined,
     loadWaitArchives,
@@ -1963,14 +1477,32 @@ export default function MatchesPage({
     loadBrokenMatches,
   ]);
 
+  useEffect(() => {
+    noteDeparting(departingIdsRef);
+    return () => noteDeparting(null);
+  }, [noteDeparting, departingIdsRef]);
+
+  useEffect(() => {
+    bindWaitPrune((updater) => {
+      setWaitArchives((prev) => updater(prev));
+    });
+    return () => bindWaitPrune(null);
+  }, [bindWaitPrune]);
+
+
   const inboxLoadedRef = useRef(false);
   useEffect(() => {
     if (!pageActive) return;
-    if (!inboxLoadedRef.current) {
-      inboxLoadedRef.current = true;
-      return;
-    }
-    void loadMatches();
+    const openedBefore = inboxLoadedRef.current;
+    const reloadList = shouldFullLoadMatchesOnPageOpen({
+      alreadyLoaded: matchesLoaded,
+      openedBefore,
+      inFlight: matchesInFlight,
+    });
+    inboxLoadedRef.current = true;
+    if (!openedBefore && !reloadList) return;
+    if (reloadList) void loadMatches();
+    if (!openedBefore) return;
     void loadDeclinedArchives();
     void loadPendingDeclined();
     void loadWaitArchives();
@@ -2003,7 +1535,6 @@ export default function MatchesPage({
     }
     inboxReloadTimer.current = window.setTimeout(() => {
       inboxReloadTimer.current = null;
-      void loadMatches();
       void loadDeclinedArchives();
       void loadPendingDeclined();
       void loadWaitArchives();
@@ -2481,7 +2012,7 @@ export default function MatchesPage({
 
       if (!beginActing(item.profile.id, 'refuse')) return;
       setError(null);
-      matchesLoadGen.current += 1;
+      invalidateMatchesLoad();
       forgetClearedWait(user.id, item.profile.id);
       restoredWaitActorsRef.current.delete(item.profile.id);
       try {
@@ -2591,7 +2122,7 @@ export default function MatchesPage({
       setOpenWaitingManage(null);
       await playDepart(actorId, () => {
         waitArchivesLoadGen.current += 1;
-        matchesLoadGen.current += 1;
+        invalidateMatchesLoad();
         restoredWaitActorsRef.current.delete(actorId);
         rememberMineWaitArchive(user.id, {
           actorId,
@@ -2751,7 +2282,7 @@ export default function MatchesPage({
         open?.archiveId === card.archiveId ? null : open
       );
       await playDepart(actorId, () => {
-        matchesLoadGen.current += 1;
+        invalidateMatchesLoad();
         waitArchivesLoadGen.current += 1;
         restoredWaitActorsRef.current.add(actorId);
         releaseWaitCycle(user.id, actorId);
@@ -3063,37 +2594,9 @@ export default function MatchesPage({
       visibleDeclinedArchives.length > 0;
   const hasApresStage = viewerSimplified ? false : brokenMatches.length > 0;
 
-  /** Source de vérité pour la cloche : états des cartes Mes Matchs. */
   useEffect(() => {
-    const next: MatchesInboxEntry[] = matches
-      .filter((match) => {
-        if (brokenPeerIds.has(match.profile.id)) return false;
-        if (
-          match.waiting &&
-          user &&
-          isMineWaitArchived(user.id, match.profile.id)
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .map((match) => {
-      const isPending = match.kind !== 'match';
-      const isMatched = !isPending || match.alreadyLiked;
-      const hasDialogue = peersWithChat.has(match.profile.id);
-      let status: MatchesInboxStatus;
-      if (match.waiting) status = 'wait';
-      else if (isMatched) status = hasDialogue ? 'matched-chat' : 'matched';
-      else status = 'new';
-      return {
-        id: match.profile.id,
-        displayName: (match.profile.display_name || '').trim() || t('common.someone'),
-        status,
-        origin: match.origin,
-      };
-    });
-    publish(next);
-  }, [matches, peersWithChat, publish, brokenPeerIds, user, waitArchives]);
+    setPageBrokenIds(brokenPeerIds);
+  }, [brokenPeerIds, setPageBrokenIds]);
 
   const renderMatchCard = (match: Match) => {
     const isPending = match.kind !== 'match';
@@ -4118,10 +3621,10 @@ export default function MatchesPage({
         />
       )}
 
-      {error && (
+      {(error || matchesError) && (
         <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <span>{error || matchesError}</span>
         </div>
       )}
 

@@ -11,7 +11,10 @@ import {
 } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { peerSetsFromDialogueFlagRows, parseLastSentAtMs } from '@/lib/twoWayDialogue';
+import {
+  peerDialogueFlagsFromRpc,
+  parseLastSentAtMs,
+} from '@/lib/twoWayDialogue';
 import { dateLocale } from '../i18n/format.ts';
 
 export type ChatMessage = {
@@ -30,6 +33,20 @@ function logSupabaseError(context: string, error: unknown) {
   if (import.meta.env.DEV) {
     console.error(`[messaging] ${context}`, error);
   }
+}
+
+/** Visible en production : le build retire les appels directs à console.*. */
+export function warnSupabaseFailure(scope: string, error: unknown) {
+  const err = (error ?? {}) as {
+    message?: string;
+    code?: string;
+    details?: string | null;
+  };
+  globalThis.console['warn'](`[aypik] ${scope}`, {
+    message: typeof err.message === 'string' ? err.message : String(error),
+    code: err.code ?? null,
+    details: err.details ?? null,
+  });
 }
 
 export type PeerDialogueFlags = {
@@ -73,13 +90,17 @@ async function fetchLastSentAtByPeer(
 
 /** Un aller-retour : 2 booléens par pair (échange réel / l’autre m’a écrit). */
 export async function fetchPeerDialogueFlags(): Promise<PeerDialogueFlags> {
-  const { data: auth } = await supabase.auth.getUser();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError) {
+    warnSupabaseFailure('peer_dialogue_flags', authError);
+    throw authError;
+  }
   if (!auth.user?.id) return emptyDialogueFlags();
 
   const { data, error } = await supabase.rpc('peer_dialogue_flags');
   if (error) {
     logSupabaseError('fetchPeerDialogueFlags', error);
-    return emptyDialogueFlags();
+    warnSupabaseFailure('peer_dialogue_flags', error);
   }
   const rows = (data || []) as {
     peer_id?: string | null;
@@ -87,7 +108,7 @@ export async function fetchPeerDialogueFlags(): Promise<PeerDialogueFlags> {
     wrote_to_me?: boolean | null;
     last_sent_at?: string | null;
   }[];
-  const flags = peerSetsFromDialogueFlagRows(rows);
+  const flags = peerDialogueFlagsFromRpc(error, rows);
   const lastSentAtColumnAbsent =
     rows.length > 0 && rows.every((row) => row.last_sent_at === undefined);
   if (lastSentAtColumnAbsent && flags.wroteFromMe.size > 0) {
