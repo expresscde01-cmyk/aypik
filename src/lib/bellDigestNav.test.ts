@@ -14,6 +14,7 @@ import {
   firstWordDigestAlert,
   firstWordDismissedAfterSessionStart,
   firstWordNotificationIds,
+  omitFirstWordRepliedThisSession,
   matchesPageEffectsFired,
   shouldFullLoadMatchesOnPageOpen,
   shouldRetryBellDialogue,
@@ -1052,6 +1053,33 @@ test('[règle produit] message non lu et visite ne retirent personne de 1er mot'
 test('[règle produit] 1er mot revient à chaque session et à chaque reconnexion', () => {
   assert.equal(firstWordDismissedAfterSessionStart(true), false);
   assert.equal(firstWordDismissedAfterSessionStart(false), false);
+});
+
+test('[règle produit] réponse envoyée : la notification disparaît pour cette session, le profil reste 1er mot', () => {
+  const hidden = omitFirstWordRepliedThisSession(['suzanne', 'lea'], ['suzanne']);
+  assert.deepEqual(hidden, ['lea']);
+  const onlySuzanne = omitFirstWordRepliedThisSession(['suzanne'], ['suzanne']);
+  const alert = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: true,
+    dismissed: false,
+    quietIds: onlySuzanne,
+    wroteFromMe: ['suzanne'],
+    wroteToMe: [],
+  });
+  assert.equal(alert.showFirstWord, false);
+  assert.deepEqual(alert.firstWordIds, []);
+  const nextSession = omitFirstWordRepliedThisSession(['suzanne'], []);
+  const back = firstWordDigestAlert({
+    simplified: true,
+    dialogueReady: true,
+    dismissed: false,
+    quietIds: nextSession,
+    wroteFromMe: ['suzanne'],
+    wroteToMe: [],
+  });
+  assert.deepEqual(back.firstWordIds, ['suzanne']);
+  assert.equal(back.showFirstWord, true);
 });
 
 test('[règle produit] digest silencieux : j’ai écrit sans réponse reste dans 1er mot, et dans Relance pendant la fenêtre', () => {
