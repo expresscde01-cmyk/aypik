@@ -41,11 +41,16 @@ import {
   shouldRetryBellDialogue,
   firstDigestTone,
   firstWordDigestAlert,
+  omitFirstWordRepliedThisSession,
   followUpNotificationCopy,
   resolveDigestPeople,
   sliceDigestPeople,
   switchBellDialogueAccount,
 } from '@/lib/digestCopy';
+import {
+  clearFirstWordRepliedThisSession,
+  FIRST_WORD_REPLIED_EVENT,
+} from '@/lib/firstWordSession';
 import {
   absorbRubricConsultation,
   bellPanelCardCount,
@@ -434,6 +439,8 @@ export default function NotificationsBell({
     null
   );
   const [firstDismissed, setFirstDismissed] = useState(false);
+  const [repliedThisSession, setRepliedThisSession] = useState<string[]>([]);
+  const firstWordSessionAccountRef = useRef<string | null>(null);
   const [newDismissed, setNewDismissed] = useState(false);
   const [waitDismissed, setWaitDismissed] = useState(false);
   const [categoryServerReady, setCategoryServerReady] = useState(false);
@@ -613,7 +620,10 @@ export default function NotificationsBell({
   ]);
 
   const quietPartition = useMemo(() => {
-    const ids = quietMatches.map((m) => m.id);
+    const ids = omitFirstWordRepliedThisSession(
+      quietMatches.map((m) => m.id),
+      repliedThisSession
+    );
     return firstWordDigestAlert({
       simplified: isSimplifiedDiscoverMode(discoverMode),
       dialogueReady: socialListReady,
@@ -632,6 +642,7 @@ export default function NotificationsBell({
     });
   }, [
     quietMatches,
+    repliedThisSession,
     discoverMode,
     socialListReady,
     socialListFailed,
@@ -1408,6 +1419,14 @@ export default function NotificationsBell({
     );
     if (user) {
       sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'first'));
+      if (firstWordSessionAccountRef.current !== user.id) {
+        firstWordSessionAccountRef.current = user.id;
+        clearFirstWordRepliedThisSession(user.id);
+        setRepliedThisSession([]);
+      }
+    } else {
+      firstWordSessionAccountRef.current = null;
+      setRepliedThisSession([]);
     }
     setFirstDismissed(
       user
@@ -1419,6 +1438,18 @@ export default function NotificationsBell({
     );
     prevQuietCountRef.current = 0;
   }, [resetForAccount, user?.id]);
+
+  useEffect(() => {
+    const onReplied = (event: Event) => {
+      const peerId = (event as CustomEvent<{ peerId?: string }>).detail?.peerId;
+      if (!peerId) return;
+      setRepliedThisSession((prev) =>
+        prev.includes(peerId) ? prev : [...prev, peerId]
+      );
+    };
+    window.addEventListener(FIRST_WORD_REPLIED_EVENT, onReplied);
+    return () => window.removeEventListener(FIRST_WORD_REPLIED_EVENT, onReplied);
+  }, []);
 
   useEffect(() => {
     if (!unreadMessages.ready) return;

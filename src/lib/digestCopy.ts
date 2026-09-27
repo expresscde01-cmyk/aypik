@@ -245,6 +245,20 @@ export function firstWordNotificationIds(ids: readonly string[]): string[] {
   return ids.filter((id) => Boolean(id));
 }
 
+/**
+ * Réponse envoyée pendant cette session : la notification de ce profil
+ * disparaît jusqu’à la prochaine connexion ou session.
+ */
+export function omitFirstWordRepliedThisSession(
+  ids: readonly string[],
+  repliedThisSession: Iterable<string>
+): string[] {
+  const hidden = new Set(
+    [...repliedThisSession].filter((id): id is string => Boolean(id))
+  );
+  return ids.filter((id) => Boolean(id) && !hidden.has(id));
+}
+
 /** Une nouvelle session ou une reconnexion rouvre la notification « 1er mot ». */
 export function firstWordDismissedAfterSessionStart(
   _storedDismissed: boolean

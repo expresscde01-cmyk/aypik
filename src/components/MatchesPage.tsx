@@ -26,6 +26,7 @@ import { isFounderPeriodActive } from '@/lib/membership';
 import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
 import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
 import { shouldFullLoadMatchesOnPageOpen } from '@/lib/digestCopy';
+import { rememberFirstWordRepliedThisSession } from '@/lib/firstWordSession';
 import { fetchProfileBundle } from '@/lib/profileBundle';
 import { useMatchesBoard } from '@/lib/matchesBoard';
 import type { Match, ReceivedOrigin } from '@/lib/loadMatchesBoard';
@@ -3593,6 +3594,7 @@ export default function MatchesPage({
               next.add(peerId);
               return next;
             });
+            if (user?.id) rememberFirstWordRepliedThisSession(user.id, peerId);
           }}
           onClose={() => {
             visitMatchIfDigestAllows(chatPeer.id);

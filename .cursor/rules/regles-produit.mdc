@@ -1,33 +1,52 @@
 ---
-description: Règles produit Aypik confirmées par David. En cas de conflit, s'arrêter. Ne pas reposer une question déjà tranchée ici.
+description: PILIER produit Aypik, gravé dans le marbre. Interdit d'y toucher sans autorisation explicite de David dans la conversation en cours.
 alwaysApply: true
 ---
 
 # Règles produit
 
-Ces règles sont définitives. Toute consigne plus ancienne qui dit « 500 premiers » est caduque : l'offre Fondateur compte 1000 membres.
+Ces règles sont définitives, gravées dans le marbre. Elles sont le pilier du site. Toute consigne plus ancienne qui dit « 500 premiers » est caduque : l'offre Fondateur compte 1000 membres.
+
+## Verrou
+
+Les règles numérotées ci-dessous ne se modifient pas, ne se contredisent pas, ne se réinterprètent pas et ne s'affaiblissent pas sans l'autorisation explicite de David, donnée dans la conversation en cours. En cas de doute, elles restent telles quelles : c'est la base pour avancer. Les tests marqués [règle produit] sont le même verrou.
+
+Les règles 1 à 10 sont fondatrices. Elles l'emportent toujours sur les règles qui suivent. Une règle suivante qui les contredirait ne s'applique pas.
 
 ## Match et « 1er mot »
 
-1. Un Match = un like et/ou un flash en commun, dans toutes les combinaisons : like + like, like + flash, flash + like, flash + flash.
+1. Un Match = un like et/ou un flash en commun, dans toutes les combinaisons : like + like, like + flash, flash + like, flash + flash. Autant de likes ou de flashs d'un seul côté, sans like ou flash en retour, ne font pas un Match.
 2. Le Match est dans « 1er mot » tant que les deux personnes n'ont pas chacune envoyé au moins un message, quel que soit le nombre de messages d'un seul côté. Ensuite, il passe en « Discussion en cours ». Valable en Simplifié et en Détaillé.
-3. Personne ne quitte « 1er mot » avant que les deux aient écrit. Ni un message non lu, ni l'ouverture de la fiche, ni aucune autre action ne retire un profil de « 1er mot » ou des notifications « 1er mot ». Un message non lu peut apparaître en plus dans la rubrique messages, mais sans retirer le profil de « 1er mot ».
-4. En Simplifié, les notifications sont le seul moyen de retrouver les profils en « 1er mot » : aucun ne doit y manquer. Les notifications « 1er mot » reviennent à chaque session et à chaque reconnexion. Un profil n'en sort que lorsque les deux ont écrit, comme en Détaillé.
-5. Si le chargement « qui a écrit » échoue, la carte « 1er mot » s'affiche quand même en Simplifié, avec les matchs connus. Mieux vaut une carte peut-être incomplète que rien.
-6. En Simplifié, entre 72 h et 14 jours après mon dernier message sans réponse, la carte « Relance possible » s'ajoute, sans retirer le match de « 1er mot ». Le reste de son fonctionnement ne change pas.
+3. Personne ne quitte la rubrique « 1er mot » avant que les deux aient écrit. Ni un message non lu, ni l'ouverture de la fiche ne retire un profil de « 1er mot ». Un message non lu peut apparaître en plus dans la rubrique messages, mais sans retirer le profil de « 1er mot ».
+4. En Simplifié, les notifications sont le seul moyen de prendre connaissance des profils en « 1er mot » et d'en suivre le fil : aucun ne doit y manquer. Dès que le membre a répondu (il a envoyé son message), la notification « 1er mot » de ce profil disparaît pour la session en cours. Elle revient à la prochaine connexion ou session, tant que les deux n'ont pas écrit.
+5. En Détaillé, les notifications « 1er mot » suivent la même règle qu'en Simplifié. En plus, ces profils sont accessibles dans la page Mes Matchs.
+6. Si le chargement « qui a écrit » échoue, la carte « 1er mot » s'affiche quand même en Simplifié, avec les matchs connus. Mieux vaut une carte peut-être incomplète que rien.
+7. En Simplifié, entre 72 h et 14 jours après mon dernier message sans réponse, la carte « Relance possible » s'ajoute, sans retirer le match de « 1er mot ». Le reste de son fonctionnement ne change pas.
 
 ## Fondateurs et forfaits
 
-7. Offre Fondateur : 1000 membres (pas 500). Le site est gratuit pendant cette offre.
-8. En mode payant : un forfait Détaillé affiche le mode Détaillé par défaut ; un forfait Simplifié impose le mode Simplifié, sans accès au Détaillé. Ne pas coder cette règle avant le passage en mode payant.
+8. Offre Fondateur : 1000 membres (pas 500). Le site est gratuit pendant cette offre.
+9. En mode payant : un forfait Détaillé affiche le mode Détaillé par défaut ; un forfait Simplifié impose le mode Simplifié, sans accès au Détaillé. Ne pas coder cette règle avant le passage en mode payant.
 
 ## Tutoiement
 
-9. Le site et les e-mails tutoient les membres. Seuls les textes juridiques (CGU, CGV, mentions légales, confidentialité, cookies) restent au vouvoiement.
+10. Le site et les e-mails tutoient les membres. Seuls les textes juridiques (CGU, CGV, mentions légales, confidentialité, cookies) restent au vouvoiement.
+
+## Précisions (soumises aux règles 1 à 10)
+
+11. Vocabulaire affiché : Like, Flash, Match, « Match le », « Matché le ». « Match le » : mon Like ou Flash a été accepté par l'autre. « Matché le » : j'ai répondu à leur intérêt.
+12. Tant que l'autre n'a pas renvoyé un Like ou un Flash, la fiche n'est ni en « 1er mot » ni en « Discussion en cours ».
+13. Une visite, ou le temps qui passe, ne retire pas un profil de la rubrique « 1er mot ». Cela ne change pas les règles 4 et 5 sur la notification.
+14. Pour la carte « Relance possible » (règle 7) : un nouvel envoi remet le délai à zéro. Avant 72 h, ou après 14 jours, cette carte n'apparaît pas.
+15. Le passage au payant est lié à l'attribution du 1000e numéro Fondateur, pas à une date. Il reste manuel.
+16. Le statut de Membre Fondateur et son numéro restent liés au compte actif. Après 6 mois, le badge devient honorifique. À la suppression du compte, le statut et le numéro sont effacés et le numéro n'est jamais réattribué.
+17. Découvrir affiche un profil si les trois conditions sont vraies en même temps : le périmètre géographique choisi, un âge d'au moins floor(mon âge / 2) + 7 (plancher 18 ans), et le minimum de centres d'intérêt. Un homme voit les femmes, une femme voit les hommes.
+18. Chaque fiche a deux lignes de géographie : le badge vert foncé (Même ville, Même département, Même région, ou le libellé Quart / Île-de-France), puis la distance « à X km » en vert clair. Paris, Versailles et l'Île-de-France ne sont jamais « Centre de la France ».
 
 ## Consignes permanentes
 
 Ne jamais contourner ni forcer un hook ou un verrou de protection (git hook, fichier protégé) sans mon accord explicite, donné dans la conversation en cours. En cas de blocage, s'arrêter et me demander.
+Ne jamais modifier ce fichier, ni une règle numérotée, ni un test marqué [règle produit], sans mon autorisation explicite dans la conversation en cours. Le verrou ci-dessus s'applique en premier.
 Avant toute modification, liste les comportements visibles pour l'utilisateur qui vont changer, et attends mon accord.
 Ne modifie ni ne supprime aucun test marqué [règle produit] sans mon accord explicite.
 Si une demande entre en conflit avec une règle de ce fichier, arrête-toi et pose-moi la question.

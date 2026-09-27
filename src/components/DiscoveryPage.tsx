@@ -36,6 +36,7 @@ import {
 } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
 import { isSimplifiedDiscoverMode } from '@/lib/discoverMode';
+import { rememberFirstWordRepliedThisSession } from '@/lib/firstWordSession';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
   geoPerimeterFilterLabel,
@@ -2311,6 +2312,9 @@ export default function DiscoveryPage({
           simplified={isSimplifiedDiscoverMode(myProfile?.discover_mode)}
           onDialogueStarted={() => {
             invalidateLikeFlashEdges(userId || '');
+          }}
+          onMessageSent={(peerId) => {
+            if (userId) rememberFirstWordRepliedThisSession(userId, peerId);
           }}
           onClose={() => setChatPeer(null)}
         />
