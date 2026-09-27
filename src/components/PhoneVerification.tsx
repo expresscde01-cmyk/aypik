@@ -1,8 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Phone, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { translateAuthError } from '@/lib/authErrors';
-import { toE164France, formatE164ForDisplay, isValidOtpCode } from '@/lib/phone';
+import {
+  formatE164ForDisplay,
+  isPhoneVerificationCountry,
+  isValidOtpCode,
+  PHONE_VERIFICATION_COUNTRIES,
+  phoneNationalPlaceholder,
+  toE164Phone,
+  type PhoneVerificationCountry,
+} from '@/lib/phone';
+import { getCountryCallingCode } from 'libphonenumber-js';
+import { dateLocale } from '@/i18n/format';
+import { countryDisplayName } from '@/lib/worldGeo';
 import { requestPhoneVerificationSms } from '@/lib/sendPhoneVerification';
 import { useAuth } from '@/lib/auth';
 import { BrandMark } from '@/components/BrandLockup';
@@ -31,9 +42,11 @@ type Step = 'enter-phone' | 'enter-code';
  * 30 SMS/h — ouvrir d'autres pays progressivement.
  */
 export default function PhoneVerification() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { signOut } = useAuth();
   const [step, setStep] = useState<Step>('enter-phone');
+  const [phoneCountry, setPhoneCountry] =
+    useState<PhoneVerificationCountry>('FR');
   const [phoneInput, setPhoneInput] = useState('');
   const [e164, setE164] = useState<string | null>(null);
   const [code, setCode] = useState('');
@@ -127,10 +140,19 @@ export default function PhoneVerification() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resendNeedsCaptcha, captchaToken, e164, loading]);
 
+  const phoneCountryOptions = useMemo(() => {
+    const rest = PHONE_VERIFICATION_COUNTRIES.filter(
+      (country) => country !== 'FR'
+    ).sort((a, b) =>
+      countryDisplayName(a).localeCompare(countryDisplayName(b), dateLocale())
+    );
+    return ['FR' as const, ...rest];
+  }, [i18n.language]);
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const target = toE164France(phoneInput);
+    const target = toE164Phone(phoneInput, phoneCountry);
     if (!target) {
       setError(t('auth.phoneInvalidFrance'));
       return;
@@ -228,12 +250,40 @@ export default function PhoneVerification() {
           {step === 'enter-phone' && (
             <form onSubmit={handlePhoneSubmit} noValidate className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label
+                  htmlFor="phone-country"
+                  className="block text-sm font-semibold text-gray-700 mb-1.5"
+                >
+                  {t('auth.phoneCountry')}
+                </label>
+                <select
+                  id="phone-country"
+                  value={phoneCountry}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    if (isPhoneVerificationCountry(next)) setPhoneCountry(next);
+                  }}
+                  className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                >
+                  {phoneCountryOptions.map((country) => (
+                    <option key={country} value={country}>
+                      {countryDisplayName(country)} (+
+                      {getCountryCallingCode(country)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="phone-number"
+                  className="block text-sm font-semibold text-gray-700 mb-1.5"
+                >
                   {t('auth.phoneLabel')}
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="phone-number"
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
@@ -241,7 +291,7 @@ export default function PhoneVerification() {
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
-                    placeholder="06 39 98 00 00"
+                    placeholder={phoneNationalPlaceholder(phoneCountry)}
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-gray-400">

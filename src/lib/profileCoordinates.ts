@@ -1,3 +1,4 @@
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { supabase } from '@/lib/supabase';
 import { lookupLocationCentre } from '@/lib/geoCommunes';
 
@@ -19,7 +20,8 @@ export async function ensureProfileCoordinates(profile: {
   await supabase
     .from('profiles')
     .update({ lat: point.lat, lng: point.lng })
-    .eq('id', profile.id);
+    .eq('id', profile.id)
+    .select(PROFILE_WRITE_RETURN);
   return point;
 }
 

@@ -35,6 +35,7 @@ import { widgetLanguage } from '@/i18n/format';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { userErrorMessage } from '@/lib/userError';
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { checkoutNeedsNativeLanguage } from '@/lib/isNativeLanguageRequired';
 import {
   hasNativeSpokenLanguage,
@@ -239,7 +240,8 @@ export function PaymentCheckoutModal({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ languages: saved })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select(PROFILE_WRITE_RETURN);
       if (updateError) throw updateError;
       setStep('choose');
     } catch (err) {

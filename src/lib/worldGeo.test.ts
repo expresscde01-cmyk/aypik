@@ -52,10 +52,19 @@ test('distance Paris–New York ≈ 5800 km', () => {
   assert.ok(km > 5600 && km < 6000, `got ${km}`);
 });
 
-test('même ville : formatDistanceKmBadge arrondit à 1 km mini', () => {
+test('distance 0 : moins de 2 km', () => {
   const km = distanceKmBetween(PARIS, PARIS);
-  assert.ok(km < 0.01);
-  assert.equal(formatDistanceKmBadge(km), 'à 1 km');
+  assert.equal(km, 0);
+  assert.equal(formatDistanceKmBadge(0), 'moins de 2 km');
+  assert.equal(formatDistanceKmBadge(km), 'moins de 2 km');
+  assert.equal(formatDistanceKmBadge(2), 'à 2 km');
+  assert.equal(formatDistanceKmBadge(278.879604702577), 'à 279 km');
+  const near = formatInternationalGeoFacts({
+    countryCode: 'BE',
+    cityName: 'Bruxelles',
+    distanceKm: 0,
+  });
+  assert.equal(near.distanceLabel, 'moins de 2 km');
 });
 
 test('pays → zone continent', () => {

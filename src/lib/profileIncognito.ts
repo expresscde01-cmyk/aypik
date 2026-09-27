@@ -1,3 +1,4 @@
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { supabase } from '@/lib/supabase';
 import { userErrorMessage } from '@/lib/userError';
 import { t } from '../i18n/t.ts';
@@ -9,7 +10,8 @@ export async function setProfileIncognito(
   const { error } = await supabase
     .from('profiles')
     .update({ incognito_at: incognito ? new Date().toISOString() : null })
-    .eq('id', userId);
+    .eq('id', userId)
+    .select(PROFILE_WRITE_RETURN);
 
   if (!error) return null;
 

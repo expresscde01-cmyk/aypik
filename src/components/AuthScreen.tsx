@@ -340,6 +340,9 @@ export default function AuthScreen({
                 <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
                   {info}
                 </p>
+                <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+                  {t('auth.signupExistingAccountHint')}
+                </p>
               </div>
               <button
                 type="button"

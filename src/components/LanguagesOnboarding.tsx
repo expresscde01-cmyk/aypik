@@ -4,7 +4,10 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useMembership } from '@/lib/useMembership';
 import { useTranslation } from 'react-i18next';
-import { userErrorMessage } from '@/lib/userError';
+import {
+  presentProfileSaveError,
+  PROFILE_WRITE_RETURN,
+} from '@/lib/profileSaveError';
 import { isNativeLanguageRequired } from '@/lib/isNativeLanguageRequired';
 import {
   MAX_SPOKEN_LANGUAGES,
@@ -48,11 +51,12 @@ export default function LanguagesOnboarding({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ languages: saved })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select(PROFILE_WRITE_RETURN);
       if (updateError) throw updateError;
       onDone();
     } catch (err) {
-      setError(userErrorMessage(err));
+      setError(presentProfileSaveError(err));
     } finally {
       setSaving(false);
     }
@@ -95,7 +99,7 @@ export default function LanguagesOnboarding({
           {error && (
             <div className="mt-5 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <span className="whitespace-pre-line">{error}</span>
             </div>
           )}
           <div className="flex flex-wrap items-center gap-4 mt-6">
