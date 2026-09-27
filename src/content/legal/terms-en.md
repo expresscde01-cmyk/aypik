@@ -317,7 +317,7 @@ A profile placed in "on hold" status (whether by you or by the other member) wit
 No. The Service is exclusively reserved for adults.
 
 **How are profiles chosen for me on Discover?**
-For every member, regardless of plan: the gender sought (a man is shown women's profiles, and vice versa), an age gap between the two profiles, and the fact that Aypik is exclusively for people without children. These criteria are not optional. Geographic perimeter and interests may, depending on the plan, be customised (Section 3.7.1).
+For every member, regardless of plan: the gender sought (a man is shown women's profiles, and vice versa), an age gap between the two profiles, and the fact that Aypik is exclusively for people without children. These criteria are not optional. Geographic perimeter, interests, desired temperament and spoken languages may, depending on the plan, be customised (Section 3.7.1).
 
 **Can I create multiple accounts?**
 No. One account per person and per email address, per Section 3.3.

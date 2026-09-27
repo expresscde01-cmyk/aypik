@@ -1402,9 +1402,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 femmes, et réciproquement), un écart d&apos;âge raisonnable entre les
                 deux profils, et le fait qu&apos;Aypik s&apos;adresse
                 exclusivement aux personnes sans enfants. Ces critères ne
-                sont pas optionnels. Le périmètre géographique et les
-                centres d&apos;intérêt peuvent, selon l&apos;offre, être
-                personnalisés (article 3.7.1).
+                sont pas optionnels. Le périmètre géographique, les centres
+                d&apos;intérêt, le tempérament recherché et les langues
+                parlées peuvent, selon l&apos;offre, être personnalisés
+                (article 3.7.1).
               </p>
             </div>
             <div>
