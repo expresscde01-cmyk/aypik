@@ -2,7 +2,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   escapeHtml,
-  isEmailNotificationsEnabled,
   resendFromAddress,
   wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
@@ -69,15 +68,6 @@ Deno.serve(async (req) => {
 
     if (membership.welcome_email_sent_at) {
       return json({ ok: true, alreadySent: true });
-    }
-
-    const allowed = await isEmailNotificationsEnabled(admin, user.id);
-    if (!allowed) {
-      return json({
-        ok: true,
-        skipped: true,
-        skippedReason: "email_notifications_disabled",
-      });
     }
 
     let body: WelcomePayload = {};
@@ -188,7 +178,7 @@ function buildWelcomeBody(params: {
   const name = escapeHtml(params.displayName);
   const numberLabel =
     typeof params.founderNumber === "number"
-      ? `#${params.founderNumber}`
+      ? String(params.founderNumber)
       : "";
   const until = params.premiumUntil
     ? `<p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">${emailT(params.locale, "welcomePremiumUntil", { date: escapeHtml(params.premiumUntil) })}</p>`
