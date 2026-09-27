@@ -317,7 +317,7 @@ Un perfil en estado de "espera" (ya sea por parte del usuario o del otro miembro
 No. El Servicio está exclusivamente reservado para personas adultas.
 
 **¿Según qué criterios se me proponen los perfiles en Descubrir?**
-Para todos los miembros, sea cual sea la oferta: el género buscado (a un hombre se le muestran perfiles de mujeres, y viceversa), una diferencia de edad entre ambos perfiles, y el hecho de que Aypik se dirige exclusivamente a personas sin hijos. Estos criterios no son opcionales. El perímetro geográfico y los intereses pueden, según la oferta, personalizarse (apartado 3.7.1).
+Para todos los miembros, sea cual sea la oferta: el género buscado (a un hombre se le muestran perfiles de mujeres, y viceversa), una diferencia de edad entre ambos perfiles, y el hecho de que Aypik se dirige exclusivamente a personas sin hijos. Estos criterios no son opcionales. El perímetro geográfico, los intereses, el temperamento buscado y los idiomas hablados pueden, según la oferta, personalizarse (apartado 3.7.1).
 
 **¿Puedo crear varias cuentas?**
 No. Una cuenta por persona y por dirección de correo electrónico, conforme al apartado 3.3.
