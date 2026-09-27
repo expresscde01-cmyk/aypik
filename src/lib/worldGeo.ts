@@ -1,5 +1,6 @@
 import { dateLocale } from '../i18n/format.ts';
 import { t } from '../i18n/t.ts';
+import { formatDistanceKmBadge } from './geoProximity.ts';
 
 export type WorldZone =
   | 'europe'
@@ -794,13 +795,6 @@ export function formatInternationalGeoFacts(input: {
     (input.countryCode || '').trim() ||
     '\u00a0';
   const city = declaredCityName(input.cityName, input.location) || '\u00a0';
-  let distanceLabel = '\u00a0';
-  if (
-    typeof input.distanceKm === 'number' &&
-    Number.isFinite(input.distanceKm) &&
-    input.distanceKm >= 0
-  ) {
-    distanceLabel = `à ${Math.max(1, Math.round(input.distanceKm))} km`;
-  }
+  const distanceLabel = formatDistanceKmBadge(input.distanceKm) || '\u00a0';
   return { continent, country, city, distanceLabel };
 }

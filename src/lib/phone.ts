@@ -1,50 +1,145 @@
 /**
- * Normalisation / validation minimale des numéros de téléphone pour la
- * vérification par SMS. On ne vise que la France pour l'instant (comme le
- * reste du site), avec tolérance sur les formats de saisie courants :
- * "06 39 98 00 00", "0639980000", "+33639980000", "0033639980000".
+ * Vérification SMS : France, outre-mer français, Union européenne
+ * et quelques pays d'Europe. France par défaut.
+ * La liste d'indicatifs en base (phone_sms_country_prefixes) doit rester
+ * le même ensemble, sans doublon.
  */
+import {
+  getCountryCallingCode,
+  getExampleNumber,
+  parsePhoneNumberFromString,
+  type CountryCode,
+} from 'libphonenumber-js';
+import examples from 'libphonenumber-js/mobile/examples';
 
-/** Retire tout ce qui n'est pas un chiffre ou un "+" initial. */
-function stripFormatting(raw: string): string {
-  const trimmed = raw.trim();
-  const hasLeadingPlus = trimmed.startsWith('+');
-  const digits = trimmed.replace(/[^\d]/g, '');
-  return hasLeadingPlus ? `+${digits}` : digits;
+/** Ordre d'affichage de référence. La France reste le premier choix. */
+export const PHONE_VERIFICATION_COUNTRIES = [
+  'FR',
+  'GP',
+  'BL',
+  'MF',
+  'MQ',
+  'GF',
+  'PM',
+  'NC',
+  'PF',
+  'WF',
+  'DE',
+  'AT',
+  'BE',
+  'BG',
+  'CY',
+  'HR',
+  'DK',
+  'ES',
+  'EE',
+  'FI',
+  'GR',
+  'HU',
+  'IE',
+  'IT',
+  'LV',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'PL',
+  'PT',
+  'CZ',
+  'RO',
+  'SK',
+  'SI',
+  'SE',
+  'GB',
+  'CH',
+  'NO',
+  'IS',
+  'LI',
+  'MC',
+  'AD',
+] as const satisfies readonly CountryCode[];
+
+export type PhoneVerificationCountry =
+  (typeof PHONE_VERIFICATION_COUNTRIES)[number];
+
+const PHONE_VERIFICATION_COUNTRY_SET = new Set<CountryCode>(
+  PHONE_VERIFICATION_COUNTRIES
+);
+
+const ownsPlanCache = new Map<CountryCode, boolean>();
+
+export function isPhoneVerificationCountry(
+  country: string
+): country is PhoneVerificationCountry {
+  return PHONE_VERIFICATION_COUNTRY_SET.has(country as CountryCode);
 }
 
 /**
- * Convertit une saisie utilisateur en E.164 (+33...) si possible.
- * Retourne null si le numéro ne ressemble pas à un mobile/fixe français valide.
+ * Indicatifs uniques, dans l'ordre des territoires.
+ * Guadeloupe, Saint-Barthélemy et Saint-Martin partagent +590.
  */
-export function toE164France(raw: string): string | null {
-  const cleaned = stripFormatting(raw);
-
-  let national: string | null = null;
-
-  if (cleaned.startsWith('+33')) {
-    const rest = cleaned.slice(3);
-    if (/^[1-9]\d{8}$/.test(rest)) national = rest;
-  } else if (cleaned.startsWith('0033')) {
-    const rest = cleaned.slice(4);
-    if (/^[1-9]\d{8}$/.test(rest)) national = rest;
-  } else if (cleaned.startsWith('0') && /^0[1-9]\d{8}$/.test(cleaned)) {
-    national = cleaned.slice(1);
-  } else if (/^[1-9]\d{8}$/.test(cleaned)) {
-    // déjà sans le 0 initial
-    national = cleaned;
+export function phoneVerificationPrefixes(): string[] {
+  const seen = new Set<string>();
+  const prefixes: string[] = [];
+  for (const country of PHONE_VERIFICATION_COUNTRIES) {
+    const prefix = `+${getCountryCallingCode(country)}`;
+    if (seen.has(prefix)) continue;
+    seen.add(prefix);
+    prefixes.push(prefix);
   }
-
-  if (!national) return null;
-  return `+33${national}`;
+  return prefixes;
 }
 
-/** Format d'affichage lisible à partir d'un E.164 français : "+33 6 39 98 00 00". */
+/**
+ * Saint-Barthélemy et Saint-Martin n'ont pas de plan de numérotation
+ * distinct de la Guadeloupe : libphonenumber les classe en GP.
+ */
+function countryOwnsPlan(country: CountryCode): boolean {
+  const cached = ownsPlanCache.get(country);
+  if (cached !== undefined) return cached;
+  const example = getExampleNumber(country, examples);
+  const parsed = example
+    ? parsePhoneNumberFromString(example.formatNational(), country)
+    : undefined;
+  const owns = parsed?.country === country;
+  ownsPlanCache.set(country, owns);
+  return owns;
+}
+
+/**
+ * Numéro national ou international saisi pour le pays choisi.
+ * Retourne l'E.164, ou null si le pays n'est pas ouvert ou si le numéro
+ * n'est pas valable pour ce pays.
+ */
+export function toE164Phone(
+  raw: string,
+  country: PhoneVerificationCountry
+): string | null {
+  if (!isPhoneVerificationCountry(country)) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const parsed = parsePhoneNumberFromString(trimmed, country);
+  if (!parsed?.isValid()) return null;
+  if (parsed.countryCallingCode !== getCountryCallingCode(country)) return null;
+  if (!parsed.country || parsed.country === country) return parsed.number;
+  if (!isPhoneVerificationCountry(parsed.country)) return null;
+  if (countryOwnsPlan(country)) return null;
+  if (getCountryCallingCode(parsed.country) !== parsed.countryCallingCode) {
+    return null;
+  }
+  return parsed.number;
+}
+
+export function phoneNationalPlaceholder(
+  country: PhoneVerificationCountry
+): string {
+  return getExampleNumber(country, examples)?.formatNational() ?? '';
+}
+
 export function formatE164ForDisplay(e164: string): string {
-  const match = /^\+33(\d)(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(e164);
-  if (!match) return e164;
-  const [, first, ...rest] = match;
-  return `+33 ${first} ${rest.join(' ')}`;
+  const parsed = parsePhoneNumberFromString(e164);
+  if (!parsed?.isValid()) return e164;
+  return parsed.formatInternational();
 }
 
 /**

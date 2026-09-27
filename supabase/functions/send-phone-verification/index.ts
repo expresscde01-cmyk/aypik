@@ -22,7 +22,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_PREFIXES = "+33";
+const DEFAULT_PREFIXES =
+  "+33 +590 +596 +594 +508 +687 +689 +681 +49 +43 +32 +359 +357 +385 +45 +34 +372 +358 +30 +36 +353 +39 +371 +370 +352 +356 +31 +48 +351 +420 +40 +421 +386 +46 +44 +41 +47 +354 +423 +377 +376";
 const E164_RE = /^\+[1-9]\d{6,14}$/;
 const FRANCE_E164_RE = /^\+33[1-9]\d{8}$/;
 

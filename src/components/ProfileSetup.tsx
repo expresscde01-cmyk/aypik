@@ -75,6 +75,11 @@ import { membershipRequiredError } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
 import { userErrorMessage } from '@/lib/userError';
 import {
+  presentProfileSaveError,
+  PROFILE_PUBLIC_COLUMNS,
+  PROFILE_WRITE_RETURN,
+} from '@/lib/profileSaveError';
+import {
   adultsOnlyMessage,
   MIN_USER_AGE,
   isAdult,
@@ -116,8 +121,7 @@ export interface Profile {
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
-export const PROFILE_CARD_COLUMNS =
-  'id, display_name, bio, has_children, location, interests, photo_url, gender, country_code, city_name, geoname_id, discover_mode, temperament, languages, created_at, updated_at';
+export const PROFILE_CARD_COLUMNS = PROFILE_PUBLIC_COLUMNS;
 
 type ProfileFieldKey =
   | 'city'
@@ -422,7 +426,7 @@ export default function ProfileSetup({
     setPrefsSaved(false);
     setEmailNotificationsEnabled(enabled);
 
-    // Inscription : pas encore de ligne profiles → valeur incluse au premier upsert.
+    // Inscription : pas encore de ligne profiles → valeur incluse au premier insert.
     if (!user || !profileExists) return;
 
     setPrefsSaving(true);
@@ -430,16 +434,15 @@ export default function ProfileSetup({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ email_notifications_enabled: enabled })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select(PROFILE_WRITE_RETURN);
 
       if (updateError) throw updateError;
       setPrefsSaved(true);
       window.setTimeout(() => setPrefsSaved(false), 2200);
     } catch (err) {
       setEmailNotificationsEnabled(!enabled);
-      setError(
-        userErrorMessage(err, t('profile.emailPrefError'))
-      );
+      setError(presentProfileSaveError(err));
     } finally {
       setPrefsSaving(false);
     }
@@ -729,17 +732,19 @@ export default function ProfileSetup({
         payload.lng = selectedWorldCity!.lng;
       }
 
-      if (isSignup) {
-        const { error: upsertError } = await supabase
+      if (!profileExists) {
+        const { error: insertError } = await supabase
           .from('profiles')
-          .upsert(payload);
-        if (upsertError) throw upsertError;
+          .insert(payload)
+          .select(PROFILE_WRITE_RETURN);
+        if (insertError) throw insertError;
       } else {
         const { id, ...updateFields } = payload;
         const { error: updateError } = await supabase
           .from('profiles')
           .update(updateFields)
-          .eq('id', id);
+          .eq('id', id)
+          .select(PROFILE_WRITE_RETURN);
         if (updateError) throw updateError;
       }
 
@@ -787,7 +792,7 @@ export default function ProfileSetup({
       }
       onDone();
     } catch (err) {
-      setError(userErrorMessage(err));
+      setError(presentProfileSaveError(err));
       if (!isSignup) scrollToField(profileSaveRef.current);
     } finally {
       setSaving(false);
@@ -889,7 +894,7 @@ export default function ProfileSetup({
         {error && isSignup && !canEditProfile && (
           <div className="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
+            <span className="whitespace-pre-line">{error}</span>
           </div>
         )}
 
@@ -1395,7 +1400,7 @@ export default function ProfileSetup({
           {isSignup && error && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <span className="whitespace-pre-line">{error}</span>
             </div>
           )}
 
@@ -1447,7 +1452,7 @@ export default function ProfileSetup({
                 {error && (
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm animate-fadeIn">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <span>{error}</span>
+                    <span className="whitespace-pre-line">{error}</span>
                   </div>
                 )}
                 <button

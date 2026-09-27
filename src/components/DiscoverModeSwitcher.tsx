@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import {
@@ -58,7 +59,8 @@ export default function DiscoverModeSwitcher({
     const { error } = await supabase
       .from('profiles')
       .update({ discover_mode: next })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select(PROFILE_WRITE_RETURN);
     setBusy(false);
     if (error) {
       setMode(prev);

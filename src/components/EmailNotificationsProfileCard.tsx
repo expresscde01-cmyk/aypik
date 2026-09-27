@@ -3,7 +3,10 @@ import { AlertCircle, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from 'react-i18next';
-import { userErrorMessage } from '@/lib/userError';
+import {
+  presentProfileSaveError,
+  PROFILE_WRITE_RETURN,
+} from '@/lib/profileSaveError';
 
 export default function EmailNotificationsProfileCard({
   initialEnabled,
@@ -34,12 +37,13 @@ export default function EmailNotificationsProfileCard({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ email_notifications_enabled: enabled })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select(PROFILE_WRITE_RETURN);
       if (updateError) throw updateError;
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1800);
     } catch (err) {
-      setError(userErrorMessage(err, t('profile.emailPrefError')));
+      setError(presentProfileSaveError(err));
     } finally {
       setSaving(false);
     }
@@ -81,7 +85,7 @@ export default function EmailNotificationsProfileCard({
       {error && (
         <div className="mt-5 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <span className="whitespace-pre-line">{error}</span>
         </div>
       )}
       <div className="mt-6 space-y-3">

@@ -692,5 +692,8 @@ export function formatDistanceKmBadge(
   if (typeof distanceKm !== 'number' || !Number.isFinite(distanceKm) || distanceKm < 0) {
     return null;
   }
+  if (distanceKm === 0) {
+    return t('common.distanceUnder2Km');
+  }
   return t('common.distanceKm', { n: Math.max(1, Math.round(distanceKm)) });
 }

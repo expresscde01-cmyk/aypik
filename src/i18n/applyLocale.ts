@@ -1,3 +1,4 @@
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { supabase } from '@/lib/supabase';
 import i18n from '@/i18n/config';
 import { currentLocale, syncDocumentMeta } from '@/i18n/documentMeta';
@@ -12,7 +13,8 @@ export async function persistProfileLocale(
   const { error } = await supabase
     .from('profiles')
     .update({ preferred_locale: locale })
-    .eq('id', userId);
+    .eq('id', userId)
+    .select(PROFILE_WRITE_RETURN);
   if (error) {
     console.warn('preferred_locale update failed', error.message);
   }
