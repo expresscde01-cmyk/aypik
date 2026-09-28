@@ -42,10 +42,16 @@ test('FR/EN/ES : les libellés « Choisis une offre » existent mais restent der
     const json = JSON.parse(
       readFileSync(join(root, 'src/locales', file), 'utf8')
     ) as {
-      membership: { lockedNeedOffer: string; chatLockedHint: string };
+      membership: {
+        lockedNeedOffer: string;
+        lockedNeedConfort: string;
+        chatLockedHint: string;
+      };
     };
     assert.equal(typeof json.membership.lockedNeedOffer, 'string');
     assert.equal(json.membership.lockedNeedOffer.length > 0, true);
+    assert.equal(typeof json.membership.lockedNeedConfort, 'string');
+    assert.equal(json.membership.lockedNeedConfort.length > 0, true);
     assert.equal(typeof json.membership.chatLockedHint, 'string');
     assert.equal(json.membership.chatLockedHint.length > 0, true);
   }

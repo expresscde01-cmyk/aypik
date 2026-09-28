@@ -26,7 +26,7 @@ Les règles 1 à 10 sont fondatrices. Elles l'emportent toujours sur les règles
 ## Fondateurs et forfaits
 
 8. Offre Fondateur : 1000 membres (pas 500). Le site est gratuit pendant cette offre.
-9. En mode payant : un forfait Détaillé affiche le mode Détaillé par défaut ; un forfait Simplifié impose le mode Simplifié, sans accès au Détaillé. Ne pas coder cette règle avant le passage en mode payant.
+9. Pendant l'offre Fondateur, Simplifié et Détaillé restent tous les deux accessibles. En mode payant : Gratuit, Basique et Essentiel n'ont que le mode Simplifié, et le bouton Détaillé est grisé. Confort et Premium ont le choix : la page s'ouvre en Détaillé par défaut, et Simplifié reste disponible.
 
 ## Tutoiement
 
