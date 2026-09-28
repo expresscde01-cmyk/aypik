@@ -4,11 +4,13 @@ import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import {
+  canUseDetailedDiscoverMode,
   parseDiscoverMode,
   type DiscoverMode,
 } from '@/lib/discoverMode';
 import { useMembership } from '@/lib/useMembership';
 import { canOptOutMessagingProtection } from '@/lib/membership';
+import { openHighlightOffer } from '@/lib/conversionNav';
 
 const OPTIONS = [
   { id: 'simplifie' as const, labelKey: 'profile.discoverModeSimplified' as const },
@@ -27,6 +29,7 @@ export default function DiscoverModeSwitcher({
   const { status, loading } = useMembership();
   const messagingOptOut =
     !loading && canOptOutMessagingProtection(status);
+  const detailedLocked = !loading && !canUseDetailedDiscoverMode(status);
   const [mode, setMode] = useState<DiscoverMode>(parseDiscoverMode(value));
   const [busy, setBusy] = useState(false);
 
@@ -52,6 +55,11 @@ export default function DiscoverModeSwitcher({
   }, [user?.id, value]);
 
   const select = async (next: DiscoverMode) => {
+    if (next === 'detaille' && detailedLocked) {
+      openHighlightOffer('detaille');
+      return;
+    }
+    if (detailedLocked) return;
     if (!user?.id || next === mode || busy) return;
     const prev = mode;
     setMode(next);
@@ -77,18 +85,25 @@ export default function DiscoverModeSwitcher({
         className="inline-flex w-full items-center rounded-lg border border-rose-100 bg-white/80 p-0.5"
       >
         {OPTIONS.map((option) => {
-          const selected = mode === option.id;
+          const locked = option.id === 'detaille' && detailedLocked;
+          const selected = detailedLocked
+            ? option.id === 'simplifie'
+            : mode === option.id;
           return (
             <button
               key={option.id}
               type="button"
               aria-pressed={selected}
-              disabled={busy}
+              aria-disabled={locked || undefined}
+              disabled={busy && !locked}
+              title={locked ? t('membership.lockedNeedConfort') : undefined}
               onClick={() => void select(option.id)}
               className={`flex-1 rounded-md px-2 py-1 text-xs font-semibold tracking-wide transition-colors disabled:opacity-60 ${
-                selected
-                  ? 'bg-rose-500 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-rose-600 hover:bg-rose-50'
+                locked
+                  ? 'text-gray-400 opacity-55 grayscale'
+                  : selected
+                    ? 'bg-rose-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-rose-600 hover:bg-rose-50'
               }`}
             >
               {t(option.labelKey)}
@@ -97,15 +112,17 @@ export default function DiscoverModeSwitcher({
         })}
       </div>
       <p className="text-[11px] leading-snug text-gray-500">
-        {t(
-          mode === 'simplifie'
-            ? messagingOptOut
-              ? 'profile.discoverModeSimplifiedHint'
-              : 'profile.discoverModeSimplifiedHintOpen'
-            : messagingOptOut
-              ? 'profile.discoverModeDetailedHint'
-              : 'profile.discoverModeDetailedHintOpen'
-        )}
+        {detailedLocked
+          ? t('membership.lockedNeedConfort')
+          : t(
+              mode === 'simplifie'
+                ? messagingOptOut
+                  ? 'profile.discoverModeSimplifiedHint'
+                  : 'profile.discoverModeSimplifiedHintOpen'
+                : messagingOptOut
+                  ? 'profile.discoverModeDetailedHint'
+                  : 'profile.discoverModeDetailedHintOpen'
+            )}
       </p>
     </div>
   );

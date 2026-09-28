@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Compass, Heart, Home, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { adultsOnlyMessage, isAdult, parseProfileGender } from '@/lib/dating';
-import { parseDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
+import { effectiveDiscoverMode, type DiscoverMode } from '@/lib/discoverMode';
+import { useMembership } from '@/lib/useMembership';
 import { fetchMyProfile } from '@/lib/myProfile';
 import { useTranslation } from 'react-i18next';
 import HomeDashboard from '@/components/HomeDashboard';
@@ -82,6 +83,7 @@ export default function AppShell() {
 function AppShellView() {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
+  const { status, loading: membershipLoading } = useMembership();
   const [tab, setTab] = useState<Tab>(initialTabFromQuery);
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(
     () => new Set([initialTabFromQuery()])
@@ -131,7 +133,11 @@ function AppShellView() {
     setProfile((prev) => (prev ? { ...prev, discover_mode: mode } : prev));
   }, []);
 
-  const viewerDiscoverMode = parseDiscoverMode(profile?.discover_mode);
+  const viewerDiscoverMode = effectiveDiscoverMode(
+    profile?.discover_mode,
+    status,
+    membershipLoading
+  );
 
   const persistDiscoverPrefs = useCallback(() => {
     flushDiscoverPrefs(user?.id);
@@ -667,7 +673,7 @@ function AppShellView() {
                 focusUnreadMailbox={inboxUnreadMailbox}
                 focusKey={inboxFocusKey}
                 profileEpoch={profileEpoch}
-                viewerDiscoverMode={profile?.discover_mode ?? 'detaille'}
+                viewerDiscoverMode={viewerDiscoverMode}
                 onChatClosed={() => void unread.refresh()}
                 onFocusActorConsumed={() => {
                   setInboxActorId(null);

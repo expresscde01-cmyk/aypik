@@ -35,7 +35,7 @@ import {
   isInternationalLocked,
 } from '@/lib/membership';
 import { openHighlightOffer } from '@/lib/conversionNav';
-import { isSimplifiedDiscoverMode } from '@/lib/discoverMode';
+import { effectiveDiscoverMode } from '@/lib/discoverMode';
 import { rememberFirstWordRepliedThisSession } from '@/lib/firstWordSession';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import {
@@ -2309,7 +2309,10 @@ export default function DiscoveryPage({
       {chatPeer && (
         <ChatScreen
           peer={chatPeer}
-          simplified={isSimplifiedDiscoverMode(myProfile?.discover_mode)}
+          simplified={
+            effectiveDiscoverMode(myProfile?.discover_mode, status, membershipLoading) ===
+            'simplifie'
+          }
           onDialogueStarted={() => {
             invalidateLikeFlashEdges(userId || '');
           }}
