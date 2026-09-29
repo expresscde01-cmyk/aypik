@@ -5,6 +5,7 @@ import {
 } from '@/lib/founderCopy';
 import { dateLocale } from '../i18n/format.ts';
 import { t } from '../i18n/t.ts';
+export { founderPriceCents } from '../../supabase/functions/_shared/billingPolicy.ts';
 
 export type MembershipPlan =
   | 'free'
@@ -90,6 +91,9 @@ export interface MembershipStatus {
   has_premium: boolean;
   has_boost: boolean;
   boost_ends_at: string | null;
+  /** Boosts Fondateur encore utilisables (0 hors fenêtre de 6 mois). */
+  founder_boosts_remaining: number;
+  premium_boosts_remaining: number;
   founders_taken: number;
   founders_max: number;
   founders_remaining: number;
@@ -148,6 +152,8 @@ export const DEFAULT_MEMBERSHIP: MembershipStatus = {
   has_premium: false,
   has_boost: false,
   boost_ends_at: null,
+  founder_boosts_remaining: 0,
+  premium_boosts_remaining: 0,
   founders_taken: 0,
   founders_max: FOUNDER_MAX_SLOTS,
   founders_remaining: FOUNDER_MAX_SLOTS,
@@ -275,6 +281,14 @@ export function parseMembershipStatus(raw: unknown): MembershipStatus {
     has_boost: Boolean(d.has_boost),
     boost_ends_at:
       typeof d.boost_ends_at === 'string' ? d.boost_ends_at : null,
+    founder_boosts_remaining:
+      typeof d.founder_boosts_remaining === 'number'
+        ? d.founder_boosts_remaining
+        : 0,
+    premium_boosts_remaining:
+      typeof d.premium_boosts_remaining === 'number'
+        ? d.premium_boosts_remaining
+        : 0,
     founders_taken:
       typeof d.founders_taken === 'number' ? d.founders_taken : 0,
     founders_max:

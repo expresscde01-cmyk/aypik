@@ -40,9 +40,9 @@ Les règles 1 à 10 sont fondatrices. Elles l'emportent toujours sur les règles
 14. Pour la carte « Relance possible » (règle 7) : un nouvel envoi remet le délai à zéro. Avant 72 h, ou après 14 jours, cette carte n'apparaît pas.
 15. Le passage au payant est lié à l'attribution du 1000e numéro Fondateur, pas à une date. Il reste manuel.
 16. Le statut de Membre Fondateur et son numéro restent liés au compte actif. Après 6 mois, le badge devient honorifique. À la suppression du compte, le statut et le numéro sont effacés et le numéro n'est jamais réattribué.
-17. Découvrir affiche un profil si les trois conditions sont vraies en même temps : le périmètre géographique choisi, un âge d'au moins floor(mon âge / 2) + 7 (plancher 18 ans), et le minimum de centres d'intérêt. Un homme voit les femmes, une femme voit les hommes.
+17. Découvrir affiche un profil si les trois conditions sont vraies en même temps : le périmètre géographique choisi, un âge d'au moins floor(mon âge / 2) + 7 (plancher 18 ans), et le minimum de centres d'intérêt. Un homme voit les femmes, une femme voit les hommes. Le périmètre géographique choisi inclut les périmètres plus proches : l'international comprend les pays et territoires francophones, qui comprennent le national.
 18. Chaque fiche a deux lignes de géographie : le badge vert foncé (Même ville, Même département, Même région, ou le libellé Quart / Île-de-France), puis la distance « à X km » en vert clair. Paris, Versailles et l'Île-de-France ne sont jamais « Centre de la France ».
-19. La Réduction Fondateur est de 50 % sur le tarif public de toute offre payante, tant que le compte reste actif, y compris après les 6 mois où le badge devient honorifique (règle 16). Elle n'oblige pas à souscrire. Elle est personnelle, non cessible, non cumulable, et définitivement perdue à la suppression du compte.
+19. La Réduction Fondateur est de 50 % sur le tarif public de toute offre, option ou Boost payant, tant que le compte reste actif, y compris après les 6 mois où le badge devient honorifique (règle 16). Elle n'oblige pas à souscrire. Elle est personnelle, non cessible, non cumulable, et définitivement perdue à la suppression du compte.
 
 ## Consignes permanentes
 

@@ -4,15 +4,24 @@ import { SoftLock } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { useTranslation } from 'react-i18next';
 import { dateLocale } from '@/i18n/format';
+import { formatPriceCents, founderPriceCents } from '@/lib/membership';
 
 export function BoostPurchaseCard({
   hasBoost,
   boostEndsAt,
+  founderBoostsRemaining = 0,
+  premiumBoostsRemaining = 0,
+  premiumUntil = null,
+  isFounder = false,
   onPurchase,
   paymentVisible = false,
 }: {
   hasBoost: boolean;
   boostEndsAt: string | null;
+  founderBoostsRemaining?: number;
+  premiumBoostsRemaining?: number;
+  premiumUntil?: string | null;
+  isFounder?: boolean;
   onPurchase: () => Promise<string | null>;
   paymentVisible?: boolean;
 }) {
@@ -48,6 +57,18 @@ export function BoostPurchaseCard({
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
             {t('membership.boostDesc')}
           </p>
+          {premiumBoostsRemaining > 0 && premiumUntil && (
+            <p className="text-xs text-amber-800 mt-2">
+              {t('membership.premiumBoostsLeft', {
+                count: premiumBoostsRemaining,
+                date: new Date(premiumUntil).toLocaleDateString(dateLocale(), {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                }),
+              })}
+            </p>
+          )}
 
           {hasBoost && boostEndsAt && (
             <p className="text-xs text-amber-700 font-medium mt-2">
@@ -83,11 +104,30 @@ export function BoostPurchaseCard({
                 disabled={loading}
                 className="px-3.5 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-60"
               >
-                {loading
-                  ? t('membership.activatingShort')
-                  : hasBoost
-                    ? t('membership.extendBoost')
-                    : t('membership.activateBoost')}
+                {loading ? (
+                  t('membership.activatingShort')
+                ) : founderBoostsRemaining > 0 || premiumBoostsRemaining > 0 ? (
+                  hasBoost ? (
+                    t('membership.extendBoostCredit')
+                  ) : (
+                    t('membership.activateBoostCredit')
+                  )
+                ) : isFounder ? (
+                  <>
+                    {hasBoost
+                      ? t('membership.extendBoostCredit')
+                      : t('membership.activateBoostCredit')}
+                    {' · '}
+                    <span className="line-through opacity-80">
+                      {formatPriceCents(299, 'EUR')}
+                    </span>{' '}
+                    {formatPriceCents(founderPriceCents(299), 'EUR')}
+                  </>
+                ) : hasBoost ? (
+                  t('membership.extendBoost')
+                ) : (
+                  t('membership.activateBoost')
+                )}
               </button>
               <SoftLock label={t('membership.oneTimePurchase')} />
             </div>

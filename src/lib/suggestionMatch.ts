@@ -16,6 +16,7 @@ import {
 } from '@/lib/geoCommunes';
 import {
   countryToWorldZone,
+  isFrancophoneCountryIso,
   isFrenchTerritoryIso,
   isWorldZone,
   matchesFranceWorldChoice,
@@ -122,7 +123,7 @@ function matchesCountryAndWorldZones(
     );
   }
   if (prefs.geoPerimeter === 'international') {
-    if (isFrenchTerritoryIso(iso)) return false;
+    if (isFrenchTerritoryIso(iso) || isFrancophoneCountryIso(iso)) return true;
     const precise = parseInternationalCountries(prefs.internationalCountries);
     if (precise.length > 0) return precise.includes(iso);
     if (prefs.worldZones.length === 0) return true;

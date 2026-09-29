@@ -592,15 +592,16 @@ export function MembershipPanel({
           </div>
         )}
 
-        {!signupGate &&
-          !SITE_FREE_MODE &&
-          !periodActive &&
-          status.plan !== 'founder' &&
-          canBuyBoost(status) && (
+        {!signupGate && !SITE_FREE_MODE && (canBuyBoost(status) || status.founder_boosts_remaining > 0 || status.premium_boosts_remaining > 0) && (
           <BoostPurchaseCard
             hasBoost={status.has_boost}
             boostEndsAt={status.boost_ends_at}
+            founderBoostsRemaining={status.founder_boosts_remaining}
+            premiumBoostsRemaining={status.premium_boosts_remaining}
+            premiumUntil={status.premium_until}
+            isFounder={status.is_founder}
             onPurchase={onPurchaseBoost}
+            paymentVisible
           />
         )}
       </div>

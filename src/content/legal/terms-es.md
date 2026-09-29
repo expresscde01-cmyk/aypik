@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 23 de septiembre de 2026.
+Última actualización: 29 de septiembre de 2026.
 
 ### Preámbulo
 
@@ -180,19 +180,19 @@ La lengua materna es obligatoria si el miembro reside en un país que no figura 
 
 Se otorga un estatus honorífico de «Miembro Fundador» a las 1000 primeras cuentas creadas. Los números se asignan de forma sucesiva, del 1 al 1000, y nunca se reasignan: la eliminación de una cuenta conlleva la pérdida permanente de la insignia y de su número, sin liberar una plaza. La inactividad o la puesta en pausa de la cuenta no libera ninguna plaza. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: se vuelve definitivo con la asignación del número 1000.
 
-Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes, Likes y Flashes ilimitados, y un impulso de visibilidad del perfil durante el primer mes tras el registro.
+Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes y Likes y Flashes ilimitados. El Miembro Fundador recibe además 2 Boosts de 24 h, acreditados al lanzamiento de las ofertas de pago y para utilizar en un plazo de 6 meses, sea cual sea la oferta. Se pierden en caso de eliminación de la cuenta.
 
 Este estatus es honorífico: más allá de las ventajas del Período de prueba descritas anteriormente y de la Reducción Fundador prevista a continuación, no da derecho a ningún reembolso, cesión o conversión en efectivo. El título y el número asociado permanecen visibles mientras la cuenta esté activa; se pierden definitivamente en caso de baja o eliminación de la cuenta, en las condiciones del apartado 8.2. Una cuenta cuya visibilidad esté restringida o que esté en pausa a efectos del apartado 3.7 sigue siendo una cuenta activa.
 
-Reducción Fundador. Todo Miembro Fundador se beneficia, mientras su cuenta permanezca activa a efectos del apartado 3.7, de una reducción del 50 % sobre el precio de cualquier oferta de pago que llegara a proponerse en el Servicio, aplicada a la tarifa pública vigente en el momento de la contratación. Esta reducción no implica ninguna obligación de contratación. Es personal, intransferible y no acumulable con ninguna otra promoción, salvo mención contraria. Se pierde definitivamente en caso de eliminación de la cuenta, en las condiciones del apartado 8.2.
+Reducción Fundador. Todo Miembro Fundador se beneficia, mientras su cuenta permanezca activa a efectos del apartado 3.7, de una reducción del 50 % sobre la tarifa pública de cualquier oferta, opción o Boost de pago propuesto en el Servicio, aplicada en el momento de la contratación. Esta reducción no implica ninguna obligación de contratación. Es personal, intransferible y no acumulable con ninguna otra promoción, salvo mención contraria. Se pierde definitivamente en caso de eliminación de la cuenta, en las condiciones del apartado 8.2.
 
 <!-- founder-closed:start -->
-La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida, mientras la cuenta permanezca activa (apartado 3.7), en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, Boost ofrecido el primer mes). Eliminar una cuenta no libera un número.
+La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida, mientras la cuenta permanezca activa (apartado 3.7), en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, 2 Boosts de 24 h acreditados al lanzamiento de las ofertas de pago). Eliminar una cuenta no libera un número.
 <!-- founder-closed:end -->
 
 **4.2 Otros usuarios**
 
-Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador disponible (los 1000 números se han asignado) se beneficia de un Período de prueba de una (1) semana a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, impulso de visibilidad) reservadas a los Miembros Fundadores en el apartado 4.1.
+Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador disponible (los 1000 números se han asignado) se beneficia de un Período de prueba de una (1) semana a partir de la creación de su cuenta, durante el cual el envío de mensajes está incluido de forma gratuita, sin tarjeta bancaria ni compromiso. Este Período de prueba no incluye las ventajas adicionales (Likes y Flashes ilimitados, 2 Boosts de 24 h) reservadas a los Miembros Fundadores en el apartado 4.1.
 
 **4.3 Al finalizar el Período de prueba**
 
@@ -205,7 +205,7 @@ Al finalizar su Período de prueba —seis meses para un Miembro Fundador, una s
 
 ### Artículo 5 — Boost y Estatus Premium
 
-La insignia "Premium" es la etiqueta visual de las ventajas de Fundador durante su período de activación de 6 meses (Artículo 4): muestra visualmente, en el perfil, que estas ventajas (Likes y Flashes ilimitados, Boost gratuito el primer mes) están actualmente activas. Desaparece al finalizar los 6 meses, a diferencia del título honorífico "Miembro Fundador" y su número, que permanecen mostrados mientras la cuenta esté activa (Artículo 4). La validez del Boost puede consultarse en cualquier momento desde la página "Mi Perfil".
+La insignia "Premium" es la etiqueta visual de las ventajas de Fundador durante su período de activación de 6 meses (Artículo 4): muestra visualmente, en el perfil, que estas ventajas (Likes y Flashes ilimitados) están actualmente activas. Desaparece al finalizar los 6 meses, a diferencia del título honorífico "Miembro Fundador" y su número, que permanecen mostrados mientras la cuenta esté activa (Artículo 4). La validez de un Boost activado puede consultarse en cualquier momento desde la página "Mi Perfil".
 
 ### Artículo 6 — Propiedad Intelectual y Contenido del Usuario
 
@@ -301,7 +301,7 @@ Un perfil en estado de "espera" (ya sea por parte del usuario o del otro miembro
 
 **Matches Finalizados.** Un espacio de almacenamiento para los Matches archivados o finalizados a partir de una conversación ya confirmada, clasificados según quién tomó la decisión. Si el propio usuario inició el archivado o la finalización, el Match aparece en "Matches que has finalizado": el usuario puede entonces restaurar el vínculo (y el acceso a la mensajería) o eliminarlo definitivamente. Si fue la otra persona quien finalizó el vínculo, el Match aparece en "Matches que ellos finalizaron": solo es posible la eliminación definitiva, ya que no se ofrece la opción de restaurar. El otro miembro tampoco vuelve a mostrarse en Descubrir ni en las sugerencias de la página de Inicio durante un período de 1 año (si se había intercambiado un mensaje antes de la ruptura) o de 6 meses (en caso contrario), en las condiciones del apartado 3.7.1.
 
-**Boost.** Una función que permite situar el perfil en la parte superior de la lista durante un período determinado para maximizar su visibilidad.
+**Boost.** El Boost pone el perfil en primer plano durante 24 h: forma parte de los perfiles presentados con prioridad en las sugerencias de la página de Inicio y en Descubrir, salvo si el miembro que consulta ha elegido un orden, ante los miembros cuyos criterios de búsqueda coinciden con el perfil. Como varios perfiles pueden ponerse en primer plano al mismo tiempo, su orden de aparición varía. Los Miembros Fundadores reciben 2 Boosts, acreditados al lanzamiento de las ofertas de pago, para utilizar en un plazo de 6 meses, sea cual sea la oferta.
 
 **Descubrir.** La página que permite explorar perfiles compatibles, según los criterios de emparejamiento y el filtrado descritos en el apartado 3.7.1.
 

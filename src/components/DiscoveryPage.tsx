@@ -84,7 +84,10 @@ import {
   type DiscoveryCandidate,
   type DiscoveryCatalogSortId,
 } from '@/lib/discoveryCatalog';
+import { placeBoostsAtGroupHead } from '@/lib/boostPlacement';
 import {
+  discoveryGeoGroupRank,
+  inclusiveGeoGroupRank,
   newProfilesCutoffIso,
   newProfilesWindowMonths,
   sortDiscoveryCandidates,
@@ -1616,35 +1619,40 @@ export default function DiscoveryPage({
     },
   });
 
-  const catalog = catalogQuery.data ?? [];
-  const candidates = useMemo(
-    () =>
-      catalog.filter((c) => {
-        if (sessionHiddenIds.has(c.id)) return false;
-        if (!candidatePassesGeoFilter(c, catalogPrefs, myProfile?.location))
-          return false;
-        const viewedOn = sessionViewedOnPerimeterRef.current.get(c.id);
-        if (
-          viewedOn &&
-          shouldHideViewedOnProximityShift(
-            viewedOn,
-            geoPerimeter,
-            geoExclusive
-          )
-        ) {
-          return false;
-        }
-        return true;
-      }),
-    [
-      catalog,
-      sessionHiddenIds,
-      catalogPrefs,
-      geoPerimeter,
-      geoExclusive,
-      myProfile?.location,
-    ]
-  );
+  const catalog = catalogQuery.data?.profiles ?? [];
+  const boostedCatalog = catalogQuery.data?.boosted ?? [];
+  const { candidates, boostedCandidates } = useMemo(() => {
+    const keep = (c: (typeof catalog)[number]) => {
+      if (sessionHiddenIds.has(c.id)) return false;
+      if (!candidatePassesGeoFilter(c, catalogPrefs, myProfile?.location))
+        return false;
+      const viewedOn = sessionViewedOnPerimeterRef.current.get(c.id);
+      if (
+        viewedOn &&
+        shouldHideViewedOnProximityShift(
+          viewedOn,
+          geoPerimeter,
+          geoExclusive
+        )
+      ) {
+        return false;
+      }
+      return true;
+    };
+    return {
+      candidates: catalog.filter(keep),
+      boostedCandidates: sortEnabled ? [] : boostedCatalog.filter(keep),
+    };
+  }, [
+    catalog,
+    boostedCatalog,
+    sortEnabled,
+    sessionHiddenIds,
+    catalogPrefs,
+    geoPerimeter,
+    geoExclusive,
+    myProfile?.location,
+  ]);
   const loading = edgesQuery.isLoading;
   const searching = catalogQuery.isLoading;
   const catalogError = catalogQuery.error
@@ -1672,13 +1680,41 @@ export default function DiscoveryPage({
     actifs: t('discover.sortHintActive'),
   };
 
-  const displayed = useMemo(
-    () =>
-      sortEnabled
-        ? sortDiscoveryCandidates(candidates, sortChoice, newMonths)
-        : sortDiscoveryFilterResults(candidates),
-    [candidates, sortChoice, newMonths, sortEnabled]
-  );
+  const displayed = useMemo(() => {
+    if (sortEnabled) {
+      return sortDiscoveryCandidates(candidates, sortChoice, newMonths);
+    }
+    const groupRank =
+      geoPerimeter === 'international' ||
+      geoPerimeter === 'la_france_dans_le_monde'
+        ? inclusiveGeoGroupRank
+        : discoveryGeoGroupRank;
+    const ordered =
+      groupRank === inclusiveGeoGroupRank
+        ? candidates.slice().sort(
+            (a, b) =>
+              inclusiveGeoGroupRank(a) - inclusiveGeoGroupRank(b) ||
+              (a.distance_km ?? 1e9) - (b.distance_km ?? 1e9)
+          )
+        : sortDiscoveryFilterResults(candidates);
+    if (!userId) return ordered;
+    return placeBoostsAtGroupHead(
+      ordered,
+      groupRank,
+      userId,
+      Date.now(),
+      undefined,
+      boostedCandidates
+    );
+  }, [
+    candidates,
+    boostedCandidates,
+    sortChoice,
+    newMonths,
+    sortEnabled,
+    userId,
+    geoPerimeter,
+  ]);
 
   const countLabel = t('discover.profilesCount', { count: displayed.length });
 

@@ -3,8 +3,10 @@
  *
  * Usage: npm run deploy
  *
- * Produit à la racine du projet : aypik-deploy.zip
- * (contenu = racine de dist/, à extraire dans public_html)
+ * Produit à la racine du projet un zip daté :
+ * aypik-deploy-YYYY-MM-DD-HHmm.zip
+ * (contenu = racine de dist/, à extraire dans public_html).
+ * Les zips précédents ne sont pas effacés.
  */
 import { spawnSync } from 'node:child_process';
 import {
@@ -22,7 +24,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
 const htaccessSrc = join(root, 'public', '.htaccess');
 const htaccessDest = join(dist, '.htaccess');
-const zipPath = join(root, 'aypik-deploy.zip');
+function zipStamp(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+}
 
 function fail(message, code = 1) {
   console.error(`✗ ${message}`);
@@ -57,9 +62,11 @@ console.log('→ .htaccess copié dans dist/');
 
 if (!existsSync(htaccessDest)) fail('Échec de la copie de .htaccess vers dist/.');
 
+const zipName = `aypik-deploy-${zipStamp(new Date())}.zip`;
+const zipPath = join(root, zipName);
 if (existsSync(zipPath)) rmSync(zipPath);
 
-console.log('→ Création de aypik-deploy.zip…');
+console.log(`→ Création de ${zipName}…`);
 if (process.platform === 'win32') {
   // tar natif Windows 10+ : archive ZIP du contenu de dist/
   run('tar', ['-a', '-c', '-f', zipPath, '-C', dist, '.']);
@@ -70,14 +77,14 @@ if (process.platform === 'win32') {
   run('zip', ['-r', '-q', zipPath, '.'], { cwd: dist });
 }
 
-if (!existsSync(zipPath)) fail('aypik-deploy.zip n’a pas été créé.');
+if (!existsSync(zipPath)) fail(`${zipName} n’a pas été créé.`);
 
 const kb = (statSync(zipPath).size / 1024).toFixed(0);
 const assetsDir = join(dist, 'assets');
 const entryAssets = existsSync(assetsDir)
   ? readdirSync(assetsDir).filter((name) => /^index-.*\.(js|css)$/.test(name))
   : [];
-console.log(`✓ Prêt : aypik-deploy.zip (${kb} Ko)`);
+console.log(`✓ Prêt : ${zipName} (${kb} Ko)`);
 if (entryAssets.length) {
   console.log(`  Entrée JS/CSS : ${entryAssets.join(', ')}`);
 }

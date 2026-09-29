@@ -48,12 +48,19 @@ export function isPayPalConfigured() {
   return Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 }
 
+export type CheckoutStart =
+  | {
+      clientSecret: string;
+      subscriptionId: string;
+      prorataCents?: number;
+    }
+  | { approveUrl: string; subscriptionId: string; subscriptionApproveUrl?: string | null }
+  | { scheduled: true; effectiveAt: string | null }
+  | { error: string };
+
 export async function createStripeSubscription(
   plan: PaymentPlanTier = 'confort'
-): Promise<{
-  clientSecret: string;
-  subscriptionId: string;
-} | { error: string }> {
+): Promise<CheckoutStart> {
   if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-stripe-subscription',
@@ -69,13 +76,24 @@ export async function createStripeSubscription(
   }
 
   if (data?.error) return { error: String(data.error) };
+  if (data?.scheduled) {
+    return { scheduled: true, effectiveAt: data.effectiveAt ?? null };
+  }
   if (!data?.clientSecret) {
+    if (data?.subscriptionId) {
+      return {
+        clientSecret: '',
+        subscriptionId: data.subscriptionId,
+        prorataCents: data.prorataCents ?? 0,
+      };
+    }
     return { error: t('membership.stripeIncomplete') };
   }
 
   return {
     clientSecret: data.clientSecret,
     subscriptionId: data.subscriptionId,
+    prorataCents: data.prorataCents,
   };
 }
 
@@ -85,7 +103,7 @@ export async function createPayPalSubscription(
     cancelUrl: string;
   },
   plan: PaymentPlanTier = 'confort'
-): Promise<{ approveUrl: string; subscriptionId: string } | { error: string }> {
+): Promise<CheckoutStart> {
   if (SITE_FREE_MODE) return { error: paymentsDisabledMessage() };
   const { data, error } = await supabase.functions.invoke(
     'create-paypal-subscription',
@@ -101,6 +119,9 @@ export async function createPayPalSubscription(
   }
 
   if (data?.error) return { error: String(data.error) };
+  if (data?.scheduled) {
+    return { scheduled: true, effectiveAt: data.effectiveAt ?? null };
+  }
   if (!data?.approveUrl) {
     return { error: t('membership.paypalApproveMissing') };
   }
@@ -108,6 +129,7 @@ export async function createPayPalSubscription(
   return {
     approveUrl: data.approveUrl,
     subscriptionId: data.subscriptionId,
+    subscriptionApproveUrl: data.subscriptionApproveUrl ?? null,
   };
 }
 

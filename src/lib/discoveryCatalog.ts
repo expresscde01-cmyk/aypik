@@ -18,6 +18,9 @@ import { ensureProfileCoordinates } from '@/lib/profileCoordinates';
 
 export const DISCOVER_CATALOG_LIMIT = 500;
 
+/** Réservoir des places boostées, à part du plafond 50 / 500. */
+export const BOOSTED_CANDIDATE_LIMIT = 200;
+
 export type DiscoverySortId =
   | 'nouveaux'
   | 'distance'
@@ -152,6 +155,7 @@ export function suggestProfilesRpcArgs(options: {
   temperamentFilter?: SuggestionPrefs['temperamentFilter'];
   languageCodes?: SuggestionPrefs['languageCodes'];
   minLanguageLevel?: SuggestionPrefs['minLanguageLevel'];
+  boostedOnly?: boolean;
 }): Record<string, unknown> {
   const geoReset =
     options.geoPerimeter === 'anywhere' ||
@@ -206,11 +210,29 @@ export function suggestProfilesRpcArgs(options: {
       args.p_min_language_level = minLevel;
     }
   }
+  if (options.boostedOnly) {
+    args.p_boosted_only = true;
+  }
   return args;
 }
 
+export function isMissingBoostedRpc(error: {
+  code?: string;
+  message?: string;
+} | null): boolean {
+  if (!error) return false;
+  const text = `${error.code ?? ''} ${error.message ?? ''}`;
+  return text.includes('PGRST202') || text.includes('p_boosted_only');
+}
+
+export type DiscoveryCatalogResult = {
+  profiles: DiscoveryCandidate[];
+  boosted: DiscoveryCandidate[];
+};
+
 /**
  * Catalogue Découvrir : une RPC SQL paginée (plus de scan 1000).
+ * Les profils boostés compatibles sont chargés à part pour les 2 places.
  */
 export async function fetchDiscoveryCatalog(options: {
   userId: string;
@@ -220,7 +242,7 @@ export async function fetchDiscoveryCatalog(options: {
   createdAfter?: string | null;
   excludeIds?: string[];
   signal?: AbortSignal;
-}): Promise<DiscoveryCandidate[]> {
+}): Promise<DiscoveryCatalogResult> {
   const { myProfile, prefs, sort = 'score' } = options;
   if (options.signal?.aborted) {
     throw new DOMException('Aborted', 'AbortError');
@@ -231,14 +253,12 @@ export async function fetchDiscoveryCatalog(options: {
     throw new DOMException('Aborted', 'AbortError');
   }
 
-  const rpcArgs = suggestProfilesRpcArgs({
-    limit: DISCOVER_CATALOG_LIMIT,
+  const shared = {
     minOverlap: prefs.minOverlap,
-    mode: 'discover',
+    mode: 'discover' as const,
     geoPerimeter: prefs.geoPerimeter,
     geoExclusive: prefs.geoExclusive,
     radiusKm: prefs.geoRadiusKm,
-    sort,
     createdAfter: options.createdAfter,
     excludeIds: options.excludeIds,
     worldZones: prefs.worldZones,
@@ -248,27 +268,55 @@ export async function fetchDiscoveryCatalog(options: {
     temperamentFilter: prefs.temperamentFilter,
     languageCodes: prefs.languageCodes,
     minLanguageLevel: prefs.minLanguageLevel,
-  });
-  const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
+  };
 
-  if (options.signal?.aborted) {
-    throw new DOMException('Aborted', 'AbortError');
-  }
-  if (error) throw error;
-
-  const mapped = ((data || []) as SuggestRow[])
-    .map((row) =>
-      mapSuggestRow(row, myProfile.interests || [], myProfile.location)
-    )
-    .filter((candidate) =>
-      candidatePassesGeoFilter(candidate, prefs, myProfile.location)
+  const load = async (
+    limit: number,
+    boostedOnly: boolean
+  ): Promise<DiscoveryCandidate[]> => {
+    const { data, error } = await supabase.rpc(
+      'suggest_profiles',
+      suggestProfilesRpcArgs({
+        ...shared,
+        limit,
+        sort,
+        boostedOnly,
+      })
     );
+    if (options.signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    if (error) throw error;
+    const mapped = ((data || []) as SuggestRow[])
+      .map((row) =>
+        mapSuggestRow(row, myProfile.interests || [], myProfile.location)
+      )
+      .filter((candidate) =>
+        candidatePassesGeoFilter(candidate, prefs, myProfile.location)
+      );
+    return fillMissingProfileDistances(
+      myProfile.location,
+      mapped,
+      options.signal
+    );
+  };
 
-  return fillMissingProfileDistances(
-    myProfile.location,
-    mapped,
-    options.signal
-  );
+  const profiles = await load(DISCOVER_CATALOG_LIMIT, false);
+  let boosted: DiscoveryCandidate[] = [];
+  if (sort === 'score') {
+    try {
+      boosted = await load(BOOSTED_CANDIDATE_LIMIT, true);
+    } catch (error) {
+      if (
+        !isMissingBoostedRpc(
+          error as { code?: string; message?: string } | null
+        )
+      ) {
+        throw error;
+      }
+    }
+  }
+  return { profiles, boosted };
 }
 
 export async function fetchPlatformSignupCount(): Promise<number> {
