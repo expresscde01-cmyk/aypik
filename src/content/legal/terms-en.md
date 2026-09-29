@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: September 20, 2026.
+Last updated: September 23, 2026.
 
 ### Preamble
 
@@ -54,7 +54,7 @@ Registering, creating an account, or using the Service constitutes full and comp
 The following remain available free of charge, with no payment or credit card required: creating and managing a profile, viewing compatible profiles shown in Discover and suggestions, expressing interest (Like, Flash) and forming Matches.
 
 <!-- free:start -->
-Sending messages (Dialogue mode) is included during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. No paid subscription is offered or required while the Service is in free launch mode.
+Sending messages (Dialogue mode) is included during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. No paid subscription is offered while the Service is in its launch phase. At the end of this phase, optional paid plans may be offered; however, no subscription will ever be required in order to keep the account and to access the free features described in the first paragraph of this Section. Absent a subscription, the account moves to the Free plan (Section 4.3).
 <!-- free:end -->
 <!-- paid:start -->
 Sending messages (Dialogue mode) is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. This window is not renewable. Beyond that, sending new messages is reserved for users with an active subscription (Basique, Essentiel, Confort or Premium), under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4. Opening a Dialogue without a Match depends on the recipient (open or protected profile), as described in Section 2.1.
@@ -69,7 +69,7 @@ At the end of the Trial Period referred to in Article 4, the publisher offers or
 
 - users are informed beforehand, clearly and distinctly;
 - these plans are governed by separate General Terms of Sale, brought to the user's attention and expressly accepted before any subscription and any payment;
-- declining to subscribe to a paid plan does not result in account closure or loss of access to creating a profile, discovering members, Like, Flash and forming Matches, as described in Section 2.3. It does, however, limit the ability to send new messages at the end of their Trial Period (Article 4).
+- Refusing to pay does not close the account: the user keeps access to their profile, to Discover, to expressing interest (Like, Flash) and to forming Matches. After the Trial Period, this only limits the sending of new messages.
 
 As long as General Terms of Sale for a paid plan have not been published and accepted by the user, no payment is requested from them under that plan.
 <!-- paid:end -->
@@ -182,10 +182,12 @@ An honorary "Founding Member" status is granted to the first 1000 accounts creat
 
 During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages, unlimited Likes and Flashes, and a profile visibility boost during the first month after signup.
 
-This status is honorary: beyond the Trial Period benefits described above, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
+This status is honorary: beyond the Trial Period benefits described above and the Founder Discount set out below, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
+
+Founder Discount. Every Founding Member benefits, for as long as their account remains active within the meaning of Section 3.7, from a 50% reduction on the price of any paid plan that may come to be offered on the Service, applied to the public price in effect at the time of subscription. This reduction does not create any obligation to subscribe. It is personal, non-transferable and cannot be combined with any other promotion, unless otherwise stated. It is permanently lost if the account is deleted, under the conditions of Section 8.2.
 
 <!-- founder-closed:start -->
-The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). Deleting an account does not free a number.
+The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount, for as long as the account remains active (Section 3.7), on the entire site, unlimited Likes and Flashes during their launch period, complimentary Boost in the first month). Deleting an account does not free a number.
 <!-- founder-closed:end -->
 
 **4.2 Other users**
@@ -195,7 +197,7 @@ Any user creating an account when no Founding Member slot is available (all 1000
 **4.3 At the end of the Trial Period**
 
 <!-- free:start -->
-At the end of their Trial Period — six months for a Founding Member, one week for any other user — the user keeps access to the Service. No paid subscription is offered or required while the Service is in free launch mode.
+At the end of their Trial Period — six months for a Founding Member, one week for any other user — the user keeps access to the Service. No paid subscription is offered or required while the Service is in its launch phase. At the end of this launch phase, a paid subscription may be offered, but it will never be mandatory: the account will simply move to the Free plan.
 <!-- free:end -->
 <!-- paid:start -->
 At the end of their Trial Period — six months for a Founding Member, one week for any other user — and absent a subscription to a paid plan, the user keeps free access to creating and managing their profile, to Discover, to Like, to Flash, to forming Matches, and to reading messages already received. Only sending new messages then becomes subject to holding an active paid plan, under the conditions of Section 2.4.
@@ -324,7 +326,7 @@ No. One account per person and per email address, per Section 3.3.
 
 **Will the Service become paid?**
 <!-- free:start -->
-Not at the moment. The Service is in free launch mode: no paid plan is sold and no payment is requested. Creating a profile, discovering members, Like, Flash, forming Matches and sending messages are included under the Trial Period (Article 4).
+Not at the moment. The Service is in its launch phase: no paid plan is sold and no payment is requested. Creating a profile, discovering members, Like, Flash, forming Matches and sending messages are included under the Trial Period (Article 4). Even at the end of this launch phase, a paid subscription may possibly be offered, but it will never be mandatory: absent a subscription, the account remains usable via the Free plan (Section 4.3).
 <!-- free:end -->
 <!-- paid:start -->
 Creating a profile, discovering members, Like, Flash and forming Matches remain free. Sending messages is offered free of charge during the Trial Period defined in Article 4 (six months for Founding Members, one week for other users); beyond that, it requires an active subscription, the terms and pricing of which are set out in separate General Terms of Sale, provided before any subscription and any payment.

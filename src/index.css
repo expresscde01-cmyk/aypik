@@ -2294,6 +2294,17 @@ button.group[data-matched='true'] {
   background-color: #43a047;
 }
 
+.notif-tone-reply-wait {
+  background-color: #f3f4f6;
+  border-bottom-color: #d1d5db;
+}
+.notif-tone-reply-wait:hover {
+  background-color: #e5e7eb;
+}
+.notif-tone-reply-wait .notif-dot {
+  background-color: #6b7280;
+}
+
 .notif-tone-chat {
   background-color: rgba(255, 241, 242, 0.85);
   border-bottom-color: #fecdd3;

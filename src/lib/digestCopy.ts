@@ -144,9 +144,25 @@ export function firstDigestTone(
   return 'mixed';
 }
 
+/** Un seul état par personne : jamais « 1er mot » et « Relance possible » ensemble. */
+export type QuietDigestState = 'first_message' | 'follow_up' | 'waiting' | 'none';
+
+export function quietDigestState(input: {
+  iWrote: boolean;
+  theyWrote: boolean;
+  lastSentAtMs: number | null;
+  nowMs: number;
+}): QuietDigestState {
+  if (input.iWrote && input.theyWrote) return 'none';
+  if (!input.iWrote) return 'first_message';
+  if (isFollowUpInWindow(input.lastSentAtMs, input.nowMs)) return 'follow_up';
+  return 'waiting';
+}
+
 /**
- * « 1er mot » tant que les deux n’ont pas écrit.
- * « Relance possible » s’ajoute entre 72 h et 14 j après mon dernier envoi.
+ * « 1er mot » tant que je n’ai pas écrit.
+ * « Relance possible » entre 72 h et 14 j après mon dernier envoi.
+ * Sinon, si j’ai écrit sans réponse : « En attente de réponse ».
  */
 export function partitionQuietDigestIds(
   ids: readonly string[],
@@ -154,7 +170,7 @@ export function partitionQuietDigestIds(
   wroteToMe: Iterable<string>,
   lastSentAt: Readonly<Record<string, number>> | ReadonlyMap<string, number> = {},
   nowMs = Date.now()
-): { firstWordIds: string[]; followUpIds: string[] } {
+): { firstWordIds: string[]; followUpIds: string[]; waitingIds: string[] } {
   const fromMe = new Set(
     [...wroteFromMe].filter((id): id is string => Boolean(id))
   );
@@ -163,21 +179,50 @@ export function partitionQuietDigestIds(
   );
   const firstWordIds: string[] = [];
   const followUpIds: string[] = [];
+  const waitingIds: string[] = [];
   for (const id of ids) {
     if (!id) continue;
-    const iWrote = fromMe.has(id);
-    const theyWrote = toMe.has(id);
-    if (iWrote && theyWrote) continue;
-    if (
-      iWrote &&
-      !theyWrote &&
-      isFollowUpInWindow(lastSentMsOf(id, lastSentAt), nowMs)
-    ) {
-      followUpIds.push(id);
-    }
-    firstWordIds.push(id);
+    const state = quietDigestState({
+      iWrote: fromMe.has(id),
+      theyWrote: toMe.has(id),
+      lastSentAtMs: lastSentMsOf(id, lastSentAt),
+      nowMs,
+    });
+    if (state === 'first_message') firstWordIds.push(id);
+    else if (state === 'follow_up') followUpIds.push(id);
+    else if (state === 'waiting') waitingIds.push(id);
   }
-  return { firstWordIds, followUpIds };
+  return { firstWordIds, followUpIds, waitingIds };
+}
+
+/** Envoi de cette session : dernier message = maintenant, avant le retour serveur. */
+export function withSessionSends(
+  wroteFromMe: Iterable<string>,
+  lastSentAt: Readonly<Record<string, number>> | ReadonlyMap<string, number>,
+  wroteThisSession: Iterable<string>,
+  nowMs: number
+): { wroteFromMe: string[]; lastSentAt: Record<string, number> } {
+  const fromMe = [...wroteFromMe].filter((id): id is string => Boolean(id));
+  const known = new Set(fromMe);
+  const sentAt: Record<string, number> = {};
+  if (lastSentAt instanceof Map) {
+    for (const [id, value] of lastSentAt) {
+      if (id && value != null) sentAt[id] = value;
+    }
+  } else {
+    for (const [id, value] of Object.entries(lastSentAt)) {
+      if (id && value != null) sentAt[id] = value;
+    }
+  }
+  for (const id of wroteThisSession) {
+    if (!id) continue;
+    if (!known.has(id)) {
+      known.add(id);
+      fromMe.push(id);
+    }
+    sentAt[id] = nowMs;
+  }
+  return { wroteFromMe: fromMe, lastSentAt: sentAt };
 }
 
 /**
@@ -245,20 +290,6 @@ export function firstWordNotificationIds(ids: readonly string[]): string[] {
   return ids.filter((id) => Boolean(id));
 }
 
-/**
- * Réponse envoyée pendant cette session : la notification de ce profil
- * disparaît jusqu’à la prochaine connexion ou session.
- */
-export function omitFirstWordRepliedThisSession(
-  ids: readonly string[],
-  repliedThisSession: Iterable<string>
-): string[] {
-  const hidden = new Set(
-    [...repliedThisSession].filter((id): id is string => Boolean(id))
-  );
-  return ids.filter((id) => Boolean(id) && !hidden.has(id));
-}
-
 /** Une nouvelle session ou une reconnexion rouvre la notification « 1er mot ». */
 export function firstWordDismissedAfterSessionStart(
   _storedDismissed: boolean
@@ -310,11 +341,10 @@ export function shouldFullLoadMatchesOnPageOpen(input: {
 }
 
 /**
- * Carte « 1er mot » / relance.
- * Un match reste dans « 1er mot » tant que les deux n’ont pas écrit, quel que soit le délai.
- * En Simplifié, entre 72 h et 14 j après mon dernier message, il est aussi sur « Relance possible ».
- * `dialogueReady` ne fait que retarder l’affichage le temps de connaître qui a déjà écrit.
- * Si ce chargement échoue, la carte s’affiche quand même avec les matchs connus.
+ * Cases « 1er mot », « Relance possible » et « En attente de réponse ».
+ * Une personne n’est que dans une seule liste.
+ * « En attente de réponse » n’existe qu’en Simplifié.
+ * Si le chargement « qui a écrit » échoue, « 1er mot » s’affiche quand même.
  */
 export function firstWordDigestAlert(input: {
   simplified: boolean;
@@ -326,34 +356,64 @@ export function firstWordDigestAlert(input: {
   wroteFromMe: Iterable<string>;
   wroteToMe: Iterable<string>;
   lastSentAt?: Readonly<Record<string, number>> | ReadonlyMap<string, number>;
+  /** Envois de cette session, avant le retour de last_sent_at. */
+  wroteThisSession?: Iterable<string>;
   /** Liste Mes Matchs chargée avec succès. Absent = déjà connue (tests historiques). */
   matchesReady?: boolean;
   nowMs?: number;
 }): {
   firstWordIds: string[];
   followUpIds: string[];
+  waitingIds: string[];
   alert: boolean;
   showFirstWord: boolean;
+  showFollowUp: boolean;
+  showWaiting: boolean;
 } {
-  const split = partitionQuietDigestIds(
-    input.quietIds,
-    input.wroteFromMe,
-    input.wroteToMe,
-    input.lastSentAt ?? {},
-    input.nowMs
-  );
-  const followUpIds = input.simplified ? split.followUpIds : [];
-  const pending = split.firstWordIds.length + followUpIds.length > 0;
+  const nowMs = input.nowMs ?? Date.now();
   const matchesKnown = input.matchesReady !== false;
   const classified =
     !input.simplified ||
     (matchesKnown && (input.dialogueReady || input.dialogueFailed === true));
+  if (input.dialogueFailed) {
+    const firstWordIds = input.quietIds.filter((id) => Boolean(id));
+    const alert = firstWordIds.length > 0 && !input.dismissed && classified;
+    return {
+      firstWordIds,
+      followUpIds: [],
+      waitingIds: [],
+      alert,
+      showFirstWord: alert,
+      showFollowUp: false,
+      showWaiting: false,
+    };
+  }
+  const sent = withSessionSends(
+    input.wroteFromMe,
+    input.lastSentAt ?? {},
+    input.wroteThisSession ?? [],
+    nowMs
+  );
+  const split = partitionQuietDigestIds(
+    input.quietIds,
+    sent.wroteFromMe,
+    input.wroteToMe,
+    sent.lastSentAt,
+    nowMs
+  );
+  const followUpIds = split.followUpIds;
+  const waitingIds = input.simplified ? split.waitingIds : [];
+  const pending =
+    split.firstWordIds.length + followUpIds.length + waitingIds.length > 0;
   const alert = pending && !input.dismissed && classified;
   return {
     firstWordIds: split.firstWordIds,
     followUpIds,
+    waitingIds,
     alert,
     showFirstWord: alert && split.firstWordIds.length > 0,
+    showFollowUp: alert && followUpIds.length > 0,
+    showWaiting: alert && waitingIds.length > 0,
   };
 }
 
@@ -406,7 +466,14 @@ export function explainFirstWordChain(input: {
     input.lastSentAt ?? {},
     input.nowMs
   );
-  const shown = new Set(simplified.showFirstWord ? split.firstWordIds : []);
+  const shown = new Set<string>();
+  if (simplified.showFirstWord) {
+    for (const id of simplified.firstWordIds) if (id) shown.add(id);
+  }
+  if (simplified.alert) {
+    for (const id of simplified.followUpIds) if (id) shown.add(id);
+    for (const id of simplified.waitingIds) if (id) shown.add(id);
+  }
   const exclusions: { id: string; reason: string }[] = [];
   for (const id of input.quietIds) {
     if (!id || shown.has(id)) continue;
@@ -430,8 +497,11 @@ export function explainFirstWordChain(input: {
   } else stop = 'affiche';
   return {
     stop,
-    simplifiedEligible: split.firstWordIds.length + split.followUpIds.length,
-    detailedEligible: detailed.firstWordIds.length,
+    simplifiedEligible:
+      split.firstWordIds.length +
+      split.followUpIds.length +
+      split.waitingIds.length,
+    detailedEligible: detailed.firstWordIds.length + detailed.followUpIds.length,
     simplifiedShow: simplified.showFirstWord,
     detailedShow: detailed.showFirstWord,
     hidesDetailedToo: input.dismissed && quietCount > 0,
@@ -439,18 +509,88 @@ export function explainFirstWordChain(input: {
   };
 }
 
-export function followUpNotificationCopy(names: string[]): {
+/** Variante 0, 1 ou 2. Stable pour un même jour d’ancre, et jamais la même deux jours de suite. */
+export function quietDigestVariantIndex(
+  ids: readonly string[],
+  anchorMs: number
+): number {
+  const day = Math.floor(anchorMs / 86_400_000);
+  const key = [...ids].filter((id) => Boolean(id)).sort().join('\0') || 'empty';
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (Math.imul(hash, 31) + key.charCodeAt(i)) >>> 0;
+  }
+  return (hash + day) % 3;
+}
+
+function quietReplyLead(names: string[]): string {
+  return bodyWithNames(
+    names,
+    (list) => t('notifications.digestQuietLeadOne', { names: list }),
+    (list) => t('notifications.digestQuietLeadMany', { names: list }),
+    t('notifications.digestQuietLeadEmpty')
+  );
+}
+
+function pluralNames(names: string[]): boolean {
+  return names.filter((name) => Boolean(firstNameOf(name))).length > 1;
+}
+
+function rotatedTail(
+  names: string[],
+  variantIndex: number,
+  singular: [string, string, string],
+  pluralAt: Partial<Record<0 | 1 | 2, string>>
+): string {
+  const index = ((variantIndex % 3) + 3) % 3;
+  const plural = pluralNames(names);
+  const override = plural ? pluralAt[index as 0 | 1 | 2] : undefined;
+  return override ?? singular[index];
+}
+
+export function followUpNotificationCopy(
+  names: string[],
+  variantIndex = 0
+): {
   title: string;
   body: string;
 } {
+  const tail = rotatedTail(
+    names,
+    variantIndex,
+    [
+      t('notifications.digestFollowTail0'),
+      t('notifications.digestFollowTail1'),
+      t('notifications.digestFollowTail2'),
+    ],
+    { 2: t('notifications.digestFollowTail2Many') }
+  );
   return {
     title: t('notifications.digestFollowTitle'),
-    body: bodyWithNames(
-      names,
-      (list) => t('notifications.digestFollowOne', { names: list }),
-      (list) => t('notifications.digestFollowMany', { names: list }),
-      t('notifications.digestFollowEmpty')
-    ),
+    body: `${quietReplyLead(names)} ${tail}`,
+  };
+}
+
+export function waitingReplyNotificationCopy(
+  names: string[],
+  variantIndex = 0
+): {
+  title: string;
+  body: string;
+} {
+  const tail = rotatedTail(
+    names,
+    variantIndex,
+    [
+      t('notifications.digestWaitingTail0'),
+      t('notifications.digestWaitingTail1'),
+      t('notifications.digestWaitingTail2'),
+    ],
+    { 1: t('notifications.digestWaitingTail1Many') }
+  );
+  return {
+    title: t('notifications.digestWaitingTitle'),
+    body: `${quietReplyLead(names)} ${tail}`,
   };
 }
 
