@@ -387,6 +387,17 @@ export function bellPanelCardCount(
   return total;
 }
 
+/** Même comptage, sans la case grise « En attente de réponse ». */
+export function bellBadgeCardCount(
+  blocks: readonly { rows: readonly { kind?: string }[] }[]
+): number {
+  return bellPanelCardCount(
+    blocks.map((block) => ({
+      rows: block.rows.filter((row) => row.kind !== 'cat_waiting'),
+    }))
+  );
+}
+
 /**
  * Ancien tally par rubrique (stock + nouveautés). Le badge UI utilise
  * `bellPanelCardCount` (1 par case affichée).

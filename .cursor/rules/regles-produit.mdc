@@ -18,10 +18,10 @@ Les règles 1 à 10 sont fondatrices. Elles l'emportent toujours sur les règles
 1. Un Match = un like et/ou un flash en commun, dans toutes les combinaisons : like + like, like + flash, flash + like, flash + flash. Autant de likes ou de flashs d'un seul côté, sans like ou flash en retour, ne font pas un Match.
 2. Le Match est dans « 1er mot » tant que les deux personnes n'ont pas chacune envoyé au moins un message, quel que soit le nombre de messages d'un seul côté. Ensuite, il passe en « Discussion en cours ». Valable en Simplifié et en Détaillé.
 3. Personne ne quitte la rubrique « 1er mot » avant que les deux aient écrit. Ni un message non lu, ni l'ouverture de la fiche ne retire un profil de « 1er mot ». Un message non lu peut apparaître en plus dans la rubrique messages, mais sans retirer le profil de « 1er mot ».
-4. En Simplifié, les notifications sont le seul moyen de prendre connaissance des profils en « 1er mot » et d'en suivre le fil : aucun ne doit y manquer. Dès que le membre a répondu (il a envoyé son message), la notification « 1er mot » de ce profil disparaît pour la session en cours. Elle revient à la prochaine connexion ou session, tant que les deux n'ont pas écrit.
-5. En Détaillé, les notifications « 1er mot » suivent la même règle qu'en Simplifié. En plus, ces profils sont accessibles dans la page Mes Matchs.
+4. En Simplifié, les notifications sont le seul moyen de prendre connaissance des profils en « 1er mot » et d'en suivre le fil : aucun ne doit y manquer. Tant que je n'ai pas écrit, la notification « 1er mot » s'affiche et revient à chaque session. Dès que j'ai envoyé un message, elle est remplacée par « Relance possible » (règle 7) ou, en dehors de cette fenêtre, par « En attente de réponse », jusqu'à ce que l'autre réponde. La case « En attente de réponse » (grise) n'est pas comptée dans le chiffre de la cloche.
+5. En Détaillé, la notification « 1er mot » suit la même règle qu'en Simplifié, et « Relance possible » aussi (règle 7). Il n'y a pas de notification « En attente de réponse » : ces profils restent accessibles dans la page Mes Matchs.
 6. Si le chargement « qui a écrit » échoue, la carte « 1er mot » s'affiche quand même en Simplifié, avec les matchs connus. Mieux vaut une carte peut-être incomplète que rien.
-7. En Simplifié, entre 72 h et 14 jours après mon dernier message sans réponse, la carte « Relance possible » s'ajoute, sans retirer le match de « 1er mot ». Le reste de son fonctionnement ne change pas.
+7. Dans les deux modes, entre 72 h et 14 jours après mon dernier message sans réponse, la notification « Relance possible » remplace la notification « 1er mot » pour cette personne. Le match reste dans la rubrique « 1er mot » de Mes Matchs (règles 2, 3 et 13).
 
 ## Fondateurs et forfaits
 
@@ -42,6 +42,7 @@ Les règles 1 à 10 sont fondatrices. Elles l'emportent toujours sur les règles
 16. Le statut de Membre Fondateur et son numéro restent liés au compte actif. Après 6 mois, le badge devient honorifique. À la suppression du compte, le statut et le numéro sont effacés et le numéro n'est jamais réattribué.
 17. Découvrir affiche un profil si les trois conditions sont vraies en même temps : le périmètre géographique choisi, un âge d'au moins floor(mon âge / 2) + 7 (plancher 18 ans), et le minimum de centres d'intérêt. Un homme voit les femmes, une femme voit les hommes.
 18. Chaque fiche a deux lignes de géographie : le badge vert foncé (Même ville, Même département, Même région, ou le libellé Quart / Île-de-France), puis la distance « à X km » en vert clair. Paris, Versailles et l'Île-de-France ne sont jamais « Centre de la France ».
+19. La Réduction Fondateur est de 50 % sur le tarif public de toute offre payante, tant que le compte reste actif, y compris après les 6 mois où le badge devient honorifique (règle 16). Elle n'oblige pas à souscrire. Elle est personnelle, non cessible, non cumulable, et définitivement perdue à la suppression du compte.
 
 ## Consignes permanentes
 

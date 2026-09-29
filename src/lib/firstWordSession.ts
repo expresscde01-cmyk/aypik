@@ -1,4 +1,7 @@
-/** Notification « 1er mot » masquée après une réponse, pour la session en cours. */
+/**
+ * Envoi pendant cette session, avant que le serveur renvoie last_sent_at.
+ * La personne quitte « 1er mot » tout de suite et passe en attente de réponse.
+ */
 
 export const FIRST_WORD_REPLIED_EVENT = 'aypik-first-word-replied';
 

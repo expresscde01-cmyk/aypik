@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, CheckCheck, ChevronDown, Heart, MessageCircle, Sparkles } from 'lucide-react';
+import { Bell, CheckCheck, ChevronDown, Clock, Heart, MessageCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import {
@@ -41,8 +41,9 @@ import {
   shouldRetryBellDialogue,
   firstDigestTone,
   firstWordDigestAlert,
-  omitFirstWordRepliedThisSession,
   followUpNotificationCopy,
+  quietDigestVariantIndex,
+  waitingReplyNotificationCopy,
   resolveDigestPeople,
   sliceDigestPeople,
   switchBellDialogueAccount,
@@ -50,10 +51,11 @@ import {
 import {
   clearFirstWordRepliedThisSession,
   FIRST_WORD_REPLIED_EVENT,
+  readFirstWordRepliedThisSession,
 } from '@/lib/firstWordSession';
 import {
   absorbRubricConsultation,
-  bellPanelCardCount,
+  bellBadgeCardCount,
   BELL_RUBRIC_UNREAD_KINDS,
   collectUnreadActorIds,
   emptyRubricBaseline,
@@ -113,11 +115,13 @@ type NotifTone =
   | 'wait'
   | 'wait-other'
   | 'new'
+  | 'reply-wait'
   | 'declined';
 
 const TONE_HIERARCHY_TOP_TO_BOTTOM: NotifTone[] = [
   'chat',
   'match',
+  'reply-wait',
   'wait',
   'wait-other',
   'new',
@@ -160,6 +164,8 @@ function notifToneClass(tone: NotifTone): string {
       return 'notif-tone-wait-other';
     case 'match':
       return 'notif-tone-match';
+    case 'reply-wait':
+      return 'notif-tone-reply-wait';
     case 'chat':
       return 'notif-tone-chat';
     case 'declined':
@@ -223,6 +229,15 @@ type PanelRow =
       key: string;
       kind: 'cat_follow';
       tone: 'match';
+      at: number;
+      count: number;
+      soleId?: string | null;
+      soleName?: string | null;
+    }
+  | {
+      key: string;
+      kind: 'cat_waiting';
+      tone: 'reply-wait';
       at: number;
       count: number;
       soleId?: string | null;
@@ -619,18 +634,24 @@ export default function NotificationsBell({
     actorNames,
   ]);
 
+  const variantAnchorMs = useMemo(() => {
+    if (!user?.id || typeof sessionStorage === 'undefined') return Date.now();
+    const key = `aypik-digest-variant-anchor:${user.id}`;
+    const parsed = Number(sessionStorage.getItem(key));
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    const now = Date.now();
+    sessionStorage.setItem(key, String(now));
+    return now;
+  }, [user?.id]);
+
   const quietPartition = useMemo(() => {
-    const ids = omitFirstWordRepliedThisSession(
-      quietMatches.map((m) => m.id),
-      repliedThisSession
-    );
     return firstWordDigestAlert({
       simplified: isSimplifiedDiscoverMode(discoverMode),
       dialogueReady: socialListReady,
       dialogueFailed: socialListFailed,
       matchesReady: syncHasSnapshot,
       dismissed: firstDismissed,
-      quietIds: ids,
+      quietIds: quietMatches.map((m) => m.id),
       wroteFromMe: peersIWroteTo,
       wroteToMe: [
         ...peersWhoWroteToMe,
@@ -639,6 +660,7 @@ export default function NotificationsBell({
           .map(([id]) => id),
       ],
       lastSentAt: lastSentAtByPeer,
+      wroteThisSession: repliedThisSession,
     });
   }, [
     quietMatches,
@@ -655,8 +677,11 @@ export default function NotificationsBell({
   ]);
 
   const eligibleQuietCount =
-    quietPartition.firstWordIds.length + quietPartition.followUpIds.length;
-  const hasFirstAlert = quietPartition.alert;
+    quietPartition.firstWordIds.length +
+    quietPartition.followUpIds.length +
+    quietPartition.waitingIds.length;
+  const hasFirstAlert =
+    quietPartition.showFirstWord || quietPartition.showFollowUp;
 
   const prevQuietCountRef = useRef(0);
 
@@ -837,7 +862,11 @@ export default function NotificationsBell({
   const discoverPeople = resolveDigestPeople(discoverPinIds, digestNameById);
   const waitPeople = resolveDigestPeople(waitPinIds, digestNameById);
   const firstMemberIds = isSimplifiedDiscoverMode(discoverMode)
-    ? [...quietPartition.firstWordIds, ...quietPartition.followUpIds]
+    ? [
+        ...quietPartition.firstWordIds,
+        ...quietPartition.followUpIds,
+        ...quietPartition.waitingIds,
+      ]
     : quietMatches.map((m) => m.id);
   const firstWordPeople = resolveDigestPeople(
     quietPartition.firstWordIds,
@@ -845,6 +874,10 @@ export default function NotificationsBell({
   );
   const followUpPeople = resolveDigestPeople(
     quietPartition.followUpIds,
+    digestNameById
+  );
+  const waitingReplyPeople = resolveDigestPeople(
+    quietPartition.waitingIds,
     digestNameById
   );
 
@@ -1020,6 +1053,20 @@ export default function NotificationsBell({
       }
     }
 
+    if (quietPartition.showWaiting && waitingReplyPeople.length > 0) {
+      rows.push({
+        key: 'cat-waiting',
+        kind: 'cat_waiting',
+        tone: 'reply-wait',
+        at: 0,
+        count: waitingReplyPeople.length,
+        soleId:
+          waitingReplyPeople.length === 1 ? waitingReplyPeople[0].id : null,
+        soleName:
+          waitingReplyPeople.length === 1 ? waitingReplyPeople[0].name : null,
+      });
+    }
+
     const blocks: { tone: NotifTone; rows: PanelRow[] }[] = [];
     for (const tone of TONE_HIERARCHY_TOP_TO_BOTTOM) {
       const group = sortRowsForTone(
@@ -1039,6 +1086,8 @@ export default function NotificationsBell({
     activeCatWait,
     firstWordPeople,
     followUpPeople,
+    waitingReplyPeople,
+    quietPartition.showWaiting,
     discoverRecapCount,
     waitPinIds,
     mergeNewWithSocial,
@@ -1047,7 +1096,7 @@ export default function NotificationsBell({
     matchedIds,
   ]);
 
-  const badgeCount = bellPanelCardCount(orderedBlocks.blocks);
+  const badgeCount = bellBadgeCardCount(orderedBlocks.blocks);
 
   const refreshCategoryNotifs = useCallback(async () => {
     if (!user) {
@@ -1419,10 +1468,11 @@ export default function NotificationsBell({
     );
     if (user) {
       sessionStorage.removeItem(categoryNotifSessionKey(user.id, 'first'));
-      if (firstWordSessionAccountRef.current !== user.id) {
+      const previousAccount = firstWordSessionAccountRef.current;
+      if (previousAccount !== user.id) {
+        if (previousAccount) clearFirstWordRepliedThisSession(previousAccount);
         firstWordSessionAccountRef.current = user.id;
-        clearFirstWordRepliedThisSession(user.id);
-        setRepliedThisSession([]);
+        setRepliedThisSession(readFirstWordRepliedThisSession(user.id));
       }
     } else {
       firstWordSessionAccountRef.current = null;
@@ -2062,10 +2112,52 @@ export default function NotificationsBell({
                         );
                       }
 
+                      if (row.kind === 'cat_waiting') {
+                        const slice = sliceDigestPeople(waitingReplyPeople);
+                        const copy = waitingReplyNotificationCopy(
+                          waitingReplyPeople.map((p) => p.name),
+                          quietDigestVariantIndex(
+                            waitingReplyPeople.map((p) => p.id),
+                            variantAnchorMs
+                          )
+                        );
+                        return (
+                          <DigestNamedRow
+                            key={row.key}
+                            title={copy.title}
+                            body={copy.body}
+                            people={slice.shown}
+                            extra={slice.extra}
+                            photos={actorPhotos}
+                            initialClass="bg-gray-500"
+                            titleClass="text-gray-800"
+                            bodyClass="text-gray-600"
+                            toneClass={notifToneClass('reply-wait')}
+                            onOpenAll={() =>
+                              openFirstDigestCards(
+                                waitingReplyPeople.map((p) => p.id)
+                              )
+                            }
+                            onOpenPerson={(id) =>
+                              openDigestPerson('first', id)
+                            }
+                            icon={
+                              <span className="mt-0.5 relative w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center shrink-0">
+                                <Clock className="w-3.5 h-3.5" />
+                              </span>
+                            }
+                          />
+                        );
+                      }
+
                       if (row.kind === 'cat_follow') {
                         const slice = sliceDigestPeople(followUpPeople);
                         const copy = followUpNotificationCopy(
-                          followUpPeople.map((p) => p.name)
+                          followUpPeople.map((p) => p.name),
+                          quietDigestVariantIndex(
+                            followUpPeople.map((p) => p.id),
+                            variantAnchorMs
+                          )
                         );
                         return (
                           <DigestNamedRow

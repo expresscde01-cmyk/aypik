@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 20 de septiembre de 2026.
+Última actualización: 23 de septiembre de 2026.
 
 ### Preámbulo
 
@@ -54,7 +54,7 @@ Registrarse, crear una cuenta o utilizar el Servicio implica la aceptación plen
 Permanecen disponibles de forma gratuita, sin obligación de pago ni de tarjeta bancaria: la creación y gestión de un perfil, la consulta de los perfiles compatibles mostrados en Descubrir y en las sugerencias, la expresión de interés (Like, Flash) y la formación de Matches.
 
 <!-- free:start -->
-El envío de mensajes (modo Diálogo) está incluido durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Ninguna suscripción de pago se ofrece ni se exige mientras el Servicio esté en modo de lanzamiento gratuito.
+El envío de mensajes (modo Diálogo) está incluido durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Ninguna suscripción de pago se ofrece mientras el Servicio esté en fase de lanzamiento. Al término de esta fase, podrán proponerse ofertas de pago opcionales; no obstante, nunca se exigirá ninguna suscripción para conservar la cuenta y acceder a las funcionalidades gratuitas descritas en el primer párrafo del presente apartado. A falta de suscripción, la cuenta pasa a la oferta Gratis (apartado 4.3).
 <!-- free:end -->
 <!-- paid:start -->
 El envío de mensajes (modo Diálogo) está incluido de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Esta ventana no es renovable. Más allá de ese período, el envío de nuevos mensajes queda reservado a los usuarios que dispongan de una suscripción activa (Basique, Essentiel, Confort o Premium), en las condiciones y tarifas establecidas en las Condiciones Generales de Venta mencionadas en el apartado 2.4. La apertura de un Diálogo sin Match depende del destinatario (perfil abierto o protegido), según el apartado 2.1.
@@ -69,7 +69,7 @@ Al finalizar el Período de prueba mencionado en el artículo 4, el editor ofrec
 
 - los usuarios son informados previamente, de manera clara y diferenciada;
 - dichos planes se rigen por Condiciones Generales de Venta distintas, puestas en conocimiento del usuario y aceptadas expresamente antes de cualquier contratación y de cualquier pago;
-- la negativa a contratar un plan de pago no supone el cierre de la cuenta ni la pérdida de acceso a la creación de perfil, al descubrimiento de miembros, al Like, al Flash ni a la formación de Matches, descritos en el apartado 2.3. Sí limita, no obstante, la posibilidad de enviar nuevos mensajes al finalizar su Período de prueba (artículo 4).
+- Rechazar el pago no cierra la cuenta: el usuario conserva el acceso a su perfil, a Descubrir, a la expresión de un interés (Like, Flash) y a la formación de Matches. Después del Período de prueba, esto solo limita el envío de nuevos mensajes.
 
 Mientras las Condiciones Generales de Venta de un plan de pago no hayan sido publicadas y aceptadas por el usuario, no se le solicitará ningún pago en virtud de dicho plan.
 <!-- paid:end -->
@@ -182,10 +182,12 @@ Se otorga un estatus honorífico de «Miembro Fundador» a las 1000 primeras cue
 
 Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes, Likes y Flashes ilimitados, y un impulso de visibilidad del perfil durante el primer mes tras el registro.
 
-Este estatus es honorífico: más allá de las ventajas del Período de prueba descritas anteriormente, no da derecho a ningún reembolso, cesión o conversión en efectivo. El título y el número asociado permanecen visibles mientras la cuenta esté activa; se pierden definitivamente en caso de baja o eliminación de la cuenta, en las condiciones del apartado 8.2. Una cuenta cuya visibilidad esté restringida o que esté en pausa a efectos del apartado 3.7 sigue siendo una cuenta activa.
+Este estatus es honorífico: más allá de las ventajas del Período de prueba descritas anteriormente y de la Reducción Fundador prevista a continuación, no da derecho a ningún reembolso, cesión o conversión en efectivo. El título y el número asociado permanecen visibles mientras la cuenta esté activa; se pierden definitivamente en caso de baja o eliminación de la cuenta, en las condiciones del apartado 8.2. Una cuenta cuya visibilidad esté restringida o que esté en pausa a efectos del apartado 3.7 sigue siendo una cuenta activa.
+
+Reducción Fundador. Todo Miembro Fundador se beneficia, mientras su cuenta permanezca activa a efectos del apartado 3.7, de una reducción del 50 % sobre el precio de cualquier oferta de pago que llegara a proponerse en el Servicio, aplicada a la tarifa pública vigente en el momento de la contratación. Esta reducción no implica ninguna obligación de contratación. Es personal, intransferible y no acumulable con ninguna otra promoción, salvo mención contraria. Se pierde definitivamente en caso de eliminación de la cuenta, en las condiciones del apartado 8.2.
 
 <!-- founder-closed:start -->
-La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, Boost ofrecido el primer mes). Eliminar una cuenta no libera un número.
+La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida, mientras la cuenta permanezca activa (apartado 3.7), en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, Boost ofrecido el primer mes). Eliminar una cuenta no libera un número.
 <!-- founder-closed:end -->
 
 **4.2 Otros usuarios**
@@ -195,7 +197,7 @@ Todo usuario que cree una cuenta cuando no hay ninguna plaza de Miembro Fundador
 **4.3 Al finalizar el Período de prueba**
 
 <!-- free:start -->
-Al finalizar su Período de prueba —seis meses para un Miembro Fundador, una semana para cualquier otro usuario— el usuario conserva el acceso al Servicio. Ninguna suscripción de pago se ofrece ni se exige mientras el Servicio esté en modo de lanzamiento gratuito.
+Al finalizar su Período de prueba —seis meses para un Miembro Fundador, una semana para cualquier otro usuario— el usuario conserva el acceso al Servicio. Ninguna suscripción de pago se ofrece ni se exige mientras el Servicio esté en fase de lanzamiento. Al término de esta fase de lanzamiento, podrá proponerse una suscripción de pago, pero nunca será obligatoria: la cuenta pasará simplemente a la oferta Gratis.
 <!-- free:end -->
 <!-- paid:start -->
 Al finalizar su Período de prueba —seis meses para un Miembro Fundador, una semana para cualquier otro usuario— y a falta de contratación de un plan de pago, el usuario conserva acceso gratuito a la creación y gestión de su perfil, a Descubrir, al Like, al Flash, a la formación de Matches y a la lectura de los mensajes ya recibidos. Solo el envío de nuevos mensajes queda entonces sujeto a la contratación de un plan de pago activo, en las condiciones del apartado 2.4.
@@ -324,7 +326,7 @@ No. Una cuenta por persona y por dirección de correo electrónico, conforme al 
 
 **¿El Servicio se convertirá en un servicio de pago?**
 <!-- free:start -->
-No por el momento. El Servicio está en modo de lanzamiento gratuito: no se comercializa ningún plan de pago y no se solicita ningún pago. La creación de perfil, el descubrimiento de miembros, el Like, el Flash, la formación de Matches y el envío de mensajes están incluidos en las condiciones del Período de prueba (artículo 4).
+No por el momento. El Servicio está en fase de lanzamiento: no se comercializa ninguna oferta de pago y no se solicita ningún pago. La creación de perfil, el descubrimiento de miembros, el Like, el Flash, la formación de Matches y el envío de mensajes están incluidos en las condiciones del Período de prueba (artículo 4). Incluso al término de esta fase de lanzamiento, podrá eventualmente proponerse una suscripción de pago, pero nunca será obligatoria: a falta de suscripción, la cuenta sigue siendo utilizable mediante la oferta Gratis (apartado 4.3).
 <!-- free:end -->
 <!-- paid:start -->
 La creación de perfil, el descubrimiento de miembros, el Like, el Flash y la formación de Matches siguen siendo gratuitos. El envío de mensajes se ofrece de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para los Miembros Fundadores, una semana para los demás usuarios); más allá de ese período, requiere una suscripción activa, cuyas condiciones y tarifas se detallan en Condiciones Generales de Venta distintas, comunicadas antes de cualquier contratación y de cualquier pago.
