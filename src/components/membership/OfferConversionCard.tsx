@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
-import { formatPriceCents, internationalAddonPriceCents, type MembershipStatus } from '@/lib/membership';
+import {
+  formatPriceCents,
+  founderPriceCents,
+  internationalAddonPriceCents,
+  type MembershipStatus,
+} from '@/lib/membership';
 import { canBuyAddons } from '@/lib/offerAccess';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
 import { LegalLink } from '@/components/LegalTerms';
@@ -184,13 +189,27 @@ export function GeoReachAddonCard({
     choice === 'international' ? internationalIncluded : francophoneIncluded;
   const paymentReady =
     addonsAllowed && status.payment_visible && !selectedIncluded;
-  const francoAmount = formatPriceCents(
-    status.francophone_price_cents,
-    status.premium_currency
+  const priced = (cents: number) => {
+    const charge = status.is_founder ? founderPriceCents(cents) : cents;
+    return {
+      struck:
+        status.is_founder && charge !== cents
+          ? formatPriceCents(cents, status.premium_currency)
+          : null,
+      amount: formatPriceCents(charge, status.premium_currency),
+    };
+  };
+  const franco = priced(status.francophone_price_cents);
+  const intl = priced(
+    internationalAddonPriceCents(status) || status.international_price_cents
   );
-  const intlAmount = formatPriceCents(
-    internationalAddonPriceCents(status) || status.international_price_cents,
-    status.premium_currency
+  const priceLine = (row: { struck: string | null; amount: string }) => (
+    <>
+      {row.struck ? (
+        <span className="mr-1 text-gray-400 line-through">{row.struck}</span>
+      ) : null}
+      {row.amount} {t('membership.perMonth')}
+    </>
   );
 
   return (
@@ -238,7 +257,7 @@ export function GeoReachAddonCard({
                 <span className="block text-gray-500 mt-0.5">
                   {francophoneIncluded
                     ? t('offersGrid.included')
-                    : `${francoAmount} ${t('membership.perMonth')}`}
+                    : priceLine(franco)}
                 </span>
               </span>
             </label>
@@ -263,7 +282,7 @@ export function GeoReachAddonCard({
                 <span className="block text-gray-500 mt-0.5">
                   {internationalIncluded
                     ? t('offersGrid.included')
-                    : `${intlAmount} ${t('membership.perMonth')}`}
+                    : priceLine(intl)}
                 </span>
               </span>
             </label>

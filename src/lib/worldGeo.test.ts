@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { inclusiveGeoGroupRank } from './discoverySort.ts';
 import { distanceKmBetween } from './geoCommunes.ts';
+import { DEFAULT_SUGGESTION_PREFS } from './suggestionPrefs.ts';
+import { candidatePassesGeoFilter } from './suggestionMatch.ts';
 import {
   formatDistanceKmBadge,
   isGeoFilterActive,
@@ -11,6 +14,7 @@ import {
 import {
   countryToWorldZone,
   formatInternationalGeoFacts,
+  FRENCH_TERRITORY_CODES,
   isFrenchTerritoryIso,
   isWorldZoneFilter,
   parseFranceWorldChoice,
@@ -24,7 +28,6 @@ import {
   FRANCOPHONE_MENU,
   FRANCE_WORLD_COUNTRY_SECTIONS,
   INTERNATIONAL_COUNTRY_SECTIONS,
-  FRENCH_TERRITORY_CODES,
   isInternationalMenuIso,
   parseInternationalCountry,
   parseInternationalCountries,
@@ -205,7 +208,10 @@ test('France dans le monde : unions PARTOUT / groupes / pays', () => {
     ...francophone,
   ]);
   assert.deepEqual(franceWorldAllowedIsos('overseas'), overseas);
-  assert.deepEqual(franceWorldAllowedIsos('francophone'), francophone);
+  assert.deepEqual(franceWorldAllowedIsos('francophone'), [
+    ...FRENCH_TERRITORY_CODES,
+    ...francophone,
+  ]);
   assert.deepEqual(franceWorldAllowedIsos('BE'), ['BE']);
   assert.deepEqual(franceWorldAllowedIsos('gp'), ['GP']);
   assert.equal(franceWorldAllowedIsos('all').includes('FR'), false);
@@ -215,7 +221,8 @@ test('France dans le monde : unions PARTOUT / groupes / pays', () => {
   assert.equal(matchesFranceWorldChoice('BE', 'overseas'), false);
   assert.equal(matchesFranceWorldChoice('GP', 'overseas'), true);
   assert.equal(matchesFranceWorldChoice('BE', 'francophone'), true);
-  assert.equal(matchesFranceWorldChoice('GP', 'francophone'), false);
+  assert.equal(matchesFranceWorldChoice('GP', 'francophone'), true);
+  assert.equal(matchesFranceWorldChoice('FR', 'francophone'), true);
   assert.equal(matchesFranceWorldChoice('BE', 'BE'), true);
   assert.equal(matchesFranceWorldChoice('CH', 'BE'), false);
 });
@@ -293,4 +300,46 @@ test('pays précis : cumul multi-sélection', () => {
   assert.deepEqual(franceWorldAllowedIsos('all', ['BE', 'CH']), ['BE', 'CH']);
   assert.equal(matchesFranceWorldChoice('BE', 'all', ['BE', 'CH']), true);
   assert.equal(matchesFranceWorldChoice('GP', 'all', ['BE', 'CH']), false);
+});
+
+test('International et francophone incluent les périmètres plus proches', () => {
+  assert.equal(
+    candidatePassesGeoFilter(
+      { country_code: 'FR', distance_km: 12 },
+      { ...DEFAULT_SUGGESTION_PREFS, geoPerimeter: 'international' }
+    ),
+    true
+  );
+  assert.equal(
+    candidatePassesGeoFilter(
+      { country_code: 'BE', distance_km: 40 },
+      { ...DEFAULT_SUGGESTION_PREFS, geoPerimeter: 'international' }
+    ),
+    true
+  );
+  assert.equal(
+    candidatePassesGeoFilter(
+      { country_code: 'FR', distance_km: 8 },
+      {
+        ...DEFAULT_SUGGESTION_PREFS,
+        geoPerimeter: 'la_france_dans_le_monde',
+        franceWorldChoice: 'francophone',
+      }
+    ),
+    true
+  );
+  assert.equal(
+    inclusiveGeoGroupRank({ country_code: 'FR', location: 'Lyon (69001)' }),
+    5
+  );
+  assert.equal(inclusiveGeoGroupRank({ country_code: 'BE' }), 6);
+  assert.equal(inclusiveGeoGroupRank({ country_code: 'DE' }), 7);
+  assert.ok(
+    inclusiveGeoGroupRank({
+      country_code: 'FR',
+      same_city: true,
+      location: 'Lyon (69001)',
+    }) <
+      inclusiveGeoGroupRank({ country_code: 'BE' })
+  );
 });

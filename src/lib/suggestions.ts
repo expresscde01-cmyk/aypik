@@ -1,7 +1,11 @@
+import { placeHomeSuggestions } from '@/lib/boostPlacement';
+import { inclusiveGeoGroupRank } from '@/lib/discoverySort';
 import { supabase } from '@/lib/supabase';
 import type { Profile, ProfileGender } from '@/components/ProfileSetup';
 import { geoProximityFlags } from '@/lib/geoProximity';
 import {
+  BOOSTED_CANDIDATE_LIMIT,
+  isMissingBoostedRpc,
   mapSuggestRow,
   suggestProfilesRpcArgs,
   type SuggestRow,
@@ -119,10 +123,6 @@ export async function fetchSuggestedProfiles(options?: {
 
   const prefs = options?.prefs ?? DEFAULT_SUGGESTION_PREFS;
   const myInterests = options?.myInterests || [];
-  const limit = Math.min(
-    Math.max(options?.limit ?? HOME_SUGGESTIONS_MAX, 1),
-    HOME_SUGGESTIONS_MAX
-  );
 
   await ensureProfileCoordinates({
     id: me,
@@ -133,7 +133,7 @@ export async function fetchSuggestedProfiles(options?: {
   if (options?.signal?.aborted) return [];
 
   const rpcArgs = suggestProfilesRpcArgs({
-    limit,
+    limit: 50,
     minOverlap: prefs.minOverlap,
     mode: 'home',
     geoPerimeter: prefs.geoPerimeter,
@@ -148,31 +148,64 @@ export async function fetchSuggestedProfiles(options?: {
     languageCodes: prefs.languageCodes,
     minLanguageLevel: prefs.minLanguageLevel,
   });
-  const { data, error } = await supabase.rpc('suggest_profiles', rpcArgs);
 
-  if (options?.signal?.aborted) return [];
-  if (error) throw error;
-
-  const mapped = ((data || []) as SuggestRow[])
-    .map((row) => {
-      const mappedRow = mapSuggestRow(
-        row,
-        myInterests,
-        options?.myLocation
+  const load = async (args: Record<string, unknown>) => {
+    const { data, error } = await supabase.rpc('suggest_profiles', args);
+    if (options?.signal?.aborted) return [];
+    if (error) throw error;
+    const mapped = ((data || []) as SuggestRow[])
+      .map((row) => {
+        const mappedRow = mapSuggestRow(
+          row,
+          myInterests,
+          options?.myLocation
+        );
+        return {
+          ...mappedRow,
+          mutual_interest_count: mappedRow.mutual_interests.length,
+        };
+      })
+      .filter((candidate) =>
+        candidatePassesGeoFilter(candidate, prefs, options?.myLocation)
       );
-      return {
-        ...mappedRow,
-        mutual_interest_count: mappedRow.mutual_interests.length,
-      };
-    })
-    .filter((candidate) =>
-      candidatePassesGeoFilter(candidate, prefs, options?.myLocation)
+    return fillMissingProfileDistances(
+      options?.myLocation,
+      mapped,
+      options?.signal
     );
+  };
 
-  return fillMissingProfileDistances(
-    options?.myLocation,
-    mapped,
-    options?.signal
+  const withDistance = await load(rpcArgs);
+  let boosted = withDistance.filter((candidate) => candidate.is_boosted);
+  try {
+    const extra = await load({
+      ...rpcArgs,
+      p_limit: BOOSTED_CANDIDATE_LIMIT,
+      p_boosted_only: true,
+    });
+    if (extra.length > 0) boosted = extra;
+  } catch (error) {
+    if (
+      !isMissingBoostedRpc(error as { code?: string; message?: string } | null)
+    ) {
+      throw error;
+    }
+  }
+  const ordered =
+    prefs.geoPerimeter === 'international' ||
+    prefs.geoPerimeter === 'la_france_dans_le_monde'
+      ? withDistance.slice().sort(
+          (a, b) =>
+            inclusiveGeoGroupRank(a) - inclusiveGeoGroupRank(b) ||
+            (a.distance_km ?? 1e9) - (b.distance_km ?? 1e9)
+        )
+      : withDistance;
+  return placeHomeSuggestions(
+    ordered,
+    me,
+    Date.now(),
+    HOME_SUGGESTIONS_MAX,
+    boosted
   );
 }
 

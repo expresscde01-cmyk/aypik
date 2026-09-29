@@ -136,7 +136,14 @@ export function canBuyAddons(
 export function canBuyBoost(
   status: Pick<MembershipStatus, 'plan' | 'premium_until'> & OfferStatusLike
 ): boolean {
-  return canBuyAddons(status);
+  if (
+    status.plan === 'essentiel' ||
+    status.plan === 'confort' ||
+    status.plan === 'premium'
+  ) {
+    return paidPlanStillActive(status);
+  }
+  return false;
 }
 
 /** National = périmètre FRANCE (`anywhere`). */

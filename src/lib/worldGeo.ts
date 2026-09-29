@@ -319,7 +319,9 @@ export function franceWorldAllowedIsos(
   const precise = parseFranceWorldCodes(codes);
   if (precise.length > 0) return precise;
   if (choice === FRANCE_WORLD_CHOICE_OVERSEAS) return OVERSEAS_ISOS;
-  if (choice === FRANCE_WORLD_CHOICE_FRANCOPHONE) return FRANCOPHONE_ISOS;
+  if (choice === FRANCE_WORLD_CHOICE_FRANCOPHONE) {
+    return [...FRENCH_TERRITORY_CODES, ...FRANCOPHONE_ISOS];
+  }
   if (isFranceWorldMenuIso(choice)) {
     return [choice.trim().toUpperCase()];
   }
@@ -336,6 +338,15 @@ export function matchesFranceWorldChoice(
     .toUpperCase();
   if (!iso) return false;
   return franceWorldAllowedIsos(choice, codes).includes(iso);
+}
+
+export function isFrancophoneCountryIso(
+  countryCode: string | null | undefined
+): boolean {
+  const iso = String(countryCode || '')
+    .trim()
+    .toUpperCase();
+  return FRANCOPHONE_ISOS.includes(iso);
 }
 
 export function isFrenchTerritoryIso(

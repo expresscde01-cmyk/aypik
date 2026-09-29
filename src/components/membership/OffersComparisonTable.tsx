@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { formatPriceCents, founderPriceCents } from '@/lib/membership';
 import { LegalLink } from '@/components/LegalChrome';
 import { useTranslation } from 'react-i18next';
 
@@ -113,7 +114,7 @@ const BOTTOM_ROWS = [
     'offersGrid.no',
     'offersGrid.priceAddon',
     'offersGrid.priceAddon',
-    'offersGrid.priceAddon',
+    'offersGrid.boostPremium',
   ],
 ] as const;
 
@@ -155,9 +156,31 @@ function geoCellStyle(
 }
 
 /** Grille commerciale v3 — visible hors mode lancement gratuit. */
-export function OffersComparisonTable() {
+const GRID_CENTS: Record<string, number> = {
+  'offersGrid.priceBasique': 999,
+  'offersGrid.priceEssentiel': 1499,
+  'offersGrid.priceConfort': 1999,
+  'offersGrid.pricePremium': 2499,
+  'offersGrid.priceAddon': 299,
+  'offersGrid.priceIntlFull': 599,
+  'offersGrid.priceIntlUpgrade': 299,
+};
+
+export function OffersComparisonTable({ founder = false }: { founder?: boolean }) {
   const { t } = useTranslation();
   if (SITE_FREE_MODE) return null;
+
+  const cellText = (key: string) => {
+    const cents = GRID_CENTS[key];
+    if (!founder || cents == null) return t(key);
+    const charge = founderPriceCents(cents);
+    return (
+      <>
+        <span className="mr-1 text-gray-400 line-through">{t(key)}</span>
+        {formatPriceCents(charge, 'EUR')}
+      </>
+    );
+  };
 
   const renderCells = (
     row: readonly OfferGridKey[],
@@ -176,12 +199,12 @@ export function OffersComparisonTable() {
                 {t('offersGrid.geoPrefix')}
               </div>
             ) : null}
-            <div className="w-full text-right font-medium">{t(key)}</div>
+            <div className="w-full text-right font-medium">{cellText(key)}</div>
           </div>
         ) : key === 'offersGrid.indifferentFixed' ? (
           <span className="whitespace-pre-line">{t(key)}</span>
         ) : (
-          t(key)
+          cellText(key)
         )}
       </td>
     ));
@@ -251,6 +274,12 @@ export function OffersComparisonTable() {
           ))}
         </tbody>
       </table>
+      <p className="px-2.5 pt-2 text-[11px] leading-snug text-gray-500">
+        {t('offersGrid.inclusionNote')}
+      </p>
+      <p className="px-2.5 pt-1 text-[11px] leading-snug text-gray-500">
+        {t('offersGrid.founderBoostNote')}
+      </p>
       <p className="px-2.5 py-2 text-[11px] leading-snug text-gray-500">
         {t('offersGrid.openProtectedNote')}{' '}
         <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">

@@ -3,7 +3,11 @@ import { Check } from 'lucide-react';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
 import { OffersComparisonTable } from '@/components/membership/OffersComparisonTable';
 import { PaymentCheckoutModal } from '@/components/membership/PaymentCheckoutModal';
-import { formatPriceCents, type MembershipStatus } from '@/lib/membership';
+import {
+  formatPriceCents,
+  founderPriceCents,
+  type MembershipStatus,
+} from '@/lib/membership';
 import type { PaymentPlanTier } from '@/lib/payments';
 import { useTranslation } from 'react-i18next';
 
@@ -99,12 +103,14 @@ export function OfferSummaryCards({
     },
   ];
 
-  const amountFor = (id: SummaryId): { amount: string; perMonth: boolean } => {
+  const amountFor = (
+    id: SummaryId
+  ): { amount: string; struck: string | null; perMonth: boolean } => {
     if (id === 'gratuit') {
-      return { amount: t('offersGrid.priceFree'), perMonth: false };
+      return { amount: t('offersGrid.priceFree'), struck: null, perMonth: false };
     }
     if (!status) {
-      return { amount: t(FALLBACK_PRICE_KEY[id]), perMonth: false };
+      return { amount: t(FALLBACK_PRICE_KEY[id]), struck: null, perMonth: false };
     }
     const cents =
       id === 'basique'
@@ -114,8 +120,13 @@ export function OfferSummaryCards({
           : id === 'confort'
             ? status.confort_price_cents
             : status.premium_price_cents;
+    const charge = status.is_founder ? founderPriceCents(cents) : cents;
     return {
-      amount: formatPriceCents(cents, status.premium_currency),
+      amount: formatPriceCents(charge, status.premium_currency),
+      struck:
+        status.is_founder && charge !== cents
+          ? formatPriceCents(cents, status.premium_currency)
+          : null,
       perMonth: true,
     };
   };
@@ -136,7 +147,7 @@ export function OfferSummaryCards({
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => {
-          const { amount, perMonth } = amountFor(card.id);
+          const { amount, struck, perMonth } = amountFor(card.id);
           return (
             <article
               key={card.id}
@@ -152,6 +163,11 @@ export function OfferSummaryCards({
                   {t(TITLE_KEY[card.id])}
                 </p>
                 <p className="mt-0.5 text-lg font-extrabold text-gray-800">
+                  {struck ? (
+                    <span className="mr-1.5 text-sm font-medium text-gray-400 line-through">
+                      {struck}
+                    </span>
+                  ) : null}
                   {amount}
                   {perMonth ? (
                     <span className="ml-1 text-xs font-medium text-gray-500">
@@ -204,7 +220,9 @@ export function OfferSummaryCards({
             : t('offersCards.showCompare')}
         </button>
       </div>
-      {compareOpen ? <OffersComparisonTable /> : null}
+      {compareOpen ? (
+        <OffersComparisonTable founder={status?.is_founder === true} />
+      ) : null}
       {status && checkoutPlan && (
         <PaymentCheckoutModal
           open

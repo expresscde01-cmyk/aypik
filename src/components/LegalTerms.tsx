@@ -93,7 +93,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 23 septembre 2026.
+              Dernière mise à jour : 29 septembre 2026.
             </p>
           </header>
 
@@ -753,10 +753,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Pendant une Période d&apos;essai de six (6) mois à compter de
                 la création de son compte, le Membre Fondateur bénéficie, à
                 titre gracieux, sans engagement de durée, sans tacite
-                reconduction et sans aucune demande de carte bancaire : de
-                l&apos;envoi de messages, de likes et Flash illimités, ainsi
-                que d&apos;un boost de visibilité du profil pendant le premier
-                mois suivant l&apos;inscription.
+                reconduction et sans aucune demande de carte bancaire :                 de
+                l&apos;envoi de messages, ainsi que de likes et Flash illimités.
+                Il reçoit en outre 2 Boosts de 24 h, crédités au lancement des
+                offres payantes et à utiliser dans les 6 mois, quelle que soit
+                l&apos;offre. Ils sont perdus en cas de suppression du compte.
               </p>
               <p>
                 Ce statut est honorifique : au-delà des avantages de la
@@ -773,10 +774,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 Réduction Fondateur. Tout Membre Fondateur bénéficie, tant
                 que son compte demeure actif au sens de l&apos;article 3.7,
-                d&apos;une réduction de 50 % sur le prix de toute offre
-                payante qui viendrait à être proposée sur le Service,
-                appliquée au tarif public en vigueur au moment de la
-                souscription. Cette réduction n&apos;emporte aucune
+                d&apos;une réduction de 50 % sur le tarif public de toute
+                offre, option ou Boost payant proposé sur le Service,
+                appliquée au moment de la souscription. Cette réduction n&apos;emporte aucune
                 obligation de souscription. Elle est personnelle, non
                 cessible et non cumulable avec toute autre promotion, sauf
                 mention contraire. Elle est définitivement perdue en cas de
@@ -799,8 +799,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 son compte, pendant laquelle l&apos;envoi de messages est
                 inclus gratuitement, sans carte bancaire ni engagement. Cette
                 Période d&apos;essai n&apos;inclut pas les avantages
-                complémentaires (likes et Flash illimités, boost de
-                visibilité) réservés aux Membres Fondateurs à l&apos;article
+                complémentaires (likes et Flash illimités, 2 Boosts de 24 h) réservés aux Membres Fondateurs à l&apos;article
                 4.1.
               </p>
             </div>
@@ -844,12 +843,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Le badge « Premium » est le libellé d&apos;affichage des
               avantages Fondateur pendant leur période d&apos;activation de
               6 mois (article 4) : il matérialise visuellement, sur le
-              profil, que ces avantages (likes et Flash illimités, Boost
-              offert le premier mois) sont actuellement actifs. Il disparaît
+              profil, que ces avantages (likes et Flash illimités) sont
+              actuellement actifs. Il disparaît
               à l&apos;issue des 6 mois, à la différence du titre
               honorifique « Membre Fondateur » et de son numéro, qui restent
               affichés tant que le compte est actif (article 4). La validité
-              du Boost est consultable à tout moment depuis la page « Mon
+              d&apos;un Boost activé est consultable à tout moment depuis la page « Mon
               profil ».
             </p>
           </section>
@@ -1328,9 +1327,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
             <div>
               <p className="font-semibold text-gray-900">Boost</p>
               <p>
-                Fonctionnalité permettant de mettre en avant son profil en
-                tête de liste pendant une durée déterminée pour maximiser sa
-                visibilité.
+                Le Boost met le profil en avant pendant 24 h : il fait partie
+                des profils présentés en priorité dans les suggestions de
+                l&apos;Accueil et dans Découvrir, sauf si le membre qui
+                consulte a choisi un tri, auprès des membres pour lesquels
+                les critères de mise en relation correspondent. Plusieurs
+                profils pouvant être mis en avant en même temps, leur ordre
+                d&apos;apparition varie.                 Les Membres Fondateurs reçoivent
+                2 Boosts, crédités au lancement des offres payantes, à
+                utiliser dans les 6 mois, quelle que soit l&apos;offre.
               </p>
             </div>
             <div>
@@ -1426,10 +1431,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Quatre paliers : Basique (9,99&nbsp;€/mois), Essentiel
                 (14,99&nbsp;€/mois), Confort (19,99&nbsp;€/mois) et Premium
                 (24,99&nbsp;€/mois), plus des options à la carte
-                (Visibilité, portée Francophone ou International — choix
-                exclusif — et Boost 24&nbsp;h). Le détail à jour figure sur
-                la page des offres. Les CGV ci-dessous décrivent les
-                modalités de souscription, de résiliation et de
+                (Visibilité, portée Francophone ou International — chaque
+                périmètre inclut les précédents — et Boost 24&nbsp;h).
+                L&apos;offre Premium inclut 2 Boosts de 24 h par mois, non
+                reportés, puis 2,99&nbsp;€ à partir de l&apos;offre Essentiel.
+                Le Membre Fondateur bénéficie
+                de 50 % sur le tarif public de ces offres, des options et du
+                Boost, tant que son compte reste actif. Le détail à jour
+                figure sur la page des offres. Les CGV ci-dessous décrivent
+                les modalités de souscription, de résiliation et de
                 rétractation.
               </p>
             </div>
@@ -1604,9 +1614,15 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Les abonnements sont sans engagement de durée, renouvelés
                 mensuellement, et résiliables en un clic depuis le profil.
                 L&apos;accès payant reste actif jusqu&apos;à la fin de la
-                période déjà réglée. Le paiement est assuré par des
+                période déjà réglée. Une montée en gamme prend effet
+                immédiatement : seul l&apos;écart de prix pour les jours
+                restants est facturé, puis le nouveau prix au renouvellement.
+                Une descente en gamme prend effet à la fin de la période déjà
+                réglée : jusque-là, l&apos;accès en cours est conservé, y
+                compris ses options incluses. Le paiement est assuré par des
                 prestataires (carte via Stripe, PayPal). Aypik ne stocke pas
-                les données de carte.
+                les données de carte. Un même droit ne fait l&apos;objet que
+                d&apos;un seul prélèvement.
               </p>
             </div>
             <div>
@@ -1630,8 +1646,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 distincte (6 mois offerts, {FOUNDER_MAX_SLOTS} premiers
                 comptes). À l&apos;issue de cette période, le compte
                 bascule vers l&apos;offre Gratuite, sauf souscription d&apos;un
-                palier payant. Le badge et le numéro restent affichés tant que
-                le compte n&apos;est pas supprimé.
+                palier                 payant. Le badge et le numéro restent affichés tant que
+                le compte n&apos;est pas supprimé. Il bénéficie d&apos;une
+                réduction de 50 % sur le tarif public de toute offre, option
+                ou Boost payant, tant que son compte demeure actif, y compris
+                après les six mois où le badge devient honorifique.
               </p>
             </div>
             <div>
@@ -1650,13 +1669,21 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 6. Portée Francophone / International
               </p>
               <p>
-                Francophone et International forment un choix exclusif à
-                deux paliers, non cumulables. International englobe déjà
-                Francophone. Le tarif International est de 5,99&nbsp;€
-                depuis Essentiel (aucune extension incluse) et de
-                2,99&nbsp;€ depuis Confort (mise à niveau : Francophone est
-                déjà inclus dans l&apos;abonnement). Il est inclus dans
-                Premium.
+                Francophone et International forment deux paliers. International
+                comprend déjà Francophone. Le passage de
+                Francophone à International résilie l&apos;abonnement
+                Francophone. Seule la mise à niveau est facturée. Le tarif
+                International est de 5,99&nbsp;€ depuis Essentiel (aucune
+                extension incluse) et de 2,99&nbsp;€ depuis Confort (mise à
+                niveau : Francophone est déjà inclus dans l&apos;abonnement).
+                Il est inclus dans Premium. L&apos;offre Premium inclut en
+                outre 2 Boosts de 24 h par mois, non reportés au mois
+                suivant. Les Boosts supplémentaires sont proposés à
+                2,99&nbsp;€ à partir de l&apos;offre Essentiel. Lors d&apos;une
+                descente en gamme, une option incluse dans l&apos;offre en
+                cours demeure jusqu&apos;à la fin de la période déjà réglée.
+                Chaque périmètre inclut les plus proches : l&apos;international
+                comprend la francophonie, qui comprend le national.
               </p>
             </div>
           </section>

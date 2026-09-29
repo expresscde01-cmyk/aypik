@@ -1,10 +1,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
+  PLAN_AMOUNT_CENTS,
   parsePlan,
   qualifiesForInternationalUpgrade,
   resolveCheckoutEnv,
+  type PlanTier,
 } from "../_shared/plans.ts";
+import {
+  checkoutForMember,
+  gateForChannel,
+  periodFractions,
+  tierSubscription,
+  upgradeProrataCents,
+  type ActiveSub,
+} from "../_shared/checkoutFlow.ts";
 import {
   checkoutPlanRequiresNative,
   hasNativeSpokenLanguagePayload,
@@ -67,17 +77,56 @@ Deno.serve(async (req) => {
       }
     }
 
+    const { data: setting } = await admin
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "payments_enabled")
+      .maybeSingle();
+    const gate = gateForChannel({
+      settingValue: setting?.value,
+      channel: "paypal",
+      paypalApiBase: apiBase,
+    });
+    if (!gate.allowed) {
+      return json({ error: "payments_disabled", code: "payments_disabled" }, 403);
+    }
+
     const { data: membership } = await admin
       .from("memberships")
-      .select("plan, francophone_until, international_until")
+      .select("plan, is_founder, premium_until, francophone_until, international_until")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const { data: subRows } = await admin
+      .from("payment_subscriptions")
+      .select("plan, status, provider, provider_subscription_id")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing", "incomplete", "pending", "past_due"]);
+    const subs = (subRows ?? []) as ActiveSub[];
+    const decision = checkoutForMember({ membership, targetPlan: plan, subs });
+    if (decision.kind === "duplicate") {
+      return json({ error: "already_subscribed", code: "duplicate_purchase" }, 409);
+    }
+    if (decision.kind === "downgrade") {
+      const effectiveAt = membership?.premium_until ?? null;
+      await admin
+        .from("memberships")
+        .update({ pending_plan: plan, pending_plan_at: effectiveAt })
+        .eq("user_id", user.id);
+      return json({
+        scheduled: true,
+        effectiveAt,
+        plan,
+      });
+    }
+
+    const founder = membership?.is_founder === true;
     const checkout = resolveCheckoutEnv(
       "paypal",
       plan,
       qualifiesForInternationalUpgrade(membership ?? {}),
-      (name) => Deno.env.get(name)
+      (name) => Deno.env.get(name),
+      founder
     );
     const planId = Deno.env.get(checkout.envName);
 
@@ -110,6 +159,58 @@ Deno.serve(async (req) => {
       return json({ error: "Auth PayPal échouée", details: tokenData }, 502);
     }
 
+    const currentTier = tierSubscription(subs, "paypal");
+    let prorataApproveUrl: string | null = null;
+    let prorataCents = 0;
+    if (decision.kind === "upgrade" && currentTier && membership?.premium_until) {
+      const endMs = Date.parse(membership.premium_until);
+      const fractions = periodFractions(endMs - 30 * 86_400_000, endMs, Date.now());
+      const currentPublic =
+        PLAN_AMOUNT_CENTS[currentTier.plan as PlanTier] ?? checkout.publicCents;
+      prorataCents = upgradeProrataCents({
+        currentPublicCents: currentPublic,
+        nextPublicCents: checkout.publicCents,
+        founder: membership?.is_founder === true,
+        daysLeft: fractions.daysLeft,
+        daysInPeriod: fractions.daysInPeriod,
+      });
+      if (prorataCents > 0) {
+        const orderRes = await fetch(`${apiBase}/v2/checkout/orders`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            intent: "CAPTURE",
+            purchase_units: [
+              {
+                custom_id: user.id,
+                description: "Montée en gamme",
+                amount: {
+                  currency_code: "EUR",
+                  value: (prorataCents / 100).toFixed(2),
+                },
+              },
+            ],
+          }),
+        });
+        const order = await orderRes.json();
+        if (orderRes.ok) {
+          prorataApproveUrl =
+            (order.links || []).find((link: { rel: string }) => link.rel === "approve")
+              ?.href ?? null;
+        }
+      }
+    }
+
+    const startTime =
+      decision.kind === "upgrade" &&
+      membership?.premium_until &&
+      Date.parse(membership.premium_until) > Date.now()
+        ? membership.premium_until
+        : undefined;
+
     const subRes = await fetch(`${apiBase}/v1/billing/subscriptions`, {
       method: "POST",
       headers: {
@@ -120,6 +221,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         plan_id: planId,
         custom_id: user.id,
+        ...(startTime ? { start_time: startTime } : {}),
         application_context: {
           brand_name: "Aypik",
           locale: "fr-FR",
@@ -152,11 +254,14 @@ Deno.serve(async (req) => {
       amount_cents: checkout.amountCents,
       currency: "EUR",
       interval: "month",
+      replaces_subscription_id: currentTier?.provider_subscription_id ?? null,
     });
 
     return json({
       subscriptionId: subscription.id,
-      approveUrl: approveLink,
+      approveUrl: prorataApproveUrl ?? approveLink,
+      subscriptionApproveUrl: prorataApproveUrl ? approveLink : null,
+      prorataCents,
       plan,
     });
   } catch (err) {

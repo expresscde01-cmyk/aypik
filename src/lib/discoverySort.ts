@@ -134,7 +134,34 @@ type GeoSortableCandidate = GeoProximityFlags & {
  * Même ville → département → région → régions voisines → quarts de France,
  * et dans chaque groupe du plus proche au plus loin.
  */
-function filterGeoGroupRank(c: GeoSortableCandidate): number {
+export function inclusiveGeoGroupRank(
+  c: GeoSortableCandidate & { country_code?: string | null }
+): number {
+  const near = discoveryGeoGroupRank(c);
+  if (near <= 4) return near;
+  const iso = String(c.country_code || '')
+    .trim()
+    .toUpperCase();
+  if (near === 5) return 5;
+  if (
+    iso === 'FR' ||
+    ['GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'WF', 'TF', 'NC', 'PF'].includes(iso)
+  ) {
+    return 5;
+  }
+  if (
+    [
+      'BE', 'CH', 'LU', 'MC', 'CA', 'SN', 'CI', 'ML', 'BF', 'NE', 'GN', 'BJ',
+      'TG', 'CM', 'GA', 'CG', 'CD', 'TD', 'CF', 'RW', 'BI', 'DJ', 'KM', 'MG',
+      'MA', 'TN', 'DZ', 'MR', 'GQ', 'SC', 'HT', 'LB', 'VU',
+    ].includes(iso)
+  ) {
+    return 6;
+  }
+  return 7;
+}
+
+export function discoveryGeoGroupRank(c: GeoSortableCandidate): number {
   const level = geoProximityLevelFromFlags(c);
   if (level === 'city') return 1;
   if (level === 'department') return 2;
@@ -149,7 +176,7 @@ export function sortDiscoveryFilterResults<T extends GeoSortableCandidate>(
 ): T[] {
   return candidates.slice().sort(
     (a, b) =>
-      filterGeoGroupRank(a) - filterGeoGroupRank(b) ||
+      discoveryGeoGroupRank(a) - discoveryGeoGroupRank(b) ||
       distanceKm(a) - distanceKm(b)
   );
 }

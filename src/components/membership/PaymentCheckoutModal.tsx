@@ -25,6 +25,7 @@ import {
 import {
   formatPremiumPriceLabel,
   formatPriceCents,
+  founderPriceCents,
   internationalAddonPriceCents,
   type MembershipStatus,
 } from '@/lib/membership';
@@ -128,6 +129,7 @@ export function PaymentCheckoutModal({
   const [method, setMethod] = useState<PaymentMethodChoice>('card');
   const [step, setStep] = useState<Step>('choose');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [nativeDrafts, setNativeDrafts] = useState<SpokenDraft[]>([]);
@@ -141,9 +143,13 @@ export function PaymentCheckoutModal({
       : status[PLAN_PRICE_FIELD[plan]];
   const offerName = t(PLAN_OFFER_NAME_KEY[plan]);
   const benefits = planBenefitKeys(plan).map((key) => t(key));
-  const amount = formatPriceCents(priceCents, status.premium_currency);
+  const chargeCents = status.is_founder
+    ? founderPriceCents(priceCents)
+    : priceCents;
+  const amount = formatPriceCents(chargeCents, status.premium_currency);
+  const publicAmount = formatPriceCents(priceCents, status.premium_currency);
   const priceLabel = formatPremiumPriceLabel(
-    priceCents,
+    chargeCents,
     status.premium_currency,
     status.premium_interval
   );
@@ -191,6 +197,22 @@ export function PaymentCheckoutModal({
       setError(result.error);
       return;
     }
+    if ('scheduled' in result) {
+      const when = result.effectiveAt
+        ? new Date(result.effectiveAt).toLocaleDateString('fr-FR')
+        : '';
+      setNotice(
+        when
+          ? `Changement prévu le ${when}. L'accès en cours reste jusqu'à cette date.`
+          : "Changement prévu en fin de période. L'accès en cours est conservé."
+      );
+      return;
+    }
+    if (!('clientSecret' in result) || !result.clientSecret) {
+      setNotice('Offre mise à jour.');
+      onSuccess?.();
+      return;
+    }
     setClientSecret(result.clientSecret);
     setStep('card');
   };
@@ -219,6 +241,19 @@ export function PaymentCheckoutModal({
       setStep('choose');
       return;
     }
+    if ('scheduled' in result) {
+      const when = result.effectiveAt
+        ? new Date(result.effectiveAt).toLocaleDateString('fr-FR')
+        : '';
+      setNotice(
+        when
+          ? `Changement prévu le ${when}. L'accès en cours reste jusqu'à cette date.`
+          : "Changement prévu en fin de période. L'accès en cours est conservé."
+      );
+      setStep('choose');
+      return;
+    }
+    if (!('approveUrl' in result)) return;
     window.location.href = result.approveUrl;
   };
 
@@ -337,7 +372,22 @@ export function PaymentCheckoutModal({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">{amount}</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {status.is_founder && chargeCents !== priceCents && (
+                    <span className="mr-2 text-base font-medium text-gray-400 line-through">
+                      {publicAmount}
+                    </span>
+                  )}
+                  {amount}
+                </p>
+                {notice && (
+                  <p className="mt-2 text-sm text-emerald-800">{notice}</p>
+                )}
+                {(plan === 'international' || plan === 'francophone') && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {t('offersGrid.inclusionNote')}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">{t('membership.perMonth')}</p>
               </div>
             </div>

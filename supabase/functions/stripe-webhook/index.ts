@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 import { activatePaidOffer, parsePlan, type PlanTier } from "../_shared/plans.ts";
+import { webhookMayActivate } from "../_shared/billingPolicy.ts";
 
 type SupabaseAdmin = ReturnType<typeof createClient>;
 
@@ -42,6 +43,9 @@ Deno.serve(async (req) => {
   } catch {
     return new Response("Signature invalide", { status: 400 });
   }
+  if (!webhookMayActivate(true)) {
+    return new Response("Signature invalide", { status: 400 });
+  }
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -56,8 +60,29 @@ Deno.serve(async (req) => {
     const userId = sub.metadata?.supabase_user_id;
     if (userId && (sub.status === "active" || sub.status === "trialing")) {
       const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
-      const plan = await getPlanForSubscription(admin, sub.id);
-      await activatePaidOffer(admin, userId, plan, "stripe", periodEnd);
+      const pendingAt = sub.metadata?.pending_plan_at;
+      const pendingPlan = sub.metadata?.pending_plan;
+      const pendingDue =
+        Boolean(pendingPlan) &&
+        Boolean(pendingAt) &&
+        Date.parse(pendingAt) <= Date.now();
+      const plan = pendingDue
+        ? parsePlan(pendingPlan)
+        : await getPlanForSubscription(admin, sub.id);
+      if (!pendingPlan || !pendingAt || pendingDue) {
+        await activatePaidOffer(admin, userId, plan, "stripe", periodEnd);
+      }
+      if (pendingDue) {
+        await admin
+          .from("memberships")
+          .update({ pending_plan: null, pending_plan_at: null })
+          .eq("user_id", userId);
+        await admin
+          .from("payment_subscriptions")
+          .update({ plan })
+          .eq("provider", "stripe")
+          .eq("provider_subscription_id", sub.id);
+      }
       await admin
         .from("payment_subscriptions")
         .update({

@@ -146,7 +146,18 @@ export function useMembership() {
       }
     } else {
       setError(null);
-      setStatus(parseMembershipStatus(data));
+      const parsed = parseMembershipStatus(data);
+      const { data: credits } = await supabase.rpc('my_founder_boost_credits');
+      const { data: premiumCredits } = await supabase.rpc(
+        'my_premium_boost_credits'
+      );
+      setStatus({
+        ...parsed,
+        founder_boosts_remaining:
+          typeof credits === 'number' ? credits : 0,
+        premium_boosts_remaining:
+          typeof premiumCredits === 'number' ? premiumCredits : 0,
+      });
     }
     setLoading(false);
   }, [user]);

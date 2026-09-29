@@ -366,7 +366,7 @@ export const GEO_PERIMETER_FILTER_LABEL: Record<GeoPerimeterFilter, string> = {
   center: 'Centre de la France',
   anywhere: 'FRANCE',
   la_france_dans_le_monde: 'LA FRANCE DANS LE MONDE',
-  international: 'INTERNATIONAL (hors France et assimilés)',
+  international: 'INTERNATIONAL (francophonie incluse)',
 };
 
 const GEO_PERIMETER_I18N_KEY: Record<GeoPerimeterFilter, string> = {

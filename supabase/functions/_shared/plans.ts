@@ -1,3 +1,5 @@
+import { founderPriceCents } from "./billingPolicy.ts";
+
 export type PlanTier =
   | "basique"
   | "essentiel"
@@ -146,32 +148,55 @@ export function paypalInternationalPlanEnv(qualifiesUpgrade: boolean): string {
     : "PAYPAL_INTERNATIONAL_PLAN_ID";
 }
 
-/** Env du Price / Plan PayPal à débiter. Mise à niveau Confort : 2,99 € (env dédié, sinon visibilité 2,99 €). */
+function founderPriceEnv(name: string, founder: boolean): string {
+  if (!founder) return name;
+  if (name.endsWith("_PRICE_ID")) {
+    return name.replace(/_PRICE_ID$/, "_FOUNDER_PRICE_ID");
+  }
+  if (name.endsWith("_PLAN_ID")) {
+    return name.replace(/_PLAN_ID$/, "_FOUNDER_PLAN_ID");
+  }
+  return name;
+}
+
+/**
+ * Prix choisi ici, jamais par le client.
+ * Fondateur : identifiant dédié au montant déjà arrondi.
+ */
 export function resolveCheckoutEnv(
   kind: "stripe" | "paypal",
   plan: PlanTier,
   qualifiesIntlUpgrade: boolean,
-  getEnv: (name: string) => string | undefined
-): { envName: string; amountCents: number } {
+  getEnv: (name: string) => string | undefined,
+  founder = false
+): { envName: string; amountCents: number; publicCents: number } {
+  let envName: string;
+  let publicCents: number;
   if (plan !== "international") {
-    const envName =
+    envName =
       kind === "stripe" ? stripePriceEnvName(plan) : paypalPlanEnvName(plan);
-    return { envName, amountCents: PLAN_AMOUNT_CENTS[plan] };
-  }
-  const amountCents = internationalCheckoutAmountCents(qualifiesIntlUpgrade);
-  const preferred =
-    kind === "stripe"
-      ? stripeInternationalPriceEnv(qualifiesIntlUpgrade)
-      : paypalInternationalPlanEnv(qualifiesIntlUpgrade);
-  if (getEnv(preferred)) return { envName: preferred, amountCents };
-  if (qualifiesIntlUpgrade) {
-    return {
-      envName:
+    publicCents = PLAN_AMOUNT_CENTS[plan];
+  } else {
+    publicCents = internationalCheckoutAmountCents(qualifiesIntlUpgrade);
+    const preferred =
+      kind === "stripe"
+        ? stripeInternationalPriceEnv(qualifiesIntlUpgrade)
+        : paypalInternationalPlanEnv(qualifiesIntlUpgrade);
+    if (getEnv(preferred) || founder) {
+      envName = preferred;
+    } else if (qualifiesIntlUpgrade) {
+      envName =
         kind === "stripe"
           ? "STRIPE_VISIBILITE_PRICE_ID"
-          : "PAYPAL_VISIBILITE_PLAN_ID",
-      amountCents,
-    };
+          : "PAYPAL_VISIBILITE_PLAN_ID";
+    } else {
+      envName = preferred;
+    }
   }
-  return { envName: preferred, amountCents };
+  const named = founderPriceEnv(envName, founder);
+  return {
+    envName: named,
+    publicCents,
+    amountCents: founder ? founderPriceCents(publicCents) : publicCents,
+  };
 }
