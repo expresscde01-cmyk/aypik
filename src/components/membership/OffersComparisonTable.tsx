@@ -120,6 +120,14 @@ const BOTTOM_ROWS = [
 
 const GEO_BOX = '#d1d5db';
 
+/** Compléments d’affichage : le montant barré / réduit reste celui de la clé prix. */
+const CELL_SUFFIX: Record<string, string> = {
+  'offersGrid.geoFrancophone:3': 'offersGrid.francophoneExclIntl',
+  'offersGrid.geoInternational:3': 'offersGrid.intlIncludesFrancophone',
+  'offersGrid.boost:3': 'offersGrid.boostPerUnit',
+  'offersGrid.boost:4': 'offersGrid.boostPerUnit',
+};
+
 type OfferGridKey =
   | (typeof TOP_ROWS)[number][number]
   | (typeof GEO_ROWS)[number][number]
@@ -128,8 +136,8 @@ type OfferGridKey =
 function cellClass(col: number): string {
   const base =
     col === 0
-      ? 'px-2.5 py-2 font-medium text-gray-800'
-      : 'px-2.5 py-2 text-gray-600';
+      ? 'px-2.5 py-2 align-top break-words font-medium text-gray-800'
+      : 'px-2.5 py-2 align-top break-words text-gray-600';
   const freeCut =
     col === 1
       ? ' border-r-2 border-gray-400 pr-3.5'
@@ -170,14 +178,16 @@ export function OffersComparisonTable({ founder = false }: { founder?: boolean }
   const { t } = useTranslation();
   if (SITE_FREE_MODE) return null;
 
-  const cellText = (key: string) => {
+  const cellText = (key: string, suffixKey?: string) => {
     const cents = GRID_CENTS[key];
-    if (!founder || cents == null) return t(key);
+    const suffix = suffixKey ? ` ${t(suffixKey)}` : '';
+    if (!founder || cents == null) return `${t(key)}${suffix}`;
     const charge = founderPriceCents(cents);
     return (
       <>
         <span className="mr-1 text-gray-400 line-through">{t(key)}</span>
         {formatPriceCents(charge, 'EUR')}
+        {suffix}
       </>
     );
   };
@@ -204,7 +214,7 @@ export function OffersComparisonTable({ founder = false }: { founder?: boolean }
         ) : key === 'offersGrid.indifferentFixed' ? (
           <span className="whitespace-pre-line">{t(key)}</span>
         ) : (
-          cellText(key)
+          cellText(key, CELL_SUFFIX[`${row[0]}:${i}`])
         )}
       </td>
     ));
