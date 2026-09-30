@@ -386,6 +386,11 @@ export function PaymentCheckoutModal({
                 <p className="text-xs text-gray-500">{t('membership.perMonth')}</p>
               </div>
             </div>
+            {status.is_founder && chargeCents !== priceCents && (
+              <p className="mt-2 text-left text-xs leading-snug text-gray-500">
+                {t('membership.founderRoundingNote')}
+              </p>
+            )}
             {(plan === 'international' || plan === 'francophone') && (
               <p className="mt-2 text-left text-xs leading-snug text-gray-500">
                 {t('offersGrid.inclusionNote')}
