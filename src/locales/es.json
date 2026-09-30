@@ -179,7 +179,7 @@
     "founderBenefitNoCard": "Regístrate sin tarjeta bancaria y sin compromiso",
     "founderBenefitLikes": "Likes y Flash ilimitados incluidos, con notificación inmediata",
     "founderBenefitBoost": "2 Boosts de regalo al lanzamiento de las ofertas de pago",
-    "founderBenefitLifetimeDiscount": "Tu privilegio de Miembro Fundador: 50 % de descuento de por vida, mientras tu cuenta permanezca activa, en todo el sitio, sin ninguna obligación de compra. El precio se redondea al céntimo más cercano (un medio céntimo se redondea al alza); el precio aplicado es el que se muestra.",
+    "founderBenefitLifetimeDiscount": "Tu privilegio de Miembro Fundador: 50 % de descuento de por vida, mientras tu cuenta permanezca activa, en todo el sitio, sin ninguna obligación de compra.",
     "founderBenefitFlash": "Flash gratis (notificación inmediata)",
     "after6MonthsBody": "Eres libre de cancelar en un clic, pasar al plan Freemium o apoyar a la comunidad con el plan Premium a {{price}}. Los planes de AYPIK no tienen compromiso de permanencia.",
     "premiumTitle": "Plan Premium",
@@ -970,7 +970,7 @@
     "officialNotice": "Esta es una traducción informativa no oficial. Solo la versión francesa de estos Términos de Servicio (Conditions Générales d’Utilisation) es jurídicamente vinculante. En caso de discrepancia o conflicto, prevalecerá la versión francesa.",
     "officialNoticeTitle": "Traducción no oficial",
     "readOfficialFrench": "Leer la versión oficial en francés",
-    "founderOfferClosed": "La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida, mientras la cuenta permanezca activa (apartado 3.7), en todo el sitio (precio redondeado al céntimo más cercano, un medio céntimo redondeado al alza; el precio aplicado es el que se muestra), Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, 2 Boosts de 24 h acreditados al lanzamiento de las ofertas de pago). Eliminar una cuenta no libera un número."
+    "founderOfferClosed": "La oferta de Miembro Fundador, reservada a las 1000 primeras cuentas, ya no está disponible: los 1000 números se han asignado. La fase de lanzamiento ha terminado y el paso del Servicio al modo de pago es definitivo. Los Miembros Fundadores conservan las ventajas ya concedidas (insignia de Fundador mientras exista la cuenta, 50 % de descuento de por vida, mientras la cuenta permanezca activa (apartado 3.7), en todo el sitio, Likes y Flashes ilimitados ofrecidos durante su período de lanzamiento, 2 Boosts de 24 h acreditados al lanzamiento de las ofertas de pago). Eliminar una cuenta no libera un número."
   },
   "emails": {
     "legalFooterAccount": "Recibes este correo porque tienes una cuenta en Aypik.",

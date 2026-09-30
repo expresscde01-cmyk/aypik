@@ -179,7 +179,7 @@
     "founderBenefitNoCard": "Sign up with no credit card and no commitment",
     "founderBenefitLikes": "Unlimited Likes and Flashes included, with instant notification",
     "founderBenefitBoost": "2 Boosts included when paid plans launch",
-    "founderBenefitLifetimeDiscount": "Your Founding Member privilege: 50% off for life, for as long as your account remains active, across the whole site, with no purchase obligation. The price is rounded to the nearest cent (a half-cent is rounded up); the price applied is the one displayed.",
+    "founderBenefitLifetimeDiscount": "Your Founding Member privilege: 50% off for life, for as long as your account remains active, across the whole site, with no purchase obligation.",
     "founderBenefitFlash": "Free Flash (instant notification)",
     "after6MonthsBody": "You're always free to cancel in one click, move to the Freemium plan, or support the community with the Premium plan at {{price}}. AYPIK plans have no fixed-term commitment.",
     "premiumTitle": "Premium plan",
@@ -970,7 +970,7 @@
     "officialNotice": "This is an unofficial, informative translation. Only the French version of these Terms of Service (Conditions Générales d’Utilisation) is legally binding. In the event of any discrepancy or conflict, the French version shall prevail.",
     "officialNoticeTitle": "Unofficial translation",
     "readOfficialFrench": "Read the official French version",
-    "founderOfferClosed": "The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount, for as long as the account remains active (Section 3.7), on the entire site (price rounded to the nearest cent, a half-cent rounded up; the price applied is the one displayed), unlimited Likes and Flashes during their launch period, 2 Boosts of 24 hours credited when paid plans launch). Deleting an account does not free a number."
+    "founderOfferClosed": "The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount, for as long as the account remains active (Section 3.7), on the entire site, unlimited Likes and Flashes during their launch period, 2 Boosts of 24 hours credited when paid plans launch). Deleting an account does not free a number."
   },
   "emails": {
     "legalFooterAccount": "You're receiving this email because you have an account on Aypik.",
