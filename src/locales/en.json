@@ -757,6 +757,7 @@
     "subPremium": "{{offer}} subscription",
     "monthlyRenewal": "Monthly renewal",
     "perMonth": "/ month",
+    "founderRoundingNote": "Price rounded to the nearest cent (a half-cent is rounded up). The price applied is the one displayed.",
     "benefitWhoLiked": "See who liked your profile",
     "benefitFilters": "Advanced filters",
     "benefitUnlimitedLikes": "Unlimited likes",

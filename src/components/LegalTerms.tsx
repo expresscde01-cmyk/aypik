@@ -776,7 +776,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 que son compte demeure actif au sens de l&apos;article 3.7,
                 d&apos;une réduction de 50 % sur le tarif public de toute
                 offre, option ou Boost payant proposé sur le Service,
-                appliquée au moment de la souscription. Cette réduction n&apos;emporte aucune
+                appliquée au moment de la souscription. Le prix est arrondi
+                au centime le plus proche (un demi-centime est arrondi
+                au-dessus). Le prix appliqué est celui affiché. Cette réduction n&apos;emporte aucune
                 obligation de souscription. Elle est personnelle, non
                 cessible et non cumulable avec toute autre promotion, sauf
                 mention contraire. Elle est définitivement perdue en cas de
@@ -1439,7 +1441,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 par mois, non reportés ; au-delà, 2,99&nbsp;€ l&apos;unité.
                 Le Membre Fondateur bénéficie
                 de 50 % sur le tarif public de ces offres, des options et du
-                Boost, tant que son compte reste actif. Le détail à jour
+                Boost, tant que son compte reste actif. Le prix est arrondi
+                au centime le plus proche (un demi-centime est arrondi
+                au-dessus). Le prix appliqué est celui affiché. Le détail à jour
                 figure sur la page des offres. Les CGV ci-dessous décrivent
                 les modalités de souscription, de résiliation et de
                 rétractation.
@@ -1652,7 +1656,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 le compte n&apos;est pas supprimé. Il bénéficie d&apos;une
                 réduction de 50 % sur le tarif public de toute offre, option
                 ou Boost payant, tant que son compte demeure actif, y compris
-                après les six mois où le badge devient honorifique.
+                après les six mois où le badge devient honorifique. Le prix
+                est arrondi au centime le plus proche (un demi-centime est
+                arrondi au-dessus). Le prix appliqué est celui affiché.
               </p>
             </div>
             <div>

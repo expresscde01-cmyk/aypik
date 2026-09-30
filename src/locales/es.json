@@ -757,6 +757,7 @@
     "subPremium": "Suscripción {{offer}}",
     "monthlyRenewal": "Renovación mensual",
     "perMonth": "/ mes",
+    "founderRoundingNote": "Precio redondeado al céntimo más cercano (un medio céntimo se redondea al alza). El precio aplicado es el que se muestra.",
     "benefitWhoLiked": "Ver quién le ha dado like a tu perfil",
     "benefitFilters": "Filtros avanzados",
     "benefitUnlimitedLikes": "Likes ilimitados",

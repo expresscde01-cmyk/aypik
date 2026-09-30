@@ -757,6 +757,7 @@
     "subPremium": "Abonnement {{offer}}",
     "monthlyRenewal": "Renouvellement mensuel",
     "perMonth": "/ mois",
+    "founderRoundingNote": "Prix arrondi au centime le plus proche (un demi-centime est arrondi au-dessus). Le prix appliqué est celui affiché.",
     "benefitWhoLiked": "Voir qui a liké ton profil",
     "benefitFilters": "Filtres avancés",
     "benefitUnlimitedLikes": "Likes illimités",
