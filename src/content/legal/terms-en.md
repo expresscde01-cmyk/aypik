@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: September 29, 2026.
+Last updated: September 30, 2026.
 
 ### Preamble
 
@@ -324,6 +324,11 @@ For every member, regardless of plan: the gender sought (a man is shown women's 
 **Can I create multiple accounts?**
 No. One account per person and per email address, per Section 3.3.
 
+<!-- paid:start -->
+**What are the paid offers?**
+Four tiers: Basique (€9.99/month), Essentiel (€14.99/month), Confort (€19.99/month) and Premium (€24.99/month), plus à-la-carte options (Visibility, French-speaking or International reach — International already includes the French-speaking countries; the French-speaking option does not give access to International — and the 24-hour Boost). The 24-hour Boost is a paid option starting with the Essentiel plan, at €2.99 each. The Premium plan includes 2 free Boosts per month, which do not roll over; beyond that, €2.99 each. A Founding Member receives 50% off the public price of these plans, options and the Boost, for as long as their account remains active. The current detail is on the offers page. The General Terms of Sale below describe how to subscribe, cancel and withdraw.
+<!-- paid:end -->
+
 **Will the Service become paid?**
 <!-- free:start -->
 Not at the moment. The Service is in its launch phase: no paid plan is sold and no payment is requested. Creating a profile, discovering members, Like, Flash, forming Matches and sending messages are included under the Trial Period (Article 4). Even at the end of this launch phase, a paid subscription may possibly be offered, but it will never be mandatory: absent a subscription, the account remains usable via the Free plan (Section 4.3).
@@ -360,6 +365,14 @@ Yes, after a period of 1 year if a message had been exchanged before the ending,
 
 **What does the green dot on a profile photo mean?**
 It shows that the member is considered online (Section 3.8). This dot does not appear if that member has turned on Incognito.
+
+<!-- paid:start -->
+## General Terms of Sale
+
+### 6. French-speaking / International reach
+
+French-speaking and International are two tiers. International already includes French-speaking. Moving from French-speaking to International ends the French-speaking subscription. Only the upgrade is charged. The International price is €5.99 from Essentiel (no extension is included) and €2.99 from Confort (an upgrade: French-speaking is already included in the subscription). It is included in Premium. The 24-hour Boost is a paid option starting with the Essentiel plan, at €2.99 each. The Premium plan includes 2 free Boosts per month, which do not roll over; beyond that, €2.99 each. On a downgrade, an option included in the current plan remains until the end of the period already paid. Each perimeter includes the closer ones: International includes the French-speaking countries, which include the home country. On Essentiel, the International option at €5.99 is enough on its own: there is no need to also take the French-speaking option. Conversely, the French-speaking option does not give access to International. On Confort, the €2.99 International price is the upgrade: French-speaking is already included.
+<!-- paid:end -->
 
 ---
 

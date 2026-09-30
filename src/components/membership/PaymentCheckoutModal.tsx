@@ -383,14 +383,14 @@ export function PaymentCheckoutModal({
                 {notice && (
                   <p className="mt-2 text-sm text-emerald-800">{notice}</p>
                 )}
-                {(plan === 'international' || plan === 'francophone') && (
-                  <p className="mt-2 text-xs text-gray-500">
-                    {t('offersGrid.inclusionNote')}
-                  </p>
-                )}
                 <p className="text-xs text-gray-500">{t('membership.perMonth')}</p>
               </div>
             </div>
+            {(plan === 'international' || plan === 'francophone') && (
+              <p className="mt-2 text-left text-xs leading-snug text-gray-500">
+                {t('offersGrid.inclusionNote')}
+              </p>
+            )}
             <ul className="mt-3 space-y-1.5">
               {benefits.map((item) => (
                 <li

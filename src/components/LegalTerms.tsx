@@ -93,7 +93,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 29 septembre 2026.
+              Dernière mise à jour : 30 septembre 2026.
             </p>
           </header>
 
@@ -1431,10 +1431,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Quatre paliers : Basique (9,99&nbsp;€/mois), Essentiel
                 (14,99&nbsp;€/mois), Confort (19,99&nbsp;€/mois) et Premium
                 (24,99&nbsp;€/mois), plus des options à la carte
-                (Visibilité, portée Francophone ou International — chaque
-                périmètre inclut les précédents — et Boost 24&nbsp;h).
-                L&apos;offre Premium inclut 2 Boosts de 24 h par mois, non
-                reportés, puis 2,99&nbsp;€ à partir de l&apos;offre Essentiel.
+                (Visibilité, portée Francophone ou International — l&apos;International
+                comprend la francophonie ; l&apos;option Francophone ne donne pas
+                accès à l&apos;International — et Boost 24&nbsp;h).
+                Le Boost 24&nbsp;h est payant à partir de l&apos;offre Essentiel, à
+                2,99&nbsp;€ l&apos;unité. L&apos;offre Premium inclut 2 Boosts offerts
+                par mois, non reportés ; au-delà, 2,99&nbsp;€ l&apos;unité.
                 Le Membre Fondateur bénéficie
                 de 50 % sur le tarif public de ces offres, des options et du
                 Boost, tant que son compte reste actif. Le détail à jour
@@ -1676,14 +1678,19 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 International est de 5,99&nbsp;€ depuis Essentiel (aucune
                 extension incluse) et de 2,99&nbsp;€ depuis Confort (mise à
                 niveau : Francophone est déjà inclus dans l&apos;abonnement).
-                Il est inclus dans Premium. L&apos;offre Premium inclut en
-                outre 2 Boosts de 24 h par mois, non reportés au mois
-                suivant. Les Boosts supplémentaires sont proposés à
-                2,99&nbsp;€ à partir de l&apos;offre Essentiel. Lors d&apos;une
+                Il est inclus dans Premium. Le Boost 24&nbsp;h est payant à
+                partir de l&apos;offre Essentiel, à 2,99&nbsp;€ l&apos;unité. L&apos;offre
+                Premium inclut 2 Boosts offerts par mois, non reportés ;
+                au-delà, 2,99&nbsp;€ l&apos;unité. Lors d&apos;une
                 descente en gamme, une option incluse dans l&apos;offre en
                 cours demeure jusqu&apos;à la fin de la période déjà réglée.
-                Chaque périmètre inclut les plus proches : l&apos;international
-                comprend la francophonie, qui comprend le national.
+                Chaque périmètre inclut les plus proches : l&apos;International
+                comprend la francophonie, qui comprend le national. En Essentiel,
+                l&apos;option International à 5,99&nbsp;€ suffit seule : inutile de
+                prendre aussi l&apos;option Francophone. À l&apos;inverse, l&apos;option
+                Francophone ne donne pas accès à l&apos;International. En Confort, le
+                2,99&nbsp;€ d&apos;International est la mise à niveau : Francophone y
+                est déjà inclus.
               </p>
             </div>
           </section>

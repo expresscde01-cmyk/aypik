@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 29 de septiembre de 2026.
+Última actualización: 30 de septiembre de 2026.
 
 ### Preámbulo
 
@@ -324,6 +324,11 @@ Para todos los miembros, sea cual sea la oferta: el género buscado (a un hombre
 **¿Puedo crear varias cuentas?**
 No. Una cuenta por persona y por dirección de correo electrónico, conforme al apartado 3.3.
 
+<!-- paid:start -->
+**¿Cuáles son las ofertas de pago?**
+Cuatro niveles: Basique (9,99 €/mes), Essentiel (14,99 €/mes), Confort (19,99 €/mes) y Premium (24,99 €/mes), más opciones a la carta (Visibilidad, alcance francófono o Internacional — el Internacional ya comprende la francofonía; la opción Francófona no da acceso al Internacional — y el Boost de 24 h). El Boost de 24 h es de pago a partir de la oferta Essentiel, a 2,99 € la unidad. La oferta Premium incluye 2 Boosts de regalo al mes, que no se acumulan de un mes a otro; a partir de ahí, 2,99 € la unidad. El Miembro Fundador se beneficia de un 50 % sobre la tarifa pública de estas ofertas, de las opciones y del Boost, mientras su cuenta permanezca activa. El detalle actualizado figura en la página de ofertas. Las Condiciones Generales de Venta que siguen describen la contratación, la resolución y el desistimiento.
+<!-- paid:end -->
+
 **¿El Servicio se convertirá en un servicio de pago?**
 <!-- free:start -->
 No por el momento. El Servicio está en fase de lanzamiento: no se comercializa ninguna oferta de pago y no se solicita ningún pago. La creación de perfil, el descubrimiento de miembros, el Like, el Flash, la formación de Matches y el envío de mensajes están incluidos en las condiciones del Período de prueba (artículo 4). Incluso al término de esta fase de lanzamiento, podrá eventualmente proponerse una suscripción de pago, pero nunca será obligatoria: a falta de suscripción, la cuenta sigue siendo utilizable mediante la oferta Gratis (apartado 4.3).
@@ -360,6 +365,14 @@ Sí, transcurrido un período de 1 año si se había intercambiado un mensaje an
 
 **¿Qué significa el punto verde en una foto de perfil?**
 Indica que se considera que el miembro está en línea (apartado 3.8). Este punto no aparece si dicho miembro ha activado el modo Incógnito.
+
+<!-- paid:start -->
+## Condiciones Generales de Venta
+
+### 6. Alcance francófono / Internacional
+
+Francófono e Internacional son dos niveles. El Internacional ya comprende el Francófono. El paso de Francófono a Internacional resuelve la suscripción Francófona. Solo se factura la mejora. La tarifa Internacional es de 5,99 € desde Essentiel (ninguna extensión incluida) y de 2,99 € desde Confort (mejora: el Francófono ya está incluido en la suscripción). Está incluido en Premium. El Boost de 24 h es de pago a partir de la oferta Essentiel, a 2,99 € la unidad. La oferta Premium incluye 2 Boosts de regalo al mes, que no se acumulan de un mes a otro; a partir de ahí, 2,99 € la unidad. En un descenso de gama, una opción incluida en la oferta en curso se mantiene hasta el final del período ya pagado. Cada perímetro incluye los más cercanos: el Internacional comprende la francofonía, que comprende el nacional. En Essentiel, la opción Internacional a 5,99 € basta por sí sola: no hace falta tomar también la opción Francófona. A la inversa, la opción Francófona no da acceso al Internacional. En Confort, los 2,99 € de Internacional son la mejora: el Francófono ya está incluido.
+<!-- paid:end -->
 
 ---
 
