@@ -130,8 +130,8 @@ const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
 
 /** Asset UI (header, landing) — indépendant du favicon SVG/ICO. */
 const BRAND_MARK_SRC = `${import.meta.env.BASE_URL}brand-mark-transparent.png`;
-/** Cœur vagues — uniquement l’écran Connexion / Inscription. */
-export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}brand-mark-auth.png`;
+/** Cœur vagues — hero et écran Connexion / Inscription. */
+export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}aypik-coeur.svg`;
 
 /**
  * Logo cœur détouré (PNG alpha) — header et landing.
@@ -139,7 +139,7 @@ export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}brand-mark-auth.p
  * `public/app-icon-source.png` via scripts/build-app-icons.cjs.
  * Ne pas confondre avec ce PNG transparent (header / hero)
  * ni avec brand-mark.png (tuile carte)
- * ni avec brand-mark-auth.png (connexion / inscription).
+ * ni avec aypik-coeur.svg (hero, connexion / inscription).
  */
 export function BrandMark({
   size = 'md',

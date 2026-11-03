@@ -87,7 +87,8 @@ AddDefaultCharset UTF-8
   Header always set X-Frame-Options "DENY"
   Header always set X-Permitted-Cross-Domain-Policies "none"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-  Header always set Cross-Origin-Opener-Policy "same-origin"
+  # Pas de COOP same-origin : WebKit laisse le lancement écran d’accueil
+  # bloqué sur le splash. Le site n’utilise pas COEP.
   Header always set Cross-Origin-Resource-Policy "same-site"
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 

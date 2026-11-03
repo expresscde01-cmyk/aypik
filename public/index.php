@@ -129,10 +129,15 @@ $bootJs = <<<'JS'
   var root = document.getElementById('root');
   if (!root) return;
   var fallback = null;
+  function hideShell() {
+    var shell = document.getElementById('aypik-boot-shell');
+    if (shell) shell.remove();
+  }
   function onBooted() {
     if (!root.childNodes.length) return;
     clearTimeout(timer);
     obs.disconnect();
+    hideShell();
     if (fallback) {
       fallback.remove();
       fallback = null;
@@ -140,11 +145,26 @@ $bootJs = <<<'JS'
   }
   var obs = new MutationObserver(onBooted);
   obs.observe(root, { childList: true });
+  function loadFonts() {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+    document.head.appendChild(link);
+  }
+  if (window.requestAnimationFrame) {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(loadFonts);
+    });
+  } else {
+    setTimeout(loadFonts, 0);
+  }
   var timer = setTimeout(function () {
     if (root.childNodes.length) {
       onBooted();
       return;
     }
+    hideShell();
     fallback = document.createElement('div');
     fallback.id = 'aypik-boot-fallback';
     fallback.setAttribute('role', 'alert');

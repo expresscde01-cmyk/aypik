@@ -23,7 +23,6 @@
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>AYPIK</title>
     <meta property="og:site_name" content="Aypik" />
     <meta property="og:title" content="Aypik — Personnes sans enfants" />
@@ -43,6 +42,14 @@
     <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
 </head>
   <body>
+    <div
+      id="aypik-boot-shell"
+      aria-hidden="true"
+      style="position:fixed;inset:0;z-index:20;box-sizing:border-box;margin:0;padding:1.25rem 1rem 0;background:#fff8f5;font-family:system-ui,-apple-system,sans-serif;color:#111827;"
+    >
+      <p style="margin:0;font-size:1.125rem;font-weight:800;letter-spacing:0.28em;text-transform:uppercase;line-height:1;">Aypik</p>
+      <p style="margin:0.4rem 0 0;font-size:0.875rem;font-weight:400;color:#6b7280;line-height:1.35;">Le site de rencontre destiné aux personnes sans enfants</p>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
