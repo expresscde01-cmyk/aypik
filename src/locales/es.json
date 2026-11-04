@@ -1,11 +1,13 @@
 {
   "seo": {
     "title": "AYPIK",
+    "homeTitle": "Aypik — Sitio de citas para solteros sin hijos",
     "metaDescription": "Aypik — Un espacio diferente, reservado exclusivamente a personas sin hijos.",
+    "homeMetaDescription": "¿Sin pareja y sin hijos? Conoce a alguien como tú en Aypik, el sitio de citas exclusivo para personas sin hijos. Fase de lanzamiento participativo, registro gratuito y sin compromiso.",
     "ogTitle": "Aypik — Personas sin hijos",
-    "ogDescription": "Aypik — Un espacio diferente, reservado exclusivamente a personas sin hijos.",
+    "ogDescription": "¿Sin pareja y sin hijos? Conoce a alguien como tú en Aypik, el sitio de citas exclusivo para personas sin hijos. Fase de lanzamiento participativo, registro gratuito y sin compromiso.",
     "twitterTitle": "Aypik — Personas sin hijos",
-    "twitterDescription": "Aypik — Personas sin hijos",
+    "twitterDescription": "¿Sin pareja y sin hijos? Conoce a alguien como tú en Aypik, el sitio de citas exclusivo para personas sin hijos. Fase de lanzamiento participativo, registro gratuito y sin compromiso.",
     "applicationName": "Aypik"
   },
   "common": {
@@ -148,14 +150,22 @@
     "agoDays": "Hace {{n}} d"
   },
   "landing": {
-    "heroTitleLine1": "Un espacio de citas",
-    "heroTitleLine2": "diferente",
+    "heroTitleBefore": "¿Sin pareja y ",
+    "heroTitleAccent": "sin hijos",
+    "heroTitleMark": "?",
+    "heroTitleSub": "Conoce a alguien como tú.",
     "heroChildFree": "Reservado exclusivamente a personas sin hijos",
-    "heroChildFreeLine1": "Reservado exclusivamente a personas",
+    "heroChildFreeMark": "Reservado exclusivamente",
+    "heroChildFreeLine1Rest": "a personas",
     "heroChildFreeLine2": "sin hijos",
     "heroHeartHintMouse": "Pasa el ratón por el corazón",
     "heroHeartHintTouch": "Toca el corazón",
-    "heroMeet": "Conoce a personas que, como tú, no tienen hijos.",
+    "heroMeetLead": "Fase de lanzamiento participativo",
+    "heroMeetRest": "Registro gratuito y sin compromiso",
+    "beforeOfferTitle": "Conoce a alguien que, como tú, no tiene hijos",
+    "beforeOfferLead": "Conoce a alguien que, ",
+    "beforeOfferAccent": "como\u00A0tú",
+    "beforeOfferRest": "no tiene hijos",
     "scrollToOfferAria": "Ver nuestra oferta",
     "ctaJoin": "Unirme a Aypik",
     "ctaSignIn": "Iniciar sesión",
@@ -175,7 +185,7 @@
     "valueSharedBody": "Un entorno dedicado a compartir un mismo estilo de vida o una experiencia en común.",
     "offersTitleFree": "Nuestro plan",
     "offersTitlePaid": "Nuestros planes",
-    "offersSubtitleFree": "Un plan gratuito durante 6 meses.",
+    "offersSubtitleFree": "Hazte Miembro Fundador: oferta abierta durante 6 meses, sin obligación de compra.",
     "offersSubtitlePaid": "Acceso libre, con opciones para ir más allá.",
     "founderTitle": "Miembro Fundador",
     "founderBadge": "Oferta limitada",
@@ -185,6 +195,11 @@
     "founderBenefitLikes": "Likes y Flash ilimitados incluidos, con notificación inmediata",
     "founderBenefitBoost": "2 Boosts de regalo al lanzamiento de las ofertas de pago",
     "founderBenefitLifetimeDiscount": "Tu privilegio de Miembro Fundador: 50 % de descuento de por vida, mientras tu cuenta permanezca activa, en todo el sitio, sin ninguna obligación de compra.",
+    "founderPrivilegeBold": [
+      "Tu privilegio de Miembro Fundador:",
+      "50 % de descuento de por vida",
+      "sin ninguna obligación de compra"
+    ],
     "founderBenefitFlash": "Flash gratis (notificación inmediata)",
     "after6MonthsBody": "Eres libre de cancelar en un clic, pasar al plan Freemium o apoyar a la comunidad con el plan Premium a {{price}}. Los planes de AYPIK no tienen compromiso de permanencia.",
     "premiumTitle": "Plan Premium",
