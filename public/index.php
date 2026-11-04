@@ -151,6 +151,16 @@ $bootJs = <<<'JS'
     link.href =
       'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
     document.head.appendChild(link);
+    var hero = document.createElement('link');
+    hero.rel = 'stylesheet';
+    hero.href =
+      'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Playfair+Display:ital,wght@1,600;1,700&display=swap';
+    document.head.appendChild(hero);
+    var offer = document.createElement('link');
+    offer.rel = 'stylesheet';
+    offer.href =
+      'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=Caveat:wght@700&display=swap';
+    document.head.appendChild(offer);
   }
   if (window.requestAnimationFrame) {
     requestAnimationFrame(function () {
@@ -225,6 +235,25 @@ $html = preg_replace(
     $html,
     1
 ) ?? $html;
+
+$homeShareDescription = [
+    'fr' => "Célibataire et sans enfants ? Rencontre quelqu'un qui te ressemble sur Aypik, le site de rencontre réservé aux personnes sans enfants. Phase de lancement participatif, inscription gratuite et sans engagement.",
+    'en' => 'Single with no kids? Meet someone like you on Aypik, the dating site exclusively for people without children. Participatory launch phase, free sign-up, no commitment.',
+    'es' => '¿Sin pareja y sin hijos? Conoce a alguien como tú en Aypik, el sitio de citas exclusivo para personas sin hijos. Fase de lanzamiento participativo, registro gratuito y sin compromiso.',
+];
+$share = htmlspecialchars(
+    $homeShareDescription[$locale] ?? $homeShareDescription['fr'],
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
+if ($locale !== 'fr') {
+    $html = str_replace($homeShareDescription['fr'], $share, $html);
+}
+$html = str_replace(
+    'Aypik — Un espace atypique réservé exclusivement aux personnes sans enfants.',
+    $share,
+    $html
+);
 
 $hFr = htmlspecialchars($hreflangFr, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $hEn = htmlspecialchars($hreflangEn, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

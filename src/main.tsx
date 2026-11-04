@@ -43,6 +43,16 @@ if (import.meta.env.DEV) {
   font.href =
     'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
   document.head.appendChild(font);
+  const heroFont = document.createElement('link');
+  heroFont.rel = 'stylesheet';
+  heroFont.href =
+    'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=Playfair+Display:ital,wght@1,600;1,700&display=swap';
+  document.head.appendChild(heroFont);
+  const offerFont = document.createElement('link');
+  offerFont.rel = 'stylesheet';
+  offerFont.href =
+    'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=Caveat:wght@700&display=swap';
+  document.head.appendChild(offerFont);
 }
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
