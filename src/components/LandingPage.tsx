@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { ChevronDown, Gift, Heart, HeartHandshake, LogOut, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
-import { BrandHeaderBrand, BRAND_GRADIENT_CSS, BRAND_MARK_AUTH_SRC } from '@/components/BrandLockup';
+import { BrandHeaderBrand } from '@/components/BrandLockup';
 import { SiteFooter } from '@/components/LegalChrome';
 import LaunchTicker from '@/components/LaunchTicker';
 import { OfferSummaryCards } from '@/components/membership/OfferSummaryCards';
@@ -46,6 +46,25 @@ const HERO_SPARKS = [
   { x: '-74px', y: '4px', color: '#E8395F' },
   { x: '-46px', y: '-62px', color: '#FFFFFF' },
 ] as const;
+
+const HERO_HEART_WEBP = '/aypik-coeur-hero.webp?v=6';
+const HERO_HEART_PNG = '/aypik-coeur-hero.png?v=6';
+
+/** Cœur brillant du hero : WebP, PNG en secours. Même fichier pour le repos et les deux moitiés. */
+function HeroHeartFrame({ className }: { className: string }) {
+  return (
+    <picture className={className}>
+      <source srcSet={HERO_HEART_WEBP} type="image/webp" />
+      <img
+        src={HERO_HEART_PNG}
+        alt=""
+        width={1164}
+        height={1026}
+        draggable={false}
+      />
+    </picture>
+  );
+}
 
 /** Cœur du hero : le logo déjà affiché s’ouvre et laisse sortir la phrase. */
 function HeroHeart() {
@@ -95,34 +114,20 @@ function HeroHeart() {
                 }}
               />
             ))}
-            <img
-              src={BRAND_MARK_AUTH_SRC}
-              alt=""
-              draggable={false}
-              className="hero-heart-half hero-heart-half--left"
-            />
-            <img
-              src={BRAND_MARK_AUTH_SRC}
-              alt=""
-              draggable={false}
-              className="hero-heart-half hero-heart-half--right"
-            />
-            <img
-              src={BRAND_MARK_AUTH_SRC}
-              alt=""
-              draggable={false}
-              className="hero-heart-whole"
-            />
+            <HeroHeartFrame className="hero-heart-half hero-heart-half--left" />
+            <HeroHeartFrame className="hero-heart-half hero-heart-half--right" />
+            <HeroHeartFrame className="hero-heart-whole" />
           </span>
         </button>
       </div>
-      <p
-        className="w-fit mx-auto text-xl sm:text-2xl font-extrabold uppercase tracking-[0.32em] bg-clip-text text-transparent"
-        style={{ backgroundImage: BRAND_GRADIENT_CSS }}
-        aria-label="Aypik"
-      >
-        Aypik
-      </p>
+      <img
+        src="/aypik-nom.svg?v=1"
+        alt="Aypik"
+        width={3464}
+        height={722}
+        draggable={false}
+        className="hero-wordmark"
+      />
       <p className="hero-heart-hint hero-heart-hint--mouse">{t('landing.heroHeartHintMouse')}</p>
       <p className="hero-heart-hint hero-heart-hint--touch">{t('landing.heroHeartHintTouch')}</p>
     </div>
