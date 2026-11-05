@@ -130,16 +130,31 @@ const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
 
 /** Asset UI (header, landing) — indépendant du favicon SVG/ICO. */
 const BRAND_MARK_SRC = `${import.meta.env.BASE_URL}brand-mark-transparent.png`;
-/** Cœur vagues — hero et écran Connexion / Inscription. */
+/** Cœur plat — écran Connexion / Inscription. Le hero utilise aypik-coeur-hero.webp. */
 export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}aypik-coeur.svg`;
+const BRAND_NAME_SRC = '/aypik-nom.svg?v=1';
+
+/** Nom AYPIK en logo. La hauteur vient de className (16/20 px en en-tête, 22/28 px sous le cœur). */
+export function BrandNameImg({ className }: { className: string }) {
+  return (
+    <img
+      src={BRAND_NAME_SRC}
+      alt="Aypik"
+      width={3464}
+      height={722}
+      draggable={false}
+      className={`w-auto shrink-0 select-none ${BRAND_LOCKUP_NO_COPY_CLASS} ${className}`}
+    />
+  );
+}
 
 /**
  * Logo cœur détouré (PNG alpha) — header et landing.
  * Favicon onglet : pipeline SVG (build-favicons). PWA / apple-touch :
  * `public/app-icon-source.png` via scripts/build-app-icons.cjs.
- * Ne pas confondre avec ce PNG transparent (header / hero)
+ * Ne pas confondre avec ce PNG transparent (header)
  * ni avec brand-mark.png (tuile carte)
- * ni avec aypik-coeur.svg (hero, connexion / inscription).
+ * ni avec aypik-coeur.svg (connexion / inscription).
  */
 export function BrandMark({
   size = 'md',
@@ -194,7 +209,6 @@ export function BrandHeaderBrand({
   const stacked =
     compact === true ? true : compact === false ? false : null;
 
-  const brandClass = `shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none ${BRAND_LOCKUP_NO_COPY_CLASS}`;
   const shortTagClass = `min-w-0 text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
   const longTagClass = `min-w-0 whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
   /** Décalage = largeur cœur nav (18 / sm:20) + gap-2 (0.5rem). */
@@ -206,8 +220,8 @@ export function BrandHeaderBrand({
         className={`inline-flex flex-nowrap items-center gap-2 min-w-0 max-w-full ${className}`}
       >
         <BrandMarkNav />
-        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
-          <span className={brandClass}>{BRAND}</span>
+        <span className="inline-flex flex-nowrap items-center gap-1 min-w-0 overflow-hidden">
+          <BrandNameImg className="h-[16px] sm:h-[20px]" />
           <span className={longTagClass}>{baseline}</span>
         </span>
       </span>
@@ -224,8 +238,8 @@ export function BrandHeaderBrand({
         className={`inline-flex flex-nowrap items-center gap-2 min-w-0 max-w-full ${className}`}
       >
         <BrandMarkNav />
-        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
-          <span className={brandClass}>{BRAND}</span>
+        <span className="inline-flex flex-nowrap items-center gap-1 min-w-0 overflow-hidden">
+          <BrandNameImg className="h-[16px] sm:h-[20px]" />
           {stacked === null && (
             <span className={`hidden sm:inline ${longTagClass}`}>{baseline}</span>
           )}
@@ -240,8 +254,8 @@ export function BrandHeaderBrand({
     >
       <span className="inline-flex flex-nowrap items-center gap-2 min-w-0">
         <BrandMark size="nav" />
-        <span className="inline-flex flex-nowrap items-baseline gap-1 min-w-0 overflow-hidden">
-          <span className={brandClass}>{BRAND}</span>
+        <span className="inline-flex flex-nowrap items-center gap-1 min-w-0 overflow-hidden">
+          <BrandNameImg className="h-[16px] sm:h-[20px]" />
           {stacked === null && (
             <span className={`hidden sm:inline ${longTagClass}`}>{baseline}</span>
           )}

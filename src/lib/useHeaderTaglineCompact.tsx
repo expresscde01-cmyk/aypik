@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
   BRAND_BASELINE,
-  BRAND_NAME,
   BRAND_SHORT_TAGLINE_TEXT,
+  BrandNameImg,
 } from '@/components/BrandLockup';
 import {
   HEADER_TAGLINE_MEASURE_DEBOUNCE_MS,
@@ -84,9 +84,7 @@ export function HeaderTaglineWidthProbe({
     >
       <span className="w-5 h-5 shrink-0" />
       <span className="inline-flex flex-nowrap items-baseline gap-1">
-        <span className="shrink-0 text-lg font-extrabold uppercase tracking-[0.28em] leading-none">
-          {BRAND_NAME}
-        </span>
+        <BrandNameImg className="h-[20px]" />
         <span className="whitespace-nowrap text-xs font-light tracking-wide leading-none">
           {BRAND_BASELINE}
         </span>
@@ -176,9 +174,7 @@ export function MobileTaglineWidthProbe({
     >
       <span className="inline-flex flex-nowrap items-center gap-2">
         <span className="w-[18px] h-[18px] shrink-0" />
-        <span className="text-base font-extrabold uppercase tracking-[0.28em] leading-none">
-          {BRAND_NAME}
-        </span>
+        <BrandNameImg className="h-[16px]" />
       </span>
       <span className="pl-[calc(18px+0.5rem)] text-[10.5px] font-light tracking-normal leading-none whitespace-nowrap">
         {BRAND_SHORT_TAGLINE_TEXT}
