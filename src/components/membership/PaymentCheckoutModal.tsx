@@ -300,7 +300,7 @@ export function PaymentCheckoutModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-aypik-border max-h-[92vh] overflow-y-auto animate-fadeIn">
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
           <div>
             <h2
@@ -351,9 +351,9 @@ export function PaymentCheckoutModal({
                   )
                 }
                 onClick={() => void saveNativeThenContinue()}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold disabled:opacity-60"
+                className="w-full py-3 btn-primary disabled:opacity-60"
               >
-                {loading ? t('profile.saving') : t('languages.checkoutContinue')}
+                <span>{loading ? t('profile.saving') : t('languages.checkoutContinue')}</span>
               </button>
             </div>
           )}
@@ -402,7 +402,7 @@ export function PaymentCheckoutModal({
                   key={item}
                   className="flex items-center gap-2 text-xs text-gray-600"
                 >
-                  <Check className="w-3.5 h-3.5 text-rose-500" />
+                  <Check className="w-3.5 h-3.5 text-aypik-navy" />
                   {item}
                 </li>
               ))}
@@ -412,7 +412,7 @@ export function PaymentCheckoutModal({
                 {t('membership.cancelAnytime')}
               </strong>{' '}
               {t('membership.checkoutTermsAfter')}{' '}
-              <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors font-medium">
+              <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors font-medium">
                 {t('common.legalCguCgv')}
               </LegalLink>
               .
@@ -482,18 +482,20 @@ export function PaymentCheckoutModal({
                 type="button"
                 onClick={continuePayment}
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:opacity-95 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3.5 btn-primary disabled:opacity-60"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t('membership.preparing')}
-                  </>
-                ) : method === 'card' ? (
-                  t('membership.continuePrice', { price: priceLabel })
-                ) : (
-                  t('membership.continuePaypal', { price: priceLabel })
-                )}
+                <span className="inline-flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t('membership.preparing')}
+                    </>
+                  ) : method === 'card' ? (
+                    t('membership.continuePrice', { price: priceLabel })
+                  ) : (
+                    t('membership.continuePaypal', { price: priceLabel })
+                  )}
+                </span>
               </button>
 
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
@@ -512,7 +514,7 @@ export function PaymentCheckoutModal({
                 appearance: {
                   theme: 'stripe',
                   variables: {
-                    colorPrimary: '#f43f5e',
+                    colorPrimary: '#d6246e',
                     borderRadius: '12px',
                   },
                 },
@@ -535,7 +537,7 @@ export function PaymentCheckoutModal({
 
           {step === 'paypal_redirect' && (
             <div className="py-8 text-center space-y-3">
-              <Loader2 className="w-8 h-8 animate-spin text-rose-500 mx-auto" />
+              <Loader2 className="w-8 h-8 animate-spin text-aypik-navy mx-auto" />
               <p className="text-sm text-gray-700 font-medium">
                 {t('membership.redirectingPaypal')}
               </p>
@@ -623,23 +625,25 @@ function StripeCardForm({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
+          className="flex-1 py-3 btn-secondary text-sm disabled:opacity-60"
         >
           {t('common.back')}
         </button>
         <button
           type="submit"
           disabled={!stripe || !elements || submitting}
-          className="flex-[1.4] py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+          className="flex-[1.4] py-3 btn-primary text-sm disabled:opacity-60"
         >
-          {submitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {t('membership.paying')}
-            </>
-          ) : (
-            t('membership.payAmount', { price: priceLabel })
-          )}
+          <span className="inline-flex items-center justify-center gap-2">
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t('membership.paying')}
+              </>
+            ) : (
+              t('membership.payAmount', { price: priceLabel })
+            )}
+          </span>
         </button>
       </div>
 
@@ -674,13 +678,13 @@ function PaymentOption({
       disabled={disabled}
       className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center gap-3 disabled:opacity-55 disabled:cursor-not-allowed ${
         selected
-          ? 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-100'
+          ? 'border-rose-400 bg-aypik-banner-bg ring-2 ring-aypik-border'
           : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
     >
       <span
         className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          selected ? 'bg-white text-rose-600' : 'bg-gray-50 text-gray-600'
+          selected ? 'bg-white text-aypik-navy' : 'bg-gray-50 text-gray-600'
         }`}
       >
         {icon}
@@ -699,7 +703,7 @@ function PaymentOption({
       <span
         className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
           selected
-            ? 'border-rose-500 bg-rose-500 shadow-[inset_0_0_0_2px_white]'
+            ? 'border-aypik-navy bg-aypik-navy shadow-[inset_0_0_0_2px_white]'
             : 'border-gray-300'
         }`}
       />

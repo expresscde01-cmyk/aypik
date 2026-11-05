@@ -428,7 +428,7 @@ function AppShellView() {
   if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+        <div className="w-10 h-10 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
       </div>
     );
   }
@@ -439,8 +439,8 @@ function AppShellView() {
 
   if (profileLoadError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-aypik-banner-bg">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
             {profileLoadError}
           </p>
@@ -475,8 +475,8 @@ function AppShellView() {
 
   if (accountDeleted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-aypik-banner-bg">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
             {t('common.accountDeleted')}
           </p>
@@ -494,8 +494,8 @@ function AppShellView() {
 
   if (profile && !isAdult(profile.birth_date)) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-aypik-banner-bg">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
             {adultsOnlyMessage()}
           </p>
@@ -609,7 +609,7 @@ function AppShellView() {
                       {t('discover.title')}
                     </h1>
                     <span
-                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-gradient-to-r from-rose-400 to-amber-400"
+                      className="mt-1.5 block h-0.5 w-8 rounded-full bg-aypik-navy"
                       aria-hidden
                     />
                     <p className="mt-1.5 text-sm text-gray-500 leading-snug">
@@ -848,7 +848,7 @@ function useBottomNavAutoHide(resetKey: unknown) {
 function TabLoadingFallback() {
   return (
     <div className="flex-1 flex items-center justify-center py-16">
-      <div className="w-8 h-8 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+      <div className="w-8 h-8 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
     </div>
   );
 }
@@ -871,7 +871,7 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={`relative flex flex-col items-center gap-0.5 px-3 sm:px-5 py-2 rounded-lg transition-all ${
-        active ? 'text-rose-500' : 'text-gray-400 hover:text-gray-600'
+        active ? 'text-aypik-navy' : 'text-gray-400 hover:text-gray-600'
       }`}
     >
       <span className="relative">

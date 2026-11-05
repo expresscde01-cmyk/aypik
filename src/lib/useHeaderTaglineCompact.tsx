@@ -77,18 +77,19 @@ export function HeaderTaglineWidthProbe({
   probeRef: RefObject<HTMLDivElement>;
 }) {
   return (
-    <div
-      ref={probeRef}
-      className="absolute left-0 top-0 invisible pointer-events-none inline-flex flex-nowrap items-center gap-2 w-max"
-      aria-hidden
-    >
-      <span className="w-5 h-5 shrink-0" />
-      <span className="inline-flex flex-nowrap items-baseline gap-1">
-        <BrandNameImg className="h-[20px]" />
-        <span className="whitespace-nowrap text-xs font-light tracking-wide leading-none">
-          {BRAND_BASELINE}
+    <div className="absolute left-0 top-0 h-0 w-0 overflow-hidden" aria-hidden>
+      <div
+        ref={probeRef}
+        className="invisible pointer-events-none inline-flex w-max flex-nowrap items-center gap-2"
+      >
+        <span className="h-[23px] w-[26px] shrink-0" />
+        <span className="inline-flex flex-nowrap items-baseline gap-1">
+          <BrandNameImg className="h-[20px]" />
+          <span className="whitespace-nowrap text-xs font-light tracking-wide leading-none">
+            {BRAND_BASELINE}
+          </span>
         </span>
-      </span>
+      </div>
     </div>
   );
 }
@@ -167,18 +168,19 @@ export function MobileTaglineWidthProbe({
   probeRef: RefObject<HTMLDivElement>;
 }) {
   return (
-    <div
-      ref={probeRef}
-      className="absolute left-0 top-0 invisible pointer-events-none inline-flex flex-col gap-0.5 w-max"
-      aria-hidden
-    >
-      <span className="inline-flex flex-nowrap items-center gap-2">
-        <span className="w-[18px] h-[18px] shrink-0" />
-        <BrandNameImg className="h-[16px]" />
-      </span>
-      <span className="pl-[calc(18px+0.5rem)] text-[10.5px] font-light tracking-normal leading-none whitespace-nowrap">
-        {BRAND_SHORT_TAGLINE_TEXT}
-      </span>
+    <div className="absolute left-0 top-0 h-0 w-0 overflow-hidden" aria-hidden>
+      <div
+        ref={probeRef}
+        className="invisible pointer-events-none inline-flex w-max flex-col gap-0.5"
+      >
+        <span className="inline-flex flex-nowrap items-center gap-2">
+          <span className="h-[21px] w-[24px] shrink-0" />
+          <BrandNameImg className="h-[16px]" />
+        </span>
+        <span className="whitespace-nowrap pl-[calc(24px+0.5rem)] text-[10.5px] font-light leading-none tracking-normal">
+          {BRAND_SHORT_TAGLINE_TEXT}
+        </span>
+      </div>
     </div>
   );
 }

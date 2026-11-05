@@ -74,7 +74,7 @@ function UnsubscribeBanner({
 }) {
   const isError = notice.kind === 'error';
   return (
-    <div className="border-b border-rose-100/80 bg-white/90">
+    <div className="border-b border-aypik-border/80 bg-white/90">
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div
           role={isError ? 'alert' : 'status'}

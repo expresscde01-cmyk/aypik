@@ -42,7 +42,7 @@ export default function UnreadBadge({
   if (count <= 0) return null;
   return (
     <span
-      className={`min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm shadow-rose-300/70 ${
+      className={`min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-aypik-navy text-white text-[10px] font-bold flex items-center justify-center shadow-sm shadow-aypik-navy/20 ${
         pulse ? 'unread-badge-pulse' : ''
       } ${className}`}
       aria-hidden

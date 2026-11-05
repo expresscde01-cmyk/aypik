@@ -32,7 +32,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <div className="min-h-screen flex items-center justify-center px-4 bg-aypik-banner-bg">
           <div className="max-w-md text-center">
             <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8 text-red-400" />
@@ -43,9 +43,9 @@ export default class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-500 text-sm mb-4">{this.state.message}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2.5 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition-colors"
+              className="px-6 py-2.5 btn-primary"
             >
-              {t('common.reloadPage')}
+              <span>{t('common.reloadPage')}</span>
             </button>
           </div>
         </div>

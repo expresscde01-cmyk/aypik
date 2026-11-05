@@ -49,7 +49,7 @@ export default function RefuseButton({
           className={`pointer-events-none relative flex h-8 w-8 items-center justify-center rounded-full border shadow-sm ${
             isBan
               ? 'refuse-ban-wrap border-gray-200 bg-white'
-              : 'border-gray-200 bg-white transition-colors group-hover:border-rose-200 group-hover:bg-rose-50 group-focus-visible:border-rose-200 group-focus-visible:bg-rose-50'
+              : 'border-gray-200 bg-white transition-colors group-hover:border-aypik-border group-hover:bg-aypik-banner-bg group-focus-visible:border-aypik-border group-focus-visible:bg-aypik-banner-bg'
           }`}
         >
           {isBan ? (
@@ -82,7 +82,7 @@ export default function RefuseButton({
           ) : (
             <svg
               viewBox="0 0 24 24"
-              className="refuse-trash w-3.5 h-3.5 text-gray-500 group-hover:text-rose-600 group-focus-visible:text-rose-600"
+              className="refuse-trash w-3.5 h-3.5 text-gray-500 group-hover:text-aypik-magenta group-focus-visible:text-aypik-navy"
               fill="none"
               stroke="currentColor"
               strokeWidth={2.4}
@@ -105,7 +105,7 @@ export default function RefuseButton({
             tip === 'left' || tip === 'top' ? '' : ' match-action-tip-end'
           } pointer-events-none absolute z-30 whitespace-nowrap rounded-full border bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 ${
             isBan
-              ? 'border-rose-100 text-rose-700'
+              ? 'border-aypik-border text-aypik-navy'
               : 'border-gray-100 text-gray-600'
           } ${
             tip === 'top'

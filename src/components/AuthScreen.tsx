@@ -271,14 +271,14 @@ export default function AuthScreen({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen flex flex-col bg-aypik-banner-bg">
       <div className="sticky top-0 z-20">
         <LaunchTicker />
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-4">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-aypik-navy/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-aypik-navy/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -292,7 +292,7 @@ export default function AuthScreen({
               e.preventDefault();
               onBack?.();
             }}
-            className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
+            className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-aypik-navy/40 rounded-2xl"
             aria-label={t('common.homeAria')}
           >
             <div className="mb-5 animate-pop">
@@ -302,7 +302,7 @@ export default function AuthScreen({
           </a>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-8">
           <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-6">
             <button
               type="button"
@@ -347,7 +347,7 @@ export default function AuthScreen({
               <button
                 type="button"
                 onClick={() => switchMode('signin')}
-                className="text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+                className="text-sm font-semibold text-aypik-navy hover:text-aypik-magenta transition-colors"
               >
                 {t('auth.backToSignin')}
               </button>
@@ -372,7 +372,7 @@ export default function AuthScreen({
                       setError(null);
                     }
                   }}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
                   placeholder={t('auth.emailPlaceholder')}
                 />
               </div>
@@ -407,7 +407,7 @@ export default function AuthScreen({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
                   placeholder={
                     mode === 'signup'
                       ? t('auth.passwordPlaceholderSignup')
@@ -444,7 +444,7 @@ export default function AuthScreen({
                   type="checkbox"
                   checked={rememberSession}
                   onChange={(e) => setRememberSession(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-300"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy/30"
                 />
                 <span className="text-sm text-gray-600 leading-snug">
                   <span className="font-semibold text-gray-800">
@@ -521,15 +521,17 @@ export default function AuthScreen({
                 (mode === 'signin' && accountLocked) ||
                 (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
               }
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3.5 btn-primary disabled:opacity-60"
             >
-              {loading
-                ? t('auth.loading')
-                : mode === 'signup'
-                  ? t('auth.submitSignup')
-                  : accountLocked
-                    ? t('auth.submitLocked')
-                    : t('auth.submitSignin')}
+              <span>
+                {loading
+                  ? t('auth.loading')
+                  : mode === 'signup'
+                    ? t('auth.submitSignup')
+                    : accountLocked
+                      ? t('auth.submitLocked')
+                      : t('auth.submitSignin')}
+              </span>
             </button>
           </form>
           )}
@@ -552,7 +554,7 @@ export default function AuthScreen({
             i18nKey="auth.legalConsent"
             components={{
               legalDoc: (
-                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
+                <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors" />
               ),
             }}
           />

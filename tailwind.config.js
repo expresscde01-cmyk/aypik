@@ -10,6 +10,14 @@ export default {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
+        'aypik-navy': '#1C2340',
+        'aypik-magenta': '#D6246E',
+        'aypik-magenta-light': '#EE4189',
+        'aypik-magenta-dark': '#A3164F',
+        'aypik-raspberry': '#9F1239',
+        'aypik-border': '#E3E5EA',
+        'aypik-banner-bg': '#FFF6EE',
+        'aypik-text-muted': '#5B6175',
         brand: {
           50: '#fff1f2',
           100: '#ffe4e6',

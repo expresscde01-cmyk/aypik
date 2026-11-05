@@ -832,8 +832,8 @@ export default function ProfileSetup({
 
   if (isSignup && membershipLoadError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-8 text-center space-y-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-aypik-banner-bg">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-8 text-center space-y-4">
           <p className="text-gray-800 text-sm leading-relaxed">
             {membershipLoadError}
           </p>
@@ -857,7 +857,7 @@ export default function ProfileSetup({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8 px-4">
+    <div className="min-h-screen bg-aypik-banner-bg py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {isSignup && (
           <div className="flex justify-end mb-4">
@@ -901,7 +901,7 @@ export default function ProfileSetup({
         {canEditProfile && (
           <>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 shadow-lg shadow-rose-200 mb-3 animate-pop">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl surface-primary mb-3 animate-pop">
             <Heart className="w-7 h-7 text-white" fill="white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('profile.title')}</h1>
@@ -927,7 +927,7 @@ export default function ProfileSetup({
           onSubmit={handleSubmit}
           className={
             isSignup
-              ? 'bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6'
+              ? 'bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8 space-y-6'
               : undefined
           }
         >
@@ -935,12 +935,12 @@ export default function ProfileSetup({
             className={
               isSignup
                 ? 'contents'
-                : 'bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 space-y-6'
+                : 'bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8 space-y-6'
             }
           >
           {/* Photo */}
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-rose-100">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
               {photoPreview || photoUrl ? (
                 <img
                   src={photoPreview || photoUrl}
@@ -948,7 +948,7 @@ export default function ProfileSetup({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Camera className="w-7 h-7 text-rose-300" />
+                <Camera className="w-7 h-7 text-aypik-text-muted" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -966,7 +966,7 @@ export default function ProfileSetup({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-rose-600 text-sm font-semibold hover:bg-rose-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-aypik-border bg-white text-aypik-navy text-sm font-semibold hover:bg-aypik-banner-bg transition-colors"
                 >
                   <ImagePlus className="w-4 h-4" />
                   {photoPreview || photoUrl
@@ -996,14 +996,14 @@ export default function ProfileSetup({
           {/* Display name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              {t('profile.displayName')} <span className="text-rose-500">*</span>
+              {t('profile.displayName')} <span className="text-aypik-navy">*</span>
             </label>
             <input
               type="text"
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
               placeholder={t('profile.displayNamePlaceholder')}
             />
           </div>
@@ -1014,7 +1014,7 @@ export default function ProfileSetup({
               htmlFor="profile-birth-date-year"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
             >
-              {t('auth.birthDate')} <span className="text-rose-500">*</span>
+              {t('auth.birthDate')} <span className="text-aypik-navy">*</span>
             </label>
             <BirthDatePicker
               id="profile-birth-date"
@@ -1038,7 +1038,7 @@ export default function ProfileSetup({
           {!genderLocked && (
             <div ref={genderFieldRef}>
               <p className="block text-sm font-semibold text-gray-700 mb-1.5">
-                {t('profile.gender')} <span className="text-rose-500">*</span>
+                {t('profile.gender')} <span className="text-aypik-navy">*</span>
               </p>
               <div
                 className="flex gap-2"
@@ -1055,8 +1055,8 @@ export default function ProfileSetup({
                   }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                     gender === 'homme'
-                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                      ? 'bg-aypik-navy text-white border-aypik-navy shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-aypik-navy hover:text-aypik-magenta'
                   }`}
                 >
                   {t('profile.genderMale')}
@@ -1070,8 +1070,8 @@ export default function ProfileSetup({
                   }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                     gender === 'femme'
-                      ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-rose-300 hover:text-rose-500'
+                      ? 'bg-aypik-navy text-white border-aypik-navy shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-aypik-navy hover:text-aypik-magenta'
                   }`}
                 >
                   {t('profile.genderFemale')}
@@ -1093,7 +1093,7 @@ export default function ProfileSetup({
                 htmlFor="profile-country"
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
               >
-                {t('profile.country')} <span className="text-rose-500">*</span>
+                {t('profile.country')} <span className="text-aypik-navy">*</span>
               </label>
               <select
                 id="profile-country"
@@ -1106,7 +1106,7 @@ export default function ProfileSetup({
                   setSelectedWorldCity(null);
                   setCityError(null);
                 }}
-                className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15"
               >
                 {COUNTRY_SELECT_OPTIONS.map((row) => (
                   <option key={row.iso2} value={row.iso2}>
@@ -1120,7 +1120,7 @@ export default function ProfileSetup({
                 htmlFor="profile-city"
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
               >
-                {t('profile.city')} <span className="text-rose-500">*</span>
+                {t('profile.city')} <span className="text-aypik-navy">*</span>
               </label>
               {countryCode === 'FR' ? (
                 <CityAutocomplete
@@ -1209,7 +1209,7 @@ export default function ProfileSetup({
                     onClick={() => setHasChildren(true)}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                       hasChildren
-                        ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                        ? 'bg-aypik-navy text-white border-aypik-navy shadow-sm'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -1217,7 +1217,7 @@ export default function ProfileSetup({
                   </button>
                 </div>
                 {hasChildren && (
-                  <p className="text-xs text-rose-600 mt-2 flex items-center gap-1 animate-fadeIn">
+                  <p className="text-xs text-aypik-navy mt-2 flex items-center gap-1 animate-fadeIn">
                     <AlertCircle className="w-3.5 h-3.5" />
                     {t('profile.childfreeOnly')}
                   </p>
@@ -1239,7 +1239,7 @@ export default function ProfileSetup({
             )}
 
             {interests.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-rose-50/60 border border-rose-100">
+              <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-aypik-banner-bg border border-aypik-border">
                 {interests.map((interest) => (
                   <span
                     key={interest}
@@ -1307,7 +1307,7 @@ export default function ProfileSetup({
                       addCustomInterest();
                     }
                   }}
-                  className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
+                  className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 text-sm placeholder-gray-400"
                   placeholder={t('profile.customInterestPlaceholder')}
                 />
                 <button
@@ -1333,7 +1333,7 @@ export default function ProfileSetup({
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={500}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
               placeholder={t('profile.bioPlaceholder')}
             />
             <p className="text-xs text-gray-400 mt-1 text-right">
@@ -1347,7 +1347,7 @@ export default function ProfileSetup({
             id="email-preferences"
             className={`rounded-2xl border p-4 sm:p-5 space-y-3 transition-colors ${
               prefsHint
-                ? 'border-rose-300 bg-rose-50/60 ring-2 ring-rose-100'
+                ? 'border-aypik-navy bg-aypik-banner-bg ring-2 ring-aypik-border'
                 : 'border-gray-100 bg-gray-50/80'
             }`}
           >
@@ -1367,7 +1367,7 @@ export default function ProfileSetup({
                 onChange={(e) => {
                   void handleEmailNotificationsChange(e.target.checked);
                 }}
-                className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400 disabled:opacity-60"
+                className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy disabled:opacity-60"
               />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-gray-800">
@@ -1412,14 +1412,16 @@ export default function ProfileSetup({
               hasChildren ||
               (!genderLocked && gender !== 'homme' && gender !== 'femme')
             }
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 btn-primary disabled:opacity-60"
           >
-            {saving
-              ? photoFile
-                ? t('profile.uploadingPhoto')
-                : t('profile.saving')
-              : t('profile.saveProfile')}
-            {!saving && <ArrowRight className="w-4 h-4" />}
+            <span className="inline-flex items-center justify-center gap-2">
+              {saving
+                ? photoFile
+                  ? t('profile.uploadingPhoto')
+                  : t('profile.saving')
+                : t('profile.saveProfile')}
+              {!saving && <ArrowRight className="w-4 h-4" />}
+            </span>
           </button>
           )}
           </div>
@@ -1462,21 +1464,23 @@ export default function ProfileSetup({
                     hasChildren ||
                     (!genderLocked && gender !== 'homme' && gender !== 'femme')
                   }
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3.5 btn-primary disabled:opacity-60"
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {photoFile
-                        ? t('profile.uploadingPhoto')
-                        : t('profile.saving')}
-                    </>
-                  ) : (
-                    <>
-                      {t('profile.saveProfile')}
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
+                  <span className="inline-flex items-center justify-center gap-2">
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {photoFile
+                          ? t('profile.uploadingPhoto')
+                          : t('profile.saving')}
+                      </>
+                    ) : (
+                      <>
+                        {t('profile.saveProfile')}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </span>
                 </button>
                 {profileSaved && (
                   <span className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700">
@@ -1501,7 +1505,7 @@ export default function ProfileSetup({
         {allowAccountDeletion && <PwaInstallCard />}
 
         {allowAccountDeletion && (
-          <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-red-100 p-6 sm:p-8">
+          <div className="mt-4 bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-red-100 p-6 sm:p-8">
             <h2 className="text-sm font-semibold text-gray-900 mb-1">{t('profile.deleteAccountTitle')}</h2>
             <p className="text-sm text-gray-500 mb-4">
               {t('profile.deleteAccountBody')}
@@ -1543,7 +1547,7 @@ export default function ProfileSetup({
                       onChange={(e) =>
                         setDeleteAcknowledged(e.target.checked)
                       }
-                      className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+                      className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy"
                     />
                     <span className="text-sm text-gray-700 leading-relaxed">
                       {t('profile.deleteAcknowledge')}

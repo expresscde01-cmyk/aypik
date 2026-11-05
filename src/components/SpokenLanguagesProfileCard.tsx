@@ -44,18 +44,18 @@ export default function SpokenLanguagesProfileCard({
   return (
     <div
       ref={cardRef}
-      className="mt-6 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
+      className="mt-6 bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-bold text-gray-900">
           {t('languages.title')}
           {required && (
-            <span className="ml-2 text-xs font-semibold text-rose-600">
+            <span className="ml-2 text-xs font-semibold text-aypik-navy">
               {t('languages.required')}
             </span>
           )}
         </h2>
-        <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+        <span className="text-xs font-bold text-aypik-navy bg-aypik-banner-bg px-2.5 py-0.5 rounded-full whitespace-nowrap">
           {drafts.length} / {MAX_SPOKEN_LANGUAGES}
         </span>
       </div>

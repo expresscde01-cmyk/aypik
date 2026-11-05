@@ -68,7 +68,7 @@ export function PremiumBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100 ${pad}`}
+      className={`inline-flex items-center gap-1 rounded-full bg-aypik-banner-bg text-aypik-navy font-semibold border border-aypik-border ${pad}`}
     >
       <Sparkles className={icon} />
       {t('common.offer.shortPremium')}

@@ -35,7 +35,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
   const docLabel = legalDocLabel();
   const { closed: founderOfferClosed } = useFounderSlots();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen bg-aypik-banner-bg">
       <div className="sticky top-0 z-20">
       <header className="bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
@@ -61,7 +61,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
         {locale !== 'fr' ? (
           <article
             lang={locale}
-            className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
+            className="bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
           >
             <LegalMarkdown
               source={locale === 'es' ? termsEs : termsEn}
@@ -72,7 +72,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
         ) : (
         <article
           lang="fr"
-          className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-100/40 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
+          className="bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
         >
           <header className="space-y-2 border-b border-gray-100 pb-6">
             <p className="inline-flex items-baseline gap-1.5 text-[10px]">
@@ -133,7 +133,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Le site {BRAND_NAME} (accessible notamment à l&apos;adresse{' '}
                 <a
                   href="https://aypik.fr"
-                  className="underline underline-offset-2 hover:text-rose-600"
+                  className="underline underline-offset-2 hover:text-aypik-magenta"
                 >
                   https://aypik.fr
                 </a>
@@ -147,7 +147,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                   href={`mailto:${SUPPORT_EMAIL}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-rose-600"
+                  className="underline underline-offset-2 hover:text-aypik-magenta"
                 >
                   {SUPPORT_EMAIL}
                 </a>
@@ -179,7 +179,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Site :{' '}
                 <a
                   href="https://www.o2switch.fr"
-                  className="underline underline-offset-2 hover:text-rose-600"
+                  className="underline underline-offset-2 hover:text-aypik-magenta"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
@@ -360,7 +360,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               accessible via un navigateur à l&apos;adresse{' '}
               <a
                 href="https://aypik.fr"
-                className="underline underline-offset-2 hover:text-rose-600"
+                className="underline underline-offset-2 hover:text-aypik-magenta"
               >
                 https://aypik.fr
               </a>{' '}
@@ -388,7 +388,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               navigateur, à l&apos;adresse{' '}
               <a
                 href="https://aypik.fr"
-                className="underline underline-offset-2 hover:text-rose-600"
+                className="underline underline-offset-2 hover:text-aypik-magenta"
               >
                 https://aypik.fr
               </a>, demeure entièrement disponible et inchangé.
@@ -1705,7 +1705,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
           <footer className="border-t border-gray-100 pt-6 text-xs text-gray-400 space-y-2">
             <p>
               Tu as des questions ?{' '}
-              <ContactLink className="underline underline-offset-2 hover:text-rose-600 transition-colors" />
+              <ContactLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors" />
             </p>
             <p>
               En utilisant {BRAND_NAME} — {BRAND_BASELINE} — vous confirmez
@@ -1721,7 +1721,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+            className="text-sm font-semibold text-aypik-navy hover:text-aypik-magenta"
           >
             {t('legal.back')}
           </button>

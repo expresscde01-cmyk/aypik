@@ -77,7 +77,7 @@ function FounderActiveBanner({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300 shadow-lg shadow-amber-200/60">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-aypik-border bg-aypik-banner-bg">
       <div
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{
@@ -87,7 +87,7 @@ function FounderActiveBanner({
       />
       <div className="relative p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-900 border border-white/80 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-aypik-raspberry border border-aypik-border shadow-sm">
             <Gift className="w-3.5 h-3.5" />
             {t('landing.founderBadge')}
           </span>
@@ -97,16 +97,16 @@ function FounderActiveBanner({
           {status.has_premium && <PremiumBadge />}
         </div>
         {status.has_premium ? (
-          <p className="text-xs font-medium text-amber-950/80 leading-snug">
+          <p className="text-xs font-medium text-aypik-navy/80 leading-snug">
             {t('membership.founderPremiumMonths')}
           </p>
         ) : null}
 
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-amber-950 tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-aypik-navy tracking-tight leading-tight">
             {t('common.offer.memberFondateur')}
           </h2>
-          <p className="mt-2 text-base sm:text-lg font-semibold text-amber-950/90 leading-snug">
+          <p className="mt-2 text-base sm:text-lg font-semibold text-aypik-navy/90 leading-snug">
             {founderSlotsSubtitle()}
           </p>
         </div>
@@ -119,7 +119,7 @@ function FounderActiveBanner({
           ].map((item) => (
             <li
               key={item}
-              className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-amber-950"
+              className="flex items-start gap-2.5 text-sm sm:text-base font-medium text-aypik-navy"
             >
               <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/80">
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -128,7 +128,7 @@ function FounderActiveBanner({
             </li>
           ))}
         </ul>
-        <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-bold text-amber-950 leading-snug shadow-sm">
+        <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-bold text-aypik-navy leading-snug shadow-sm">
           {founderBenefitLifetimeDiscount()}
         </p>
 
@@ -163,14 +163,14 @@ function FreemiumClaimCard({
     <div
       className={
         primary
-          ? 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50'
+          ? 'rounded-2xl border border-aypik-border bg-white overflow-hidden shadow-sm shadow-aypik-navy/5'
           : 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
       }
     >
       <div
         className={
           primary
-            ? 'bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-white'
+            ? 'surface-primary px-4 py-3 text-white'
             : 'bg-gray-100 px-4 py-3 border-b border-gray-200'
         }
       >
@@ -203,11 +203,13 @@ function FreemiumClaimCard({
           disabled={activating}
           className={
             primary
-              ? 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-60'
-              : 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60'
+              ? 'w-full py-2.5 btn-primary text-sm disabled:opacity-60'
+              : 'w-full py-2.5 btn-secondary text-sm disabled:opacity-60'
           }
         >
-          {activating ? t('membership.activating') : t('membership.continueFreemium')}
+          <span>
+            {activating ? t('membership.activating') : t('membership.continueFreemium')}
+          </span>
         </button>
       </div>
     </div>
@@ -361,8 +363,8 @@ export function MembershipPanel({
   if (signupGate && !offerChosen) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-rose-100 bg-white/80 p-4 text-center">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-500 mb-2">
+        <div className="rounded-2xl border border-aypik-border bg-white/80 p-4 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-aypik-banner-bg text-aypik-navy mb-2">
             <Heart className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
@@ -533,7 +535,7 @@ export function MembershipPanel({
               type="button"
               onClick={handleCancel}
               disabled={canceling}
-              className="w-full py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
+              className="w-full py-2.5 btn-secondary text-sm disabled:opacity-60"
             >
               {canceling ? t('membership.canceling') : t('membership.cancelPremium')}
             </button>
@@ -566,7 +568,7 @@ export function MembershipPanel({
                   type="button"
                   onClick={() => void handleCancelAddon(addon)}
                   disabled={canceling}
-                  className="py-1.5 px-3 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 disabled:opacity-60"
+                  className="py-1.5 px-3 btn-secondary text-xs disabled:opacity-60"
                 >
                   {canceling ? t('membership.canceling') : t('membership.cancelAddon')}
                 </button>

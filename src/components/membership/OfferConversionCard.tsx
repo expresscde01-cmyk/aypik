@@ -79,7 +79,7 @@ export function OfferConversionCard({
           (included
             ? 'rounded-2xl border border-emerald-200 bg-emerald-50/40 overflow-hidden'
             : 'rounded-2xl border border-gray-200 bg-white overflow-hidden') +
-          (highlighted ? ' ring-2 ring-rose-400 ring-offset-2' : '')
+          (highlighted ? ' ring-2 ring-aypik-navy ring-offset-2' : '')
         }
       >
         <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
@@ -106,7 +106,7 @@ export function OfferConversionCard({
 
           <ul className="space-y-1.5">
             <li className="flex items-center gap-2 text-xs text-gray-600">
-              <Check className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+              <Check className="w-3.5 h-3.5 text-aypik-navy flex-shrink-0" />
               {t(copy.benefitKey)}
             </li>
           </ul>
@@ -136,7 +136,7 @@ export function OfferConversionCard({
               </button>
               <p className="text-[10px] text-center text-gray-400 leading-relaxed">
                 {t('membership.securePaymentLegal')}{' '}
-                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+                <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
                   {t('common.legalCguCgv')}
                 </LegalLink>
               </p>
@@ -220,7 +220,7 @@ export function GeoReachAddonCard({
           (internationalIncluded
             ? 'rounded-2xl border border-emerald-200 bg-emerald-50/40 overflow-hidden'
             : 'rounded-2xl border border-gray-200 bg-white overflow-hidden') +
-          (highlighted ? ' ring-2 ring-rose-400 ring-offset-2' : '')
+          (highlighted ? ' ring-2 ring-aypik-navy ring-offset-2' : '')
         }
       >
         <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
@@ -238,7 +238,7 @@ export function GeoReachAddonCard({
               id={offerCardDomId('international')}
               className={`flex items-start gap-2.5 rounded-xl border px-3 py-2 text-xs ${
                 choice === 'francophone'
-                  ? 'border-rose-300 bg-rose-50/50'
+                  ? 'border-aypik-navy bg-aypik-banner-bg'
                   : 'border-gray-200'
               } ${francophoneIncluded ? 'opacity-80' : ''}`}
             >
@@ -264,7 +264,7 @@ export function GeoReachAddonCard({
             <label
               className={`flex items-start gap-2.5 rounded-xl border px-3 py-2 text-xs ${
                 choice === 'international'
-                  ? 'border-rose-300 bg-rose-50/50'
+                  ? 'border-aypik-navy bg-aypik-banner-bg'
                   : 'border-gray-200'
               }`}
             >
@@ -317,7 +317,7 @@ export function GeoReachAddonCard({
               </button>
               <p className="text-[10px] text-center text-gray-400 leading-relaxed">
                 {t('membership.securePaymentLegal')}{' '}
-                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+                <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
                   {t('common.legalCguCgv')}
                 </LegalLink>
               </p>

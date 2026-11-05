@@ -15,8 +15,8 @@ function initials(name: string) {
 
 function TestimonialCard({ item }: { item: PublishedTestimonial }) {
   return (
-    <article className="flex h-full flex-col rounded-3xl border border-rose-100 bg-white/80 p-5 shadow-sm shadow-rose-100/60">
-      <Quote className="h-5 w-5 text-rose-300" aria-hidden />
+    <article className="flex h-full flex-col rounded-3xl border border-aypik-border bg-white/80 p-5 shadow-sm shadow-aypik-navy/5">
+      <Quote className="h-5 w-5 text-aypik-text-muted" aria-hidden />
       <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-700 text-pretty">
         {item.body}
       </p>
@@ -25,10 +25,10 @@ function TestimonialCard({ item }: { item: PublishedTestimonial }) {
           <img
             src={item.avatar_url}
             alt=""
-            className="h-10 w-10 rounded-full object-cover border border-rose-100"
+            className="h-10 w-10 rounded-full object-cover border border-aypik-border"
           />
         ) : (
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-amber-400 text-sm font-bold text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-aypik-navy text-sm font-bold text-white">
             {initials(item.first_name)}
           </span>
         )}

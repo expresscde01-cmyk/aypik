@@ -154,7 +154,7 @@ export function OfferSummaryCards({
               className={
                 'rounded-2xl border border-gray-200 bg-white overflow-hidden flex flex-col' +
                 (highlighted === card.id
-                  ? ' ring-2 ring-rose-400 ring-offset-2'
+                  ? ' ring-2 ring-aypik-navy ring-offset-2'
                   : '')
               }
             >
@@ -175,7 +175,7 @@ export function OfferSummaryCards({
                     </span>
                   ) : null}
                 </p>
-                <p className="mt-1 text-xs font-medium text-rose-600">
+                <p className="mt-1 text-xs font-medium text-aypik-navy">
                   {card.hook}
                 </p>
               </div>
@@ -186,7 +186,7 @@ export function OfferSummaryCards({
                       key={point}
                       className="flex items-start gap-2 text-xs text-gray-700 leading-snug"
                     >
-                      <Check className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-aypik-navy shrink-0 mt-0.5" />
                       {point}
                     </li>
                   ))}
@@ -213,7 +213,7 @@ export function OfferSummaryCards({
           type="button"
           aria-expanded={compareOpen}
           onClick={() => setCompareOpen((open) => !open)}
-          className="text-sm font-semibold text-rose-600 underline underline-offset-2 hover:text-rose-700"
+          className="text-sm font-semibold text-aypik-navy underline underline-offset-2 hover:text-aypik-magenta"
         >
           {compareOpen
             ? t('offersCards.hideCompare')

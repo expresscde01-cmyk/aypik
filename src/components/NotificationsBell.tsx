@@ -1899,7 +1899,7 @@ export default function NotificationsBell({
               <button
                 type="button"
                 onClick={() => void handleMarkAll()}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-aypik-navy hover:text-aypik-magenta"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {t('notifications.markAllRead')}
@@ -1928,7 +1928,7 @@ export default function NotificationsBell({
               !hasWaitAlert &&
               !hasFirstAlert ? (
               <div className="px-4 py-8 text-center">
-                <Sparkles className="w-6 h-6 text-rose-300 mx-auto mb-2" />
+                <Sparkles className="w-6 h-6 text-aypik-text-muted mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
                   {t('notifications.empty')}
                 </p>
@@ -1953,7 +1953,7 @@ export default function NotificationsBell({
                               className={`w-full text-left px-3 py-3 border-b transition-colors ${notifToneClass('chat')}`}
                             >
                               <div className="flex items-start gap-2">
-                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
+                                <span className="mt-0.5 relative w-8 h-8 rounded-full bg-aypik-navy text-white flex items-center justify-center shrink-0">
                                   <MessageCircle className="w-3.5 h-3.5" />
                                   <UnreadBadge
                                     count={unreadMessages.total}
@@ -1964,7 +1964,7 @@ export default function NotificationsBell({
                                   <p className="text-sm font-semibold text-rose-800">
                                     {copy.title}
                                   </p>
-                                  <p className="text-xs text-rose-600 leading-relaxed mt-0.5">
+                                  <p className="text-xs text-aypik-navy leading-relaxed mt-0.5">
                                     {withNotificationPeriod(copy.body)}
                                   </p>
                                 </div>
@@ -2282,7 +2282,7 @@ export default function NotificationsBell({
           }
           void handleOpen();
         }}
-        className="relative p-2 rounded-xl text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+        className="relative p-2 rounded-xl text-gray-500 hover:text-aypik-magenta hover:bg-aypik-banner-bg transition-colors"
         aria-label={
           badgeCount > 0
             ? t('notifications.titleWithUnread', { count: badgeCount })
@@ -2294,7 +2294,7 @@ export default function NotificationsBell({
         {badgeCount > 0 && (
           <span
             key={badgeCount}
-            className={`absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center ${
+            className={`absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-aypik-navy text-white text-[10px] font-bold flex items-center justify-center ${
               ringing ? 'bell-badge-pop' : ''
             }`}
           >

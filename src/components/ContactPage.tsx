@@ -17,7 +17,7 @@ import { useTranslation, Trans } from 'react-i18next';
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 const FIELD_CLASS =
-  'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 bg-white';
+  'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400 bg-white';
 
 export default function ContactPage() {
   const { t } = useTranslation();
@@ -66,14 +66,14 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen flex flex-col bg-aypik-banner-bg">
       <div className="sticky top-0 z-20">
         <LaunchTicker />
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl" />
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-aypik-navy/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-aypik-navy/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative w-full max-w-lg">
@@ -83,7 +83,7 @@ export default function ContactPage() {
           <div className="text-center mb-8">
             <a
               href="/"
-              className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-rose-300 rounded-2xl"
+              className="inline-flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-aypik-navy/40 rounded-2xl"
               aria-label={t('common.homeAria')}
             >
               <div className="mb-5">
@@ -93,7 +93,7 @@ export default function ContactPage() {
             </a>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-8">
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               {t('contact.title')}
             </h1>
@@ -213,7 +213,7 @@ export default function ContactPage() {
                     required
                     checked={consent}
                     onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-200"
+                    className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-rose-200"
                   />
                   <span>
                     <Trans
@@ -250,9 +250,9 @@ export default function ContactPage() {
                     loading ||
                     (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)
                   }
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 btn-primary disabled:opacity-60"
                 >
-                  {loading ? t('contact.sending') : t('common.send')}
+                  <span>{loading ? t('contact.sending') : t('common.send')}</span>
                 </button>
               </form>
             )}

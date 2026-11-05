@@ -296,7 +296,7 @@ function PreciseCountryPanel({
             </li>
           ) : null}
           <li
-            className="geo-perimeter-section-label text-xs font-semibold text-rose-700"
+            className="geo-perimeter-section-label text-xs font-semibold text-aypik-navy"
             aria-hidden
           >
             {section.title}
@@ -1244,7 +1244,7 @@ function DiscoverFilterDisclose({
             <div className="flex justify-end px-3 pt-1.5 pb-0.5">
               <button
                 type="button"
-                className="text-[11px] leading-none text-rose-600 hover:text-rose-700 bg-transparent p-0 border-0"
+                className="text-[11px] leading-none text-aypik-navy hover:text-aypik-magenta bg-transparent p-0 border-0"
                 onClick={onClear}
               >
                 {tStatic('discover.clearSelection')}
@@ -1863,7 +1863,7 @@ export default function DiscoveryPage({
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+          <div className="w-10 h-10 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
           <div className="text-gray-400 text-sm">Chargement...</div>
         </div>
       </div>
@@ -1925,9 +1925,9 @@ export default function DiscoveryPage({
           {filtersActive && showFilters && (
             <div
               id="discovery-filters-panel"
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-3 space-y-2.5 overflow-visible"
+              className="rounded-2xl border border-aypik-border bg-white px-3 py-3 space-y-2.5 overflow-visible"
             >
-              <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
+              <p className="text-xs font-semibold text-aypik-navy flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 {t('discover.targetedSuggestions')}
               </p>
@@ -2154,14 +2154,14 @@ export default function DiscoveryPage({
       {searching ? (
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+            <div className="w-10 h-10 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
             <div className="text-gray-400 text-sm">{t('discover.searching')}</div>
           </div>
         </div>
       ) : displayError ? null : candidates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
-            <Heart className="w-9 h-9 text-rose-300" />
+          <div className="w-20 h-20 rounded-full bg-aypik-banner-bg flex items-center justify-center">
+            <Heart className="w-9 h-9 text-aypik-text-muted" />
           </div>
           {filtersActive && hasActiveFilter ? (
             <p className="text-gray-600 text-sm max-w-sm leading-relaxed">
@@ -2468,8 +2468,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
       <article
         className={`relative isolate rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
           unreadCount > 0
-            ? 'border-rose-300 ring-2 ring-rose-100'
-            : 'border-gray-100 hover:border-rose-100'
+            ? 'border-aypik-navy ring-2 ring-aypik-border'
+            : 'border-gray-100 hover:border-aypik-border'
         }`}
       >
         <button
@@ -2485,7 +2485,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
               : t('discover.viewProfile', { name: c.display_name })
           }
         />
-        <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative z-[2] pointer-events-none overflow-hidden rounded-t-2xl">
+        <div className="aspect-[4/5] bg-aypik-border relative z-[2] pointer-events-none overflow-hidden rounded-t-2xl">
           {c.photo_url ? (
             <ProfilePhoto
               src={c.photo_url}
@@ -2510,7 +2510,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 e.stopPropagation();
                 onOpenUnread(c);
               }}
-              className={`pointer-events-auto absolute right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md hover:bg-rose-600 bottom-2`}
+              className={`pointer-events-auto absolute right-2 z-10 inline-flex items-center gap-1 pl-1.5 pr-1.5 py-0.5 rounded-full bg-aypik-navy text-white text-[10px] font-bold shadow-md hover:bg-aypik-navy bottom-2`}
               aria-label={unreadMessagesLabel(unreadCount)}
             >
               <MessageCircle className="w-3 h-3" />
@@ -2569,7 +2569,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                   onFlash(c);
                 }}
                 disabled={busy || alreadyFlashed}
-                className="relative w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
+                className="relative w-10 h-10 rounded-full btn-primary flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
                 aria-label={
                   alreadyFlashed
                     ? t('discover.alreadyFlashedName', { name: c.display_name })
@@ -2594,7 +2594,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 onLike(c);
               }}
               disabled={busy || likesExhausted || alreadyLiked}
-              className="relative w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
+              className="relative w-10 h-10 rounded-full btn-primary flex items-center justify-center hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 cursor-pointer"
               aria-label={
                 alreadyLiked
                   ? t('discover.alreadyLikedName', { name: c.display_name })

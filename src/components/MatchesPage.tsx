@@ -243,7 +243,7 @@ function sortByFirstWordDesc(a: Match, b: Match): number {
 
 function GlossaryMatcherChip() {
   return (
-    <span className="match-intro-chip inline-flex items-center border border-rose-100 bg-white text-rose-600">
+    <span className="match-intro-chip inline-flex items-center border border-aypik-border bg-white text-aypik-navy">
       <MatcherWord />
     </span>
   );
@@ -2678,7 +2678,7 @@ export default function MatchesPage({
             interactWithMatchCard(match.profile.id);
             setOpenProfile(match);
           }}
-          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 flex-shrink-0"
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-aypik-border flex-shrink-0"
           aria-label={`Voir le profil de ${match.profile.display_name}`}
         >
           {match.profile.photo_url ? (
@@ -2688,7 +2688,7 @@ export default function MatchesPage({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-rose-400">
+            <div className="w-full h-full flex items-center justify-center text-lg font-bold text-aypik-navy">
               {match.profile.display_name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -2699,12 +2699,12 @@ export default function MatchesPage({
             </span>
           )}
           {!isFlash && isPending && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -left-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
+            <span className="absolute -top-1 -left-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-aypik-navy text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -2906,7 +2906,7 @@ export default function MatchesPage({
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           ) : (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
@@ -2994,7 +2994,7 @@ export default function MatchesPage({
             consumeAttentionPulse(card.profile.id);
             setOpenWaitingByOther(card);
           }}
-          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 flex-shrink-0"
+          className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-aypik-border flex-shrink-0"
           aria-label={`Voir le profil de ${card.profile.display_name}`}
         >
           {card.profile.photo_url ? (
@@ -3014,7 +3014,7 @@ export default function MatchesPage({
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           ) : (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
@@ -3177,7 +3177,7 @@ export default function MatchesPage({
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           ) : (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
@@ -3296,7 +3296,7 @@ export default function MatchesPage({
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           ) : (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
@@ -3402,7 +3402,7 @@ export default function MatchesPage({
               <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           ) : (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
               <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
             </span>
           )}
@@ -3503,7 +3503,7 @@ export default function MatchesPage({
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+          <div className="w-10 h-10 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
           <div className="text-gray-400 text-sm">{t('matches.loading')}</div>
         </div>
       </div>
@@ -3528,8 +3528,8 @@ export default function MatchesPage({
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center">
-            <Heart className="w-9 h-9 text-rose-300 match-empty-heart" />
+          <div className="w-20 h-20 rounded-full bg-aypik-banner-bg flex items-center justify-center">
+            <Heart className="w-9 h-9 text-aypik-text-muted match-empty-heart" />
           </div>
           <h2
             className="text-xl font-bold text-blue-900 my-4"

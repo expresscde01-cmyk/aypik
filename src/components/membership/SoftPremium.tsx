@@ -20,16 +20,16 @@ export function SoftPremiumBanner({
   const cta = actionLabel ?? t('membership.discoverPremium');
   if (SITE_FREE_MODE) return null;
   return (
-    <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50 to-amber-50 p-4">
+    <div className="rounded-2xl border border-aypik-border bg-aypik-banner-bg p-4">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white/80 flex items-center justify-center flex-shrink-0 border border-rose-100">
-          <Sparkles className="w-4 h-4 text-rose-500" />
+        <div className="w-9 h-9 rounded-xl bg-white/80 flex items-center justify-center flex-shrink-0 border border-aypik-border">
+          <Sparkles className="w-4 h-4 text-aypik-navy" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-semibold text-gray-900">{title}</p>
             {!SITE_FREE_MODE && priceLabel && (
-              <span className="flex-shrink-0 text-xs font-bold text-rose-600 bg-white/80 border border-rose-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+              <span className="flex-shrink-0 text-xs font-bold text-aypik-navy bg-white/80 border border-aypik-border px-2 py-0.5 rounded-full whitespace-nowrap">
                 {priceLabel}
               </span>
             )}
@@ -41,7 +41,7 @@ export function SoftPremiumBanner({
             <button
               type="button"
               onClick={onAction}
-              className="mt-2.5 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+              className="mt-2.5 text-xs font-semibold text-aypik-navy hover:text-aypik-magenta transition-colors"
             >
               {cta} →
             </button>

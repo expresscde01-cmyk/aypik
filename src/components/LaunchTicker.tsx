@@ -12,13 +12,27 @@ import {
   isLaunchTickerDismissed,
 } from '@/lib/launchTicker';
 
+function TickerPhrase({ text, highlight }: { text: string; highlight: string }) {
+  const at = highlight ? text.indexOf(highlight) : -1;
+  if (at < 0) return text;
+  return (
+    <>
+      {text.slice(0, at)}
+      <strong>{highlight}</strong>
+      {text.slice(at + highlight.length)}
+    </>
+  );
+}
+
 function TickerGroup({
   text,
+  highlight,
   copies,
   groupRef,
   itemRef,
 }: {
   text: string;
+  highlight: string;
   copies: number;
   groupRef?: Ref<HTMLDivElement>;
   itemRef?: Ref<HTMLSpanElement>;
@@ -31,7 +45,7 @@ function TickerGroup({
           className="launch-ticker-item"
           ref={index === 0 ? itemRef : undefined}
         >
-          {text}
+          <TickerPhrase text={text} highlight={highlight} />
         </span>
       ))}
     </div>
@@ -42,6 +56,7 @@ export default function LaunchTicker() {
   const { t } = useTranslation();
   const { closed } = useFounderSlots();
   const text = t('landing.launchTicker');
+  const highlight = t('landing.launchTickerHighlight');
   const [dismissed, setDismissed] = useState(isLaunchTickerDismissed);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -115,11 +130,14 @@ export default function LaunchTicker() {
         >
           <TickerGroup
             text={text}
+            highlight={highlight}
             copies={copies}
             groupRef={groupRef}
             itemRef={itemRef}
           />
-          {!reduceMotion && <TickerGroup text={text} copies={copies} />}
+          {!reduceMotion && (
+            <TickerGroup text={text} highlight={highlight} copies={copies} />
+          )}
         </div>
       </div>
       <div className="launch-ticker-actions">

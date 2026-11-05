@@ -37,7 +37,7 @@ function toIso(y: number, m: number, d: number): string {
 }
 
 const selectClass =
-  'relative z-10 w-full px-3 py-3 rounded-xl border border-gray-200 bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 text-sm sm:text-base cursor-pointer';
+  'relative z-10 w-full px-3 py-3 rounded-xl border border-gray-200 bg-white focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 text-sm sm:text-base cursor-pointer';
 
 type BirthDatePickerProps = {
   id?: string;

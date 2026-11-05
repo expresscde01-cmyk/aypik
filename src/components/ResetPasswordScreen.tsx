@@ -70,7 +70,7 @@ export default function ResetPasswordScreen({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen flex flex-col bg-aypik-banner-bg">
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="relative w-full max-w-md">
           <div className="flex justify-end mb-3">
@@ -83,7 +83,7 @@ export default function ResetPasswordScreen({
             <BrandLockup variant="hero" />
           </div>
 
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-8">
             <h1 className="text-lg font-semibold text-gray-900 mb-1">
               {t('auth.resetTitle')}
             </h1>
@@ -99,9 +99,9 @@ export default function ResetPasswordScreen({
               <button
                 type="button"
                 onClick={onDone}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                className="w-full py-3.5 btn-primary"
               >
-                {session ? t('common.continue') : t('common.backHome')}
+                <span>{session ? t('common.continue') : t('common.backHome')}</span>
               </button>
             ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -116,7 +116,7 @@ export default function ResetPasswordScreen({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+                    className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
                     placeholder={t('auth.passwordPlaceholderSignup')}
                     autoComplete="new-password"
                   />
@@ -150,7 +150,7 @@ export default function ResetPasswordScreen({
                     required
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
                     placeholder={t('auth.confirmPasswordPlaceholder')}
                     autoComplete="new-password"
                   />
@@ -170,9 +170,9 @@ export default function ResetPasswordScreen({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 btn-primary disabled:opacity-60"
               >
-                {loading ? t('auth.saving') : t('auth.saveUnlock')}
+                <span>{loading ? t('auth.saving') : t('auth.saveUnlock')}</span>
               </button>
             </form>
             )}

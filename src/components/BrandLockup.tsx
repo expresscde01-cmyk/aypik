@@ -19,15 +19,16 @@ const BRAND = 'Aypik';
 const BASELINE = 'Le site de rencontre destiné aux personnes sans enfants';
 const BRAND_SHORT_TAGLINE = 'Communauté sans enfants';
 
-/** Same stops as AYPIK wordmark — rose vif → ambre */
+/** Dégradé du logo (cœur verni). */
 export const BRAND_GRADIENT_CSS =
-  'linear-gradient(90deg,#f43f5e 0%,#f43f5e 35%,#fb7185 50%,#fbbf24 100%)';
+  'linear-gradient(90deg,#B8125F 0%,#CE0E5E 35%,#DE063C 60%,#EC3C0E 85%,#F26A0A 100%)';
 
 const BRAND_GRADIENT_STOPS = [
-  { offset: '0%', color: '#f43f5e' },
-  { offset: '35%', color: '#f43f5e' },
-  { offset: '50%', color: '#fb7185' },
-  { offset: '100%', color: '#fbbf24' },
+  { offset: '0%', color: '#B8125F' },
+  { offset: '35%', color: '#CE0E5E' },
+  { offset: '60%', color: '#DE063C' },
+  { offset: '85%', color: '#EC3C0E' },
+  { offset: '100%', color: '#F26A0A' },
 ] as const;
 
 /**
@@ -106,32 +107,18 @@ type BrandMarkProps = {
 };
 
 const MARK_BOX = {
-  /**
-   * Header uniquement — px figés (pas d’em) :
-   * AYPIK = text-base 16px → cœur 18px (+12,5 %) ;
-   * sm+ = text-lg 18px → cœur 20px (+11 %).
-   */
-  nav: 'w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]',
-  sm: 'w-11 h-11',
-  /**
-   * Hero landing uniquement — mobile-first :
-   * base 67px de haut (~75px de large, ratio PNG 512×458) ; `md` (768px) restaure 6.5rem.
-   */
-  md: 'h-[67px] w-[75px] md:h-[6.5rem] md:w-[6.5rem]',
-  lg: 'w-[65px] h-[58px]',
+  nav: 'w-[24px] sm:w-[26px]',
+  sm: 'w-12',
+  md: 'w-[75px] md:w-[6.5rem]',
+  lg: 'w-[72px]',
 } as const;
 
-const MARK_INTRINSIC: Record<keyof typeof MARK_BOX, number> = {
-  nav: 20,
-  sm: 44,
-  md: 104,
-  lg: 65,
-};
-
-/** Asset UI (header, landing) — indépendant du favicon SVG/ICO. */
-const BRAND_MARK_SRC = `${import.meta.env.BASE_URL}brand-mark-transparent.png`;
-/** Cœur plat — écran Connexion / Inscription. Le hero utilise aypik-coeur-hero.webp. */
-export const BRAND_MARK_AUTH_SRC = `${import.meta.env.BASE_URL}aypik-coeur.svg`;
+/** Cœur verni 192×169 (2× d’un affichage ~96 px). */
+const BRAND_MARK_PNG = `${import.meta.env.BASE_URL}aypik-coeur-mark.png?v=1`;
+const BRAND_MARK_WEBP = `${import.meta.env.BASE_URL}aypik-coeur-mark.webp?v=1`;
+const BRAND_MARK_SRC = BRAND_MARK_PNG;
+/** Même cœur sur connexion, mot de passe, contact. Le hero utilise aypik-coeur-hero.webp. */
+export const BRAND_MARK_AUTH_SRC = BRAND_MARK_PNG;
 const BRAND_NAME_SRC = '/aypik-nom.svg?v=1';
 
 /** Nom AYPIK en logo. La hauteur vient de className (16/20 px en en-tête, 22/28 px sous le cœur). */
@@ -152,27 +139,50 @@ export function BrandNameImg({ className }: { className: string }) {
  * Logo cœur détouré (PNG alpha) — header et landing.
  * Favicon onglet : pipeline SVG (build-favicons). PWA / apple-touch :
  * `public/app-icon-source.png` via scripts/build-app-icons.cjs.
- * Ne pas confondre avec ce PNG transparent (header)
- * ni avec brand-mark.png (tuile carte)
- * ni avec aypik-coeur.svg (connexion / inscription).
+ * Ne pas confondre avec le cœur d’en-tête (24/26 px)
+ * ni avec le grand cœur du hero.
  */
 export function BrandMark({
   size = 'md',
   className = '',
   src = BRAND_MARK_SRC,
 }: BrandMarkProps) {
-  const px = MARK_INTRINSIC[size];
   return (
-    <img
-      src={src}
-      alt=""
-      width={px}
-      height={px}
-      decoding="async"
-      className={`relative shrink-0 object-contain select-none ${MARK_BOX[size]} ${className}`}
-      aria-hidden
-      draggable={false}
-    />
+    <picture className={`relative inline-flex shrink-0 ${MARK_BOX[size]} ${className}`}>
+      <source srcSet={BRAND_MARK_WEBP} type="image/webp" />
+      <img
+        src={src}
+        alt=""
+        width={192}
+        height={169}
+        decoding="async"
+        className="h-auto w-full select-none object-contain"
+        aria-hidden
+        draggable={false}
+      />
+    </picture>
+  );
+}
+
+const HEADER_HEART_PNG = '/aypik-coeur-header.png?v=1';
+const HEADER_HEART_WEBP = '/aypik-coeur-header.webp?v=1';
+
+/** Cœur verni de l’en-tête : 24 px mobile, 26 px ordinateur. */
+function HeaderHeart() {
+  return (
+    <picture className="inline-flex shrink-0">
+      <source srcSet={HEADER_HEART_WEBP} type="image/webp" />
+      <img
+        src={HEADER_HEART_PNG}
+        alt=""
+        width={96}
+        height={84}
+        decoding="async"
+        draggable={false}
+        aria-hidden
+        className="h-auto w-[24px] select-none object-contain sm:w-[26px]"
+      />
+    </picture>
   );
 }
 
@@ -182,7 +192,7 @@ export function BrandMarkNav({ className = '' }: { className?: string }) {
     <span
       className={`inline-flex shrink-0 items-center justify-center leading-none ${className}`}
     >
-      <BrandMark size="nav" />
+      <HeaderHeart />
     </span>
   );
 }
@@ -211,8 +221,8 @@ export function BrandHeaderBrand({
 
   const shortTagClass = `min-w-0 text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
   const longTagClass = `min-w-0 whitespace-nowrap text-xs font-light text-gray-400 tracking-wide leading-none overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`;
-  /** Décalage = largeur cœur nav (18 / sm:20) + gap-2 (0.5rem). */
-  const tagIndent = 'pl-[calc(18px+0.5rem)] sm:pl-[calc(20px+0.5rem)]';
+  /** Décalage = largeur du cœur (24 / sm:26) + gap-2 (0.5rem). */
+  const tagIndent = 'pl-[calc(24px+0.5rem)] sm:pl-[calc(26px+0.5rem)]';
 
   if (stacked === false) {
     return (
@@ -253,7 +263,7 @@ export function BrandHeaderBrand({
       className={`inline-flex flex-col items-stretch gap-0.5 min-w-0 max-w-full ${className}`}
     >
       <span className="inline-flex flex-nowrap items-center gap-2 min-w-0">
-        <BrandMark size="nav" />
+        <BrandMarkNav />
         <span className="inline-flex flex-nowrap items-center gap-1 min-w-0 overflow-hidden">
           <BrandNameImg className="h-[16px] sm:h-[20px]" />
           {stacked === null && (
