@@ -109,15 +109,15 @@ export function PremiumConversionCard({
             ? 'rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden opacity-55 grayscale pointer-events-none select-none'
             : secondary
               ? 'rounded-2xl border border-gray-200 bg-white overflow-hidden'
-              : 'rounded-2xl border border-rose-200 bg-white overflow-hidden shadow-sm shadow-rose-50') +
-          (highlighted ? ' ring-2 ring-rose-400 ring-offset-2' : '')
+              : 'rounded-2xl border border-aypik-border bg-white overflow-hidden shadow-sm shadow-aypik-navy/5') +
+          (highlighted ? ' ring-2 ring-aypik-navy ring-offset-2' : '')
         }
       >
         <div
           className={
             disabled || secondary
               ? 'bg-gray-100 px-4 py-3 border-b border-gray-200'
-              : 'bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-white'
+              : 'surface-primary px-4 py-3 text-white'
           }
         >
           <p
@@ -179,7 +179,7 @@ export function PremiumConversionCard({
                   className={
                     disabled || secondary
                       ? 'w-3.5 h-3.5 text-gray-400 flex-shrink-0'
-                      : 'w-3.5 h-3.5 text-rose-500 flex-shrink-0'
+                      : 'w-3.5 h-3.5 text-aypik-navy flex-shrink-0'
                   }
                 />
                 {perk}
@@ -202,11 +202,11 @@ export function PremiumConversionCard({
                 onClick={() => setCheckoutOpen(true)}
                 className={
                   secondary
-                    ? 'w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors'
-                    : 'w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity'
+                    ? 'w-full py-2.5 btn-secondary text-sm'
+                    : 'w-full py-2.5 btn-primary text-sm'
                 }
               >
-                {activeLabel}
+                <span>{activeLabel}</span>
               </button>
             )}
 
@@ -217,7 +217,7 @@ export function PremiumConversionCard({
                 </p>
                 <p className="text-[10px] text-center text-gray-400 leading-relaxed">
                   {t('membership.securePaymentLegal')}{' '}
-                  <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+                  <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
                     {t('common.legalCguCgv')}
                   </LegalLink>
                 </p>

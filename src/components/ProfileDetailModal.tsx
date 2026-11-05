@@ -226,8 +226,8 @@ export default function ProfileDetailModal({
         aria-label={t('common.closeAria')}
         onClick={onClose}
       />
-      <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-rose-100 max-h-[92vh] overflow-y-auto animate-fadeIn">
-        <div className="aspect-[4/5] sm:aspect-[5/4] bg-gradient-to-br from-rose-100 to-amber-100 relative">
+      <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-aypik-border max-h-[92vh] overflow-y-auto animate-fadeIn">
+        <div className="aspect-[4/5] sm:aspect-[5/4] bg-aypik-border relative">
           {candidate.photo_url ? (
             <ProfilePhoto
               src={candidate.photo_url}
@@ -253,7 +253,7 @@ export default function ProfileDetailModal({
             {t('profile.ageYears', { age: candidate.age })}
           </span>
           {unreadCount > 0 && (
-            <span className="absolute top-3 left-3 min-w-[1.35rem] h-[1.35rem] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center unread-badge-pulse">
+            <span className="absolute top-3 left-3 min-w-[1.35rem] h-[1.35rem] px-1.5 rounded-full bg-aypik-navy text-white text-[11px] font-bold flex items-center justify-center unread-badge-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -325,7 +325,7 @@ export default function ProfileDetailModal({
                       key={interest}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                         shared
-                          ? 'bg-rose-100 text-rose-700'
+                          ? 'bg-aypik-border text-aypik-navy'
                           : 'bg-gray-100 text-gray-600'
                       }`}
                     >
@@ -382,12 +382,14 @@ export default function ProfileDetailModal({
             <button
               type="button"
               onClick={onOpenChat}
-              className="btn-open-conversation w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
+              className="btn-primary w-full inline-flex items-center justify-center gap-2 py-2.5 text-sm"
             >
-              <MessageCircle className="w-4 h-4" />
-              {t('discover.openUnread', {
-                unread: unreadMessagesLabel(unreadCount),
-              })}
+              <span className="inline-flex items-center justify-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                {t('discover.openUnread', {
+                  unread: unreadMessagesLabel(unreadCount),
+                })}
+              </span>
             </button>
           ) : null}
 
@@ -397,12 +399,12 @@ export default function ProfileDetailModal({
               className={`rounded-2xl px-4 py-3 space-y-2 ${
                 inboxHistory.origin === 'flash'
                   ? 'bg-amber-50/80 border border-amber-100'
-                  : 'bg-rose-50/80 border border-rose-100'
+                  : 'bg-aypik-banner-bg border border-aypik-border'
               }`}
             >
               {inboxHistory.matchedViaWait && inboxHistory.matchedLabel ? (
                 <p
-                  className="flex items-center text-rose-500"
+                  className="flex items-center text-aypik-navy"
                   aria-label="Match"
                 >
                   <CrownIcon size="1.15rem" />
@@ -412,7 +414,7 @@ export default function ProfileDetailModal({
                   className={`text-sm font-medium flex items-center gap-2 ${
                     inboxHistory.origin === 'flash'
                       ? 'text-amber-800'
-                      : 'text-rose-700'
+                      : 'text-aypik-navy'
                   }`}
                 >
                   {inboxHistory.origin === 'flash' ? (
@@ -490,10 +492,12 @@ export default function ProfileDetailModal({
                 <button
                   type="button"
                   onClick={onOpenChat}
-                  className="btn-open-conversation w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
+                  className="btn-primary w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 text-sm"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  {openChatLabel || t('matches.openConversation')}
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    {openChatLabel || t('matches.openConversation')}
+                  </span>
                 </button>
               ) : null}
 
@@ -510,9 +514,9 @@ export default function ProfileDetailModal({
                         if (onInboxDecision) onInboxDecision('match');
                         else onLike();
                       }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 disabled:opacity-40 cursor-pointer"
+                      className="w-full py-2.5 btn-primary text-sm disabled:opacity-40 cursor-pointer"
                     >
-                      {busy ? '…' : <MatcherWord />}
+                      <span>{busy ? '…' : <MatcherWord />}</span>
                     </button>
                   ) : null}
                   <button
@@ -572,9 +576,9 @@ export default function ProfileDetailModal({
                     disabled={likesExhausted || matchPending}
                     aria-busy={matchPending || undefined}
                     onClick={() => requestInboxDecision('match')}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 disabled:opacity-40"
+                    className="w-full py-2.5 btn-primary text-sm disabled:opacity-40"
                   >
-                    <MatcherWord />
+                    <span><MatcherWord /></span>
                   </button>
                   <button
                     type="button"
@@ -631,7 +635,7 @@ export default function ProfileDetailModal({
                   type="button"
                   onClick={onFlash}
                   disabled={busy || alreadyFlashed}
-                  className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
+                  className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full btn-primary overflow-visible hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                   aria-label={
                     alreadyFlashed
                       ? t('discover.alreadyFlashedName', {
@@ -658,7 +662,7 @@ export default function ProfileDetailModal({
                 type="button"
                 onClick={onLike}
                 disabled={busy || likesExhausted || alreadyLiked}
-                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-amber-500 shadow-sm overflow-visible hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
+                className="group relative box-border inline-flex size-12 min-w-12 min-h-12 p-0 shrink-0 items-center justify-center rounded-full btn-primary overflow-visible hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer"
                 aria-label={
                   alreadyLiked
                     ? t('discover.alreadyLikedName', {

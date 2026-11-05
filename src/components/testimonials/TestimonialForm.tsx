@@ -121,11 +121,11 @@ export default function TestimonialForm({
   return (
     <section
       id="temoignage-form"
-      className="rounded-3xl border border-rose-100 bg-white/90 p-5 sm:p-6 shadow-sm shadow-rose-100/50 space-y-4"
+      className="rounded-3xl border border-aypik-border bg-white/90 p-5 sm:p-6 shadow-sm shadow-aypik-navy/5 space-y-4"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-100">
-          <Quote className="h-5 w-5 text-rose-500" aria-hidden />
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-aypik-banner-bg border border-aypik-border">
+          <Quote className="h-5 w-5 text-aypik-navy" aria-hidden />
         </div>
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
@@ -168,7 +168,7 @@ export default function TestimonialForm({
               onChange={(e) => setBody(e.target.value)}
               rows={5}
               maxLength={TESTIMONIAL_MAX_LEN}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400 resize-none"
               placeholder={t('profile.testimonialPlaceholder')}
             />
             <p className="text-xs text-gray-400 mt-1 text-right">
@@ -181,19 +181,19 @@ export default function TestimonialForm({
               type="checkbox"
               checked={includeAvatar}
               onChange={(e) => setIncludeAvatar(e.target.checked)}
-              className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+              className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy"
             />
             <span className="text-sm text-gray-700 leading-relaxed">
               {t('profile.testimonialShowPhoto')}
             </span>
           </label>
 
-          <label className="flex items-start gap-3 cursor-pointer rounded-2xl border border-rose-100 bg-rose-50/50 p-3">
+          <label className="flex items-start gap-3 cursor-pointer rounded-2xl border border-aypik-border bg-aypik-banner-bg p-3">
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+              className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy"
               required
             />
             <span className="text-sm text-gray-800 leading-relaxed">
@@ -220,20 +220,22 @@ export default function TestimonialForm({
             <button
               type="submit"
               disabled={saving || !consent}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold hover:opacity-95 transition-opacity disabled:opacity-50"
+              className="flex-1 py-2.5 btn-primary text-sm disabled:opacity-50"
             >
-              {saving
-                ? t('profile.savingPref')
-                : mine?.exists
-                  ? t('profile.testimonialUpdate')
-                  : t('profile.testimonialPublish')}
+              <span>
+                {saving
+                  ? t('profile.savingPref')
+                  : mine?.exists
+                    ? t('profile.testimonialUpdate')
+                    : t('profile.testimonialPublish')}
+              </span>
             </button>
             {mine?.exists && (
               <button
                 type="button"
                 onClick={() => void handleWithdraw()}
                 disabled={saving}
-                className="py-2.5 px-4 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
+                className="py-2.5 px-4 btn-secondary text-sm disabled:opacity-50"
               >
                 {t('profile.testimonialWithdraw')}
               </button>

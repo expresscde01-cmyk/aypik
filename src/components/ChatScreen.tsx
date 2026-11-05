@@ -304,17 +304,17 @@ export default function ChatScreen({
         onClick={onClose}
       />
       <aside className="absolute inset-y-0 right-0 flex h-full w-full sm:max-w-md flex-col bg-white shadow-[-12px_0_40px_rgba(15,23,42,0.18)] border-l border-gray-200">
-        <header className="shrink-0 bg-white border-b border-rose-100">
+        <header className="shrink-0 bg-white border-b border-aypik-border">
           <div className="px-3 h-14 flex items-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-lg hover:bg-rose-50 flex items-center justify-center text-gray-500"
+              className="w-9 h-9 rounded-lg hover:bg-aypik-banner-bg flex items-center justify-center text-gray-500"
               aria-label={t('matches.chatBack')}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 shrink-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-aypik-border shrink-0">
               {peer.photo_url ? (
                 <ProfilePhoto
                   src={peer.photo_url}
@@ -323,7 +323,7 @@ export default function ChatScreen({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm font-bold text-rose-400">
+                <div className="w-full h-full flex items-center justify-center text-sm font-bold text-aypik-navy">
                   {peer.display_name.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function ChatScreen({
               <h2 className="font-semibold text-gray-900 text-sm truncate">
                 {peer.display_name}
               </h2>
-              <p className="text-[11px] text-rose-500 font-medium flex items-center gap-1">
+              <p className="text-[11px] text-aypik-navy font-medium flex items-center gap-1">
                 <Heart className="w-3 h-3" fill="currentColor" />
                 {loading
                   ? t('matches.conversation')
@@ -351,14 +351,14 @@ export default function ChatScreen({
           <div className="px-4 py-4 space-y-2.5 min-h-full flex flex-col bg-white">
             {loading ? (
               <div className="flex-1 flex items-center justify-center py-16">
-                <div className="w-9 h-9 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+                <div className="w-9 h-9 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
               </div>
             ) : (
               <>
                 {messages.length === 0 && !error && (
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-100 to-amber-100 flex items-center justify-center mb-4">
-                      <Heart className="w-7 h-7 text-rose-400" fill="currentColor" />
+                    <div className="w-16 h-16 rounded-full bg-aypik-border flex items-center justify-center mb-4">
+                      <Heart className="w-7 h-7 text-aypik-navy" fill="currentColor" />
                     </div>
                     <p className="text-sm font-semibold text-gray-800">
                       {t('matches.chatMatchBanner', { name: peer.display_name })}
@@ -417,9 +417,9 @@ export default function ChatScreen({
           </div>
         )}
 
-        <footer className="shrink-0 bg-white border-t-2 border-rose-200 shadow-[0_-10px_28px_rgba(136,19,55,0.1)] pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <footer className="shrink-0 bg-white border-t-2 border-aypik-border shadow-[0_-10px_28px_rgba(136,19,55,0.1)] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="px-4 pt-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-500 mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-aypik-navy mb-2">
               {t('matches.chatWrite')}
             </p>
             {postTrialLocked ? (
@@ -428,7 +428,7 @@ export default function ChatScreen({
               </p>
             ) : null}
             <form
-              className={`flex items-end gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 p-2 ${
+              className={`flex items-end gap-2 rounded-2xl border border-aypik-border bg-aypik-banner-bg p-2 ${
                 postTrialLocked ? 'opacity-55 grayscale select-none' : ''
               }`}
               onClick={
@@ -462,7 +462,7 @@ export default function ChatScreen({
               <button
                 type={postTrialLocked ? 'button' : 'submit'}
                 disabled={postTrialLocked ? false : sending || !draft.trim()}
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-300/70 disabled:opacity-40 disabled:shadow-none hover:brightness-105 transition-all shrink-0"
+                className="w-12 h-12 rounded-full btn-primary text-white flex items-center justify-center disabled:opacity-40 disabled:shadow-none shrink-0"
                 aria-label={
                   postTrialLocked
                     ? t('membership.lockedNeedOffer')

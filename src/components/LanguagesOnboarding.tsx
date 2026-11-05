@@ -75,7 +75,7 @@ export default function LanguagesOnboarding({
           </button>
         </div>
         <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden mb-2">
-          <div className="h-full w-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full" />
+          <div className="h-full w-full surface-primary rounded-full" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mt-4">
           {t('languages.signupTitle')}
@@ -84,10 +84,10 @@ export default function LanguagesOnboarding({
           {required ? t('languages.signupHelpRequired') : t('languages.signupHelp')}
         </p>
 
-        <div className="bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8 mt-5">
+        <div className="bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8 mt-5">
           <div className="flex items-center justify-between gap-3 mb-3">
             <p className="text-sm text-gray-500">{t('languages.selection')}</p>
-            <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+            <span className="text-xs font-bold text-aypik-navy bg-aypik-banner-bg px-2.5 py-0.5 rounded-full whitespace-nowrap">
               {drafts.length} / {MAX_SPOKEN_LANGUAGES}
             </span>
           </div>
@@ -107,9 +107,9 @@ export default function LanguagesOnboarding({
               type="button"
               disabled={saving || !canContinue}
               onClick={() => void persist(drafts)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold shadow-lg shadow-rose-200 hover:opacity-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary disabled:opacity-60"
             >
-              {saving ? t('profile.saving') : t('common.continue')}
+              <span>{saving ? t('profile.saving') : t('common.continue')}</span>
             </button>
             {!required && (
               <button

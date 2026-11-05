@@ -7,8 +7,11 @@ import {
   buildPasswordRecoveryPageUrl,
   buildUnsubscribeUrl,
   sendResendEmail,
-  wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import {
+  emailActionButton,
+  wrapTransactionalEmailHtml,
+} from "../_shared/emailLayout.ts";
 
 /**
  * Auth "Send Email" hook — remplace le mailer natif de Supabase pour TOUS
@@ -326,7 +329,7 @@ Deno.serve(async (req) => {
 });
 
 function authButton(href: string, label: string): string {
-  return `<p style="margin:0 0 16px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;">${label}</a></p>`;
+  return emailActionButton(href, label);
 }
 
 function buildVerifyUrl(

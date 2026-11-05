@@ -35,11 +35,11 @@ export default function ChatBubbleButton({
         </svg>
       </span>
       {unreadCount > 0 ? (
-        <span className="absolute -top-1 -right-1 z-10 min-w-[1.05rem] h-[1.05rem] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
+        <span className="absolute -top-1 -right-1 z-10 min-w-[1.05rem] h-[1.05rem] px-1 rounded-full bg-aypik-navy text-white text-[9px] font-bold flex items-center justify-center unread-badge-pulse">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       ) : null}
-      <span className="pointer-events-none absolute z-30 bottom-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-rose-100 bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-rose-600 shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+      <span className="pointer-events-none absolute z-30 bottom-[calc(100%-6px)] left-[calc(100%-4px)] whitespace-nowrap rounded-full border border-aypik-border bg-white/95 px-2 py-0.5 text-[11px] font-medium tracking-wide text-aypik-navy shadow-sm opacity-0 transition-all duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
         Ouvrir la messagerie
       </span>
     </button>

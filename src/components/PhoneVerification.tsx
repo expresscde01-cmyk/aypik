@@ -227,10 +227,10 @@ export default function PhoneVerification() {
   ) : null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-rose-50 via-white to-amber-50">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-aypik-banner-bg">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-rose-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-aypik-navy/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-aypik-navy/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -246,7 +246,7 @@ export default function PhoneVerification() {
           </p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-8">
           {step === 'enter-phone' && (
             <form onSubmit={handlePhoneSubmit} noValidate className="space-y-4">
               <div>
@@ -263,7 +263,7 @@ export default function PhoneVerification() {
                     const next = e.target.value;
                     if (isPhoneVerificationCountry(next)) setPhoneCountry(next);
                   }}
-                  className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  className="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm outline-none focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15"
                 >
                   {phoneCountryOptions.map((country) => (
                     <option key={country} value={country}>
@@ -290,7 +290,7 @@ export default function PhoneVerification() {
                     required
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
                     placeholder={phoneNationalPlaceholder(phoneCountry)}
                   />
                 </div>
@@ -306,13 +306,15 @@ export default function PhoneVerification() {
               <button
                 type="submit"
                 disabled={loading || captchaBlocking}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 btn-primary disabled:opacity-60"
               >
-                {loading
-                  ? t('auth.phoneSending')
-                  : waitingCaptcha
-                    ? t('auth.phoneVerifying')
-                    : t('auth.phoneSendSms')}
+                <span>
+                  {loading
+                    ? t('auth.phoneSending')
+                    : waitingCaptcha
+                      ? t('auth.phoneVerifying')
+                      : t('auth.phoneSendSms')}
+                </span>
               </button>
             </form>
           )}
@@ -342,7 +344,7 @@ export default function PhoneVerification() {
                   onChange={(e) =>
                     setCode(e.target.value.replace(/[^\d]/g, ''))
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400 text-center text-lg tracking-[0.5em] font-semibold"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400 text-center text-lg tracking-[0.5em] font-semibold"
                   placeholder="000000"
                 />
               </div>
@@ -359,11 +361,13 @@ export default function PhoneVerification() {
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 btn-primary disabled:opacity-60"
               >
-                {loading && !resendNeedsCaptcha
-                  ? t('auth.phoneVerifying')
-                  : t('auth.phoneValidate')}
+                <span>
+                  {loading && !resendNeedsCaptcha
+                    ? t('auth.phoneVerifying')
+                    : t('auth.phoneValidate')}
+                </span>
               </button>
 
               {resendNeedsCaptcha ? turnstileWidget : null}
@@ -372,7 +376,7 @@ export default function PhoneVerification() {
                 type="button"
                 onClick={() => void handleResend()}
                 disabled={cooldown > 0 || loading || resendNeedsCaptcha}
-                className="w-full text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="w-full text-sm font-semibold text-aypik-navy hover:text-aypik-magenta disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 {cooldown > 0
                   ? t('auth.phoneResendWait', { seconds: cooldown })

@@ -43,7 +43,7 @@ export default function LegalTranslationBanner({
           </p>
           <button
             type="button"
-            className="text-sm font-bold text-amber-950 underline underline-offset-2 hover:text-rose-700"
+            className="text-sm font-bold text-amber-950 underline underline-offset-2 hover:text-aypik-magenta"
             onClick={() => {
               void applyLocale('fr', {
                 userId: user?.id,

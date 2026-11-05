@@ -4,8 +4,11 @@ import {
   escapeHtml,
   getPublicSiteUrl,
   resendFromAddress,
-  wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import {
+  emailActionButton,
+  wrapTransactionalEmailHtml,
+} from "../_shared/emailLayout.ts";
 import {
   emailT,
   localizedSiteUrl,
@@ -70,6 +73,7 @@ Deno.serve(async (req) => {
       const html = wrapTransactionalEmailHtml({
         title: emailT(locale, "testimonialTitle"),
         siteUrl,
+        locale,
         bodyHtml: buildInviteBody({
           displayName: row.display_name || "Membre",
           formUrl,
@@ -160,23 +164,19 @@ function buildInviteBody(params: {
   const locale = params.locale;
 
   return `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "testimonialHeading")}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#1C2340;">Aypik</p>
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "testimonialHeading")}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "testimonialHello", { name })}
               </p>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "testimonialBody1")}
               </p>
-              <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <p style="margin:0 0 24px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "testimonialBody2")}
               </p>
-              <p style="margin:0 0 24px;">
-                <a href="${formUrl}" style="display:inline-block;background:linear-gradient(90deg,#f43f5e,#f59e0b);color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;">
-                  ${emailT(locale, "testimonialCta")}
-                </a>
-              </p>
-              <p style="margin:0;color:#9ca3af;font-size:13px;line-height:1.55;">
+              ${emailActionButton(formUrl, emailT(locale, "testimonialCta"))}
+              <p style="margin:0;color:#8A90A2;font-size:13px;line-height:1.55;">
                 ${emailT(locale, "testimonialFooter")}
               </p>`;
 }

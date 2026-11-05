@@ -96,7 +96,7 @@ export default function MatchManageModal({
       />
       <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden animate-fadeIn">
         <header className="px-5 pt-5 pb-3 border-b border-gray-100 flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-rose-100 to-amber-100 shrink-0">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-aypik-border shrink-0">
             {peer.photo_url ? (
               <ProfilePhoto
                 src={peer.photo_url}
@@ -105,7 +105,7 @@ export default function MatchManageModal({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-base font-bold text-rose-400">
+              <div className="w-full h-full flex items-center justify-center text-base font-bold text-aypik-navy">
                 {peer.display_name.charAt(0).toUpperCase()}
               </div>
             )}

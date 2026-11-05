@@ -64,7 +64,7 @@ export function WhoLikedTeaser({
     <div className="rounded-2xl border border-gray-100 bg-white p-4 relative overflow-hidden">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-rose-500" />
+          <Eye className="w-4 h-4 text-aypik-navy" />
           <h3 className="text-sm font-semibold text-gray-900">
             {t('membership.whoLiked')}
           </h3>
@@ -76,7 +76,7 @@ export function WhoLikedTeaser({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-200 to-amber-200 border-2 border-white"
+            className="w-10 h-10 rounded-full bg-aypik-border border-2 border-white"
           />
         ))}
         {count > 0 && (
@@ -171,7 +171,7 @@ export function AdvancedFiltersTeaser({
     <button
       type="button"
       onClick={onAskPremium}
-      className="w-full rounded-2xl border border-dashed border-gray-200 bg-white p-3 flex items-center justify-between text-left hover:border-rose-200 transition-colors"
+      className="w-full rounded-2xl border border-dashed border-gray-200 bg-white p-3 flex items-center justify-between text-left hover:border-aypik-border transition-colors"
     >
       <span className="flex items-center gap-2 text-sm text-gray-600">
         <Filter className="w-4 h-4 text-gray-400" />
@@ -206,7 +206,7 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
     return (
       <p className="text-center text-xs text-gray-400">
         {t('membership.likesUnlimitedShort')}{' '}
-        <span className="text-rose-500 font-medium">{short}</span>
+        <span className="text-aypik-navy font-medium">{short}</span>
       </p>
     );
   }

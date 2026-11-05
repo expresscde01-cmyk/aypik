@@ -328,7 +328,7 @@ export default function HomeDashboard({
 
   return (
     <div className="min-h-full flex flex-col bg-[#fff8f5]">
-      <header className="sticky top-0 z-40 isolate overflow-x-clip bg-white/85 backdrop-blur-md border-b border-rose-100/80">
+      <header className="sticky top-0 z-40 isolate overflow-x-clip bg-white/85 backdrop-blur-md border-b border-aypik-border/80">
         {pcHeader ? (
         <div className="w-full px-8">
           <div className="max-w-7xl mx-auto">
@@ -339,7 +339,7 @@ export default function HomeDashboard({
               <button
                 type="button"
                 onClick={onHome}
-                className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+                className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-aypik-navy/40 focus-visible:ring-offset-2"
                 aria-label={t('common.homeTopAria')}
               >
                 <BrandHeaderBrand compact={taglineCompact} />
@@ -390,7 +390,7 @@ export default function HomeDashboard({
             <button
               type="button"
               onClick={onHome}
-              className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+              className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-aypik-navy/40 focus-visible:ring-offset-2"
               aria-label={t('common.homeTopAria')}
             >
               <BrandHeaderBrand hideTagline={!mobileTaglineFits} />
@@ -441,22 +441,24 @@ export default function HomeDashboard({
             <button
               type="button"
               onClick={onOpenDiscover}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/60 hover:opacity-95 transition-opacity"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary"
             >
-              <Compass className="w-4 h-4" />
-              {t('common.nav.discover')}
+              <span className="inline-flex items-center gap-2">
+                <Compass className="w-4 h-4" />
+                {t('common.nav.discover')}
+              </span>
             </button>
             <button
               type="button"
               onClick={() => onOpenMatches()}
-              className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-rose-200 bg-white/80 text-gray-800 font-semibold hover:bg-white transition-colors"
+              className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 btn-secondary"
               aria-label={
                 matchCount > 0
                   ? `${t('matches.title')} (${matchCount})`
                   : t('matches.title')
               }
             >
-              <Heart className="w-4 h-4 text-rose-500" />
+              <Heart className="w-4 h-4 text-aypik-navy" />
               {t('matches.title')}
               {matchCount > 0 && (
                 <UnreadBadge
@@ -481,7 +483,7 @@ export default function HomeDashboard({
             <button
               type="button"
               onClick={onOpenProfile}
-              className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+              className="text-xs font-semibold text-aypik-navy hover:text-aypik-magenta"
             >
               {t('profile.title')}
             </button>
@@ -501,18 +503,18 @@ export default function HomeDashboard({
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <div className="w-9 h-9 rounded-full border-4 border-rose-200 border-t-rose-500 animate-spin" />
+              <div className="w-9 h-9 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
             </div>
           ) : suggestions.length === 0 && error ? null : suggestions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-rose-200 bg-white/70 px-5 py-10 text-center">
-              <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-2" />
+            <div className="rounded-2xl border border-dashed border-aypik-border bg-white/70 px-5 py-10 text-center">
+              <Sparkles className="w-7 h-7 text-aypik-text-muted mx-auto mb-2" />
               <p className="text-sm text-gray-600 leading-relaxed">
                 {t('discover.suggestionsEmpty')}
               </p>
               <button
                 type="button"
                 onClick={onOpenDiscover}
-                className="mt-4 text-sm font-semibold text-rose-600"
+                className="mt-4 text-sm font-semibold text-aypik-navy"
               >
                 {t('discover.discoverProfilesCta')}
               </button>
@@ -536,11 +538,11 @@ export default function HomeDashboard({
                     }
                     className={`w-full text-left rounded-2xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all animate-fadeIn cursor-pointer ${
                       unreadCount > 0
-                        ? 'border-rose-300 ring-2 ring-rose-100'
-                        : 'border-gray-100 hover:border-rose-100'
+                        ? 'border-aypik-navy ring-2 ring-aypik-border'
+                        : 'border-gray-100 hover:border-aypik-border'
                     }`}
                   >
-                    <div className="aspect-[4/5] bg-gradient-to-br from-rose-100 to-amber-100 relative">
+                    <div className="aspect-[4/5] bg-aypik-border relative">
                       {p.photo_url ? (
                         <ProfilePhoto
                           src={p.photo_url}
@@ -559,7 +561,7 @@ export default function HomeDashboard({
                         founderNumber={p.founder_number}
                       />
                       {unreadCount > 0 && (
-                        <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-md">
+                        <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-aypik-navy text-white text-[10px] font-bold shadow-md">
                           <MessageCircle className="w-3 h-3" />
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>

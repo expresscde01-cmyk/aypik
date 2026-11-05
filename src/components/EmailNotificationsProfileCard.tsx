@@ -53,10 +53,10 @@ export default function EmailNotificationsProfileCard({
     <div
       ref={cardRef}
       id="email-preferences"
-      className={`mt-6 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border p-6 sm:p-8 ${
+      className={`mt-6 bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border p-6 sm:p-8 ${
         hinted
-          ? 'border-rose-300 ring-2 ring-rose-100'
-          : 'border-rose-100'
+          ? 'border-aypik-navy ring-2 ring-aypik-border'
+          : 'border-aypik-border'
       }`}
     >
       <h2 className="text-lg font-bold text-gray-900">
@@ -71,7 +71,7 @@ export default function EmailNotificationsProfileCard({
             setSaved(false);
             setEnabled(e.target.checked);
           }}
-          className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+          className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy"
         />
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-gray-800">
@@ -93,9 +93,9 @@ export default function EmailNotificationsProfileCard({
           type="button"
           disabled={saving}
           onClick={() => void save()}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3.5 btn-primary disabled:opacity-60"
         >
-          {saving ? t('profile.saving') : t('languages.save')}
+          <span>{saving ? t('profile.saving') : t('languages.save')}</span>
         </button>
         {saved && (
           <span className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700">

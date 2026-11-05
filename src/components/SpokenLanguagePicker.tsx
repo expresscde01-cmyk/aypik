@@ -115,7 +115,7 @@ export default function SpokenLanguagePicker({
             disabled={atMax}
             autoComplete="off"
             placeholder={t('languages.searchPlaceholder')}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none text-sm text-gray-900 placeholder-gray-400"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none text-sm text-gray-900 placeholder-gray-400"
           />
         </div>
         {!atMax && (
@@ -163,7 +163,7 @@ export default function SpokenLanguagePicker({
                   <p className="text-sm font-semibold text-gray-800">
                     {languageDisplayName(item.code, locale)}
                     {nativeRequired && item.level === 'native' && (
-                      <span className="ml-2 text-[11px] font-bold uppercase tracking-wide text-rose-600">
+                      <span className="ml-2 text-[11px] font-bold uppercase tracking-wide text-aypik-navy">
                         {t('languages.required')}
                       </span>
                     )}

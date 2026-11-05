@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {
   escapeHtml,
   resendFromAddress,
-  wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import { wrapTransactionalEmailHtml } from "../_shared/emailLayout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -213,10 +213,10 @@ function buildContactBody(params: {
   const message = escapeHtml(params.message).replace(/\r\n|\r|\n/g, "<br>");
 
   return `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">Nouveau message de contact</h1>
-              <p style="margin:0 0 8px;color:#4b5563;font-size:15px;line-height:1.6;"><strong>Nom :</strong> ${name}</p>
-              <p style="margin:0 0 8px;color:#4b5563;font-size:15px;line-height:1.6;"><strong>E-mail (répondre à) :</strong> <a href="mailto:${email}">${email}</a></p>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;"><strong>Sujet :</strong> ${category}</p>
-              <p style="margin:0;color:#111827;font-size:15px;line-height:1.7;">${message}</p>`;
+              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#1C2340;">Aypik</p>
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">Nouveau message de contact</h1>
+              <p style="margin:0 0 8px;color:#1C2340;font-size:15px;line-height:1.6;"><strong>Nom :</strong> ${name}</p>
+              <p style="margin:0 0 8px;color:#1C2340;font-size:15px;line-height:1.6;"><strong>E-mail (répondre à) :</strong> <a href="mailto:${email}">${email}</a></p>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;"><strong>Sujet :</strong> ${category}</p>
+              <p style="margin:0;color:#1C2340;font-size:15px;line-height:1.7;">${message}</p>`;
 }

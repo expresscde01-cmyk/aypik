@@ -32,7 +32,7 @@ export default function LanguageSwitcher({
       role="group"
       aria-label={t('common.language')}
       aria-disabled={locked || undefined}
-      className={`inline-flex items-center rounded-lg border border-rose-100 bg-white/80 p-0.5 ${
+      className={`lang-switch inline-flex items-center rounded-lg border border-aypik-border bg-white/80 p-0.5 ${
         locked ? 'opacity-55 grayscale select-none' : ''
       } ${className}`}
     >
@@ -64,8 +64,8 @@ export default function LanguageSwitcher({
                 : 'px-2 py-1 text-xs'
             } ${
               selected
-                ? 'bg-rose-500 text-white shadow-sm'
-                : 'text-gray-500 hover:text-rose-600 hover:bg-rose-50'
+                ? 'active'
+                : 'text-aypik-text-muted hover:text-aypik-navy'
             }`}
           >
             {code.toUpperCase()}

@@ -192,12 +192,12 @@ export function WorldCityAutocomplete({
               ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
               : isValidated
                 ? 'border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100'
-                : 'border-gray-200 focus:border-rose-400 focus:ring-rose-100'
+                : 'border-gray-200 focus:border-aypik-navy focus:ring-aypik-border'
           }`}
           placeholder={resolvedPlaceholder}
         />
         {loading ? (
-          <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-400 animate-spin" />
+          <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-aypik-navy animate-spin" />
         ) : isValidated ? (
           <Check
             className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500"
@@ -220,7 +220,7 @@ export function WorldCityAutocomplete({
           <ul
             id={listId}
             role="listbox"
-            className="absolute z-50 mt-1.5 w-full max-h-60 overflow-auto rounded-xl border border-rose-100 bg-white shadow-lg shadow-rose-100/50 py-1"
+            className="absolute z-50 mt-1.5 w-full max-h-60 overflow-auto rounded-xl border border-aypik-border bg-white shadow-lg shadow-aypik-navy/5 py-1"
           >
             {suggestions.length === 0 ? (
               <li className="px-3.5 py-2.5 text-sm text-gray-500">
@@ -242,7 +242,7 @@ export function WorldCityAutocomplete({
                         selectCity(city);
                       }}
                       className={`w-full flex items-center px-3.5 py-2.5 text-left text-sm transition-colors ${
-                        active ? 'bg-rose-50 text-rose-900' : 'text-gray-800'
+                        active ? 'bg-aypik-banner-bg text-aypik-navy' : 'text-gray-800'
                       }`}
                     >
                       <span className="font-semibold truncate">{city.nom}</span>

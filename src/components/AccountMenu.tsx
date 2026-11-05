@@ -257,7 +257,7 @@ export default function AccountMenu({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[11rem] truncate text-sm font-semibold text-gray-800 ml-1 rounded-lg px-1.5 py-1 -mx-0.5 hover:bg-rose-50 transition-colors"
+        className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[11rem] truncate text-sm font-semibold text-gray-800 ml-1 rounded-lg px-1.5 py-1 -mx-0.5 hover:bg-aypik-banner-bg transition-colors"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
@@ -270,7 +270,7 @@ export default function AccountMenu({
           });
         }}
       >
-        <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
+        <UserRound className="w-4 h-4 text-aypik-navy shrink-0" />
         <span className="hidden sm:inline truncate">{displayName}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${
@@ -577,7 +577,7 @@ export default function AccountMenu({
                   type="checkbox"
                   checked={deleteAcknowledged}
                   onChange={(e) => setDeleteAcknowledged(e.target.checked)}
-                  className="mt-1 rounded border-gray-300 text-rose-500 focus:ring-rose-400"
+                  className="mt-1 rounded border-gray-300 text-aypik-navy focus:ring-aypik-navy"
                 />
                 <span className="text-sm text-gray-700 leading-relaxed">
                   {t('profile.deleteAcknowledge')}
@@ -659,7 +659,7 @@ function MenuItem({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] font-medium transition-colors disabled:opacity-50 ${
         destructive
-          ? 'text-red-600 hover:bg-rose-50'
+          ? 'text-red-600 hover:bg-aypik-banner-bg'
           : 'text-gray-800 hover:bg-slate-50'
       }`}
     >

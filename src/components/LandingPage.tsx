@@ -172,7 +172,7 @@ export function SiteHeader({
 
   return (
     <div className="sticky top-0 z-20">
-    <header className="bg-white/85 backdrop-blur-md border-b border-rose-100/80">
+    <header className="bg-white/85 backdrop-blur-md border-b border-aypik-border">
       <div className={pcHeader ? 'w-full px-8' : 'max-w-3xl mx-auto px-4'}>
         <div className={pcHeader ? 'max-w-7xl mx-auto' : undefined}>
         <div
@@ -197,7 +197,7 @@ export function SiteHeader({
                 window.history.pushState({}, '', homeHref);
               }
             }}
-            className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
+            className="inline-flex flex-nowrap items-center min-w-0 max-w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-aypik-navy/40 focus-visible:ring-offset-2"
             aria-label={t('common.homeAria')}
           >
             {pcHeader ? (
@@ -218,7 +218,7 @@ export function SiteHeader({
             {connected ? (
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 max-w-[9rem] sm:max-w-[12rem] truncate text-sm font-semibold text-gray-800">
-                  <UserRound className="w-4 h-4 text-rose-500 shrink-0" />
+                  <UserRound className="w-4 h-4 text-aypik-navy shrink-0" />
                   {displayName}
                 </span>
                 {onSignOut && (
@@ -242,9 +242,9 @@ export function SiteHeader({
               <button
                 type="button"
                 onClick={() => onAuthClick?.('signup')}
-                className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-rose-200/60 hover:opacity-95 transition-opacity"
+                className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 btn-header text-xs sm:text-sm"
               >
-                {t('landing.headerAuth')}
+                <span>{t('landing.headerAuth')}</span>
               </button>
             )}
           </div>
@@ -259,25 +259,43 @@ export function SiteHeader({
   );
 }
 
+const PRIVILEGE_TONE = [
+  'font-bold text-aypik-navy',
+  'font-bold text-aypik-raspberry',
+  'font-bold text-aypik-navy',
+];
+
 function founderPrivilegeHighlight(text: string, phrases: unknown): ReactNode[] {
   const marks = Array.isArray(phrases)
     ? phrases.filter((phrase): phrase is string => typeof phrase === 'string' && phrase.length > 0)
     : [];
   const nodes: ReactNode[] = [];
   let rest = text;
-  for (const phrase of marks) {
+  marks.forEach((phrase, index) => {
     const at = rest.indexOf(phrase);
-    if (at < 0) continue;
+    if (at < 0) return;
     if (at > 0) nodes.push(rest.slice(0, at));
     nodes.push(
-      <strong key={phrase} className="font-bold">
+      <strong key={phrase} className={PRIVILEGE_TONE[index] ?? 'font-bold text-aypik-navy'}>
         {phrase}
       </strong>
     );
     rest = rest.slice(at + phrase.length);
-  }
+  });
   if (rest) nodes.push(rest);
   return nodes;
+}
+
+function founderLead(description: string): ReactNode {
+  const sep = ' — ';
+  const at = description.indexOf(sep);
+  if (at <= 0) return description;
+  return (
+    <>
+      <strong className="font-bold text-aypik-raspberry">{description.slice(0, at)}</strong>
+      {description.slice(at)}
+    </>
+  );
 }
 
 function OfferCard({
@@ -302,14 +320,14 @@ function OfferCard({
     accent === 'founder'
       ? 'border-amber-300 bg-gradient-to-br from-amber-400 via-amber-300 to-rose-300'
       : accent === 'premium'
-        ? 'border-rose-200 bg-white'
+        ? 'border-aypik-border bg-white'
         : accent === 'boost'
-          ? 'border-amber-200 bg-white'
+          ? 'border-aypik-border bg-white'
           : 'border-gray-200 bg-white';
   const titleColor =
-    accent === 'founder' ? 'text-amber-950' : 'text-gray-900';
+    accent === 'founder' ? 'text-aypik-raspberry' : 'text-gray-900';
   const bodyColor =
-    accent === 'founder' ? 'text-amber-950/85' : 'text-gray-600';
+    accent === 'founder' ? 'text-aypik-navy' : 'text-gray-600';
   const Icon =
     accent === 'founder'
       ? Gift
@@ -335,7 +353,7 @@ function OfferCard({
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {badge && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-900 border border-white/80 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-aypik-raspberry px-3 py-1 text-xs font-bold uppercase tracking-wide text-white border border-aypik-raspberry">
               <Gift className="w-3.5 h-3.5" />
               {badge}
             </span>
@@ -344,10 +362,10 @@ function OfferCard({
             <span
               className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
                 accent === 'premium'
-                  ? 'bg-rose-50 text-rose-500'
+                  ? 'bg-aypik-banner-bg text-aypik-navy'
                   : accent === 'boost'
-                    ? 'bg-amber-50 text-amber-600'
-                    : 'bg-gray-100 text-rose-400'
+                    ? 'bg-aypik-banner-bg text-aypik-navy'
+                    : 'bg-gray-100 text-aypik-navy'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -358,18 +376,18 @@ function OfferCard({
           {title}
         </h3>
         <p className={`text-sm sm:text-base font-medium leading-snug ${bodyColor}`}>
-          {description}
+          {accent === 'founder' ? founderLead(description) : description}
         </p>
         {items.map((item) => (
           <p
             key={item}
             className={`flex items-center gap-2 text-sm font-semibold ${
-              accent === 'founder' ? 'text-amber-950' : 'text-gray-800'
+              accent === 'founder' ? 'text-aypik-navy' : 'text-gray-800'
             }`}
           >
             <span
               className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                accent === 'founder' ? 'bg-white/80' : 'bg-rose-50'
+                accent === 'founder' ? 'bg-white text-aypik-raspberry' : 'bg-aypik-banner-bg'
               }`}
             >
               ✓
@@ -378,7 +396,7 @@ function OfferCard({
           </p>
         ))}
         {highlight ? (
-          <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-normal text-amber-950 leading-snug shadow-sm">
+          <p className="rounded-xl border-l-4 border-aypik-raspberry bg-white/85 px-3 py-2.5 text-sm sm:text-base font-normal text-aypik-navy leading-snug shadow-sm">
             {highlight}
           </p>
         ) : null}
@@ -515,7 +533,7 @@ export default function LandingPage({
                       {t('landing.heroTitleBefore')}
                       <span className="hero-title-trail-unit">
                         <span className="hero-title-trail-unit-text">
-                          <span className="hero-headline-accent">
+                          <span className="hero-headline-accent accent-logo">
                             {t('landing.heroTitleAccent').replace(/ /g, '\u00A0')}
                           </span>
                           {t('landing.heroTitleMark')}
@@ -529,7 +547,7 @@ export default function LandingPage({
                   <>
                     {t('landing.heroTitleBefore')}
                     <span className="whitespace-nowrap">
-                      <span className="hero-headline-accent">
+                      <span className="hero-headline-accent accent-logo">
                         {t('landing.heroTitleAccent').replace(/ /g, '\u00A0')}
                       </span>
                       {t('landing.heroTitleMark')}
@@ -544,24 +562,24 @@ export default function LandingPage({
           <HeroHeart />
 
           <p className="hero-meet">
-            <span className="hero-meet-part">{t('landing.heroMeetLead')}</span>
+            <span className="hero-meet-lead">{t('landing.heroMeetLead')}</span>
             <span className="hero-meet-sep" aria-hidden="true"> · </span>
-            <span className="hero-meet-part">{t('landing.heroMeetRest')}</span>
+            <span className="hero-meet-rest">{t('landing.heroMeetRest')}</span>
           </p>
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fadeIn">
             <button
               type="button"
               onClick={connected ? onPrimaryCta : () => onAuthClick?.('signup')}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold shadow-lg shadow-rose-200/70 hover:opacity-95 transition-opacity"
+              className="w-full sm:w-auto px-7 py-3.5 btn-join"
             >
-              {connected ? t('landing.ctaMatches') : t('landing.ctaJoin')}
+              <span>{connected ? t('landing.ctaMatches') : t('landing.ctaJoin')}</span>
             </button>
             {!connected && (
               <button
                 type="button"
                 onClick={() => onAuthClick?.('signin')}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl border border-rose-200 bg-white/70 text-gray-800 font-semibold hover:bg-white transition-colors"
+                className="w-full sm:w-auto px-7 py-3.5 btn-secondary"
               >
                 {t('landing.ctaSignIn')}
               </button>
@@ -570,7 +588,7 @@ export default function LandingPage({
 
           <button
             type="button"
-            className="hero-scroll-hint"
+            className="hero-scroll-hint scroll-chevron"
             aria-label={t('landing.scrollToOfferAria')}
             onClick={() => {
               const reduce = window.matchMedia(
@@ -596,7 +614,7 @@ export default function LandingPage({
           <h2 className="offer-lead">
             <span className="offer-lead-line">
               {t('landing.beforeOfferLead')}
-              <span className="offer-lead-accent">{t('landing.beforeOfferAccent')}</span>,
+              <span className="offer-lead-accent accent-logo">{t('landing.beforeOfferAccent')}</span>,
             </span>{' '}
             <span className="offer-lead-line">{t('landing.beforeOfferRest')}</span>
           </h2>
@@ -651,7 +669,7 @@ export default function LandingPage({
         <ul className="grid gap-8 sm:grid-cols-3 sm:gap-6">
           {values.map(({ id, title, description, Icon }) => (
             <li key={id} className="text-center sm:text-left">
-              <div className="mx-auto sm:mx-0 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md text-orange-500">
+              <div className="mx-auto sm:mx-0 mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md text-aypik-raspberry">
                 <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </div>
               <h3 className="text-base font-bold text-gray-900 tracking-tight leading-snug">

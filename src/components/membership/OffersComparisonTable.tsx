@@ -292,7 +292,7 @@ export function OffersComparisonTable({ founder = false }: { founder?: boolean }
       </p>
       <p className="px-2.5 py-2 text-[11px] leading-snug text-gray-500">
         {t('offersGrid.openProtectedNote')}{' '}
-        <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+        <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
           {t('legal.docLabelPaid')}
         </LegalLink>
         .

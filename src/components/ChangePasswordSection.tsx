@@ -44,7 +44,7 @@ function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
-          className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all text-gray-900 placeholder-gray-400"
+          className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 focus:border-aypik-navy focus:ring-2 focus:ring-aypik-navy/15 outline-none transition-all text-gray-900 placeholder-gray-400"
           placeholder={placeholder}
         />
         <button
@@ -157,7 +157,7 @@ export default function ChangePasswordSection() {
   return (
     <div
       id="change-password"
-      className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
+      className="mt-4 bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8"
     >
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
         {t('profile.passwordSectionTitle')}

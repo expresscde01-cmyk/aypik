@@ -82,7 +82,7 @@ export default function DiscoverModeSwitcher({
       <div
         role="group"
         aria-label={t('profile.discoverMode')}
-        className="inline-flex w-full items-center rounded-lg border border-rose-100 bg-white/80 p-0.5"
+        className="inline-flex w-full items-center rounded-lg border border-aypik-border bg-white/80 p-0.5"
       >
         {OPTIONS.map((option) => {
           const locked = option.id === 'detaille' && detailedLocked;
@@ -102,8 +102,8 @@ export default function DiscoverModeSwitcher({
                 locked
                   ? 'text-gray-400 opacity-55 grayscale'
                   : selected
-                    ? 'bg-rose-500 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-rose-600 hover:bg-rose-50'
+                    ? 'bg-aypik-navy text-white shadow-sm'
+                    : 'text-gray-500 hover:text-aypik-magenta hover:bg-aypik-banner-bg'
               }`}
             >
               {t(option.labelKey)}

@@ -78,7 +78,7 @@ function MdLink({
   return (
     <a
       href={resolved.href}
-      className="underline underline-offset-2 hover:text-rose-600"
+      className="underline underline-offset-2 hover:text-aypik-magenta"
       {...(resolved.external
         ? { target: '_blank', rel: 'noopener noreferrer' }
         : {})}

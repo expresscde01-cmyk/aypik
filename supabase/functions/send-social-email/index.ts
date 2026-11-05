@@ -5,8 +5,8 @@ import {
   escapeHtml,
   isEmailNotificationsEnabled,
   sendResendEmail,
-  wrapTransactionalEmailHtml,
 } from "../_shared/email.ts";
+import { wrapTransactionalEmailHtml } from "../_shared/emailLayout.ts";
 import { emailT, profileEmailLocale, type EmailLocale } from "../_shared/i18n.ts";
 
 const corsHeaders = {
@@ -187,8 +187,8 @@ function buildSocialEmail(params: {
 }): { subject: string; title: string; bodyHtml: string } {
   const name = escapeHtml(params.actorName);
   const locale = params.locale;
-  const closing = `<p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">${emailT(locale, "socialClosing")}</p>`;
-  const brand = `<p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#f97316;">Aypik</p>`;
+  const closing = `<p style="margin:0;color:#1C2340;font-size:15px;line-height:1.6;">${emailT(locale, "socialClosing")}</p>`;
+  const brand = `<p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#1C2340;">Aypik</p>`;
 
   if (params.kind === "flash_received") {
     return {
@@ -196,8 +196,8 @@ function buildSocialEmail(params: {
       title: emailT(locale, "socialFlashTitle"),
       bodyHtml: `
               ${brand}
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialFlashHeading")}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "socialFlashHeading")}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "socialFlashBody", { name })}
               </p>
               ${closing}`,
@@ -210,8 +210,8 @@ function buildSocialEmail(params: {
       title: emailT(locale, "socialLikeTitle"),
       bodyHtml: `
               ${brand}
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialLikeHeading")}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "socialLikeHeading")}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "socialLikeBody", { name })}
               </p>
               ${closing}`,
@@ -230,11 +230,11 @@ function buildSocialEmail(params: {
       title: "Aypik",
       bodyHtml: `
               ${brand}
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${escapeHtml(title)}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${escapeHtml(title)}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${escapeHtml(description)}
               </p>
-              <p style="margin:0;color:#4b5563;font-size:15px;line-height:1.6;">
+              <p style="margin:0;color:#1C2340;font-size:15px;line-height:1.6;">
                 Retrouve les détails depuis ton profil sur Aypik.
               </p>`,
     };
@@ -251,8 +251,8 @@ function buildSocialEmail(params: {
       title: emailT(locale, "socialMatchTitle"),
       bodyHtml: `
               ${brand}
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialMatchHeading")}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "socialMatchHeading")}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "socialMatchAcceptorBody", { name })}
               </p>
               ${closing}`,
@@ -267,8 +267,8 @@ function buildSocialEmail(params: {
     title: emailT(locale, "socialMatchTitle"),
     bodyHtml: `
               ${brand}
-              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#111827;">${emailT(locale, "socialMatchHeading")}</h1>
-              <p style="margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "socialMatchHeading")}</h1>
+              <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${
                   flashOrigin
                     ? emailT(locale, "socialMatchInitiatorFlash", { name })

@@ -28,7 +28,7 @@ export default function PwaInstallCard() {
   return (
     <div
       id="install-app"
-      className="mt-4 bg-white rounded-3xl shadow-xl shadow-rose-100/50 border border-rose-100 p-6 sm:p-8"
+      className="mt-4 bg-white rounded-3xl shadow-xl shadow-aypik-navy/5 border border-aypik-border p-6 sm:p-8"
     >
       <h2 className="text-sm font-semibold text-gray-900 mb-1">
         {t('common.pwa.title')}
@@ -40,7 +40,7 @@ export default function PwaInstallCard() {
           <button
             type="button"
             onClick={() => setManualOpen((open) => !open)}
-            className="w-full py-3 rounded-xl border border-rose-200 bg-white text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl border border-aypik-border bg-white text-aypik-navy font-semibold hover:bg-aypik-banner-bg transition-colors flex items-center justify-center gap-2"
             aria-expanded={manualOpen}
           >
             <Share className="w-4 h-4" />
@@ -71,7 +71,7 @@ export default function PwaInstallCard() {
             <button
               type="button"
               onClick={() => void promptInstall()}
-              className="w-full py-3 rounded-xl border border-rose-200 bg-white text-rose-600 font-semibold hover:bg-rose-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border border-aypik-border bg-white text-aypik-navy font-semibold hover:bg-aypik-banner-bg transition-colors flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
               {nativeLabel}

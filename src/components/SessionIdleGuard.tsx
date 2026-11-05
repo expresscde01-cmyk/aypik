@@ -270,7 +270,7 @@ export default function SessionIdleGuard() {
       aria-describedby="session-idle-desc"
     >
       <div className="absolute inset-0 bg-slate-900/50" aria-hidden />
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl border border-rose-100 animate-fadeIn space-y-4">
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl border border-aypik-border animate-fadeIn space-y-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
             <Clock className="w-5 h-5 text-amber-600" />
@@ -297,9 +297,9 @@ export default function SessionIdleGuard() {
         <button
           type="button"
           onClick={staySignedIn}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-semibold shadow-lg shadow-rose-200 hover:shadow-rose-300 hover:scale-[1.01] active:scale-[0.99] transition-all"
+          className="w-full py-3 btn-primary text-sm"
         >
-          Rester connecté
+          <span>Rester connecté</span>
         </button>
       </div>
     </div>,

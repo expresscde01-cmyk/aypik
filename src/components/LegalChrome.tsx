@@ -56,7 +56,7 @@ export function LegalLink({
       onClick={openLegalTerms}
       className={
         className ||
-        'underline underline-offset-2 hover:text-rose-600 transition-colors'
+        'underline underline-offset-2 hover:text-aypik-magenta transition-colors'
       }
     >
       {label}
@@ -89,7 +89,7 @@ export function ContactLink({
       rel="noopener noreferrer"
       className={
         className ||
-        'underline underline-offset-2 hover:text-rose-600 transition-colors'
+        'underline underline-offset-2 hover:text-aypik-magenta transition-colors'
       }
     >
       {t('common.contactUs')}
@@ -112,7 +112,7 @@ export function SiteFooter({
       : t('legal.docLabelPaid');
   return (
     <footer
-      className={`border-t border-rose-100/80 bg-white/60 ${
+      className={`border-t border-aypik-border/80 bg-white/60 ${
         compact ? '' : 'mt-auto'
       }`}
     >
@@ -127,7 +127,7 @@ export function SiteFooter({
             {showLegal && (
               <>
                 {' · '}
-                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+                <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
                   {doc}
                 </LegalLink>
               </>
@@ -141,7 +141,7 @@ export function SiteFooter({
             {showLegal && (
               <p>
                 {t('common.footerAgeLegal')}{' '}
-                <LegalLink className="underline underline-offset-2 hover:text-rose-600 transition-colors">
+                <LegalLink className="underline underline-offset-2 hover:text-aypik-magenta transition-colors">
                   {doc}
                 </LegalLink>
               </p>

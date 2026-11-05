@@ -32,7 +32,7 @@ export default function TemperamentPicker({
                 <em className="not-italic">
                   {t(`temperament.poles.${family.id}From`)}
                 </em>
-                <span className="text-rose-500 font-bold" aria-hidden>
+                <span className="text-aypik-navy font-bold" aria-hidden>
                   →
                 </span>
                 <em className="not-italic">
