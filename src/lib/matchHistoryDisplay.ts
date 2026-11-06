@@ -174,6 +174,20 @@ export function countReciprocalMatches<
   return count;
 }
 
+/** Matchs encore dans la rubrique « 1er mot » : pas d’échange des deux côtés. */
+export function countFirstWordMatches(
+  matches: { kind?: string; profile: { id: string } }[],
+  peersWithChat: ReadonlySet<string>
+): number {
+  let count = 0;
+  for (const match of matches) {
+    if (match.kind === 'match' && !peersWithChat.has(match.profile.id)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 /** Sources brutes (likes/flashes/inbox/ruptures) pour le même total que le titre. */
 export type LiveReciprocalMatchSources = {
   sentLikeIds?: Iterable<string>;
