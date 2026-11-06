@@ -4109,6 +4109,13 @@ button.group[data-matched='true'] {
   line-height: 1.2;
 }
 
+.member-home-stat-aside {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b6f84;
+  line-height: 1.2;
+}
+
 .member-home-stat-bar {
   margin-top: 8px;
   height: 6px;

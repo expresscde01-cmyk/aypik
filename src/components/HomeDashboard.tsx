@@ -51,6 +51,8 @@ import {
 import { useMembership } from '@/lib/useMembership';
 import { formatDateFr, isFounderPeriodActive } from '@/lib/membership';
 import { useMatchesBoard } from '@/lib/matchesBoard';
+import { fetchLiveMatchCount } from '@/lib/liveMatchCount';
+import { countFirstWordMatches } from '@/lib/matchHistoryDisplay';
 import { profileCompletionPercent } from '@/lib/profileCompletion';
 import { requestDiscoverFilters } from '@/lib/discoverEntry';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
@@ -163,13 +165,27 @@ export default function HomeDashboard({
     () => profileCompletionPercent(viewerProfile),
     [viewerProfile]
   );
-  const newMatchCount = useMemo(() => {
+  const liveQuery = useQuery({
+    queryKey: queryKeys.liveMatchCount(user?.id || ''),
+    queryFn: () => fetchLiveMatchCount(user!.id),
+    enabled: Boolean(user?.id),
+    refetchOnMount: 'always',
+  });
+  const boardMatchTotal = useMemo(() => {
     if (!board.loaded) return null;
-    return board.matches.filter(
-      (match) =>
-        match.kind === 'match' && !board.peersWithChat.has(match.profile.id)
-    ).length;
+    let total = 0;
+    for (const match of board.matches) {
+      if (match.kind === 'match') total += 1;
+    }
+    return total;
+  }, [board.loaded, board.matches]);
+  const firstWordCount = useMemo(() => {
+    if (!board.loaded) return null;
+    return countFirstWordMatches(board.matches, board.peersWithChat);
   }, [board.loaded, board.matches, board.peersWithChat]);
+  const totalMatches = liveQuery.isSuccess
+    ? liveQuery.data
+    : boardMatchTotal;
   const founderKnown = !membershipLoading && !membershipError;
   const premiumUntilTime = status.founder_premium_until
     ? new Date(status.founder_premium_until).getTime()
@@ -182,10 +198,10 @@ export default function HomeDashboard({
       : '';
   const showFounderBadge = founderKnown && status.is_founder;
   const showProfileStat = completionPercent !== null;
-  const showNewMatches = newMatchCount !== null;
+  const showMatchesStat = firstWordCount !== null;
   const showPremiumUntil = premiumUntilLabel.length > 0;
   const statCount =
-    Number(showProfileStat) + Number(showNewMatches) + Number(showPremiumUntil);
+    Number(showProfileStat) + Number(showMatchesStat) + Number(showPremiumUntil);
   const showCompleteAction =
     completionPercent !== null && completionPercent < 100;
   const photoUrl = viewerProfile?.photo_url?.trim() || '';
@@ -556,9 +572,9 @@ export default function HomeDashboard({
                 <Heart aria-hidden="true" />
                 {t('matches.title')}
               </span>
-              {newMatchCount != null && newMatchCount > 0 && (
+              {firstWordCount != null && firstWordCount > 0 && (
                 <UnreadBadge
-                  count={newMatchCount}
+                  count={firstWordCount}
                   className="member-home-action-count"
                 />
               )}
@@ -595,12 +611,22 @@ export default function HomeDashboard({
                   </div>
                 </div>
               )}
-              {showNewMatches && (
+              {showMatchesStat && (
                 <div className="member-home-stat">
                   <p className="member-home-stat-label">
                     {t('discover.homeStatMatches')}
                   </p>
-                  <p className="member-home-stat-value">{newMatchCount}</p>
+                  <p className="member-home-stat-value">
+                    {totalMatches}
+                    {(firstWordCount ?? 0) > 0 && (
+                      <span className="member-home-stat-aside">
+                        {' '}
+                        {t('discover.homeStatFirstWord', {
+                          count: firstWordCount,
+                        })}
+                      </span>
+                    )}
+                  </p>
                 </div>
               )}
               {showPremiumUntil && (
