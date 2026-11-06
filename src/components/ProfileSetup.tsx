@@ -1776,8 +1776,8 @@ export default function ProfileSetup({
                       </>
                     ) : (
                       <>
+                        <Check className="w-4 h-4" />
                         {t('profile.saveProfile')}
-                        <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </span>
@@ -1825,8 +1825,8 @@ export default function ProfileSetup({
                     </>
                   ) : (
                     <>
+                      <Check className="w-4 h-4" />
                       {t('profile.saveProfile')}
-                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </span>
