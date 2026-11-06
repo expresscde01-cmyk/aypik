@@ -1046,7 +1046,7 @@ export default function ProfileSetup({
             />
           </div>
 
-          {!isSignup && greetingColorReady && (
+          {!isSignup && (
             <GreetingNameColorField
               name={displayName}
               gender={gender}
