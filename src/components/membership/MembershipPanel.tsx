@@ -1,5 +1,6 @@
 import { Award, Bell, Check, Gift, Heart, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { FounderPrivilegeHighlight } from '@/components/FounderPrivilegeHighlight';
 import { FounderBadge, PremiumBadge } from '@/components/membership/Badges';
 import { BoostPurchaseCard } from '@/components/membership/BoostPurchaseCard';
 import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
@@ -17,7 +18,6 @@ import {
   SITE_FREE_MODE,
   founderAfter6MonthsBody,
   founderBenefitBoostFirstMonth,
-  founderBenefitLifetimeDiscount,
   founderBenefitNoCard,
   founderBenefitUnlimitedLikes,
   founderOfferClosedShort,
@@ -128,8 +128,8 @@ function FounderActiveBanner({
             </li>
           ))}
         </ul>
-        <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-bold text-aypik-navy leading-snug shadow-sm">
-          {founderBenefitLifetimeDiscount()}
+        <p className="rounded-xl bg-white/75 border border-white/90 px-3 py-2.5 text-sm sm:text-base font-normal text-aypik-navy leading-snug shadow-sm">
+          <FounderPrivilegeHighlight />
         </p>
 
         {showCta && (

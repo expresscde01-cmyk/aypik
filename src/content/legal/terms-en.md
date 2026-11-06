@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: September 30, 2026.
+Last updated: November 6, 2026.
 
 ### Preamble
 
@@ -180,14 +180,14 @@ A native language is required if the member lives in a country that is not on th
 
 An honorary "Founding Member" status is granted to the first 1000 accounts created. Numbers are assigned in sequence, from 1 to 1000, and are never reassigned: deletion of an account results in the permanent loss of the badge and its number, without freeing a slot. Inactivity or pausing the account does not free a slot. Switching the Service to paid mode is not triggered by a fixed calendar date: it becomes definitive when the 1000th number is assigned.
 
-During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages and unlimited Likes and Flashes. The Founding Member also receives 2 Boosts of 24 hours, credited when paid plans launch and to be used within 6 months, on any plan. They are lost if the account is deleted.
+During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages and unlimited Likes and Flashes. The Founding Member also receives 2 Boosts of 24 hours, credited when paid plans launch, or at signup if that comes later, and to be used within the 6 months following that credit, on any plan. They are lost if the account is deleted.
 
-This status is honorary: beyond the Trial Period benefits described above and the Founder Discount set out below, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account is active; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
+This status is honorary: beyond the Trial Period benefits described above and the Founder Discount set out below, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account exists; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
 
-Founder Discount. Every Founding Member benefits, for as long as their account remains active within the meaning of Section 3.7, from a 50% reduction on the public price of any paid plan, option or Boost offered on the Service, applied at the time of subscription. The price is rounded to the nearest cent (a half-cent is rounded up). The price applied is the one displayed. This reduction does not create any obligation to subscribe. It is personal, non-transferable and cannot be combined with any other promotion, unless otherwise stated. It is permanently lost if the account is deleted, under the conditions of Section 8.2.
+Founder Discount. Every Founding Member benefits, for as long as their account exists, from a 50% reduction on the public price of any paid plan, option or Boost offered on the Service, applied at the time of subscription. The price is rounded to the nearest cent (a half-cent is rounded up). The price applied is the one displayed. This reduction does not create any obligation to subscribe. It is personal, non-transferable and cannot be combined with any other promotion, unless otherwise stated. It is permanently lost if the account is deleted, under the conditions of Section 8.2.
 
 <!-- founder-closed:start -->
-The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge for as long as the account exists, 50% lifetime discount, for as long as the account remains active (Section 3.7), on the entire site, unlimited Likes and Flashes during their launch period, 2 Boosts of 24 hours credited when paid plans launch). Deleting an account does not free a number.
+The Founding Member offer, reserved for the first 1000 accounts, is no longer available: all 1000 numbers have been assigned. The launch phase has ended, and the switch of the Service to paid mode is definitive. Founding Members keep the additional benefits already granted (Founder badge and 50% lifetime discount, for as long as the account exists, on the entire site, unlimited Likes and Flashes during their launch period, 2 Boosts of 24 hours credited when paid plans launch, to be used within the 6 months following that credit). Deleting an account does not free a number.
 <!-- founder-closed:end -->
 
 **4.2 Other users**
@@ -205,7 +205,7 @@ At the end of their Trial Period — six months for a Founding Member, one week 
 
 ### Article 5 — Boost and Premium Status
 
-The "Premium" badge is the display label for the Founder perks during their 6-month activation period (Article 4): it visually shows, on the profile, that these perks (unlimited Likes and Flashes) are currently active. It disappears at the end of the 6 months, unlike the honorary "Founding Member" title and its number, which remain displayed for as long as the account is active (Article 4). The validity of an activated Boost may be checked at any time from the "My Profile" page.
+The "Premium" badge is the display label for the Founder perks during their 6-month activation period (Article 4): it visually shows, on the profile, that these perks (unlimited Likes and Flashes) are currently active. It disappears at the end of the 6 months, unlike the honorary "Founding Member" title and its number, which remain displayed for as long as the account exists (Article 4). The validity of an activated Boost may be checked at any time from the "My Profile" page.
 
 ### Article 6 — Intellectual Property and User Content
 
@@ -301,7 +301,7 @@ A profile placed in "on hold" status (whether by you or by the other member) wit
 
 **Ended Matches.** A storage area for Matches archived or ended from a conversation that was already confirmed, sorted by who made the decision. If the user themselves initiated the archiving or the ending, the Match appears under "Matches you ended": the user may then restore the link (and access to messaging) or delete it permanently. If it was the other person who ended the link, the Match appears under "Matches they ended": only permanent deletion is possible, as restoring is not offered. The other member is also no longer shown on Discover or in the Home page suggestions for a period of 1 year (if a message had been exchanged before the ending) or 6 months (otherwise), under the conditions of Section 3.7.1.
 
-**Boost.** The Boost features your profile for 24 hours: it is among the profiles shown first in the Home page suggestions and on Discover (unless the viewing member has chosen a sort), to members whose search criteria match your profile. As several profiles may be featured at the same time, the order in which they appear varies. Founding Members receive 2 Boosts, credited when paid plans launch, to be used within 6 months, on any plan.
+**Boost.** The Boost features your profile for 24 hours: it is among the profiles shown first in the Home page suggestions and on Discover (unless the viewing member has chosen a sort), to members whose search criteria match your profile. As several profiles may be featured at the same time, the order in which they appear varies. Founding Members receive 2 Boosts, credited when paid plans launch, or at signup if that comes later, and to be used within the 6 months following that credit, on any plan.
 
 **Discover.** The page that lets you browse compatible profiles, according to the matching criteria and filtering described in Section 3.7.1.
 
@@ -326,7 +326,7 @@ No. One account per person and per email address, per Section 3.3.
 
 <!-- paid:start -->
 **What are the paid offers?**
-Four tiers: Basique (€9.99/month), Essentiel (€14.99/month), Confort (€19.99/month) and Premium (€24.99/month), plus à-la-carte options (Visibility, French-speaking or International reach — International already includes the French-speaking countries; the French-speaking option does not give access to International — and the 24-hour Boost). The 24-hour Boost is a paid option starting with the Essentiel plan, at €2.99 each. The Premium plan includes 2 free Boosts per month, which do not roll over; beyond that, €2.99 each. A Founding Member receives 50% off the public price of these plans, options and the Boost, for as long as their account remains active. The price is rounded to the nearest cent (a half-cent is rounded up). The price applied is the one displayed. The current detail is on the offers page. The General Terms of Sale below describe how to subscribe, cancel and withdraw.
+Four tiers: Basique (€9.99/month), Essentiel (€14.99/month), Confort (€19.99/month) and Premium (€24.99/month), plus à-la-carte options (Visibility, French-speaking or International reach — International already includes the French-speaking countries; the French-speaking option does not give access to International — and the 24-hour Boost). The 24-hour Boost is a paid option starting with the Essentiel plan, at €2.99 each. The Premium plan includes 2 free Boosts per month, which do not roll over; beyond that, €2.99 each. A Founding Member receives 50% off the public price of these plans, options and the Boost, for as long as their account exists. The price is rounded to the nearest cent (a half-cent is rounded up). The price applied is the one displayed. The current detail is on the offers page. The General Terms of Sale below describe how to subscribe, cancel and withdraw.
 <!-- paid:end -->
 
 **Will the Service become paid?**
@@ -368,6 +368,8 @@ It shows that the member is considered online (Section 3.8). This dot does not a
 
 <!-- paid:start -->
 ## General Terms of Sale
+
+Last updated: November 6, 2026.
 
 ### 6. French-speaking / International reach
 

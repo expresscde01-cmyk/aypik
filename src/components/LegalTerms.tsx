@@ -93,7 +93,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 30 septembre 2026.
+              Dernière mise à jour : 6 novembre 2026.
             </p>
           </header>
 
@@ -753,11 +753,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Pendant une Période d&apos;essai de six (6) mois à compter de
                 la création de son compte, le Membre Fondateur bénéficie, à
                 titre gracieux, sans engagement de durée, sans tacite
-                reconduction et sans aucune demande de carte bancaire :                 de
+                reconduction et sans aucune demande de carte bancaire : de
                 l&apos;envoi de messages, ainsi que de likes et Flash illimités.
                 Il reçoit en outre 2 Boosts de 24 h, crédités au lancement des
-                offres payantes et à utiliser dans les 6 mois, quelle que soit
-                l&apos;offre. Ils sont perdus en cas de suppression du compte.
+                offres payantes, ou à l&apos;inscription si elle a lieu après,
+                et à utiliser dans les 6 mois qui suivent ce crédit, quelle que
+                soit l&apos;offre. Ils sont perdus en cas de suppression du compte.
               </p>
               <p>
                 Ce statut est honorifique : au-delà des avantages de la
@@ -765,7 +766,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Fondateur prévue ci-dessous, il n&apos;ouvre droit à aucun
                 remboursement, cession ou conversion en numéraire. Le
                 titre et le numéro associé restent affichés tant que le
-                compte est actif ; ils sont définitivement perdus en cas de
+                compte existe ; ils sont définitivement perdus en cas de
                 désinscription ou de suppression du compte, dans les
                 conditions de l&apos;article 8.2. Un compte dont la visibilité
                 est restreinte ou qui est mis en pause au sens de
@@ -773,7 +774,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 Réduction Fondateur. Tout Membre Fondateur bénéficie, tant
-                que son compte demeure actif au sens de l&apos;article 3.7,
+                que son compte existe,
                 d&apos;une réduction de 50 % sur le tarif public de toute
                 offre, option ou Boost payant proposé sur le Service,
                 appliquée au moment de la souscription. Le prix est arrondi
@@ -849,7 +850,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               actuellement actifs. Il disparaît
               à l&apos;issue des 6 mois, à la différence du titre
               honorifique « Membre Fondateur » et de son numéro, qui restent
-              affichés tant que le compte est actif (article 4). La validité
+              affichés tant que le compte existe (article 4). La validité
               d&apos;un Boost activé est consultable à tout moment depuis la page « Mon
               profil ».
             </p>
@@ -1335,9 +1336,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 consulte a choisi un tri, auprès des membres pour lesquels
                 les critères de mise en relation correspondent. Plusieurs
                 profils pouvant être mis en avant en même temps, leur ordre
-                d&apos;apparition varie.                 Les Membres Fondateurs reçoivent
-                2 Boosts, crédités au lancement des offres payantes, à
-                utiliser dans les 6 mois, quelle que soit l&apos;offre.
+                d&apos;apparition varie. Les Membres Fondateurs reçoivent
+                2 Boosts, crédités au lancement des offres payantes, ou à
+                l&apos;inscription si elle a lieu après, et à utiliser dans
+                les 6 mois qui suivent ce crédit, quelle que soit l&apos;offre.
               </p>
             </div>
             <div>
@@ -1441,7 +1443,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 par mois, non reportés ; au-delà, 2,99&nbsp;€ l&apos;unité.
                 Le Membre Fondateur bénéficie
                 de 50 % sur le tarif public de ces offres, des options et du
-                Boost, tant que son compte reste actif. Le prix est arrondi
+                Boost, tant que son compte existe. Le prix est arrondi
                 au centime le plus proche (un demi-centime est arrondi
                 au-dessus). Le prix appliqué est celui affiché. Le détail à jour
                 figure sur la page des offres. Les CGV ci-dessous décrivent
@@ -1599,6 +1601,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales de Vente (CGV)
             </h3>
             <p className="text-xs text-gray-500">
+              Dernière mise à jour : 6 novembre 2026.
+            </p>
+            <p className="text-xs text-gray-500">
               Squelette publié pour information. À faire relire par un
               professionnel du droit avant toute commercialisation.
             </p>
@@ -1655,7 +1660,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 palier                 payant. Le badge et le numéro restent affichés tant que
                 le compte n&apos;est pas supprimé. Il bénéficie d&apos;une
                 réduction de 50 % sur le tarif public de toute offre, option
-                ou Boost payant, tant que son compte demeure actif, y compris
+                ou Boost payant, tant que son compte existe, y compris
                 après les six mois où le badge devient honorifique. Le prix
                 est arrondi au centime le plus proche (un demi-centime est
                 arrondi au-dessus). Le prix appliqué est celui affiché.
