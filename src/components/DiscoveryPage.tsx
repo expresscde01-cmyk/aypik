@@ -94,6 +94,7 @@ import {
   sortDiscoveryFilterResults,
 } from '@/lib/discoverySort';
 import { useSuggestionPrefs, syncDiscoverPrefs, flushDiscoverPrefs } from '@/lib/suggestionPrefs';
+import { consumeDiscoverFiltersRequest } from '@/lib/discoverEntry';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ChatScreen from '@/components/ChatScreen';
 import ProfilePhoto from '@/components/ProfilePhoto';
@@ -1507,6 +1508,12 @@ export default function DiscoveryPage({
       setVisitEpoch((n) => n + 1);
     }
   }, [pageActive, clearDiscoverSession]);
+
+  useEffect(() => {
+    if (!pageActive) return;
+    if (!consumeDiscoverFiltersRequest()) return;
+    setShowFilters(true);
+  }, [pageActive]);
 
   if (userId) syncDiscoverPrefs(userId, prefs);
 
