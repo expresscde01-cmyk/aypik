@@ -69,6 +69,38 @@ export function orderTemperamentKeys(keys: readonly string[]): string[] {
   return TEMPERAMENT_KEY_ORDER.filter((key) => allowed.has(key));
 }
 
+export function temperamentFamilyOf(key: string): TemperamentFamily | null {
+  return (
+    TEMPERAMENT_FAMILIES.find((family) =>
+      (family.keys as readonly string[]).includes(key)
+    ) ?? null
+  );
+}
+
+/**
+ * Un seul choix par échelle. Un second clic sur le choix actif le retire.
+ * Si l'échelle en contient déjà plusieurs, le clic n'en garde qu'un.
+ * Les autres échelles ne sont pas réécrites.
+ */
+export function chooseTemperamentKey(
+  current: readonly string[],
+  key: string
+): string[] {
+  const family = temperamentFamilyOf(key);
+  if (!family) return sanitizeTemperament(current);
+  const inFamily = (item: string) =>
+    (family.keys as readonly string[]).includes(item);
+  const selectedInFamily = current.filter(inFamily);
+  const rest = current.filter((item) => !inFamily(item));
+  if (selectedInFamily.length === 1 && selectedInFamily[0] === key) {
+    return sanitizeTemperament(rest);
+  }
+  if (selectedInFamily.length === 0 && rest.length >= MAX_TEMPERAMENT) {
+    return sanitizeTemperament(current);
+  }
+  return sanitizeTemperament([...rest, key]);
+}
+
 function resolveLocale(lang?: string | null): string {
   return (lang || i18n.language || 'fr').slice(0, 2).toLowerCase();
 }

@@ -6,6 +6,7 @@ import {
   sanitizeTemperament,
   orderTemperamentKeys,
   getTemperamentLabel,
+  chooseTemperamentKey,
 } from './temperament.ts';
 
 test('sanitizeTemperament : clés connues, sans doublon, 6 max', () => {
@@ -36,6 +37,32 @@ test('orderTemperamentKeys : rubriques puis graduation, pas l’ordre de sélect
     'romantic',
     'curious',
   ]);
+});
+
+test('chooseTemperamentKey : un seul choix par échelle, second clic retire', () => {
+  assert.deepEqual(chooseTemperamentKey(['calm'], 'settled'), ['settled']);
+  assert.deepEqual(chooseTemperamentKey(['settled'], 'settled'), []);
+  assert.deepEqual(chooseTemperamentKey(['calm', 'settled'], 'settled'), [
+    'settled',
+  ]);
+  assert.deepEqual(
+    chooseTemperamentKey(['settled', 'sociable'], 'listener'),
+    ['settled', 'sociable', 'listener']
+  );
+  assert.deepEqual(
+    chooseTemperamentKey(
+      ['calm', 'settled', 'homebody', 'introvert', 'discreet', 'listener'],
+      'distant'
+    ),
+    ['calm', 'settled', 'homebody', 'introvert', 'discreet', 'listener']
+  );
+  assert.deepEqual(
+    chooseTemperamentKey(
+      ['calm', 'settled', 'homebody', 'introvert', 'discreet', 'listener'],
+      'dynamic'
+    ),
+    ['homebody', 'introvert', 'discreet', 'listener', 'dynamic']
+  );
 });
 
 test('getTemperamentLabel : accord selon le genre du profil, EN sans accord', () => {

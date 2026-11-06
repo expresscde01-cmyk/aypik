@@ -26,6 +26,39 @@ test('filtre tempérament : OU dans une famille', () => {
   assert.equal(profileMatchesTemperamentFilter(['hyper'], filter), false);
 });
 
+test('un seul choix par échelle reste cherchable', () => {
+  const profile = [
+    'settled',
+    'sociable',
+    'listener',
+    'tender',
+    'curious',
+    'spontaneous',
+  ];
+  assert.equal(
+    profileMatchesTemperamentFilter(profile, { energy: ['settled'] }),
+    true
+  );
+  assert.equal(
+    profileMatchesTemperamentFilter(profile, { energy: ['calm', 'settled'] }),
+    true
+  );
+  assert.equal(
+    profileMatchesTemperamentFilter(profile, {
+      energy: ['settled'],
+      heart: ['tender'],
+    }),
+    true
+  );
+  assert.equal(
+    profileMatchesTemperamentFilter(profile, {
+      energy: ['hyper'],
+      heart: ['tender'],
+    }),
+    false
+  );
+});
+
 test('filtre tempérament : ET entre familles', () => {
   const filter = { energy: ['calm'], heart: ['tender'] };
   assert.equal(

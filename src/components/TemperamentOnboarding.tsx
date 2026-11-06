@@ -9,17 +9,12 @@ import {
 } from '@/lib/profileSaveError';
 import {
   MAX_TEMPERAMENT,
+  chooseTemperamentKey,
   sanitizeTemperament,
 } from '@/lib/temperament';
 import type { ProfileGender } from '@/lib/dating';
 import TemperamentPicker from '@/components/TemperamentPicker';
 import TipBulb from '@/components/TipBulb';
-
-function toggleKey(current: string[], key: string): string[] {
-  if (current.includes(key)) return current.filter((item) => item !== key);
-  if (current.length >= MAX_TEMPERAMENT) return current;
-  return [...current, key];
-}
 
 export default function TemperamentOnboarding({
   gender,
@@ -92,7 +87,10 @@ export default function TemperamentOnboarding({
           <TemperamentPicker
             selected={selected}
             gender={gender}
-            onToggle={(key) => setSelected((prev) => toggleKey(prev, key))}
+            selection="radio"
+            onToggle={(key) =>
+              setSelected((prev) => chooseTemperamentKey(prev, key))
+            }
           />
           {error && (
             <div className="mt-5 flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-700 text-sm">

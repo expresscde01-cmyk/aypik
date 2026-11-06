@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   MAX_TEMPERAMENT,
+  chooseTemperamentKey,
   sanitizeTemperament,
 } from '@/lib/temperament';
 import type { ProfileGender } from '@/lib/dating';
@@ -10,9 +11,7 @@ import TemperamentPicker from '@/components/TemperamentPicker';
 import TipBulb from '@/components/TipBulb';
 
 export function toggleTemperamentKey(current: string[], key: string): string[] {
-  if (current.includes(key)) return current.filter((item) => item !== key);
-  if (current.length >= MAX_TEMPERAMENT) return current;
-  return [...current, key];
+  return chooseTemperamentKey(current, key);
 }
 
 export default function TemperamentProfileCard({
@@ -55,6 +54,7 @@ export default function TemperamentProfileCard({
       <TemperamentPicker
         selected={selectedKeys}
         gender={gender}
+        selection="radio"
         onToggle={onToggle}
       />
       {error && (
