@@ -494,8 +494,10 @@ export default function HomeDashboard({
         )}
       </header>
 
-      <div className="max-w-2xl mx-auto w-full px-4 pt-8 pb-10 space-y-8">
+      <div className="member-home-stage">
         <section className="member-home-banner animate-fadeIn">
+          <div className="member-home-banner-frame">
+            <div className="member-home-banner-main">
           <div className="member-home-banner-top">
             <div className="member-home-avatar">
               {photoUrl ? (
@@ -564,6 +566,7 @@ export default function HomeDashboard({
               )}
             </button>
           </div>
+            </div>
           {statCount > 0 && (
             <div
               className={
@@ -610,8 +613,10 @@ export default function HomeDashboard({
               )}
             </div>
           )}
+          </div>
         </section>
 
+        <div className="member-home-body">
         <section className="space-y-4">
           <div className="flex items-end justify-between gap-3">
             <div>
@@ -814,6 +819,7 @@ export default function HomeDashboard({
             </ul>
           )}
         </section>
+        </div>
       </div>
 
       {openProfile && (
