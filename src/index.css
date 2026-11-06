@@ -219,6 +219,84 @@ body {
   width: 8px;
 }
 
+.profile-save-check {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transform-origin: center;
+}
+
+.profile-save-check svg {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+}
+
+.profile-save-check--success {
+  color: #1e8a5a;
+  transform: scale(1.2);
+  animation: profile-save-check-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.profile-save-check--success::before,
+.profile-save-check--leaving::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+
+.profile-save-check--leaving {
+  color: #fff;
+  transform: scale(1);
+  transition: transform 300ms ease, color 300ms ease;
+}
+
+.profile-save-check--leaving::before {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+@keyframes profile-save-check-pop {
+  0% {
+    transform: scale(1);
+  }
+  65% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-save-check--success {
+    animation: none;
+    transform: none;
+  }
+
+  .profile-save-check--success::before,
+  .profile-save-check--leaving::before {
+    content: none;
+  }
+
+  .profile-save-check--leaving {
+    transition: none;
+  }
+}
+
 button.btn-secondary,
 a.btn-secondary {
   background: var(--aypik-white);
