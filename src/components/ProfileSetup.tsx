@@ -280,6 +280,7 @@ export default function ProfileSetup({
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
+  const [photoNoticeLeaving, setPhotoNoticeLeaving] = useState(false);
   const [customInterest, setCustomInterest] = useState('');
   const [gender, setGender] = useState<ProfileGender | null>(null);
   const [genderLocked, setGenderLocked] = useState(false);
@@ -310,6 +311,7 @@ export default function ProfileSetup({
   const savedProfileRef = useRef<ProfileBaseline | null>(null);
   const saveInViewRef = useRef(true);
   const photoUploadGen = useRef(0);
+  const photoNoticeTimers = useRef<number[]>([]);
   const [saveButtonInView, setSaveButtonInView] = useState(true);
 
   useEffect(() => {
@@ -590,6 +592,34 @@ export default function ProfileSetup({
     setInterests((prev) => prev.filter((i) => i !== interest));
   };
 
+  const clearPhotoNoticeTimers = () => {
+    for (const id of photoNoticeTimers.current) window.clearTimeout(id);
+    photoNoticeTimers.current = [];
+  };
+
+  const dismissPhotoNotice = () => {
+    clearPhotoNoticeTimers();
+    setPhotoNotice(null);
+    setPhotoNoticeLeaving(false);
+  };
+
+  const showPhotoSaved = () => {
+    clearPhotoNoticeTimers();
+    setPhotoNoticeLeaving(false);
+    setPhotoNotice(t('profile.photoUpdated'));
+    const fadeAt = window.setTimeout(() => {
+      setPhotoNoticeLeaving(true);
+      const hideAt = window.setTimeout(() => {
+        setPhotoNotice(null);
+        setPhotoNoticeLeaving(false);
+      }, 400);
+      photoNoticeTimers.current.push(hideAt);
+    }, 3000);
+    photoNoticeTimers.current.push(fadeAt);
+  };
+
+  useEffect(() => clearPhotoNoticeTimers, []);
+
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     e.target.value = '';
@@ -598,7 +628,7 @@ export default function ProfileSetup({
     const validationError = validateProfilePhoto(file);
     if (validationError) {
       setPhotoError(validationError);
-      setPhotoNotice(null);
+      dismissPhotoNotice();
       if (!allowAccountDeletion) setError(validationError);
       return;
     }
@@ -607,7 +637,7 @@ export default function ProfileSetup({
     setError(null);
 
     if (!allowAccountDeletion || !profileExists || !user) {
-      setPhotoNotice(null);
+      dismissPhotoNotice();
       setPhotoFile(file);
       setPhotoFileName(file.name);
       return;
@@ -616,7 +646,7 @@ export default function ProfileSetup({
     const generation = ++photoUploadGen.current;
     setPhotoFile(file);
     setPhotoFileName(null);
-    setPhotoNotice(null);
+    dismissPhotoNotice();
     setPhotoUploading(true);
 
     void (async () => {
@@ -640,12 +670,7 @@ export default function ProfileSetup({
         if (updateError) throw updateError;
         setPhotoUrl(url);
         setPhotoFile(null);
-        setPhotoNotice(t('profile.photoUpdated'));
-        window.setTimeout(() => {
-          setPhotoNotice((current) =>
-            current === t('profile.photoUpdated') ? null : current
-          );
-        }, 4000);
+        showPhotoSaved();
         onDone();
       } catch (err) {
         if (generation !== photoUploadGen.current) return;
@@ -1162,21 +1187,34 @@ export default function ProfileSetup({
             }
           >
           {/* Photo */}
+          <div>
           <div className="flex items-center gap-4">
-            <div className="profile-photo-frame w-20 h-20 rounded-2xl overflow-hidden bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
-              {photoPreview || photoUrl ? (
-                <img
-                  src={photoPreview || photoUrl}
-                  alt={t('profile.photoPreview')}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Camera className="w-7 h-7 text-aypik-text-muted" />
-              )}
-              {photoUploading && (
-                <span className="profile-photo-busy" role="status">
-                  <Loader2 className="w-6 h-6 animate-spin text-aypik-navy" />
-                  <span className="sr-only">{t('profile.uploadingPhoto')}</span>
+            <div className="profile-photo-frame w-20 h-20 rounded-2xl bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
+              <div className="profile-photo-media">
+                {photoPreview || photoUrl ? (
+                  <img
+                    src={photoPreview || photoUrl}
+                    alt={t('profile.photoPreview')}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Camera className="w-7 h-7 text-aypik-text-muted" />
+                )}
+                {photoUploading && (
+                  <span className="profile-photo-busy" role="status">
+                    <Loader2 className="w-5 h-5 animate-spin text-aypik-navy" aria-hidden="true" />
+                    <span className="sr-only">{t('profile.uploadingPhoto')}</span>
+                  </span>
+                )}
+              </div>
+              {photoNotice && (
+                <span
+                  className={`profile-photo-check profile-photo-saved${
+                    photoNoticeLeaving ? ' profile-photo-saved--out' : ''
+                  }`}
+                  aria-hidden="true"
+                >
+                  <Check strokeWidth={3} />
                 </span>
               )}
             </div>
@@ -1184,6 +1222,18 @@ export default function ProfileSetup({
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 {t('profile.photo')}
               </label>
+              {photoNotice && (
+                <p
+                  className={`profile-photo-pill profile-photo-saved${
+                    photoNoticeLeaving ? ' profile-photo-saved--out' : ''
+                  }`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Check strokeWidth={3} aria-hidden="true" />
+                  {photoNotice}
+                </p>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1217,17 +1267,13 @@ export default function ProfileSetup({
                   ? photoFileName
                   : t('profile.photoFormatsHint')}
               </p>
-              {photoError && (
-                <p className="mt-1.5 text-sm text-red-600" role="alert">
-                  {photoError}
-                </p>
-              )}
-              {photoNotice && (
-                <p className="mt-1.5 text-sm font-medium text-emerald-700" role="status">
-                  {photoNotice}
-                </p>
-              )}
             </div>
+          </div>
+          {photoError && (
+            <p className="profile-photo-error" role="alert">
+              {photoError}
+            </p>
+          )}
           </div>
 
           <div className="h-px bg-gray-100" />
