@@ -28,7 +28,6 @@ import TemperamentProfileCard, {
 import SpokenLanguagesProfileCard from '@/components/SpokenLanguagesProfileCard';
 import GreetingNameColorField from '@/components/GreetingNameColorField';
 import EmailNotificationsProfileCard from '@/components/EmailNotificationsProfileCard';
-import ProfileSaveIcon, { type ProfileSaveCue } from '@/components/ProfileSaveCheck';
 import ProfileSaveScoopFace from '@/components/ProfileSaveScoop';
 import { isNativeLanguageRequired } from '@/lib/isNativeLanguageRequired';
 import { sanitizeTemperament } from '@/lib/temperament';
@@ -273,8 +272,6 @@ export default function ProfileSetup({
     SpokenLanguage[]
   >([]);
   const [profileSaved, setProfileSaved] = useState(false);
-  const [saveCue, setSaveCue] = useState<ProfileSaveCue>('idle');
-  const saveCueTimers = useRef<number[]>([]);
   const [temperamentError, setTemperamentError] = useState<string | null>(null);
   const [languagesError, setLanguagesError] = useState<string | null>(null);
   const [interestsError, setInterestsError] = useState<string | null>(null);
@@ -822,27 +819,8 @@ export default function ProfileSetup({
     }
   };
 
-  const clearSaveCueTimers = () => {
-    for (const id of saveCueTimers.current) window.clearTimeout(id);
-    saveCueTimers.current = [];
-  };
-
-  const beginSaveConfirmation = () => {
-    clearSaveCueTimers();
-    setSaveCue('success');
-    const leaveAt = window.setTimeout(() => {
-      setSaveCue('leaving');
-      const idleAt = window.setTimeout(() => setSaveCue('idle'), 300);
-      saveCueTimers.current.push(idleAt);
-    }, 1900);
-    saveCueTimers.current.push(leaveAt);
-  };
-
-  useEffect(() => clearSaveCueTimers, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (saveCue !== 'idle') return;
     setError(null);
     setCityError(null);
     setInterestsError(null);
@@ -1054,7 +1032,6 @@ export default function ProfileSetup({
         profileBaselineRef.current = snapshotFromBaseline(savedBaseline);
         setProfileSaved(true);
         window.setTimeout(() => setProfileSaved(false), 4000);
-        beginSaveConfirmation();
       }
       onDone();
     } catch (err) {
@@ -1790,20 +1767,23 @@ export default function ProfileSetup({
                 >
                   <ProfileSaveScoopFace />
                   <span className="inline-flex items-center justify-center gap-2">
-                    <ProfileSaveIcon saving={saving} cue={saveCue} />
-                    {saving
-                      ? photoFile
-                        ? t('profile.uploadingPhoto')
-                        : t('profile.saving')
-                      : t('profile.saveProfile')}
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {photoFile
+                          ? t('profile.uploadingPhoto')
+                          : t('profile.saving')}
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        {t('profile.saveProfile')}
+                      </>
+                    )}
                   </span>
                 </button>
                 {profileSaved && (
-                  <span
-                    className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700"
-                    role="status"
-                    aria-live="polite"
-                  >
+                  <span className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700">
                     <Check className="w-4 h-4" />
                     {t('profile.saved')}
                   </span>
@@ -1812,20 +1792,10 @@ export default function ProfileSetup({
             </>
           )}
         </form>
-        {allowAccountDeletion &&
-          !saveButtonInView &&
-          (profileDirty || saving || saveCue !== 'idle') && (
-          <div
-            className="profile-save-bar"
-            {...(profileDirty
-              ? { role: 'status' as const, 'aria-live': 'polite' as const }
-              : {})}
-          >
-            {profileDirty && (
-              <p className="profile-save-bar-label">{t('profile.unsavedChanges')}</p>
-            )}
+        {allowAccountDeletion && profileDirty && !saveButtonInView && (
+          <div className="profile-save-bar" role="status" aria-live="polite">
+            <p className="profile-save-bar-label">{t('profile.unsavedChanges')}</p>
             <div className="profile-save-bar-actions">
-              {profileDirty && (
               <button
                 type="button"
                 className="profile-save-bar-cancel"
@@ -1834,7 +1804,6 @@ export default function ProfileSetup({
               >
                 {t('common.cancel')}
               </button>
-              )}
               <button
                 type="submit"
                 form="profile-setup-form"
@@ -1847,16 +1816,23 @@ export default function ProfileSetup({
                 className="px-6 py-3.5 btn-primary disabled:opacity-60"
               >
                 <span className="inline-flex items-center justify-center gap-2">
-                  <ProfileSaveIcon saving={saving} cue={saveCue} />
-                  {saving
-                    ? photoFile
-                      ? t('profile.uploadingPhoto')
-                      : t('profile.saving')
-                    : t('profile.saveProfile')}
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {photoFile
+                        ? t('profile.uploadingPhoto')
+                        : t('profile.saving')}
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      {t('profile.saveProfile')}
+                    </>
+                  )}
                 </span>
               </button>
             </div>
-            {profileDirty && error && (
+            {error && (
               <p className="profile-save-bar-error" role="alert">
                 {error}
               </p>
@@ -1866,9 +1842,8 @@ export default function ProfileSetup({
         {allowAccountDeletion &&
           profileSaved &&
           !profileDirty &&
-          saveCue === 'idle' &&
           !saveButtonInView && (
-            <div className="profile-save-bar profile-save-bar--done">
+            <div className="profile-save-bar profile-save-bar--done" role="status">
               <Check className="w-4 h-4" />
               <span>{t('profile.saved')}</span>
             </div>
