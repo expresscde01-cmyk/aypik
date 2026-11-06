@@ -518,13 +518,15 @@ export default function HomeDashboard({
               />
             </div>
             <div className="member-home-banner-copy">
-              <MemberGreeting
-                as="h1"
-                name={displayName}
-                color={resolveGreetingNameColor(greetingNameColor, gender)}
-                className="member-home-hello text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
-              />
-              <p className="member-home-banner-intro">{t('discover.homeIntro')}</p>
+              <div className="member-home-banner-lead">
+                <MemberGreeting
+                  as="h1"
+                  name={displayName}
+                  color={resolveGreetingNameColor(greetingNameColor, gender)}
+                  className="member-home-hello text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+                />
+                <p className="member-home-banner-intro">{t('discover.homeIntro')}</p>
+              </div>
               {showFounderBadge && (
                 <FounderBadge number={status.founder_number} />
               )}
