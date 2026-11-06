@@ -3810,6 +3810,14 @@ button.group[data-matched='true'] {
   gap: 8px;
 }
 
+.member-home-banner-lead {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  gap: 8px;
+  min-width: 0;
+}
+
 .member-home-banner-intro {
   margin: 0;
   max-width: 28rem;
@@ -3918,14 +3926,46 @@ button.group[data-matched='true'] {
       0 7px 16.33px rgba(222, 6, 60, 0.3);
   }
 
+  /* Mêmes bandes que le petit bouton : 30px et 8px, opacité inchangée. */
   .member-home-banner-actions .btn-primary::before {
-    left: 30.33px;
-    width: 35px;
+    left: 26px;
+    width: 30px;
   }
 
   .member-home-banner-actions .btn-primary::after {
-    left: 74.67px;
-    width: 9.33px;
+    left: 64px;
+    width: 8px;
+  }
+
+  .member-home-banner-top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+
+  .member-home-banner-copy {
+    display: contents;
+  }
+
+  .member-home-avatar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    transform: translateY(32px);
+  }
+
+  .member-home-banner-lead,
+  .member-home-banner-copy > :not(.member-home-banner-lead) {
+    grid-column: 2;
+  }
+
+  .member-home-banner-lead + * {
+    margin-top: 8px;
+  }
+
+  .member-home-banner-actions {
+    margin-top: 22px;
   }
 
   .member-home-banner-actions .btn-secondary {
