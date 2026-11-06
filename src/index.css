@@ -166,6 +166,59 @@ body {
   filter: none;
 }
 
+/* Enregistrer mon profil (bas de fiche) : haut creusé, bas inchangé. */
+.profile-save-scoop.btn-primary {
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.profile-save-scoop.btn-primary::before,
+.profile-save-scoop.btn-primary::after {
+  content: none;
+}
+
+.profile-save-scoop.btn-primary > .profile-save-scoop-shadow {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: -6px;
+  bottom: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(222, 6, 60, 0.3));
+}
+
+.profile-save-scoop-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--aypik-logo-gradient);
+  clip-path: inset(6px 0 0 0);
+}
+
+.profile-save-scoop-face::before,
+.profile-save-scoop-face::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: calc(6.6px - 10%);
+  height: calc(120% - 7.2px);
+  transform: skewX(-28deg);
+  background: rgba(255, 255, 255, 0.42);
+  pointer-events: none;
+}
+
+.profile-save-scoop-face::before {
+  left: 26px;
+  width: 30px;
+}
+
+.profile-save-scoop-face::after {
+  left: 64px;
+  width: 8px;
+}
+
 button.btn-secondary,
 a.btn-secondary {
   background: var(--aypik-white);

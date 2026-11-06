@@ -28,6 +28,7 @@ import TemperamentProfileCard, {
 import SpokenLanguagesProfileCard from '@/components/SpokenLanguagesProfileCard';
 import GreetingNameColorField from '@/components/GreetingNameColorField';
 import EmailNotificationsProfileCard from '@/components/EmailNotificationsProfileCard';
+import ProfileSaveScoopFace from '@/components/ProfileSaveScoop';
 import { isNativeLanguageRequired } from '@/lib/isNativeLanguageRequired';
 import { sanitizeTemperament } from '@/lib/temperament';
 import {
@@ -1762,8 +1763,9 @@ export default function ProfileSetup({
                     hasChildren ||
                     (!genderLocked && gender !== 'homme' && gender !== 'femme')
                   }
-                  className="w-full py-3.5 btn-primary disabled:opacity-60"
+                  className="profile-save-scoop w-full py-3.5 btn-primary disabled:opacity-60"
                 >
+                  <ProfileSaveScoopFace />
                   <span className="inline-flex items-center justify-center gap-2">
                     {saving ? (
                       <>
