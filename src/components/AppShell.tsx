@@ -225,29 +225,34 @@ function AppShellView() {
     [user]
   );
 
-  const loadViewerProfile = useCallback(async () => {
+  const loadViewerProfile = useCallback(async (options?: { silent?: boolean }) => {
     if (!user) return null;
+    const silent = options?.silent === true;
     const gen = ++profileLoadGenRef.current;
-    setProfileLoading(true);
-    setProfileLoadError(null);
+    if (!silent) {
+      setProfileLoading(true);
+      setProfileLoadError(null);
+    }
     const { data, error } = await fetchMyProfile();
     if (gen !== profileLoadGenRef.current) return null;
     if (error) {
-      setProfile(null);
-      setProfileLoadError(
-        userErrorMessage(error, t('common.profileLoadError'))
-      );
-      setProfileLoading(false);
+      if (!silent) {
+        setProfile(null);
+        setProfileLoadError(
+          userErrorMessage(error, t('common.profileLoadError'))
+        );
+        setProfileLoading(false);
+      }
       return null;
     }
     const row = (data as Profile | null) ?? null;
     setProfile(row);
-    setProfileLoading(false);
+    if (!silent) setProfileLoading(false);
     return row;
   }, [user]);
 
-  const reloadViewerProfile = useCallback(async () => {
-    const row = await loadViewerProfile();
+  const reloadViewerProfile = useCallback(async (options?: { silent?: boolean }) => {
+    const row = await loadViewerProfile(options);
     if (row) setProfileEpoch((n) => n + 1);
     return row;
   }, [loadViewerProfile]);
@@ -731,7 +736,7 @@ function AppShellView() {
                 );
               }}
               onDone={async () => {
-                await reloadViewerProfile();
+                await reloadViewerProfile({ silent: true });
               }}
             />
           </div>

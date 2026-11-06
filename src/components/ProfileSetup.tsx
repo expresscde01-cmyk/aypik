@@ -1775,15 +1775,15 @@ export default function ProfileSetup({
                           : t('profile.saving')}
                       </>
                     ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        {t('profile.saveProfile')}
-                      </>
+                      t('profile.saveProfile')
                     )}
                   </span>
                 </button>
                 {profileSaved && (
-                  <span className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700">
+                  <span
+                    className="inline-flex items-center justify-center gap-1 w-full text-sm font-medium text-emerald-700"
+                    role={saveButtonInView ? 'status' : undefined}
+                  >
                     <Check className="w-4 h-4" />
                     {t('profile.saved')}
                   </span>
@@ -1824,10 +1824,7 @@ export default function ProfileSetup({
                         : t('profile.saving')}
                     </>
                   ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      {t('profile.saveProfile')}
-                    </>
+                    t('profile.saveProfile')
                   )}
                 </span>
               </button>
