@@ -3616,6 +3616,34 @@ button.group[data-matched='true'] {
   font-weight: 700;
 }
 
+.profile-heading-mark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(27, 31, 59, 0.1);
+}
+
+.profile-heading-mark svg {
+  width: 30px;
+  height: 30px;
+  color: #1b1f3b;
+}
+
+.profile-heading-mark img {
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  height: 24px;
+  width: auto;
+  display: block;
+}
+
 /* Turnstile interaction-only (page Vérifie ton numéro) : 0 px tant
    qu’aucun défi n’est demandé, puis s’agrandit sans casser la carte. */
 .phone-turnstile {

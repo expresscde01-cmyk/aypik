@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Heart,
+  UserRound,
   AlertCircle,
   Check,
   Baby,
@@ -901,8 +901,15 @@ export default function ProfileSetup({
         {canEditProfile && (
           <>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl surface-primary mb-3 animate-pop">
-            <Heart className="w-7 h-7 text-white" fill="white" />
+          <div className="profile-heading-mark" aria-hidden="true">
+            <UserRound strokeWidth={1.8} />
+            <img
+              src="/aypik-coeur.svg?v=1"
+              alt=""
+              width={608}
+              height={539}
+              draggable={false}
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('profile.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">
