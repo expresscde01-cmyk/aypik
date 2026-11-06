@@ -51,7 +51,7 @@ import {
 import { useMembership } from '@/lib/useMembership';
 import { formatDateFr, isFounderPeriodActive } from '@/lib/membership';
 import { useMatchesBoard } from '@/lib/matchesBoard';
-import { fetchLiveMatchCount } from '@/lib/liveMatchCount';
+import { useLiveMatchCount } from '@/lib/liveMatchCount';
 import { countFirstWordMatches } from '@/lib/matchHistoryDisplay';
 import { profileCompletionPercent } from '@/lib/profileCompletion';
 import { requestDiscoverFilters } from '@/lib/discoverEntry';
@@ -165,27 +165,11 @@ export default function HomeDashboard({
     () => profileCompletionPercent(viewerProfile),
     [viewerProfile]
   );
-  const liveQuery = useQuery({
-    queryKey: queryKeys.liveMatchCount(user?.id || ''),
-    queryFn: () => fetchLiveMatchCount(user!.id),
-    enabled: Boolean(user?.id),
-    refetchOnMount: 'always',
-  });
-  const boardMatchTotal = useMemo(() => {
-    if (!board.loaded) return null;
-    let total = 0;
-    for (const match of board.matches) {
-      if (match.kind === 'match') total += 1;
-    }
-    return total;
-  }, [board.loaded, board.matches]);
+  const liveMatchCount = useLiveMatchCount();
   const firstWordCount = useMemo(() => {
     if (!board.loaded) return null;
     return countFirstWordMatches(board.matches, board.peersWithChat);
   }, [board.loaded, board.matches, board.peersWithChat]);
-  const totalMatches = liveQuery.isSuccess
-    ? liveQuery.data
-    : boardMatchTotal;
   const founderKnown = !membershipLoading && !membershipError;
   const premiumUntilTime = status.founder_premium_until
     ? new Date(status.founder_premium_until).getTime()
@@ -572,9 +556,9 @@ export default function HomeDashboard({
                 <Heart aria-hidden="true" />
                 {t('matches.title')}
               </span>
-              {firstWordCount != null && firstWordCount > 0 && (
+              {liveMatchCount > 0 && (
                 <UnreadBadge
-                  count={firstWordCount}
+                  count={liveMatchCount}
                   className="member-home-action-count"
                 />
               )}
@@ -616,17 +600,7 @@ export default function HomeDashboard({
                   <p className="member-home-stat-label">
                     {t('discover.homeStatMatches')}
                   </p>
-                  <p className="member-home-stat-value">
-                    {totalMatches}
-                    {(firstWordCount ?? 0) > 0 && (
-                      <span className="member-home-stat-aside">
-                        {' '}
-                        {t('discover.homeStatFirstWord', {
-                          count: firstWordCount,
-                        })}
-                      </span>
-                    )}
-                  </p>
+                  <p className="member-home-stat-value">{firstWordCount}</p>
                 </div>
               )}
               {showPremiumUntil && (

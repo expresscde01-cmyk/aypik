@@ -17,14 +17,13 @@ import AccountPausedScreen from '@/components/AccountPausedScreen';
 import PhoneVerification from '@/components/PhoneVerification';
 import { PHONE_VERIFICATION_REQUIRED_SINCE } from '@/lib/phone';
 import { UnreadMessagesProvider, useUnreadMessages } from '@/lib/messaging';
-import { invalidateLiveMatchCount } from '@/lib/liveMatchCount';
-import { countFirstWordMatches } from '@/lib/matchHistoryDisplay';
+import { invalidateLiveMatchCount, useLiveMatchCount } from '@/lib/liveMatchCount';
 import {
   normalizeOpenMatchesOpts,
   type OpenMatchesOpts,
 } from '@/lib/matchesNav';
 import { MatchesInboxSyncProvider } from '@/lib/matchesInboxSync';
-import { MatchesBoardProvider, useMatchesBoard } from '@/lib/matchesBoard';
+import { MatchesBoardProvider } from '@/lib/matchesBoard';
 import { flushDiscoverPrefs, subscribeSuggestionPrefs } from '@/lib/suggestionPrefs';
 import { setProfilePaused } from '@/lib/profilePause';
 import { setProfileIncognito } from '@/lib/profileIncognito';
@@ -101,6 +100,7 @@ function AppShellView() {
   /** Incrémenté à chaque navigation pour rejouer le focus même si l’acteur est identique. */
   const [inboxFocusKey, setInboxFocusKey] = useState(0);
   const unread = useUnreadMessages();
+  const liveMatchCount = useLiveMatchCount();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
@@ -753,9 +753,11 @@ function AppShellView() {
             active={tab === 'discover'}
             onClick={() => openTab('discover')}
           />
-          <MatchesNavButton
+          <NavButton
+            icon={<Heart className="w-5 h-5" />}
             label={t('common.nav.matches')}
             active={tab === 'matches'}
+            badge={liveMatchCount}
             onClick={() => openMatches()}
           />
           <NavButton
@@ -860,30 +862,6 @@ function TabLoadingFallback() {
     <div className="flex-1 flex items-center justify-center py-16">
       <div className="w-8 h-8 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
     </div>
-  );
-}
-
-function MatchesNavButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const board = useMatchesBoard();
-  const count = board.loaded
-    ? countFirstWordMatches(board.matches, board.peersWithChat)
-    : 0;
-  return (
-    <NavButton
-      icon={<Heart className="w-5 h-5" />}
-      label={label}
-      active={active}
-      onClick={onClick}
-      badge={count}
-    />
   );
 }
 
