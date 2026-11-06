@@ -1,4 +1,4 @@
-import { t } from '../i18n/t.ts';
+import { i18n, t } from '../i18n/t.ts';
 
 /**
  * Mode site entièrement gratuit (Fondateur / FREE).
@@ -14,8 +14,15 @@ export const SITE_FREE_MODE: boolean = true;
 /** Numerus clausus Fondateur (aligné sur platform_settings.founder_max_slots). */
 export const FOUNDER_MAX_SLOTS = 1000;
 
+/** « 1 000 » / « 1,000 » / « 1.000 », espace insécable en français. */
+export function founderMaxSlotsLabel(): string {
+  const lang = (i18n.resolvedLanguage || i18n.language || 'fr').slice(0, 2);
+  const sep = lang === 'en' ? ',' : lang === 'es' ? '.' : '\u00a0';
+  return String(FOUNDER_MAX_SLOTS).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+}
+
 export function founderSlotsSubtitle(): string {
-  return t('landing.founderSlotsSubtitle', { maxSlots: FOUNDER_MAX_SLOTS });
+  return t('landing.founderSlotsSubtitle', { maxSlots: founderMaxSlotsLabel() });
 }
 
 /** Landing, bandeau, carte condensée — une fois le numerus clausus atteint. */
