@@ -14,7 +14,6 @@ import {
 import {
   SITE_FREE_MODE,
   founderBenefitBoostFirstMonth,
-  founderBenefitLifetimeDiscount,
   founderBenefitNoCard,
   founderBenefitUnlimitedLikes,
   founderOfferClosedShort,
@@ -26,6 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { currentLocale } from '@/i18n/documentMeta';
 import { withLocalePrefix } from '@/i18n/path';
 import { HeroTitleTrailDesktop, HeroTitleTrailMobile } from '@/components/HeroTitleTrail';
+import { FounderPrivilegeHighlight } from '@/components/FounderPrivilegeHighlight';
 
 /** Sillage décoratif du titre hero, calé sur le français. false le retire. */
 const SHOW_TITLE_TRAIL = true;
@@ -257,33 +257,6 @@ export function SiteHeader({
     <LaunchTicker />
     </div>
   );
-}
-
-const PRIVILEGE_TONE = [
-  'font-bold text-aypik-navy',
-  'font-bold text-aypik-raspberry',
-  'font-bold text-aypik-navy',
-];
-
-function founderPrivilegeHighlight(text: string, phrases: unknown): ReactNode[] {
-  const marks = Array.isArray(phrases)
-    ? phrases.filter((phrase): phrase is string => typeof phrase === 'string' && phrase.length > 0)
-    : [];
-  const nodes: ReactNode[] = [];
-  let rest = text;
-  marks.forEach((phrase, index) => {
-    const at = rest.indexOf(phrase);
-    if (at < 0) return;
-    if (at > 0) nodes.push(rest.slice(0, at));
-    nodes.push(
-      <strong key={phrase} className={PRIVILEGE_TONE[index] ?? 'font-bold text-aypik-navy'}>
-        {phrase}
-      </strong>
-    );
-    rest = rest.slice(at + phrase.length);
-  });
-  if (rest) nodes.push(rest);
-  return nodes;
 }
 
 function founderLead(description: string): ReactNode {
@@ -635,14 +608,7 @@ export default function LandingPage({
               badge={'badge' in offer ? offer.badge : undefined}
               description={offer.description}
               points={'points' in offer ? offer.points : undefined}
-              highlight={
-                founderOfferClosed
-                  ? undefined
-                  : founderPrivilegeHighlight(
-                      founderBenefitLifetimeDiscount(),
-                      t('landing.founderPrivilegeBold', { returnObjects: true })
-                    )
-              }
+              highlight={founderOfferClosed ? undefined : <FounderPrivilegeHighlight />}
               accent={offer.accent}
             />
           ))}
