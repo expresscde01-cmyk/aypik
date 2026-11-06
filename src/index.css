@@ -3995,6 +3995,87 @@ button.group[data-matched='true'] {
   }
 }
 
+.member-home-stage {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .member-home-stage {
+    max-width: none;
+    padding: 0 0 2.5rem;
+  }
+
+  .member-home-banner {
+    border-radius: 0;
+    padding: 46px 0;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 248, 246, 0.3),
+        rgba(255, 248, 246, 0.45) 70%,
+        #fff8f6
+      ),
+      url('/images/aypik-fond-ciel.jpg');
+    background-position: center 35%;
+  }
+
+  .member-home-banner-frame {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .member-home-banner-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .member-home-banner .member-home-hello {
+    font-size: 42px;
+    line-height: 1.15;
+  }
+
+  .member-home-stats,
+  .member-home-stats--count-1,
+  .member-home-stats--count-2 {
+    width: 340px;
+    flex: 0 0 340px;
+    margin-top: 0;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .member-home-body {
+    max-width: 1160px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 32px;
+  }
+
+  .member-home-body .profile-cards-grid {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .member-home-empty-actions,
+  .member-home-empty-actions--count-2 {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .greeting-color-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

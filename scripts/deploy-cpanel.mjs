@@ -79,12 +79,16 @@ if (process.platform === 'win32') {
 
 if (!existsSync(zipPath)) fail(`${zipName} n’a pas été créé.`);
 
+const canonicalZip = join(root, 'aypik-deploy.zip');
+copyFileSync(zipPath, canonicalZip);
+
 const kb = (statSync(zipPath).size / 1024).toFixed(0);
 const assetsDir = join(dist, 'assets');
 const entryAssets = existsSync(assetsDir)
   ? readdirSync(assetsDir).filter((name) => /^index-.*\.(js|css)$/.test(name))
   : [];
 console.log(`✓ Prêt : ${zipName} (${kb} Ko)`);
+console.log('  Copie : aypik-deploy.zip');
 if (entryAssets.length) {
   console.log(`  Entrée JS/CSS : ${entryAssets.join(', ')}`);
 }
