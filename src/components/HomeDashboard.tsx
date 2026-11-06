@@ -11,7 +11,7 @@ import {
 import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
-import { BrandHeaderBrand, BRAND_GRADIENT_CSS } from '@/components/BrandLockup';
+import { BrandHeaderBrand, BrandNameImg } from '@/components/BrandLockup';
 import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
@@ -420,12 +420,7 @@ export default function HomeDashboard({
 
       <div className="max-w-2xl mx-auto w-full px-4 pt-8 pb-10 space-y-8">
         <section className="text-center space-y-3 animate-fadeIn">
-          <p
-            className="text-xs font-extrabold uppercase tracking-[0.28em] bg-clip-text text-transparent"
-            style={{ backgroundImage: BRAND_GRADIENT_CSS }}
-          >
-            {t('common.brandName')}
-          </p>
+          <BrandNameImg className="mx-auto h-5 sm:h-6" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             {t('discover.homeHello', { name: displayName })}
           </h1>

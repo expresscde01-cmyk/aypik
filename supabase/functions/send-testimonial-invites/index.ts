@@ -7,6 +7,7 @@ import {
 } from "../_shared/email.ts";
 import {
   emailActionButton,
+  emailWordmarkHtml,
   wrapTransactionalEmailHtml,
 } from "../_shared/emailLayout.ts";
 import {
@@ -164,7 +165,7 @@ function buildInviteBody(params: {
   const locale = params.locale;
 
   return `
-              <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:800;color:#1C2340;">Aypik</p>
+              ${emailWordmarkHtml("https://aypik.fr", 168)}
               <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#1C2340;">${emailT(locale, "testimonialHeading")}</h1>
               <p style="margin:0 0 16px;color:#1C2340;font-size:15px;line-height:1.6;">
                 ${emailT(locale, "testimonialHello", { name })}

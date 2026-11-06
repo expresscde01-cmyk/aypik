@@ -121,7 +121,7 @@ const BRAND_MARK_SRC = BRAND_MARK_PNG;
 export const BRAND_MARK_AUTH_SRC = BRAND_MARK_PNG;
 const BRAND_NAME_SRC = '/aypik-nom.svg?v=1';
 
-/** Nom AYPIK en logo. La hauteur vient de className (16/20 px en en-tête, 22/28 px sous le cœur). */
+/** Nom AYPIK en logo. La hauteur vient de className (16/20 px en en-tête, 28/34 px sous le cœur). */
 export function BrandNameImg({ className }: { className: string }) {
   return (
     <img
@@ -294,9 +294,7 @@ export function BrandLockup({
   if (variant === 'hero') {
     return (
       <div className={`text-center ${className}`}>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 uppercase tracking-[0.28em]">
-          {BRAND}
-        </h1>
+        <BrandNameImg className="mx-auto h-7 sm:h-[34px]" />
         <p className="mt-3 text-xs font-light text-gray-400 tracking-wide">
           <span className="mr-1.5 text-gray-300" aria-hidden>
             —
@@ -309,13 +307,8 @@ export function BrandLockup({
 
   if (variant === 'inline') {
     return (
-      <span className={`inline-flex items-baseline gap-1.5 ${className}`}>
-        <span
-          className="font-extrabold uppercase tracking-[0.22em]"
-          style={{ color: '#FF4500' }}
-        >
-          {BRAND}
-        </span>
+      <span className={`inline-flex items-center gap-1.5 ${className}`}>
+        <BrandNameImg className="h-4" />
         <span className="text-xs font-light tracking-wide text-gray-600">
           <span className="mr-1" aria-hidden>
             —
@@ -343,11 +336,7 @@ export function BrandLockup({
             : 'flex-col gap-0.5 sm:min-w-max sm:flex-row sm:items-baseline sm:gap-1'
       } ${className}`}
     >
-      <span
-        className={`shrink-0 text-base sm:text-lg font-extrabold text-gray-900 uppercase tracking-[0.28em] leading-none ${BRAND_LOCKUP_NO_COPY_CLASS}`}
-      >
-        {BRAND}
-      </span>
+      <BrandNameImg className="h-5 shrink-0 self-center sm:h-6" />
       {stacked === true ? (
         <span
           className={`text-[10.5px] font-light text-gray-400 tracking-normal leading-none whitespace-nowrap overflow-hidden text-ellipsis ${BRAND_LOCKUP_NO_COPY_CLASS}`}

@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BRAND_NAME, BRAND_BASELINE } from '@/components/BrandLockup';
+import { BRAND_BASELINE, BRAND_NAME, BrandNameImg } from '@/components/BrandLockup';
 import { FOUNDER_MAX_SLOTS, SITE_FREE_MODE } from '@/lib/founderCopy';
 import { useFounderSlots } from '@/lib/useFounderSlots';
 import {
@@ -75,13 +75,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
           className="bg-white rounded-3xl border border-aypik-border shadow-xl shadow-aypik-navy/5 p-6 sm:p-8 space-y-8 text-sm text-gray-700 leading-relaxed"
         >
           <header className="space-y-2 border-b border-gray-100 pb-6">
-            <p className="inline-flex items-baseline gap-1.5 text-[10px]">
-              <span
-                className="font-extrabold uppercase tracking-[0.22em]"
-                style={{ color: '#C71585' }}
-              >
-                {BRAND_NAME}
-              </span>
+            <p className="inline-flex items-center gap-1.5 text-[10px]">
+              <BrandNameImg className="h-[14px]" />
               <span className="text-xs font-light tracking-wide text-gray-600">
                 <span className="mr-1" aria-hidden>
                   —
