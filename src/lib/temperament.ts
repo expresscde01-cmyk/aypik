@@ -94,8 +94,3 @@ export function getTemperamentLabel(
   const fallback = t(`temperament.items.${key}.m`, { lng: locale });
   return fallback.startsWith('temperament.') ? key : fallback;
 }
-
-export function temperamentDotOpacity(index: number, count: number): number {
-  if (count <= 1) return 0.7;
-  return 0.25 + 0.75 * (index / (count - 1));
-}
