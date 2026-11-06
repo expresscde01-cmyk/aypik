@@ -5,8 +5,10 @@ import { t } from '@/i18n/t';
 import { currentLocale } from '@/i18n/documentMeta';
 import { isLocalizedContactPath, withLocalePrefix } from '@/i18n/path';
 import { useMembership } from '@/lib/useMembership';
+import { confirmLeaveUnsavedProfile } from '@/lib/unsavedProfileGuard';
 
 export function openLegalTerms() {
+  if (!confirmLeaveUnsavedProfile()) return;
   const url = new URL(window.location.href);
   url.searchParams.set('legal', 'cgu');
   window.history.pushState({}, '', url.toString());

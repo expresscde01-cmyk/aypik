@@ -79,6 +79,7 @@ import {
 import { membershipRequiredError } from '@/lib/membership';
 import { sendFounderWelcomeEmail } from '@/lib/email';
 import { userErrorMessage } from '@/lib/userError';
+import { registerUnsavedProfileGuard } from '@/lib/unsavedProfileGuard';
 import {
   presentProfileSaveError,
   PROFILE_PUBLIC_COLUMNS,
@@ -172,6 +173,41 @@ function profileFormSnapshot(input: {
   });
 }
 
+type ProfileBaseline = {
+  displayName: string;
+  birthDate: string;
+  bio: string;
+  hasChildren: boolean;
+  location: string;
+  countryCode: string;
+  interests: string[];
+  gender: ProfileGender | null;
+  genderLocked: boolean;
+  temperament: string[];
+  languages: SpokenDraft[];
+  greetingNameColor: GreetingNameColor | null;
+  greetingColorReady: boolean;
+  city: GeoCommune | null;
+  worldCity: WorldCityHit | null;
+};
+
+function snapshotFromBaseline(baseline: ProfileBaseline): string {
+  return profileFormSnapshot({
+    displayName: baseline.displayName,
+    birthDate: baseline.birthDate,
+    bio: baseline.bio,
+    hasChildren: baseline.hasChildren,
+    location: baseline.location,
+    countryCode: baseline.countryCode,
+    interests: baseline.interests,
+    gender: baseline.gender,
+    temperament: baseline.temperament,
+    languages: baseline.languages,
+    photoName: null,
+    greetingNameColor: baseline.greetingNameColor,
+  });
+}
+
 function scrollToField(el: HTMLElement | null) {
   el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -241,6 +277,9 @@ export default function ProfileSetup({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFileName, setPhotoFileName] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoNotice, setPhotoNotice] = useState<string | null>(null);
   const [customInterest, setCustomInterest] = useState('');
   const [gender, setGender] = useState<ProfileGender | null>(null);
   const [genderLocked, setGenderLocked] = useState(false);
@@ -268,6 +307,10 @@ export default function ProfileSetup({
   const languagesCardRef = useRef<HTMLDivElement>(null);
   const profileSaveRef = useRef<HTMLDivElement>(null);
   const profileBaselineRef = useRef<string>('');
+  const savedProfileRef = useRef<ProfileBaseline | null>(null);
+  const saveInViewRef = useRef(true);
+  const photoUploadGen = useRef(0);
+  const [saveButtonInView, setSaveButtonInView] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -291,12 +334,12 @@ export default function ProfileSetup({
           .trim()
           .toUpperCase() || 'FR';
         setCountryCode(loadedCountry);
+        const cityLabel = (data.city_name || data.location || '').trim();
         if (loadedCountry === 'FR') {
           setSelectedCity(communeFromStoredLabel(data.location || ''));
           setSelectedWorldCity(null);
         } else {
           setSelectedCity(null);
-          const cityLabel = (data.city_name || data.location || '').trim();
           setSelectedWorldCity(
             cityLabel
               ? {
@@ -325,27 +368,53 @@ export default function ProfileSetup({
           data.gender === 'homme' || data.gender === 'femme'
             ? data.gender
             : null;
-        profileBaselineRef.current = profileFormSnapshot({
+        const loadedGreeting = Object.prototype.hasOwnProperty.call(
+          data,
+          'greeting_name_color'
+        )
+          ? parseGreetingNameColor(data.greeting_name_color)
+          : null;
+        const loadedBaseline: ProfileBaseline = {
           displayName: data.display_name || '',
-          birthDate: data.birth_date || (typeof user.user_metadata?.birth_date === 'string'
-            ? user.user_metadata.birth_date
-            : ''),
+          birthDate:
+            data.birth_date ||
+            (typeof user.user_metadata?.birth_date === 'string'
+              ? user.user_metadata.birth_date
+              : ''),
           bio: data.bio || '',
           hasChildren: data.has_children ?? false,
           location: data.location || '',
           countryCode: loadedCountry,
-          interests: data.interests || [],
+          interests: [...(data.interests || [])],
           gender: loadedGender,
-          temperament: loadedTemperament,
-          languages: loadedLanguages,
-          photoName: null,
-          greetingNameColor: Object.prototype.hasOwnProperty.call(
+          genderLocked: loadedGender !== null,
+          temperament: [...loadedTemperament],
+          languages: loadedLanguages.map((item) => ({ ...item })),
+          greetingNameColor: loadedGreeting,
+          greetingColorReady: Object.prototype.hasOwnProperty.call(
             data,
             'greeting_name_color'
-          )
-            ? parseGreetingNameColor(data.greeting_name_color)
-            : null,
-        });
+          ),
+          city: loadedCountry === 'FR' ? communeFromStoredLabel(data.location || '') : null,
+          worldCity:
+            loadedCountry === 'FR'
+              ? null
+              : cityLabel
+                ? {
+                    geonameId: Number(data.geoname_id) || 0,
+                    nom: cityLabel,
+                    label: cityLabel,
+                    countryCode: loadedCountry,
+                    lat: Number(data.lat) || 0,
+                    lng: Number(data.lng) || 0,
+                    population: 0,
+                    codesPostaux: [],
+                    code: String(data.geoname_id || ''),
+                  }
+                : null,
+        };
+        savedProfileRef.current = loadedBaseline;
+        profileBaselineRef.current = snapshotFromBaseline(loadedBaseline);
         setGreetingColorReady(
           Object.prototype.hasOwnProperty.call(data, 'greeting_name_color')
         );
@@ -528,13 +597,64 @@ export default function ProfileSetup({
 
     const validationError = validateProfilePhoto(file);
     if (validationError) {
-      setError(validationError);
+      setPhotoError(validationError);
+      setPhotoNotice(null);
+      if (!allowAccountDeletion) setError(validationError);
       return;
     }
 
+    setPhotoError(null);
     setError(null);
+
+    if (!allowAccountDeletion || !profileExists || !user) {
+      setPhotoNotice(null);
+      setPhotoFile(file);
+      setPhotoFileName(file.name);
+      return;
+    }
+
+    const generation = ++photoUploadGen.current;
     setPhotoFile(file);
-    setPhotoFileName(file.name);
+    setPhotoFileName(null);
+    setPhotoNotice(null);
+    setPhotoUploading(true);
+
+    void (async () => {
+      try {
+        const { url, error: uploadError } = await uploadProfilePhoto(
+          user.id,
+          file
+        );
+        if (generation !== photoUploadGen.current) return;
+        if (uploadError || !url) {
+          setPhotoFile(null);
+          setPhotoError(uploadError || t('profile.photoUploadFail'));
+          return;
+        }
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ photo_url: url })
+          .eq('id', user.id)
+          .select(PROFILE_WRITE_RETURN);
+        if (generation !== photoUploadGen.current) return;
+        if (updateError) throw updateError;
+        setPhotoUrl(url);
+        setPhotoFile(null);
+        setPhotoNotice(t('profile.photoUpdated'));
+        window.setTimeout(() => {
+          setPhotoNotice((current) =>
+            current === t('profile.photoUpdated') ? null : current
+          );
+        }, 4000);
+        onDone();
+      } catch (err) {
+        if (generation !== photoUploadGen.current) return;
+        setPhotoFile(null);
+        setPhotoError(userErrorMessage(err, t('profile.photoUploadFail')));
+      } finally {
+        if (generation === photoUploadGen.current) setPhotoUploading(false);
+      }
+    })();
   };
 
   const clearSelectedPhoto = () => {
@@ -577,6 +697,63 @@ export default function ProfileSetup({
     window.addEventListener('beforeunload', onLeave);
     return () => window.removeEventListener('beforeunload', onLeave);
   }, [profileDirty]);
+
+  const profileDirtyRef = useRef(profileDirty);
+  profileDirtyRef.current = profileDirty;
+
+  useEffect(() => {
+    if (isSignup) return;
+    registerUnsavedProfileGuard(() => {
+      if (!profileDirtyRef.current) return true;
+      return window.confirm(t('profile.unsavedLeave'));
+    });
+    return () => registerUnsavedProfileGuard(null);
+  }, [isSignup, t]);
+
+  useEffect(() => {
+    if (isSignup || loading) return;
+    const target = profileSaveRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting;
+        saveInViewRef.current = visible;
+        setSaveButtonInView(visible);
+      },
+      { threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [isSignup, loading]);
+
+  const restoreSavedProfile = () => {
+    const saved = savedProfileRef.current;
+    if (!saved) return;
+    setDisplayName(saved.displayName);
+    setBirthDate(saved.birthDate);
+    setBio(saved.bio);
+    setHasChildren(saved.hasChildren);
+    setLocation(saved.location);
+    setCountryCode(saved.countryCode);
+    setInterests([...saved.interests]);
+    setGender(saved.gender);
+    setGenderLocked(saved.genderLocked);
+    setTemperament([...saved.temperament]);
+    setSpokenLanguages(saved.languages.map((item) => ({ ...item })));
+    setGreetingNameColor(saved.greetingNameColor);
+    setGreetingColorReady(saved.greetingColorReady);
+    setSelectedCity(saved.city ? { ...saved.city } : null);
+    setSelectedWorldCity(saved.worldCity ? { ...saved.worldCity } : null);
+    setCustomInterest('');
+    setCityError(null);
+    setInterestsError(null);
+    setBirthError(null);
+    setGenderError(null);
+    setTemperamentError(null);
+    setLanguagesError(null);
+    setError(null);
+    setProfileSaved(false);
+  };
 
   const failField = (key: ProfileFieldKey, message: string) => {
     if (isSignup || key === 'submit') setError(message);
@@ -804,27 +981,35 @@ export default function ProfileSetup({
         setTemperament(sanitizedTemperament);
         setSpokenLanguages(completeLanguages);
         setPersistedSpokenLanguages(completeLanguages);
-        profileBaselineRef.current = profileFormSnapshot({
+        const nextLocked = genderLocked || gender === 'homme' || gender === 'femme';
+        const savedBaseline: ProfileBaseline = {
           displayName,
           birthDate,
           bio,
           hasChildren,
           location: payload.location,
           countryCode,
-          interests,
-          gender: genderLocked ? gender : gender,
-          temperament: sanitizedTemperament,
-          languages: completeLanguages,
-          photoName: null,
+          interests: [...interests],
+          gender,
+          genderLocked: nextLocked,
+          temperament: [...sanitizedTemperament],
+          languages: completeLanguages.map((item) => ({ ...item })),
           greetingNameColor,
-        });
+          greetingColorReady,
+          city: france && selectedCity ? { ...selectedCity } : null,
+          worldCity: !france && selectedWorldCity ? { ...selectedWorldCity } : null,
+        };
+        savedProfileRef.current = savedBaseline;
+        profileBaselineRef.current = snapshotFromBaseline(savedBaseline);
         setProfileSaved(true);
         window.setTimeout(() => setProfileSaved(false), 4000);
       }
       onDone();
     } catch (err) {
       setError(presentProfileSaveError(err));
-      if (!isSignup) scrollToField(profileSaveRef.current);
+      if (!isSignup && saveInViewRef.current) {
+        scrollToField(profileSaveRef.current);
+      }
     } finally {
       setSaving(false);
     }
@@ -978,7 +1163,7 @@ export default function ProfileSetup({
           >
           {/* Photo */}
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
+            <div className="profile-photo-frame w-20 h-20 rounded-2xl overflow-hidden bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
               {photoPreview || photoUrl ? (
                 <img
                   src={photoPreview || photoUrl}
@@ -987,6 +1172,12 @@ export default function ProfileSetup({
                 />
               ) : (
                 <Camera className="w-7 h-7 text-aypik-text-muted" />
+              )}
+              {photoUploading && (
+                <span className="profile-photo-busy" role="status">
+                  <Loader2 className="w-6 h-6 animate-spin text-aypik-navy" />
+                  <span className="sr-only">{t('profile.uploadingPhoto')}</span>
+                </span>
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -1011,7 +1202,7 @@ export default function ProfileSetup({
                     ? t('profile.photoChange')
                     : t('profile.photoChoose')}
                 </button>
-                {photoFile && (
+                {photoFile && !allowAccountDeletion && (
                   <button
                     type="button"
                     onClick={clearSelectedPhoto}
@@ -1026,6 +1217,16 @@ export default function ProfileSetup({
                   ? photoFileName
                   : t('profile.photoFormatsHint')}
               </p>
+              {photoError && (
+                <p className="mt-1.5 text-sm text-red-600" role="alert">
+                  {photoError}
+                </p>
+              )}
+              {photoNotice && (
+                <p className="mt-1.5 text-sm font-medium text-emerald-700" role="status">
+                  {photoNotice}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1508,6 +1709,7 @@ export default function ProfileSetup({
                   type="submit"
                   disabled={
                     saving ||
+                    photoUploading ||
                     hasChildren ||
                     (!genderLocked && gender !== 'homme' && gender !== 'femme')
                   }
@@ -1539,6 +1741,62 @@ export default function ProfileSetup({
             </>
           )}
         </form>
+        {allowAccountDeletion && profileDirty && !saveButtonInView && (
+          <div className="profile-save-bar" role="status" aria-live="polite">
+            <p className="profile-save-bar-label">{t('profile.unsavedChanges')}</p>
+            <div className="profile-save-bar-actions">
+              <button
+                type="button"
+                className="profile-save-bar-cancel"
+                onClick={restoreSavedProfile}
+                disabled={saving}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="profile-setup-form"
+                disabled={
+                  saving ||
+                  photoUploading ||
+                  hasChildren ||
+                  (!genderLocked && gender !== 'homme' && gender !== 'femme')
+                }
+                className="px-6 py-3.5 btn-primary disabled:opacity-60"
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {photoFile
+                        ? t('profile.uploadingPhoto')
+                        : t('profile.saving')}
+                    </>
+                  ) : (
+                    <>
+                      {t('profile.saveProfile')}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
+            {error && (
+              <p className="profile-save-bar-error" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        )}
+        {allowAccountDeletion &&
+          profileSaved &&
+          !profileDirty &&
+          !saveButtonInView && (
+            <div className="profile-save-bar profile-save-bar--done" role="status">
+              <Check className="w-4 h-4" />
+              <span>{t('profile.saved')}</span>
+            </div>
+          )}
           </>
         )}
         {allowAccountDeletion && <ChangePasswordSection />}

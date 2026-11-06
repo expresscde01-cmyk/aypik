@@ -33,6 +33,7 @@ import { setProfileIncognito } from '@/lib/profileIncognito';
 import { setProfileDeactivated } from '@/lib/profileDeactivated';
 import { usePresenceHeartbeat } from '@/lib/presence';
 import { userErrorMessage } from '@/lib/userError';
+import { confirmLeaveUnsavedProfile } from '@/lib/unsavedProfileGuard';
 import { subscribeHighlightOffer } from '@/lib/conversionNav';
 import {
   fetchMyAccountFlags,
@@ -193,6 +194,7 @@ function AppShellView() {
 
   const openAccountStatusManager = useCallback(() => {
     if (tab === 'discover') persistDiscoverPrefs();
+    if (tab !== 'home' && !confirmLeaveUnsavedProfile()) return;
     mountTab('home');
     setTab('home');
     setAccountMenuRequestKey((k) => k + 1);
@@ -266,11 +268,17 @@ function AppShellView() {
       if (tab === 'discover' && next !== 'discover') {
         persistDiscoverPrefs();
       }
+      if (!confirmLeaveUnsavedProfile()) return;
       mountTab(next);
       setTab(next);
     },
     [mountTab, persistDiscoverPrefs, tab]
   );
+
+  const requestSignOut = () => {
+    if (!confirmLeaveUnsavedProfile()) return;
+    void signOut();
+  };
 
   const prevTabRef = useRef(tab);
   useEffect(() => {
@@ -421,6 +429,7 @@ function AppShellView() {
     if (tab === 'discover') {
       persistDiscoverPrefs();
     }
+    if (tab !== 'matches' && !confirmLeaveUnsavedProfile()) return;
     mountTab('matches');
     setTab('matches');
   };
@@ -453,7 +462,7 @@ function AppShellView() {
           </button>
           <button
             type="button"
-            onClick={() => void signOut()}
+            onClick={requestSignOut}
             className="text-sm font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
           >
             {t('common.signOut')}
@@ -482,7 +491,7 @@ function AppShellView() {
           </p>
           <button
             type="button"
-            onClick={() => void signOut()}
+            onClick={requestSignOut}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
             {t('common.signOut')}
@@ -501,7 +510,7 @@ function AppShellView() {
           </p>
           <button
             type="button"
-            onClick={() => void signOut()}
+            onClick={requestSignOut}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
           >
             {t('common.signOut')}
@@ -557,7 +566,7 @@ function AppShellView() {
               gender={profile?.gender}
               viewerProfile={profile}
               onHome={() => openTab('home')}
-              onSignOut={signOut}
+              onSignOut={requestSignOut}
               onOpenDiscover={() => openTab('discover')}
               onOpenMatches={openMatches}
               onOpenProfile={() => openProfileSection()}
@@ -593,7 +602,7 @@ function AppShellView() {
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
               displayName={displayName}
-              onSignOut={signOut}
+              onSignOut={requestSignOut}
               onOpenProfile={() => openProfileSection()}
               onOpenPassword={() => openProfileSection('password')}
               onOpenNotifications={() => openProfileSection('preferences')}
@@ -655,7 +664,7 @@ function AppShellView() {
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
               displayName={displayName}
-              onSignOut={signOut}
+              onSignOut={requestSignOut}
               onOpenProfile={() => openProfileSection()}
               onOpenPassword={() => openProfileSection('password')}
               onOpenNotifications={() => openProfileSection('preferences')}
@@ -706,7 +715,7 @@ function AppShellView() {
               accountStatuses={accountStatuses}
               onAccountStatusClick={openAccountStatusManager}
               displayName={displayName}
-              onSignOut={signOut}
+              onSignOut={requestSignOut}
               onOpenProfile={() => openProfileSection()}
               onOpenPassword={() => openProfileSection('password')}
               onOpenNotifications={() => openProfileSection('preferences')}
