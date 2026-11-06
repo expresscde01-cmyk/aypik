@@ -539,28 +539,28 @@ export default function HomeDashboard({
             <button
               type="button"
               onClick={onOpenDiscover}
-              className="member-home-action"
+              className="member-home-action btn-primary"
             >
-              <span className="member-home-action-orb member-home-action-orb--discover">
+              <span className="member-home-action-inner">
                 <Compass aria-hidden="true" />
+                {t('common.nav.discover')}
               </span>
-              <span className="member-home-action-label">{t('common.nav.discover')}</span>
             </button>
             <button
               type="button"
               onClick={() => onOpenMatches()}
-              className="member-home-action"
+              className="member-home-action btn-secondary"
             >
-              <span className="member-home-action-orb member-home-action-orb--matches">
+              <span className="member-home-action-inner">
                 <Heart aria-hidden="true" />
-                {matchCount > 0 && (
-                  <UnreadBadge
-                    count={matchCount}
-                    className="member-home-action-count"
-                  />
-                )}
+                {t('matches.title')}
               </span>
-              <span className="member-home-action-label">{t('matches.title')}</span>
+              {matchCount > 0 && (
+                <UnreadBadge
+                  count={matchCount}
+                  className="member-home-action-count"
+                />
+              )}
             </button>
           </div>
             </div>
