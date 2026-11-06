@@ -539,31 +539,28 @@ export default function HomeDashboard({
             <button
               type="button"
               onClick={onOpenDiscover}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary"
+              className="member-home-action"
             >
-              <span className="inline-flex items-center gap-2">
-                <Compass className="w-4 h-4" />
-                {t('common.nav.discover')}
+              <span className="member-home-action-orb member-home-action-orb--discover">
+                <Compass aria-hidden="true" />
               </span>
+              <span className="member-home-action-label">{t('common.nav.discover')}</span>
             </button>
             <button
               type="button"
               onClick={() => onOpenMatches()}
-              className="relative w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 btn-secondary"
-              aria-label={
-                matchCount > 0
-                  ? `${t('matches.title')} (${matchCount})`
-                  : t('matches.title')
-              }
+              className="member-home-action"
             >
-              <Heart className="w-4 h-4 text-aypik-navy" />
-              {t('matches.title')}
-              {matchCount > 0 && (
-                <UnreadBadge
-                  count={matchCount}
-                  className="absolute -top-1.5 -right-1.5"
-                />
-              )}
+              <span className="member-home-action-orb member-home-action-orb--matches">
+                <Heart aria-hidden="true" />
+                {matchCount > 0 && (
+                  <UnreadBadge
+                    count={matchCount}
+                    className="member-home-action-count"
+                  />
+                )}
+              </span>
+              <span className="member-home-action-label">{t('matches.title')}</span>
             </button>
           </div>
             </div>
