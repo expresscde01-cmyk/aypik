@@ -645,6 +645,7 @@
     "legendA": "À",
     "emptyHint": "Un profil apparaît ici dès qu'on t'envoie un flash ou un like. Réponds pour valider ton match.",
     "simplifiedEmpty": "Aucune discussion en cours. Tu as peut-être un nouveau match à découvrir via la cloche 🔔",
+    "simplifiedModeNote": "Tu es en mode Simplifié : cette page n'affiche que les discussions déjà engagées des deux côtés. Les matchs en 1er mot restent dans la cloche. Passe en mode Détaillé pour voir tous tes matchs.",
     "glossaryAvant": "Avant",
     "glossaryPendant": "Pendant",
     "glossaryApres": "Après",
