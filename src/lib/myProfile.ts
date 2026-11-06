@@ -2,6 +2,10 @@ import { supabase } from '@/lib/supabase';
 import { parseDiscoverMode } from '@/lib/discoverMode';
 import { parseProfileGender, type ProfileGender } from '@/lib/dating';
 import {
+  parseGreetingNameColor,
+  type GreetingNameColor,
+} from '@/lib/greetingNameColor';
+import {
   parseSpokenLanguages,
   type SpokenLanguage,
 } from '@/lib/spokenLanguages';
@@ -28,6 +32,8 @@ export type MyProfile = {
   preferred_locale: string | null;
   temperament: string[] | null;
   languages: SpokenLanguage[] | null;
+  /** null = défaut selon le genre. undefined = colonne pas encore renvoyée. */
+  greeting_name_color?: GreetingNameColor | null;
   paused_at: string | null;
   deactivated_at: string | null;
   incognito_at: string | null;
@@ -45,7 +51,7 @@ export function parseMyProfile(raw: unknown): MyProfile | null {
   const id = typeof row.id === 'string' ? row.id : '';
   if (!id) return null;
   const age = Number(row.age);
-  return {
+  const profile: MyProfile = {
     id,
     display_name: String(row.display_name || ''),
     birth_date: typeof row.birth_date === 'string' ? row.birth_date : '',
@@ -91,6 +97,10 @@ export function parseMyProfile(raw: unknown): MyProfile | null {
     updated_at: typeof row.updated_at === 'string' ? row.updated_at : null,
     age: Number.isFinite(age) ? age : 0,
   };
+  if (Object.prototype.hasOwnProperty.call(row, 'greeting_name_color')) {
+    profile.greeting_name_color = parseGreetingNameColor(row.greeting_name_color);
+  }
+  return profile;
 }
 
 export async function fetchMyProfile(): Promise<{

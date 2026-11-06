@@ -3695,3 +3695,113 @@ button.group[data-matched='true'] {
   transform: translateY(-2px);
 }
 
+.member-home-hello {
+  overflow-wrap: anywhere;
+}
+
+.member-greeting-name {
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+  font-size: 1.28em;
+  line-height: 1.05;
+  letter-spacing: 0;
+  padding: 0 0.05em;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.greeting-color-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 8px;
+}
+
+@media (min-width: 640px) {
+  .greeting-color-options {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.greeting-color-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #1b1f3b;
+}
+
+.greeting-color-option:focus-visible,
+.greeting-color-reset:focus-visible {
+  outline: 2px solid #e8395f;
+  outline-offset: 2px;
+}
+
+.greeting-color-swatch {
+  position: relative;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.greeting-color-option[aria-checked='true'] .greeting-color-swatch {
+  border-color: #1b1f3b;
+}
+
+.greeting-color-swatch svg {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+  filter: drop-shadow(0 1px 1px rgba(27, 31, 59, 0.45));
+}
+
+.greeting-color-name {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.greeting-color-preview {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #111827;
+  overflow-wrap: anywhere;
+}
+
+.greeting-color-reset {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1b1f3b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.greeting-color-reset:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+

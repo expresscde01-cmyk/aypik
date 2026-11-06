@@ -26,9 +26,14 @@ import TemperamentProfileCard, {
   toggleTemperamentKey,
 } from '@/components/TemperamentProfileCard';
 import SpokenLanguagesProfileCard from '@/components/SpokenLanguagesProfileCard';
+import GreetingNameColorField from '@/components/GreetingNameColorField';
 import EmailNotificationsProfileCard from '@/components/EmailNotificationsProfileCard';
 import { isNativeLanguageRequired } from '@/lib/isNativeLanguageRequired';
 import { sanitizeTemperament } from '@/lib/temperament';
+import {
+  parseGreetingNameColor,
+  type GreetingNameColor,
+} from '@/lib/greetingNameColor';
 import {
   hasNativeSpokenLanguage,
   parseSpokenLanguages,
@@ -118,6 +123,7 @@ export interface Profile {
   discover_mode?: 'detaille' | 'simplifie';
   temperament?: string[] | null;
   languages?: SpokenLanguage[] | null;
+  greeting_name_color?: GreetingNameColor | null;
 }
 
 /** Colonnes publiques d’un profil (listes / cartes) — pas de SELECT *. */
@@ -145,6 +151,7 @@ function profileFormSnapshot(input: {
   temperament: string[];
   languages: SpokenDraft[];
   photoName: string | null;
+  greetingNameColor: GreetingNameColor | null;
 }): string {
   return JSON.stringify({
     displayName: input.displayName.trim(),
@@ -161,6 +168,7 @@ function profileFormSnapshot(input: {
       level: item.level,
     })),
     photoName: input.photoName,
+    greetingNameColor: input.greetingNameColor,
   });
 }
 
@@ -236,6 +244,9 @@ export default function ProfileSetup({
   const [customInterest, setCustomInterest] = useState('');
   const [gender, setGender] = useState<ProfileGender | null>(null);
   const [genderLocked, setGenderLocked] = useState(false);
+  const [greetingNameColor, setGreetingNameColor] =
+    useState<GreetingNameColor | null>(null);
+  const [greetingColorReady, setGreetingColorReady] = useState(false);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] =
     useState(true);
   const [prefsHint, setPrefsHint] = useState(false);
@@ -328,7 +339,21 @@ export default function ProfileSetup({
           temperament: loadedTemperament,
           languages: loadedLanguages,
           photoName: null,
+          greetingNameColor: Object.prototype.hasOwnProperty.call(
+            data,
+            'greeting_name_color'
+          )
+            ? parseGreetingNameColor(data.greeting_name_color)
+            : null,
         });
+        setGreetingColorReady(
+          Object.prototype.hasOwnProperty.call(data, 'greeting_name_color')
+        );
+        setGreetingNameColor(
+          Object.prototype.hasOwnProperty.call(data, 'greeting_name_color')
+            ? parseGreetingNameColor(data.greeting_name_color)
+            : null
+        );
         if (!data.birth_date) {
           const metaDob = user.user_metadata?.birth_date;
           if (typeof metaDob === 'string') setBirthDate(metaDob);
@@ -535,6 +560,7 @@ export default function ProfileSetup({
       temperament,
       languages: spokenLanguages,
       photoName: photoFileName,
+      greetingNameColor,
     });
 
   const profileDirty =
@@ -692,6 +718,7 @@ export default function ProfileSetup({
         lng?: number | null;
         temperament?: string[];
         languages?: SpokenLanguage[];
+        greeting_name_color?: GreetingNameColor | null;
       } = {
         id: user.id,
         display_name: displayName,
@@ -711,6 +738,9 @@ export default function ProfileSetup({
       } else {
         payload.temperament = sanitizedTemperament;
         payload.languages = completeLanguages;
+        if (greetingColorReady) {
+          payload.greeting_name_color = greetingNameColor;
+        }
       }
 
       if (!genderLocked) {
@@ -786,6 +816,7 @@ export default function ProfileSetup({
           temperament: sanitizedTemperament,
           languages: completeLanguages,
           photoName: null,
+          greetingNameColor,
         });
         setProfileSaved(true);
         window.setTimeout(() => setProfileSaved(false), 4000);
@@ -1014,6 +1045,15 @@ export default function ProfileSetup({
               placeholder={t('profile.displayNamePlaceholder')}
             />
           </div>
+
+          {!isSignup && greetingColorReady && (
+            <GreetingNameColorField
+              name={displayName}
+              gender={gender}
+              value={greetingNameColor}
+              onChange={setGreetingNameColor}
+            />
+          )}
 
           {/* Birth date */}
           <div ref={birthFieldRef}>

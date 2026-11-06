@@ -549,6 +549,8 @@ function AppShellView() {
           <div className={tab === 'home' ? undefined : 'hidden'}>
             <HomeDashboard
               displayName={displayName}
+              greetingNameColor={profile?.greeting_name_color}
+              gender={profile?.gender}
               onHome={() => openTab('home')}
               onSignOut={signOut}
               onOpenDiscover={() => openTab('discover')}
