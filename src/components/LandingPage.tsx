@@ -354,18 +354,22 @@ function OfferCard({
         {items.map((item) => (
           <p
             key={item}
-            className={`flex items-center gap-2 text-sm font-semibold ${
-              accent === 'founder' ? 'text-aypik-navy' : 'text-gray-800'
+            className={`flex gap-2 text-sm font-semibold ${
+              accent === 'founder'
+                ? 'items-start text-aypik-navy'
+                : 'items-center text-gray-800'
             }`}
           >
             <span
               className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                accent === 'founder' ? 'bg-white text-aypik-raspberry' : 'bg-aypik-banner-bg'
+                accent === 'founder'
+                  ? 'mt-0.5 shrink-0 bg-white text-aypik-raspberry'
+                  : 'bg-aypik-banner-bg'
               }`}
             >
               ✓
             </span>
-            {item}
+            {accent === 'founder' ? <span className="min-w-0">{item}</span> : item}
           </p>
         ))}
         {highlight ? (
