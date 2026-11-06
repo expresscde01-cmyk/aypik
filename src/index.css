@@ -3807,7 +3807,8 @@ button.group[data-matched='true'] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 0;
 }
 
 .member-home-banner-lead {
@@ -3826,115 +3827,166 @@ button.group[data-matched='true'] {
   color: #6b7280;
 }
 
+.member-home-banner-lead + :not(.member-home-banner-actions) {
+  margin-top: 10px;
+}
+
+.member-home-banner-copy > span {
+  display: inline-flex;
+  width: auto;
+  max-width: max-content;
+}
+
 .member-home-banner-actions {
-  /* 8px de gap du texte + 14px = 22px sous le badge. */
-  margin-top: 14px;
+  margin-top: 20px;
   padding-top: 0;
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  align-self: stretch;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: center;
   width: 100%;
-  gap: 12px;
+  gap: 28px;
 }
 
-.member-home-banner-actions .btn-primary,
-.member-home-banner-actions .btn-secondary {
-  flex: 1 1 0;
-  width: auto;
-  min-width: 0;
-  height: 54px;
-  padding: 0 12px;
-  font-size: 17px;
+.member-home-action {
+  appearance: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
   line-height: 1;
-  white-space: nowrap;
+}
+
+.member-home-action:focus {
+  outline: none;
+}
+
+.member-home-action:focus-visible .member-home-action-orb {
+  outline: 2px solid #e8395f;
+  outline-offset: 2px;
+}
+
+.member-home-action-orb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  border-radius: 50%;
   box-sizing: border-box;
 }
 
-.member-home-banner-actions .btn-primary svg,
-.member-home-banner-actions .btn-secondary svg {
-  width: 18px;
-  height: 18px;
+.member-home-action-orb svg {
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
 }
 
-/* Échelle du reflet et de l’ombre : 54 / 48, mêmes couleurs. */
-.member-home-banner-actions .btn-primary {
-  border-radius: 15.75px;
+.member-home-action-orb--discover {
+  overflow: hidden;
+  color: #fff;
+  background: var(--aypik-logo-gradient);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 6.75px 15.75px rgba(222, 6, 60, 0.3);
+    0 6px 14px rgba(222, 6, 60, 0.3);
 }
 
-.member-home-banner-actions .btn-primary::before {
-  left: 29.25px;
-  width: 33.75px;
+.member-home-action-orb--discover::before,
+.member-home-action-orb--discover::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -10%;
+  height: 120%;
+  transform: skewX(-28deg);
+  background: rgba(255, 255, 255, 0.42);
+  pointer-events: none;
 }
 
-.member-home-banner-actions .btn-primary::after {
-  left: 72px;
-  width: 9px;
+.member-home-action-orb--discover::before {
+  left: 17.6%;
+  width: 20.3%;
 }
 
-.member-home-banner-actions .btn-secondary {
-  border-radius: 18px;
+.member-home-action-orb--discover::after {
+  left: 43.2%;
+  width: 5.4%;
+}
+
+.member-home-action-orb--discover svg {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+}
+
+.member-home-action-orb--matches {
+  background: var(--aypik-white);
+  border: 1.5px solid var(--aypik-border);
+  color: var(--aypik-navy);
+}
+
+.member-home-action-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 3;
+}
+
+.member-home-action-label {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1b1f3b;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .member-home-action {
+    transition: transform 0.15s ease;
+  }
+
+  .member-home-action:hover {
+    transform: translateY(-2px);
+  }
+
+  .member-home-action:hover .member-home-action-orb--discover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 10px 18px rgba(222, 6, 60, 0.4);
+  }
+
+  .member-home-action:hover .member-home-action-orb--matches {
+    box-shadow: 0 8px 16px rgba(27, 31, 59, 0.14);
+  }
 }
 
 @media (min-width: 768px) {
   .member-home-banner-actions {
-    gap: 14px;
-    width: auto;
+    justify-content: flex-start;
     align-self: flex-start;
+    width: auto;
   }
 
-  .member-home-banner-actions .btn-primary,
-  .member-home-banner-actions .btn-secondary {
-    flex: 0 0 auto;
-    min-width: 190px;
-    padding: 0 24px;
+  .member-home-action-orb {
+    width: 80px;
+    height: 80px;
+    flex-basis: 80px;
   }
 }
 
 @media (min-width: 1024px) {
-  .member-home-banner-actions {
-    gap: 24px;
-  }
-
-  .member-home-banner-actions .btn-primary,
-  .member-home-banner-actions .btn-secondary {
-    flex: 0 0 230px;
-    width: 230px;
-    min-width: 230px;
-    max-width: 230px;
-    height: 56px;
-    padding: 0 30px;
-    font-size: 18px;
-  }
-
-  .member-home-banner-actions .btn-primary svg,
-  .member-home-banner-actions .btn-secondary svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Échelle 56 / 48. */
-  .member-home-banner-actions .btn-primary {
-    border-radius: 16.33px;
-    box-shadow:
-      inset 0 1.17px 0 rgba(255, 255, 255, 0.75),
-      0 7px 16.33px rgba(222, 6, 60, 0.3);
-  }
-
-  /* Mêmes bandes que le petit bouton : 30px et 8px, opacité inchangée. */
-  .member-home-banner-actions .btn-primary::before {
-    left: 26px;
-    width: 30px;
-  }
-
-  .member-home-banner-actions .btn-primary::after {
-    left: 64px;
-    width: 8px;
+  .member-home-banner-copy > span {
+    justify-self: start;
   }
 
   .member-home-banner-top {
@@ -3958,18 +4010,6 @@ button.group[data-matched='true'] {
   .member-home-banner-lead,
   .member-home-banner-copy > :not(.member-home-banner-lead) {
     grid-column: 2;
-  }
-
-  .member-home-banner-lead + * {
-    margin-top: 8px;
-  }
-
-  .member-home-banner-actions {
-    margin-top: 22px;
-  }
-
-  .member-home-banner-actions .btn-secondary {
-    border-radius: 18.67px;
   }
 }
 
@@ -4189,12 +4229,16 @@ button.group[data-matched='true'] {
     background-position: center 35%;
   }
 
+  .member-home-banner-top {
+    row-gap: 0;
+  }
+
   .member-home-banner-frame {
     max-width: 1160px;
     margin: 0 auto;
     padding: 0 32px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 40px;
   }
 
