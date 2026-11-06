@@ -27,10 +27,10 @@ function extensionFor(file: File): string {
 
 export function validateProfilePhoto(file: File): string | null {
   if (!ALLOWED_TYPES.has(file.type) && !file.type.startsWith('image/')) {
-    return 'Formats acceptés : JPEG, PNG, WebP ou GIF.';
+    return t('profile.photoFormatError');
   }
   if (file.size > MAX_PROFILE_PHOTO_BYTES) {
-    return 'La photo ne doit pas dépasser 5 Mo.';
+    return t('profile.photoSizeError');
   }
   return null;
 }
