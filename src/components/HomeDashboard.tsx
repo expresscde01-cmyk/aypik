@@ -12,6 +12,7 @@ import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
 import { BrandHeaderBrand, BrandNameImg } from '@/components/BrandLockup';
+import MemberGreeting from '@/components/MemberGreeting';
 import { ProfileCardCornerBadges } from '@/components/membership/Badges';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
@@ -56,6 +57,7 @@ import {
 } from '@/lib/accountStatus';
 import { useTranslation } from 'react-i18next';
 import type { DiscoverMode } from '@/lib/discoverMode';
+import { resolveGreetingNameColor } from '@/lib/greetingNameColor';
 
 type HomeSuggestion = SuggestedProfile & {
   is_founder?: boolean;
@@ -64,6 +66,8 @@ type HomeSuggestion = SuggestedProfile & {
 
 export default function HomeDashboard({
   displayName,
+  greetingNameColor = null,
+  gender = null,
   onHome,
   onSignOut,
   onOpenDiscover,
@@ -86,6 +90,8 @@ export default function HomeDashboard({
   onDiscoverModeChange,
 }: {
   displayName: string;
+  greetingNameColor?: string | null;
+  gender?: string | null;
   onHome: () => void;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
@@ -421,9 +427,12 @@ export default function HomeDashboard({
       <div className="max-w-2xl mx-auto w-full px-4 pt-8 pb-10 space-y-8">
         <section className="text-center space-y-3 animate-fadeIn">
           <BrandNameImg className="mx-auto h-5 sm:h-6" />
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            {t('discover.homeHello', { name: displayName })}
-          </h1>
+          <MemberGreeting
+            as="h1"
+            name={displayName}
+            color={resolveGreetingNameColor(greetingNameColor, gender)}
+            className="member-home-hello text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+          />
           <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
             {t('discover.homeIntro')}
           </p>
