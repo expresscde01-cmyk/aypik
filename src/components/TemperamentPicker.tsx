@@ -1,4 +1,4 @@
-import { TEMPERAMENT_FAMILIES, MAX_TEMPERAMENT, temperamentDotOpacity, getTemperamentLabel } from '@/lib/temperament';
+import { TEMPERAMENT_FAMILIES, MAX_TEMPERAMENT, getTemperamentLabel } from '@/lib/temperament';
 import type { ProfileGender } from '@/lib/dating';
 import { useTranslation } from 'react-i18next';
 
@@ -22,27 +22,39 @@ export default function TemperamentPicker({
     <div className="space-y-5">
       {TEMPERAMENT_FAMILIES.map((family) => {
         const n = family.keys.length;
+        const selectedIndexes = family.keys.flatMap((key, index) =>
+          selectedSet.has(key) ? [index] : []
+        );
         return (
           <div key={family.id} className="temperament-family">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-gray-900">
+              <p className="temperament-family-title">
                 {t(`temperament.families.${family.id}`)}
               </p>
-              <p className="text-[11.5px] text-gray-500 flex items-center gap-1.5 shrink-0">
+              <p className="temperament-poles">
                 <em className="not-italic">
                   {t(`temperament.poles.${family.id}From`)}
                 </em>
-                <span className="text-aypik-navy font-bold" aria-hidden>
-                  →
-                </span>
+                <span aria-hidden>→</span>
                 <em className="not-italic">
                   {t(`temperament.poles.${family.id}To`)}
                 </em>
               </p>
             </div>
-            <div className="temperament-track" aria-hidden />
+            <div className="temperament-track" aria-hidden="true">
+              {selectedIndexes.map((index) => (
+                <span
+                  key={family.keys[index]}
+                  className="temperament-marker"
+                  aria-hidden="true"
+                  style={{
+                    left: n <= 1 ? '0%' : `${(index / (n - 1)) * 100}%`,
+                  }}
+                />
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2">
-              {family.keys.map((key, index) => {
+              {family.keys.map((key) => {
                 const on = selectedSet.has(key);
                 const disabled = full && !on;
                 const label = getTemperamentLabel(key, gender, lang);
@@ -55,11 +67,6 @@ export default function TemperamentPicker({
                     onClick={() => onToggle(key)}
                     className={`temperament-chip ${on ? 'temperament-chip--on' : ''}`}
                   >
-                    <span
-                      className="temperament-dot"
-                      style={{ opacity: temperamentDotOpacity(index, n) }}
-                      aria-hidden
-                    />
                     {label}
                   </button>
                 );

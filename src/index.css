@@ -3517,11 +3517,47 @@ button.group[data-matched='true'] {
   }
 }
 
+.temperament-family-title {
+  margin: 0;
+  color: #4a4e63;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.temperament-poles {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  color: #8a8ea3;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
 .temperament-track {
-  height: 4px;
-  border-radius: 999px;
-  margin: 8px 0 12px;
-  background: var(--aypik-navy);
+  position: relative;
+  height: 2px;
+  border-radius: 2px;
+  margin: 14px 0 16px;
+  background: #e3e1ea;
+}
+
+.temperament-marker {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #e8395f;
+  transform: translate(-50%, -50%);
+  transition: left 0.28s ease;
+  pointer-events: none;
 }
 
 .temperament-chip {
@@ -3561,17 +3597,23 @@ button.group[data-matched='true'] {
   outline-offset: 2px;
 }
 
-.temperament-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--aypik-navy);
-  flex: 0 0 auto;
+.temperament-family .temperament-chip {
+  background: #fff;
+  border: 1px solid #e8e6ee;
+  color: #2a2f55;
 }
 
-.temperament-chip--on .temperament-dot {
-  background: #fff;
-  opacity: 1 !important;
+.temperament-family .temperament-chip:hover:not(:disabled) {
+  border-color: #2a2f55;
+  color: #2a2f55;
+}
+
+.temperament-family .temperament-chip--on,
+.temperament-family .temperament-chip--on:hover:not(:disabled) {
+  background: var(--aypik-navy);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
 }
 
 /* Turnstile interaction-only (page Vérifie ton numéro) : 0 px tant
