@@ -645,6 +645,7 @@
     "legendA": "Por",
     "emptyHint": "Un perfil aparece aquí en cuanto alguien te envía un flash o un like. Responde para confirmar tu match.",
     "simplifiedEmpty": "Ninguna conversación en curso. Puede que tengas un nuevo match que descubrir en la campana 🔔",
+    "simplifiedModeNote": "Estás en modo Simplificado: esta página solo muestra las conversaciones ya iniciadas por ambas partes. Los matches en 1er mensaje están en la campana.",
     "glossaryAvant": "Antes",
     "glossaryPendant": "Durante",
     "glossaryApres": "Después",

@@ -645,6 +645,7 @@
     "legendA": "To",
     "emptyHint": "A profile appears here as soon as someone sends you a Flash or a Like. Respond to confirm your match.",
     "simplifiedEmpty": "No conversations in progress. You may have a new match to discover via the bell 🔔",
+    "simplifiedModeNote": "You are in Simplified mode: this page only shows conversations already started by both people. First-message matches stay in the bell.",
     "glossaryAvant": "Before",
     "glossaryPendant": "During",
     "glossaryApres": "After",

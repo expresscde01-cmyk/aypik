@@ -3616,6 +3616,11 @@ export default function MatchesPage({
       <h2 className="text-xl font-bold text-gray-900 mb-1">
         {t('matches.title')} ({liveMatchCount})
       </h2>
+      {viewerSimplified && liveMatchCount > floors.matchedChat.length ? (
+        <p className="mt-1 mb-4 text-sm text-gray-500 leading-relaxed">
+          {t('matches.simplifiedModeNote')}
+        </p>
+      ) : null}
       {viewerSimplified ? null : (
         <MatchesGlossary
           openIntroSection={openIntroSection}
