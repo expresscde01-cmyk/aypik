@@ -410,7 +410,7 @@ function WorldZoneSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className="geo-perimeter-closed discover-search-field rounded-xl px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => {
@@ -599,7 +599,7 @@ function FranceWorldSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className="geo-perimeter-closed discover-search-field rounded-xl px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => {
@@ -777,7 +777,7 @@ function GeoPerimeterSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className="geo-perimeter-closed discover-search-field rounded-xl px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => !visible);
@@ -912,7 +912,7 @@ function FranceStrataSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="geo-perimeter-closed rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className="geo-perimeter-closed discover-search-field rounded-xl px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => !visible);
@@ -1097,15 +1097,15 @@ function InterestOverlapSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className={`w-full discover-search-field rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed${
+          current === 0 ? ' discover-search-field--quiet' : ''
+        }`}
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => !visible);
         }}
       >
-        <span
-          className={`truncate text-emerald-950${current === 0 ? ' font-medium' : ''}`}
-        >
+        <span className="truncate">
           {interestOverlapLabel(current)}
         </span>
         <ChevronDown
@@ -1215,16 +1215,16 @@ function DiscoverFilterDisclose({
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={label}
-        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className={`w-full discover-search-field rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed${
+          empty ? ' discover-search-field--quiet' : ''
+        }`}
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => !visible);
         }}
       >
-        <span className="min-w-0 flex-1 flex items-center gap-1 text-emerald-950">
-          <span
-            className={`truncate${empty ? ' font-medium' : ''}`}
-          >
+        <span className="min-w-0 flex-1 flex items-center gap-1">
+          <span className="truncate">
             {empty ? tStatic('discover.interestsIndifferent') : summary}
           </span>
           {!empty && typeof count === 'number' ? (
@@ -1316,7 +1316,7 @@ function LanguageMinLevelSelect({
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
+        className="w-full discover-search-field rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:pointer-events-none disabled:cursor-not-allowed"
         onClick={() => {
           if (disabled) return;
           setOpen((visible) => !visible);
@@ -1925,13 +1925,13 @@ export default function DiscoveryPage({
           {filtersActive && showFilters && (
             <div
               id="discovery-filters-panel"
-              className="rounded-2xl border border-aypik-border bg-white px-3 py-3 space-y-2.5 overflow-visible"
+              className="discover-search-panel rounded-2xl border border-emerald-300 bg-white px-3 py-3 space-y-2.5 overflow-visible shadow-sm"
             >
               <p className="text-xs font-semibold text-aypik-navy flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 {t('discover.targetedSuggestions')}
               </p>
-              <div className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm font-semibold text-gray-900">
                 {t('discover.geoPerimeter')}
                 <span className="text-[11px] leading-snug text-gray-500 font-normal">
                   {geoPerimeter === 'international'
@@ -2033,7 +2033,7 @@ export default function DiscoveryPage({
                   />
                 ) : null}
               </div>
-              <div className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm font-semibold text-gray-900">
                 {t('discover.interestsInCommonMin')}
                 <InterestOverlapSelect
                   value={minOverlap}
@@ -2044,7 +2044,7 @@ export default function DiscoveryPage({
                   }}
                 />
               </div>
-              <div className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm font-semibold text-gray-900">
                 {t('discover.temperamentWanted')}
                 <DiscoverFilterDisclose
                   label={t('discover.temperamentWanted')}
@@ -2074,7 +2074,7 @@ export default function DiscoveryPage({
                   />
                 </DiscoverFilterDisclose>
               </div>
-              <div className="flex flex-col gap-1 text-sm text-gray-700">
+              <div className="flex flex-col gap-1 text-sm font-semibold text-gray-900">
                 {t('discover.spokenLanguages')}
                 <DiscoverFilterDisclose
                   label={t('discover.spokenLanguages')}
@@ -2100,7 +2100,7 @@ export default function DiscoveryPage({
                 </DiscoverFilterDisclose>
               </div>
               {languageFilterActive ? (
-                <div className="flex flex-col gap-1 text-sm text-gray-700">
+                <div className="flex flex-col gap-1 text-sm font-semibold text-gray-900">
                   {t('discover.minLanguageLevel')}
                   <LanguageMinLevelSelect
                     value={minLanguageLevel}
