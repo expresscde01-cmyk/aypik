@@ -3569,20 +3569,15 @@ button.group[data-matched='true'] {
   border-radius: 999px;
   border: 1.5px solid #e5e7eb;
   background: #fff;
-  color: #111827;
+  color: #1b1f3b;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.temperament-chip:hover:not(:disabled) {
-  border-color: var(--aypik-navy);
-  color: var(--aypik-navy);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .temperament-chip--on {
-  background: var(--aypik-navy);
+  background: #1b1f3b;
   border-color: transparent;
-  color: var(--aypik-white);
+  color: #fff;
   font-weight: 600;
   box-shadow: none;
 }
@@ -3592,28 +3587,51 @@ button.group[data-matched='true'] {
   cursor: not-allowed;
 }
 
-.temperament-chip:focus-visible {
-  outline: 3px solid rgba(28, 35, 64, 0.35);
+.temperament-chip:focus-visible,
+.temperament-chip--on:focus-visible {
+  outline: 2px solid #e8395f;
   outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .temperament-chip:hover:not(:disabled):not(.temperament-chip--on) {
+    background: #f4f2f8;
+    border-color: #cfcbdb;
+    color: #1b1f3b;
+  }
+
+  .temperament-chip--on:hover:not(:disabled) {
+    background: #2a2f55;
+    border-color: transparent;
+    color: #fff;
+  }
 }
 
 .temperament-family .temperament-chip {
   background: #fff;
   border: 1px solid #e8e6ee;
-  color: #2a2f55;
+  color: #1b1f3b;
 }
 
-.temperament-family .temperament-chip:hover:not(:disabled) {
-  border-color: #2a2f55;
-  color: #2a2f55;
-}
-
-.temperament-family .temperament-chip--on,
-.temperament-family .temperament-chip--on:hover:not(:disabled) {
-  background: var(--aypik-navy);
+.temperament-family .temperament-chip--on {
+  background: #1b1f3b;
   border-color: transparent;
   color: #fff;
   font-weight: 700;
+}
+
+@media (hover: hover) {
+  .temperament-family .temperament-chip:hover:not(:disabled):not(.temperament-chip--on) {
+    background: #f4f2f8;
+    border-color: #cfcbdb;
+    color: #1b1f3b;
+  }
+
+  .temperament-family .temperament-chip--on:hover:not(:disabled) {
+    background: #2a2f55;
+    border-color: transparent;
+    color: #fff;
+  }
 }
 
 .founder-member-card {
