@@ -3803,6 +3803,7 @@ button.group[data-matched='true'] {
 
 .member-home-banner-copy {
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3818,12 +3819,16 @@ button.group[data-matched='true'] {
 }
 
 .member-home-banner-actions {
-  margin-top: 22px;
+  /* 8px de gap du texte + 14px = 22px sous le badge. */
+  margin-top: 14px;
+  padding-top: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: flex-start;
+  align-self: stretch;
+  width: 100%;
+  gap: 12px;
 }
 
 .member-home-banner-actions .btn-primary,
@@ -3871,6 +3876,8 @@ button.group[data-matched='true'] {
 @media (min-width: 768px) {
   .member-home-banner-actions {
     gap: 14px;
+    width: auto;
+    align-self: flex-start;
   }
 
   .member-home-banner-actions .btn-primary,
@@ -3882,10 +3889,17 @@ button.group[data-matched='true'] {
 }
 
 @media (min-width: 1024px) {
+  .member-home-banner-actions {
+    gap: 24px;
+  }
+
   .member-home-banner-actions .btn-primary,
   .member-home-banner-actions .btn-secondary {
+    flex: 0 0 230px;
+    width: 230px;
+    min-width: 230px;
+    max-width: 230px;
     height: 56px;
-    min-width: 200px;
     padding: 0 30px;
     font-size: 18px;
   }
@@ -4090,6 +4104,18 @@ button.group[data-matched='true'] {
 
   .member-home-empty-actions--count-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .member-home-banner-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .member-home-banner-copy {
+    align-items: center;
   }
 }
 

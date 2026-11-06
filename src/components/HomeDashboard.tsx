@@ -533,9 +533,7 @@ export default function HomeDashboard({
                   {accountStatusHomeBanner(accountStatuses[0]).text}
                 </p>
               )}
-            </div>
-          </div>
-          <div className="member-home-banner-actions flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
+          <div className="member-home-banner-actions">
             <button
               type="button"
               onClick={onOpenDiscover}
@@ -565,6 +563,8 @@ export default function HomeDashboard({
                 />
               )}
             </button>
+          </div>
+            </div>
           </div>
             </div>
           {statCount > 0 && (
