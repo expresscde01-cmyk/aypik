@@ -22,6 +22,7 @@ import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
+import HomeActionShape from '@/components/HomeActionShape';
 import { CardGeoFacts, InternationalCardGeoFacts } from '@/components/GeoBadgeLine';
 import LanguageSwitcher from '@/i18n/LanguageSwitcher';
 import {
@@ -82,7 +83,6 @@ export default function HomeDashboard({
   onOpenProfile,
   onOpenPassword,
   onOpenNotifications,
-  matchCount = 0,
   unreadBySender = {},
   profileEpoch = 0,
   suggestionPrefsEpoch = 0,
@@ -107,7 +107,6 @@ export default function HomeDashboard({
   onOpenProfile: () => void;
   onOpenPassword: () => void;
   onOpenNotifications: () => void;
-  matchCount?: number;
   unreadBySender?: Record<string, number>;
   profileEpoch?: number;
   /** Incrémenté à chaque sortie de Découvrir : force la relecture des filtres. */
@@ -541,6 +540,7 @@ export default function HomeDashboard({
               onClick={onOpenDiscover}
               className="member-home-action btn-primary"
             >
+              <HomeActionShape tone="discover" />
               <span className="member-home-action-inner">
                 <Compass aria-hidden="true" />
                 {t('common.nav.discover')}
@@ -551,13 +551,14 @@ export default function HomeDashboard({
               onClick={() => onOpenMatches()}
               className="member-home-action btn-secondary"
             >
+              <HomeActionShape tone="matches" />
               <span className="member-home-action-inner">
                 <Heart aria-hidden="true" />
                 {t('matches.title')}
               </span>
-              {matchCount > 0 && (
+              {newMatchCount != null && newMatchCount > 0 && (
                 <UnreadBadge
-                  count={matchCount}
+                  count={newMatchCount}
                   className="member-home-action-count"
                 />
               )}

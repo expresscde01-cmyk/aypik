@@ -572,7 +572,6 @@ function AppShellView() {
               onOpenProfile={() => openProfileSection()}
               onOpenPassword={() => openProfileSection('password')}
               onOpenNotifications={() => openProfileSection('preferences')}
-              matchCount={liveMatchCount}
               unreadBySender={unread.bySender}
               profileEpoch={profileEpoch}
               suggestionPrefsEpoch={suggestionPrefsEpoch}
