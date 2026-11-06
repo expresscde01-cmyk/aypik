@@ -35,7 +35,14 @@ export default function MaintenanceScreen({
           <div className="icon" aria-hidden>
             <LogoMark />
           </div>
-          <h1>{t('common.brandName')}</h1>
+          <img
+            src="/aypik-nom.svg?v=1"
+            alt="Aypik"
+            width={3464}
+            height={722}
+            draggable={false}
+            className="mx-auto mb-1 h-7 w-auto"
+          />
           <h2>{t('common.maintenanceTitle')}</h2>
           {lines.map((line) => (
             <p key={line}>{line}</p>

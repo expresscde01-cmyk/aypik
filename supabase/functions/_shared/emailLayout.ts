@@ -45,6 +45,14 @@ function footerHtml(
     <p style="margin:12px 0 0;color:#8A90A2;font-size:12px;line-height:1.55;">${emailT(locale, "legalFooterRgpd")}</p>`;
 }
 
+/** Logo typographique (PNG : les messageries n'affichent pas le SVG). */
+export function emailWordmarkHtml(origin: string, width = 300): string {
+  const src = escapeHtml(`${origin.replace(/\/$/, "")}/aypik-nom.png`);
+  const height = Math.round((width * 722) / 3464);
+  const margin = width >= 240 ? "0 auto 20px" : "0 0 8px";
+  return `<img src="${src}" width="${width}" height="${height}" alt="Aypik" style="display:block;margin:${margin};border:0;outline:none;text-decoration:none;max-width:100%;height:auto;" />`;
+}
+
 /** Gabarit commun : fond crème, cœur, carte blanche, pied de page. */
 export function wrapTransactionalEmailHtml(params: TransactionalEmailParams): string {
   const locale = params.locale ?? "fr";
@@ -69,7 +77,7 @@ export function wrapTransactionalEmailHtml(params: TransactionalEmailParams): st
     <tr>
       <td align="center" style="padding:32px 16px;">
         <img src="${logo}" width="112" height="99" alt="" style="display:block;margin:0 auto 8px;border:0;outline:none;text-decoration:none;" />
-        <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;font-size:22px;letter-spacing:0.22em;font-weight:800;color:#1C2340;">AYPIK</p>
+        ${emailWordmarkHtml(origin, 300)}
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #E3E5EA;border-radius:16px;">
           <tr>
             <td style="padding:28px 28px 24px;font-family:Arial,Helvetica,sans-serif;color:#1C2340;font-size:16px;line-height:1.55;text-align:left;">
