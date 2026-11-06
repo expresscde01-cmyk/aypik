@@ -226,11 +226,14 @@ export default function ProfileSetup({
   onDone,
   allowAccountDeletion = false,
   profileFocusKey = 0,
+  onPhotoSaved,
 }: {
   onDone: () => void;
   allowAccountDeletion?: boolean;
   /** Incrémenté par AppShell à chaque navigation menu → profil (scroll rejoué). */
   profileFocusKey?: number;
+  /** Photo déjà enregistrée : met à jour l’avatar sans recharger toute la page. */
+  onPhotoSaved?: (url: string) => void;
 }) {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
@@ -671,7 +674,7 @@ export default function ProfileSetup({
         setPhotoUrl(url);
         setPhotoFile(null);
         showPhotoSaved();
-        onDone();
+        onPhotoSaved?.(url);
       } catch (err) {
         if (generation !== photoUploadGen.current) return;
         setPhotoFile(null);

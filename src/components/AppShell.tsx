@@ -725,6 +725,11 @@ function AppShellView() {
             <ProfileSetup
               allowAccountDeletion
               profileFocusKey={profileFocusKey}
+              onPhotoSaved={(url) => {
+                setProfile((prev) =>
+                  prev ? { ...prev, photo_url: url } : prev
+                );
+              }}
               onDone={async () => {
                 await reloadViewerProfile();
               }}
