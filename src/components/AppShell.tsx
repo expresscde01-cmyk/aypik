@@ -543,14 +543,19 @@ function AppShellView() {
 
   return (
     <MatchesBoardProvider profileEpoch={profileEpoch}>
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div
+      className={`min-h-screen flex flex-col ${
+        tab === 'home' ? 'bg-[#FFF8F6]' : 'bg-gray-50'
+      }`}
+    >
       <main className="flex-1 min-h-0">
         {mountedTabs.has('home') && (
-          <div className={tab === 'home' ? undefined : 'hidden'}>
+          <div className={tab === 'home' ? 'min-h-full flex flex-col' : 'hidden'}>
             <HomeDashboard
               displayName={displayName}
               greetingNameColor={profile?.greeting_name_color}
               gender={profile?.gender}
+              viewerProfile={profile}
               onHome={() => openTab('home')}
               onSignOut={signOut}
               onOpenDiscover={() => openTab('discover')}
@@ -723,7 +728,7 @@ function AppShellView() {
         )}
       </main>
 
-      <SiteFooter compact />
+      <SiteFooter compact blend={tab === 'home'} />
 
       <nav
         className={`app-bottom-nav bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-0 z-20${

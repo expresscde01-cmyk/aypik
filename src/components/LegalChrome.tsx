@@ -100,9 +100,12 @@ export function ContactLink({
 export function SiteFooter({
   compact = false,
   showLegal = true,
+  blend = false,
 }: {
   compact?: boolean;
   showLegal?: boolean;
+  /** Même fond que la page, sans bande claire. */
+  blend?: boolean;
 }) {
   const { t } = useTranslation();
   const { status } = useMembership();
@@ -112,9 +115,9 @@ export function SiteFooter({
       : t('legal.docLabelPaid');
   return (
     <footer
-      className={`border-t border-aypik-border/80 bg-white/60 ${
-        compact ? '' : 'mt-auto'
-      }`}
+      className={`border-t border-aypik-border/80 ${
+        blend ? 'bg-transparent' : 'bg-white/60'
+      } ${compact ? '' : 'mt-auto'}`}
     >
       <div
         className={`max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 leading-relaxed ${

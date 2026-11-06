@@ -6,14 +6,17 @@ import {
   LogOut,
   MapPin,
   MessageCircle,
+  Share2,
   Sparkles,
+  User,
 } from 'lucide-react';
 import AccountMenu from '@/components/AccountMenu';
 import { AccountStatusBadges } from '@/components/AccountStatusBadge';
 import OwnerBoostIndicator from '@/components/membership/OwnerBoostIndicator';
-import { BrandHeaderBrand, BrandNameImg } from '@/components/BrandLockup';
+import { BrandHeaderBrand } from '@/components/BrandLockup';
 import MemberGreeting from '@/components/MemberGreeting';
-import { ProfileCardCornerBadges } from '@/components/membership/Badges';
+import { FounderBadge, ProfileCardCornerBadges } from '@/components/membership/Badges';
+import type { Profile } from '@/components/ProfileSetup';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
 import ProfilePhoto from '@/components/ProfilePhoto';
@@ -45,7 +48,10 @@ import {
   invalidateLikeFlashEdges,
 } from '@/lib/likeFlashEdges';
 import { useMembership } from '@/lib/useMembership';
-import { isFounderPeriodActive } from '@/lib/membership';
+import { formatDateFr, isFounderPeriodActive } from '@/lib/membership';
+import { useMatchesBoard } from '@/lib/matchesBoard';
+import { profileCompletionPercent } from '@/lib/profileCompletion';
+import { requestDiscoverFilters } from '@/lib/discoverEntry';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
 import { userErrorMessage } from '@/lib/userError';
 import type { OpenMatchesOpts } from '@/lib/matchesNav';
@@ -68,6 +74,7 @@ export default function HomeDashboard({
   displayName,
   greetingNameColor = null,
   gender = null,
+  viewerProfile = null,
   onHome,
   onSignOut,
   onOpenDiscover,
@@ -92,6 +99,7 @@ export default function HomeDashboard({
   displayName: string;
   greetingNameColor?: string | null;
   gender?: string | null;
+  viewerProfile?: Profile | null;
   onHome: () => void;
   onSignOut?: () => void;
   onOpenDiscover: () => void;
@@ -136,7 +144,12 @@ export default function HomeDashboard({
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, []);
-  const { status, refresh } = useMembership();
+  const {
+    status,
+    refresh,
+    loading: membershipLoading,
+    error: membershipError,
+  } = useMembership();
   const [hiddenIds, setHiddenIds] = useState(() => new Set<string>());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [flashedIds, setFlashedIds] = useState<Set<string>>(new Set());
@@ -146,6 +159,38 @@ export default function HomeDashboard({
   const [actingId, setActingId] = useState<string | null>(null);
 
   const founderActive = isFounderPeriodActive(status);
+  const board = useMatchesBoard();
+  const completionPercent = useMemo(
+    () => profileCompletionPercent(viewerProfile),
+    [viewerProfile]
+  );
+  const newMatchCount = useMemo(() => {
+    if (!board.loaded) return null;
+    return board.matches.filter(
+      (match) =>
+        match.kind === 'match' && !board.peersWithChat.has(match.profile.id)
+    ).length;
+  }, [board.loaded, board.matches, board.peersWithChat]);
+  const founderKnown = !membershipLoading && !membershipError;
+  const premiumUntilTime = status.founder_premium_until
+    ? new Date(status.founder_premium_until).getTime()
+    : Number.NaN;
+  const premiumUntilLabel =
+    founderKnown &&
+    Number.isFinite(premiumUntilTime) &&
+    premiumUntilTime > Date.now()
+      ? formatDateFr(status.founder_premium_until)
+      : '';
+  const showFounderBadge = founderKnown && status.is_founder;
+  const showProfileStat = completionPercent !== null;
+  const showNewMatches = newMatchCount !== null;
+  const showPremiumUntil = premiumUntilLabel.length > 0;
+  const statCount =
+    Number(showProfileStat) + Number(showNewMatches) + Number(showPremiumUntil);
+  const showCompleteAction =
+    completionPercent !== null && completionPercent < 100;
+  const photoUrl = viewerProfile?.photo_url?.trim() || '';
+  const avatarInitial = displayName.trim().charAt(0).toUpperCase();
   const likesUnlimited = status.unlimited_likes || founderActive;
   const likesExhausted =
     !likesUnlimited && (status.likes_remaining_today ?? 0) <= 0;
@@ -267,6 +312,31 @@ export default function HomeDashboard({
     [user, actingId, likesExhausted, likedIds, refresh]
   );
 
+  const openWiderZone = useCallback(() => {
+    requestDiscoverFilters();
+    onOpenDiscover();
+  }, [onOpenDiscover]);
+
+  const shareSite = useCallback(async () => {
+    const url = `${window.location.origin}/`;
+    const mobile = window.matchMedia('(max-width: 639px)').matches;
+    if (mobile && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'Aypik', url });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast(t('discover.homeLinkCopied'));
+      window.setTimeout(() => setToast(null), 2200);
+    } catch {
+      setActionError(t('common.errorOccurred'));
+    }
+  }, [t]);
+
   const handleSkip = useCallback((id: string) => {
     setHiddenIds((prev) => new Set(prev).add(id));
     setOpenProfile((open) => (open?.id === id ? null : open));
@@ -333,7 +403,7 @@ export default function HomeDashboard({
     );
 
   return (
-    <div className="min-h-full flex flex-col bg-[#fff8f5]">
+    <div className="min-h-full flex flex-col flex-1 bg-[#FFF8F6]">
       <header className="sticky top-0 z-40 isolate overflow-x-clip bg-white/85 backdrop-blur-md border-b border-aypik-border/80">
         {pcHeader ? (
         <div className="w-full px-8">
@@ -425,23 +495,45 @@ export default function HomeDashboard({
       </header>
 
       <div className="max-w-2xl mx-auto w-full px-4 pt-8 pb-10 space-y-8">
-        <section className="text-center space-y-3 animate-fadeIn">
-          <BrandNameImg className="mx-auto h-5 sm:h-6" />
-          <MemberGreeting
-            as="h1"
-            name={displayName}
-            color={resolveGreetingNameColor(greetingNameColor, gender)}
-            className="member-home-hello text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
-          />
-          <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-            {t('discover.homeIntro')}
-          </p>
-          {accountStatuses[0] && (
-            <p className={accountStatusHomeBanner(accountStatuses[0]).className}>
-              {accountStatusHomeBanner(accountStatuses[0]).text}
-            </p>
-          )}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
+        <section className="member-home-banner animate-fadeIn">
+          <div className="member-home-banner-top">
+            <div className="member-home-avatar">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt=""
+                  className="member-home-avatar-photo"
+                />
+              ) : (
+                <span className="member-home-avatar-initial" aria-hidden>
+                  {avatarInitial}
+                </span>
+              )}
+              <img
+                src="/aypik-coeur.svg"
+                alt=""
+                className="member-home-avatar-heart"
+              />
+            </div>
+            <div className="member-home-banner-copy">
+              <MemberGreeting
+                as="h1"
+                name={displayName}
+                color={resolveGreetingNameColor(greetingNameColor, gender)}
+                className="member-home-hello text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+              />
+              <p className="member-home-banner-intro">{t('discover.homeIntro')}</p>
+              {showFounderBadge && (
+                <FounderBadge number={status.founder_number} />
+              )}
+              {accountStatuses[0] && (
+                <p className={accountStatusHomeBanner(accountStatuses[0]).className}>
+                  {accountStatusHomeBanner(accountStatuses[0]).text}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="member-home-banner-actions flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
             <button
               type="button"
               onClick={onOpenDiscover}
@@ -472,6 +564,52 @@ export default function HomeDashboard({
               )}
             </button>
           </div>
+          {statCount > 0 && (
+            <div
+              className={
+                statCount === 1
+                  ? 'member-home-stats member-home-stats--count-1'
+                  : statCount === 2
+                    ? 'member-home-stats member-home-stats--count-2'
+                    : 'member-home-stats'
+              }
+            >
+              {showProfileStat && (
+                <div className="member-home-stat">
+                  <p className="member-home-stat-label">
+                    {t('discover.homeStatProfile')}
+                  </p>
+                  <p className="member-home-stat-value">{completionPercent} %</p>
+                  <div
+                    className="member-home-stat-bar"
+                    role="progressbar"
+                    aria-valuenow={completionPercent ?? 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={t('discover.homeStatProfile')}
+                  >
+                    <span style={{ width: `${completionPercent}%` }} />
+                  </div>
+                </div>
+              )}
+              {showNewMatches && (
+                <div className="member-home-stat">
+                  <p className="member-home-stat-label">
+                    {t('discover.homeStatMatches')}
+                  </p>
+                  <p className="member-home-stat-value">{newMatchCount}</p>
+                </div>
+              )}
+              {showPremiumUntil && (
+                <div className="member-home-stat">
+                  <p className="member-home-stat-label">
+                    {t('discover.homeStatPremium')}
+                  </p>
+                  <p className="member-home-stat-value">{premiumUntilLabel}</p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="space-y-4">
@@ -510,18 +648,77 @@ export default function HomeDashboard({
               <div className="w-9 h-9 rounded-full border-4 border-aypik-border border-t-aypik-navy animate-spin" />
             </div>
           ) : suggestions.length === 0 && error ? null : suggestions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-aypik-border bg-white/70 px-5 py-10 text-center">
-              <Sparkles className="w-7 h-7 text-aypik-text-muted mx-auto mb-2" />
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {t('discover.suggestionsEmpty')}
-              </p>
-              <button
-                type="button"
-                onClick={onOpenDiscover}
-                className="mt-4 text-sm font-semibold text-aypik-navy"
+            <div className="member-home-empty">
+              <Sparkles className="member-home-empty-icon" aria-hidden />
+              <h3 className="member-home-empty-title">
+                {t('discover.homeEmptyTitle')}
+              </h3>
+              <p className="member-home-empty-body">{t('discover.homeEmptyBody')}</p>
+              <div
+                className={
+                  showCompleteAction
+                    ? 'member-home-empty-actions'
+                    : 'member-home-empty-actions member-home-empty-actions--count-2'
+                }
               >
-                {t('discover.discoverProfilesCta')}
-              </button>
+                <button
+                  type="button"
+                  className="member-home-empty-action"
+                  onClick={openWiderZone}
+                >
+                  <span className="member-home-empty-pill member-home-empty-pill--zone">
+                    <MapPin className="w-4 h-4" aria-hidden />
+                  </span>
+                  <span>
+                    <span className="member-home-empty-action-title">
+                      {t('discover.homeWidenTitle')}
+                    </span>
+                    <span className="member-home-empty-action-sub">
+                      {t('discover.homeWidenSubtitle')}
+                    </span>
+                  </span>
+                </button>
+                {showCompleteAction && (
+                  <button
+                    type="button"
+                    className="member-home-empty-action"
+                    onClick={onOpenProfile}
+                  >
+                    <span className="member-home-empty-pill member-home-empty-pill--profile">
+                      <User className="w-4 h-4" aria-hidden />
+                    </span>
+                    <span>
+                      <span className="member-home-empty-action-title">
+                        {t('discover.homeCompleteTitle')}
+                      </span>
+                      <span className="member-home-empty-action-sub">
+                        {t('discover.homeCompleteSubtitle', {
+                          percent: completionPercent,
+                        })}
+                      </span>
+                    </span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="member-home-empty-action"
+                  onClick={() => {
+                    void shareSite();
+                  }}
+                >
+                  <span className="member-home-empty-pill member-home-empty-pill--invite">
+                    <Share2 className="w-4 h-4" aria-hidden />
+                  </span>
+                  <span>
+                    <span className="member-home-empty-action-title">
+                      {t('discover.homeInviteTitle')}
+                    </span>
+                    <span className="member-home-empty-action-sub">
+                      {t('discover.homeInviteSubtitle')}
+                    </span>
+                  </span>
+                </button>
+              </div>
             </div>
           ) : (
             <ul className="profile-cards-grid overflow-visible">
