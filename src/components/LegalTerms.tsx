@@ -88,7 +88,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales d&apos;Utilisation
             </h2>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 6 novembre 2026.
+              Dernière mise à jour : 7 novembre 2026.
             </p>
           </header>
 
@@ -247,9 +247,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 L&apos;envoi de messages (mode Dialogue) est inclus
                 pendant la Période d&apos;essai définie à l&apos;article 4
-                (six mois pour un Membre Fondateur, une semaine pour tout
-                autre utilisateur), décomptée individuellement pour chaque
-                utilisateur à compter de la création de son compte. Aucune
+                (six mois pour un Membre Fondateur, à compter du premier
+                enregistrement de son profil ; une semaine pour tout
+                autre utilisateur, à compter de la création de son compte).
+                Aucune
                 souscription payante n&apos;est proposée tant que le Service
                 est en phase de lancement. À l&apos;issue de cette phase, des
                 offres payantes optionnelles pourront être proposées ;
@@ -264,10 +265,10 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 L&apos;envoi de messages (mode Dialogue) est inclus
                 gratuitement pendant la Période d&apos;essai définie à
-                l&apos;article 4 (six mois pour un Membre Fondateur, une
-                semaine pour tout autre utilisateur), décomptée
-                individuellement pour chaque utilisateur à compter de la
-                création de son compte. Cette fenêtre n&apos;est pas
+                l&apos;article 4 (six mois pour un Membre Fondateur, à compter
+                du premier enregistrement de son profil ; une semaine pour
+                tout autre utilisateur, à compter de la création de son
+                compte). Cette fenêtre n&apos;est pas
                 renouvelable. Au-delà, l&apos;envoi de nouveaux messages
                 est réservé aux utilisateurs disposant d&apos;un
                 abonnement actif (Basique, Essentiel, Confort ou Premium),
@@ -733,8 +734,11 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 4.1 Membres Fondateurs ({FOUNDER_MAX_SLOTS} premiers comptes)
               </p>
               <p>
-                Un statut honorifique de « Membre Fondateur » est attribué aux{' '}
-                {FOUNDER_MAX_SLOTS} premiers comptes créés. Les numéros sont
+                Le statut de Membre Fondateur est attribué aux 1&nbsp;000
+                premiers comptes, au premier enregistrement de leur profil.
+                Un compte dont le profil n&apos;a jamais été enregistré ne
+                reçoit pas de numéro. Les 6 mois d&apos;avantages Premium
+                courent à compter de cet enregistrement. Les numéros sont
                 attribués successivement, de 1 à {FOUNDER_MAX_SLOTS}, et ne
                 sont jamais réattribués : la suppression d&apos;un compte
                 emporte la perte définitive du badge et de son numéro, sans
@@ -745,8 +749,8 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 e numéro.
               </p>
               <p>
-                Pendant une Période d&apos;essai de six (6) mois à compter de
-                la création de son compte, le Membre Fondateur bénéficie, à
+                Pendant une Période d&apos;essai de six (6) mois à compter du
+                premier enregistrement de son profil, le Membre Fondateur bénéficie, à
                 titre gracieux, sans engagement de durée, sans tacite
                 reconduction et sans aucune demande de carte bancaire : de
                 l&apos;envoi de messages, ainsi que de likes et Flash illimités.
@@ -1596,7 +1600,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               Conditions Générales de Vente (CGV)
             </h3>
             <p className="text-xs text-gray-500">
-              Dernière mise à jour : 6 novembre 2026.
+              Dernière mise à jour : 7 novembre 2026.
             </p>
             <p className="text-xs text-gray-500">
               Squelette publié pour information. À faire relire par un
@@ -1648,9 +1652,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 4. Membre Fondateur
               </p>
               <p>
-                Le statut de Membre Fondateur est une offre promotionnelle
-                distincte (6 mois offerts, {FOUNDER_MAX_SLOTS} premiers
-                comptes). À l&apos;issue de cette période, le compte
+                Le statut de Membre Fondateur est attribué aux 1&nbsp;000
+                premiers comptes, au premier enregistrement de leur profil.
+                Un compte dont le profil n&apos;a jamais été enregistré ne
+                reçoit pas de numéro. Les 6 mois d&apos;avantages Premium
+                courent à compter de cet enregistrement. À l&apos;issue de
+                cette période, le compte
                 bascule vers l&apos;offre Gratuite, sauf souscription d&apos;un
                 palier                 payant. Le badge et le numéro restent affichés tant que
                 le compte n&apos;est pas supprimé. Il bénéficie d&apos;une

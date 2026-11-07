@@ -6,7 +6,7 @@
 
 ## Términos de Servicio
 
-Última actualización: 6 de noviembre de 2026.
+Última actualización: 7 de noviembre de 2026.
 
 ### Preámbulo
 
@@ -54,10 +54,10 @@ Registrarse, crear una cuenta o utilizar el Servicio implica la aceptación plen
 Permanecen disponibles de forma gratuita, sin obligación de pago ni de tarjeta bancaria: la creación y gestión de un perfil, la consulta de los perfiles compatibles mostrados en Descubrir y en las sugerencias, la expresión de interés (Like, Flash) y la formación de Matches.
 
 <!-- free:start -->
-El envío de mensajes (modo Diálogo) está incluido durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Ninguna suscripción de pago se ofrece mientras el Servicio esté en fase de lanzamiento. Al término de esta fase, podrán proponerse ofertas de pago opcionales; no obstante, nunca se exigirá ninguna suscripción para conservar la cuenta y acceder a las funcionalidades gratuitas descritas en el primer párrafo del presente apartado. A falta de suscripción, la cuenta pasa a la oferta Gratis (apartado 4.3).
+El envío de mensajes (modo Diálogo) está incluido durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, desde el primer registro de su perfil; una semana para cualquier otro usuario, desde la creación de su cuenta), contabilizado individualmente para cada usuario. Ninguna suscripción de pago se ofrece mientras el Servicio esté en fase de lanzamiento. Al término de esta fase, podrán proponerse ofertas de pago opcionales; no obstante, nunca se exigirá ninguna suscripción para conservar la cuenta y acceder a las funcionalidades gratuitas descritas en el primer párrafo del presente apartado. A falta de suscripción, la cuenta pasa a la oferta Gratis (apartado 4.3).
 <!-- free:end -->
 <!-- paid:start -->
-El envío de mensajes (modo Diálogo) está incluido de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, una semana para cualquier otro usuario), contabilizado individualmente para cada usuario desde la creación de su cuenta. Esta ventana no es renovable. Más allá de ese período, el envío de nuevos mensajes queda reservado a los usuarios que dispongan de una suscripción activa (Basique, Essentiel, Confort o Premium), en las condiciones y tarifas establecidas en las Condiciones Generales de Venta mencionadas en el apartado 2.4. La apertura de un Diálogo sin Match depende del destinatario (perfil abierto o protegido), según el apartado 2.1.
+El envío de mensajes (modo Diálogo) está incluido de forma gratuita durante el Período de prueba definido en el artículo 4 (seis meses para un Miembro Fundador, desde el primer registro de su perfil; una semana para cualquier otro usuario, desde la creación de su cuenta), contabilizado individualmente para cada usuario. Esta ventana no es renovable. Más allá de ese período, el envío de nuevos mensajes queda reservado a los usuarios que dispongan de una suscripción activa (Basique, Essentiel, Confort o Premium), en las condiciones y tarifas establecidas en las Condiciones Generales de Venta mencionadas en el apartado 2.4. La apertura de un Diálogo sin Match depende del destinatario (perfil abierto o protegido), según el apartado 2.1.
 
 La consulta de los Matches ya formados y de los mensajes ya recibidos sigue siendo accesible sin pago. El usuario que no desee contratar una suscripción conserva acceso completo a la creación de perfil, a Descubrir, al Like, al Flash y a la formación de Matches; solo el envío de nuevos mensajes, al finalizar su Período de prueba (artículo 4), está sujeto a esta condición.
 <!-- paid:end -->
@@ -178,9 +178,9 @@ La lengua materna es obligatoria si el miembro reside en un país que no figura 
 
 **4.1 Miembros Fundadores (1000 primeras cuentas)**
 
-Se otorga un estatus honorífico de «Miembro Fundador» a las 1000 primeras cuentas creadas. Los números se asignan de forma sucesiva, del 1 al 1000, y nunca se reasignan: la eliminación de una cuenta conlleva la pérdida permanente de la insignia y de su número, sin liberar una plaza. La inactividad o la puesta en pausa de la cuenta no libera ninguna plaza. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: se vuelve definitivo con la asignación del número 1000.
+El estatus de Miembro Fundador se atribuye a las 1.000 primeras cuentas, en el primer registro de su perfil. Una cuenta cuyo perfil nunca se ha registrado no recibe número. Los 6 meses de ventajas Premium corren a partir de ese registro. Los números se asignan de forma sucesiva, del 1 al 1000, y nunca se reasignan: la eliminación de una cuenta conlleva la pérdida permanente de la insignia y de su número, sin liberar una plaza. La inactividad o la puesta en pausa de la cuenta no libera ninguna plaza. El paso del Servicio al modo de pago no se dispara por una fecha de calendario fija: se vuelve definitivo con la asignación del número 1000.
 
-Durante un Período de prueba de seis (6) meses a partir de la creación de su cuenta, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes y Likes y Flashes ilimitados. El Miembro Fundador recibe además 2 Boosts de 24 h, acreditados al lanzamiento de las ofertas de pago, o en el momento de la inscripción si esta es posterior, y para utilizar en los 6 meses que siguen a ese crédito, sea cual sea la oferta. Se pierden en caso de eliminación de la cuenta.
+Durante un Período de prueba de seis (6) meses a partir del primer registro de su perfil, el Miembro Fundador se beneficia, de forma gratuita, sin compromiso de duración, sin renovación tácita y sin necesidad de tarjeta bancaria, de: el envío de mensajes y Likes y Flashes ilimitados. El Miembro Fundador recibe además 2 Boosts de 24 h, acreditados al lanzamiento de las ofertas de pago, o en el momento de la inscripción si esta es posterior, y para utilizar en los 6 meses que siguen a ese crédito, sea cual sea la oferta. Se pierden en caso de eliminación de la cuenta.
 
 Este estatus es honorífico: más allá de las ventajas del Período de prueba descritas anteriormente y de la Reducción Fundador prevista a continuación, no da derecho a ningún reembolso, cesión o conversión en efectivo. El título y el número asociado permanecen visibles mientras la cuenta exista; se pierden definitivamente en caso de baja o eliminación de la cuenta, en las condiciones del apartado 8.2. Una cuenta cuya visibilidad esté restringida o que esté en pausa a efectos del apartado 3.7 sigue siendo una cuenta activa.
 
@@ -369,7 +369,11 @@ Indica que se considera que el miembro está en línea (apartado 3.8). Este punt
 <!-- paid:start -->
 ## Condiciones Generales de Venta
 
-Última actualización: 6 de noviembre de 2026.
+Última actualización: 7 de noviembre de 2026.
+
+### 4. Miembro Fundador
+
+El estatus de Miembro Fundador se atribuye a las 1.000 primeras cuentas, en el primer registro de su perfil. Una cuenta cuyo perfil nunca se ha registrado no recibe número. Los 6 meses de ventajas Premium corren a partir de ese registro. Al término de este período, la cuenta pasa a la oferta Gratis, salvo contratación de un plan de pago. La insignia y el número siguen mostrándose mientras la cuenta no se elimine.
 
 ### 6. Alcance francófono / Internacional
 

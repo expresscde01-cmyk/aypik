@@ -6,7 +6,7 @@
 
 ## Terms of Service
 
-Last updated: November 6, 2026.
+Last updated: November 7, 2026.
 
 ### Preamble
 
@@ -54,10 +54,10 @@ Registering, creating an account, or using the Service constitutes full and comp
 The following remain available free of charge, with no payment or credit card required: creating and managing a profile, viewing compatible profiles shown in Discover and suggestions, expressing interest (Like, Flash) and forming Matches.
 
 <!-- free:start -->
-Sending messages (Dialogue mode) is included during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. No paid subscription is offered while the Service is in its launch phase. At the end of this phase, optional paid plans may be offered; however, no subscription will ever be required in order to keep the account and to access the free features described in the first paragraph of this Section. Absent a subscription, the account moves to the Free plan (Section 4.3).
+Sending messages (Dialogue mode) is included during the Trial Period defined in Article 4 (six months for a Founding Member, from the first time their profile is saved; one week for any other user, from the date their account was created), counted individually for each user. No paid subscription is offered while the Service is in its launch phase. At the end of this phase, optional paid plans may be offered; however, no subscription will ever be required in order to keep the account and to access the free features described in the first paragraph of this Section. Absent a subscription, the account moves to the Free plan (Section 4.3).
 <!-- free:end -->
 <!-- paid:start -->
-Sending messages (Dialogue mode) is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, one week for any other user), counted individually for each user from the date their account was created. This window is not renewable. Beyond that, sending new messages is reserved for users with an active subscription (Basique, Essentiel, Confort or Premium), under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4. Opening a Dialogue without a Match depends on the recipient (open or protected profile), as described in Section 2.1.
+Sending messages (Dialogue mode) is included free of charge during the Trial Period defined in Article 4 (six months for a Founding Member, from the first time their profile is saved; one week for any other user, from the date their account was created), counted individually for each user. This window is not renewable. Beyond that, sending new messages is reserved for users with an active subscription (Basique, Essentiel, Confort or Premium), under the conditions and pricing set out in the General Terms of Sale referred to in Section 2.4. Opening a Dialogue without a Match depends on the recipient (open or protected profile), as described in Section 2.1.
 
 Viewing Matches already formed and messages already received remains accessible free of charge. A user who does not wish to subscribe keeps full access to creating a profile, to Discover, to Like, to Flash and to forming Matches; only sending new messages, at the end of their Trial Period (Article 4), is subject to this condition.
 <!-- paid:end -->
@@ -178,9 +178,9 @@ A native language is required if the member lives in a country that is not on th
 
 **4.1 Founding Members (first 1000 accounts)**
 
-An honorary "Founding Member" status is granted to the first 1000 accounts created. Numbers are assigned in sequence, from 1 to 1000, and are never reassigned: deletion of an account results in the permanent loss of the badge and its number, without freeing a slot. Inactivity or pausing the account does not free a slot. Switching the Service to paid mode is not triggered by a fixed calendar date: it becomes definitive when the 1000th number is assigned.
+Founding Member status is granted to the first 1,000 accounts, when their profile is first saved. An account whose profile has never been saved does not receive a number. The 6 months of Premium benefits run from that save. Numbers are assigned in sequence, from 1 to 1000, and are never reassigned: deletion of an account results in the permanent loss of the badge and its number, without freeing a slot. Inactivity or pausing the account does not free a slot. Switching the Service to paid mode is not triggered by a fixed calendar date: it becomes definitive when the 1000th number is assigned.
 
-During a six (6) month Trial Period starting from the date their account was created, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages and unlimited Likes and Flashes. The Founding Member also receives 2 Boosts of 24 hours, credited when paid plans launch, or at signup if that comes later, and to be used within the 6 months following that credit, on any plan. They are lost if the account is deleted.
+During a six (6) month Trial Period starting from the first time their profile is saved, a Founding Member benefits, free of charge, with no fixed term, no automatic renewal and no credit card required, from: sending messages and unlimited Likes and Flashes. The Founding Member also receives 2 Boosts of 24 hours, credited when paid plans launch, or at signup if that comes later, and to be used within the 6 months following that credit, on any plan. They are lost if the account is deleted.
 
 This status is honorary: beyond the Trial Period benefits described above and the Founder Discount set out below, it does not entitle the holder to any refund, transfer, or cash conversion. The title and associated number remain displayed for as long as the account exists; they are permanently lost upon deregistration or account deletion, under the conditions of Section 8.2. An account whose visibility is restricted or which is paused within the meaning of Section 3.7 remains an active account.
 
@@ -369,7 +369,11 @@ It shows that the member is considered online (Section 3.8). This dot does not a
 <!-- paid:start -->
 ## General Terms of Sale
 
-Last updated: November 6, 2026.
+Last updated: November 7, 2026.
+
+### 4. Founding Member
+
+Founding Member status is granted to the first 1,000 accounts, when their profile is first saved. An account whose profile has never been saved does not receive a number. The 6 months of Premium benefits run from that save. At the end of this period, the account moves to the Free plan unless a paid plan is taken out. The badge and number stay displayed for as long as the account is not deleted.
 
 ### 6. French-speaking / International reach
 
