@@ -360,6 +360,26 @@ export function MembershipPanel({
     onRefresh?.();
   };
 
+  if (signupGate && !offerChosen && SITE_FREE_MODE) {
+    return (
+      <div className="rounded-2xl border border-aypik-border bg-white/80 p-4 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-aypik-banner-bg text-aypik-navy mb-2">
+          <Heart className="w-5 h-5" />
+        </div>
+        <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+          {founderAvailable
+            ? t('membership.founderAutomaticTitle')
+            : t('membership.founderFullTitle')}
+        </h2>
+        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+          {founderAvailable
+            ? t('membership.founderAutomaticBody')
+            : t('membership.founderFullBody')}
+        </p>
+      </div>
+    );
+  }
+
   if (signupGate && !offerChosen) {
     return (
       <div className="space-y-4">

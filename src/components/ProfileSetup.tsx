@@ -694,7 +694,7 @@ export default function ProfileSetup({
 
   const isSignup = !allowAccountDeletion;
   const offerChosen = status.membership_linked;
-  const canEditProfile = !isSignup || offerChosen;
+  const canEditProfile = !isSignup || offerChosen || SITE_FREE_MODE;
 
   const currentProfileSnapshot = () =>
     profileFormSnapshot({
@@ -830,7 +830,7 @@ export default function ProfileSetup({
     setLanguagesError(null);
     setProfileSaved(false);
 
-    if (isSignup && !status.membership_linked) {
+    if (isSignup && !SITE_FREE_MODE && !status.membership_linked) {
       setError(t('profile.chooseOfferFirst'));
       return;
     }
