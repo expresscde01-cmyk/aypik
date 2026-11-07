@@ -1,7 +1,8 @@
 /**
- * Compteur public Fondateur : le front ne lit que `founder_offer_closed`.
- * `founders_remaining` / `founders_taken` / `founders_max` restent côté RPC
- * pour le diagnostic interne ; ils ne doivent jamais piloter ni s’afficher.
+ * Bandeau visiteur : le front ne lit que `founder_offer_closed`.
+ * `founders_remaining` ne s’affiche que dans le bandeau membre
+ * (`FounderInviteBanner`), et seulement si `get_founder_slot_status`
+ * renvoie un entier. Aucun autre écran ne doit l’inventer ni l’afficher.
  */
 export function parseFounderOfferClosed(raw: unknown): boolean {
   if (!raw || typeof raw !== 'object') return false;

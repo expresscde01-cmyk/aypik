@@ -7,6 +7,7 @@ import { useMembership } from '@/lib/useMembership';
 import { fetchMyProfile } from '@/lib/myProfile';
 import { useTranslation } from 'react-i18next';
 import HomeDashboard from '@/components/HomeDashboard';
+import FounderInviteBanner from '@/components/FounderInviteBanner';
 import AppTabHeader from '@/components/AppTabHeader';
 import UnreadBadge from '@/components/UnreadBadge';
 import { SiteFooter } from '@/components/LegalChrome';
@@ -559,6 +560,11 @@ function AppShellView() {
         tab === 'home' ? 'bg-[#FFF8F6]' : 'bg-gray-50'
       }`}
     >
+      <FounderInviteBanner
+        founderNumber={
+          membershipLoading || !status.is_founder ? null : status.founder_number
+        }
+      />
       <main className="flex-1 min-h-0">
         {mountedTabs.has('home') && (
           <div className={tab === 'home' ? 'min-h-full flex flex-col' : 'hidden'}>

@@ -755,7 +755,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 reconduction et sans aucune demande de carte bancaire : de
                 l&apos;envoi de messages, ainsi que de likes et Flash illimités.
                 Il reçoit en outre 2 Boosts de 24 h, crédités au lancement des
-                offres payantes, ou à l&apos;inscription si elle a lieu après,
+                offres payantes, ou à l&apos;enregistrement du profil s&apos;il a lieu après,
                 et à utiliser dans les 6 mois qui suivent ce crédit, quelle que
                 soit l&apos;offre. Ils sont perdus en cas de suppression du compte.
               </p>
@@ -1335,9 +1335,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 consulte a choisi un tri, auprès des membres pour lesquels
                 les critères de mise en relation correspondent. Plusieurs
                 profils pouvant être mis en avant en même temps, leur ordre
-                d&apos;apparition varie. Les Membres Fondateurs reçoivent
+                d&apos;apparition varie.                 Les Membres Fondateurs reçoivent
                 2 Boosts, crédités au lancement des offres payantes, ou à
-                l&apos;inscription si elle a lieu après, et à utiliser dans
+                l&apos;enregistrement du profil s&apos;il a lieu après, et à utiliser dans
                 les 6 mois qui suivent ce crédit, quelle que soit l&apos;offre.
               </p>
             </div>
