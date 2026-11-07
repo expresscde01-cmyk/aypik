@@ -104,8 +104,7 @@ export default function FounderInviteBanner({
   );
 
   const share = async () => {
-    const mobile = window.matchMedia('(max-width: 639px)').matches;
-    if (mobile && typeof navigator.share === 'function') {
+    if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ url: FOUNDER_INVITE_URL });
         return;
