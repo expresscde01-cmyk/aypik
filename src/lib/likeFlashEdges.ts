@@ -8,6 +8,11 @@ export type LikeFlashEdges = {
   sentFlashes: { to_user: string; created_at: string }[];
 };
 
+/** Like enregistré par send_like (quota côté serveur). */
+export async function sendLike(toUserId: string) {
+  return supabase.rpc('send_like', { p_to_user: toUserId });
+}
+
 export async function fetchLikeFlashEdges(
   userId: string
 ): Promise<LikeFlashEdges> {

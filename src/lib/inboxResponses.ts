@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { emitInboxUpdated } from '@/lib/messaging';
 import { sweepStaleSocialNotifications } from '@/lib/suggestions';
 import { rememberClearedWait } from '@/lib/waitArchives';
-import { invalidateLikeFlashEdges, seedSentLikeEdge } from '@/lib/likeFlashEdges';
+import { invalidateLikeFlashEdges, seedSentLikeEdge, sendLike } from '@/lib/likeFlashEdges';
 import { rememberConfirmedInboxDecision } from '@/lib/inboxDecisionOverlay';
 
 export type InboxDecision = 'wait' | 'refuse' | 'match';
@@ -122,10 +122,7 @@ async function persistInboxMatchLocally(
     { onConflict: 'user_id,actor_id' }
   );
   if (upsertErr) throw upsertErr;
-  const { error: likeErr } = await supabase.from('likes').insert({
-    from_user: me,
-    to_user: actorId,
-  });
+  const { error: likeErr } = await sendLike(actorId);
   if (likeErr && !isUniqueViolation(likeErr)) throw likeErr;
   if ((await currentInboxDecision(actorId)) !== 'match') {
     throw new Error('match_not_persisted');
