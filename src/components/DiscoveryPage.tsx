@@ -105,6 +105,7 @@ import { queryKeys, SIGNUP_COUNT_STALE_MS } from '@/lib/queryClient';
 import {
   fetchLikeFlashEdges,
   invalidateLikeFlashEdges,
+  sendLike,
 } from '@/lib/likeFlashEdges';
 import { candidatePassesGeoFilter } from '@/lib/suggestionMatch';
 import { matchingTargetGender } from '@/lib/dating';
@@ -1743,10 +1744,7 @@ export default function DiscoveryPage({
       setError(null);
 
       try {
-        const { error: likeErr } = await supabase.from('likes').insert({
-          from_user: user.id,
-          to_user: candidate.id,
-        });
+        const { error: likeErr } = await sendLike(candidate.id);
         if (likeErr) throw likeErr;
         hideFromCurrentFilter(candidate.id);
         setLikedIds((prev) => new Set(prev).add(candidate.id));

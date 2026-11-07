@@ -47,6 +47,7 @@ import { queryKeys } from '@/lib/queryClient';
 import {
   fetchLikeFlashEdges,
   invalidateLikeFlashEdges,
+  sendLike,
 } from '@/lib/likeFlashEdges';
 import { useMembership } from '@/lib/useMembership';
 import { formatDateFr, isFounderPeriodActive } from '@/lib/membership';
@@ -279,10 +280,7 @@ export default function HomeDashboard({
         setActionError(null);
 
       try {
-        const { error: likeErr } = await supabase.from('likes').insert({
-          from_user: user.id,
-          to_user: candidate.id,
-        });
+        const { error: likeErr } = await sendLike(candidate.id);
         if (likeErr) throw likeErr;
         setLikedIds((prev) => new Set(prev).add(candidate.id));
         setOpenProfile((open) => (open?.id === candidate.id ? null : open));
