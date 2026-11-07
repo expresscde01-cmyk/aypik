@@ -84,4 +84,62 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.profile_boosts FROM anon
 REVOKE INSERT, TRUNCATE ON TABLE public.likes FROM anon, authenticated;
 REVOKE INSERT, TRUNCATE ON TABLE public.flashes FROM anon, authenticated;
 
+-- Un message déjà envoyé : le destinataire ne peut changer que la lecture.
+REVOKE UPDATE ON TABLE public.messages FROM anon, authenticated;
+GRANT UPDATE (read_at) ON TABLE public.messages TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.protect_sent_message()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF current_user IN ('postgres', 'supabase_admin', 'service_role') THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.id IS DISTINCT FROM OLD.id
+     OR NEW.conversation_id IS DISTINCT FROM OLD.conversation_id
+     OR NEW.sender_id IS DISTINCT FROM OLD.sender_id
+     OR NEW.recipient_id IS DISTINCT FROM OLD.recipient_id
+     OR NEW.content IS DISTINCT FROM OLD.content
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'message_column_forbidden';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS messages_protect_sent ON public.messages;
+CREATE TRIGGER messages_protect_sent
+BEFORE UPDATE ON public.messages
+FOR EACH ROW
+EXECUTE FUNCTION public.protect_sent_message();
+
+-- Une conversation déjà ouverte : les deux comptes ne bougent plus.
+REVOKE UPDATE ON TABLE public.conversations FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.protect_conversation_pair()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF current_user IN ('postgres', 'supabase_admin', 'service_role') THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.id IS DISTINCT FROM OLD.id
+     OR NEW.user_a IS DISTINCT FROM OLD.user_a
+     OR NEW.user_b IS DISTINCT FROM OLD.user_b THEN
+    RAISE EXCEPTION 'conversation_pair_forbidden';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS conversations_protect_pair ON public.conversations;
+CREATE TRIGGER conversations_protect_pair
+BEFORE UPDATE ON public.conversations
+FOR EACH ROW
+EXECUTE FUNCTION public.protect_conversation_pair();
+
 NOTIFY pgrst, 'reload schema';
