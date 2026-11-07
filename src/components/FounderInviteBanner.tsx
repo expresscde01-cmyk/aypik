@@ -22,14 +22,23 @@ async function loadFounderSlots(): Promise<FounderSlotSnapshot> {
   }
 }
 
-function InvitePhrase({ text, highlight }: { text: string; highlight: string }) {
-  const at = highlight ? text.indexOf(highlight) : -1;
-  if (at < 0) return text;
+function InvitePhrase({
+  thanks,
+  before,
+  highlight,
+  tail,
+}: {
+  thanks: string;
+  before: string;
+  highlight: string;
+  tail: string;
+}) {
   return (
     <>
-      {text.slice(0, at)}
+      <strong className="founder-invite-banner-thanks">{thanks}</strong>{' '}
+      {before}
       <strong>{highlight}</strong>
-      {text.slice(at + highlight.length)}
+      {tail}
     </>
   );
 }
@@ -61,8 +70,10 @@ async function copySiteLink(): Promise<boolean> {
 
 export default function FounderInviteBanner({
   founderNumber,
+  givenName = '',
 }: {
   founderNumber: number | null;
+  givenName?: string;
 }) {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(isFounderInviteDismissed);
@@ -94,12 +105,16 @@ export default function FounderInviteBanner({
   const variant = founderInviteVariant(slots.remaining);
   if (variant === 'hidden') return null;
 
-  const text = t(
+  const name = givenName.trim();
+  const thanks = name
+    ? t('landing.founderInviteThanks', { name })
+    : t('landing.founderInviteThanksPlain');
+  const tail = t(
     variant === 'scarce'
       ? slots.remaining === 1
-        ? 'landing.founderInviteScarceOne'
-        : 'landing.founderInviteScarce'
-      : 'landing.founderInviteOpen',
+        ? 'landing.founderInviteTailScarceOne'
+        : 'landing.founderInviteTailScarce'
+      : 'landing.founderInviteTailOpen',
     { number: founderNumber, count: slots.remaining }
   );
 
@@ -121,8 +136,15 @@ export default function FounderInviteBanner({
       role="region"
       aria-label={t('landing.founderInviteRegion')}
     >
+      <div className="founder-invite-banner-frame">
+      <div className="founder-invite-banner-inner">
       <p className="founder-invite-banner-copy">
-        <InvitePhrase text={text} highlight={t('landing.founderInviteHighlight')} />
+        <InvitePhrase
+          thanks={thanks}
+          before={t('landing.founderInviteBefore')}
+          highlight={t('landing.founderInviteHighlight')}
+          tail={tail}
+        />
       </p>
       <div className="launch-ticker-actions">
         <button
@@ -144,6 +166,8 @@ export default function FounderInviteBanner({
         >
           <X className="w-3.5 h-3.5" aria-hidden />
         </button>
+      </div>
+      </div>
       </div>
     </div>
   );

@@ -1338,18 +1338,58 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
 }
 
 .founder-invite-banner {
+  align-items: stretch;
+  padding: 0.25rem 0;
+  gap: 0;
+}
+
+.founder-invite-banner-frame {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.founder-invite-banner-inner {
+  display: flex;
   align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 2.25rem;
+}
+
+@media (min-width: 1024px) {
+  .founder-invite-banner-frame {
+    max-width: none;
+    padding-inline: 2rem;
+  }
+
+  .founder-invite-banner-inner {
+    max-width: 80rem;
+    margin-inline: auto;
+  }
 }
 
 .founder-invite-banner-copy {
   flex: 1;
   min-width: 0;
   margin: 0;
-  padding: 0.2rem 0.15rem 0.2rem 0.75rem;
+  padding: 0.15rem 0.35rem 0.15rem 0;
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.01em;
+}
+
+.launch-ticker strong.founder-invite-banner-thanks {
+  color: inherit;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.founder-invite-banner .launch-ticker-actions {
+  padding: 0;
 }
 
 .founder-invite-banner-share {
