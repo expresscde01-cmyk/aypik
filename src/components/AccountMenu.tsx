@@ -9,6 +9,7 @@ import {
   LayoutList,
   Lock,
   LogOut,
+  MessageCircle,
   RefreshCw,
   Trash2,
   UserRound,
@@ -31,7 +32,12 @@ import { useTranslation } from 'react-i18next';
 import type { DiscoverMode } from '@/lib/discoverMode';
 import { useMembership } from '@/lib/useMembership';
 import { isVisibilityLocked } from '@/lib/membership';
-import { openHighlightOffer } from '@/lib/conversionNav';
+import {
+  openHighlightOffer,
+  subscribeOpenAccountMenu,
+} from '@/lib/conversionNav';
+import { supabase } from '@/lib/supabase';
+import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
 
 export default function AccountMenu({
   displayName,
@@ -44,6 +50,10 @@ export default function AccountMenu({
   openRequestKey = 0,
   discoverMode,
   onDiscoverModeChange,
+  acceptsMessagesWithoutMatch = false,
+  messagesWithoutMatchNoticeSeen = false,
+  onAcceptMessagesWithoutMatch,
+  onMessagesWithoutMatchNoticeSeen,
 }: {
   displayName: string;
   visibilityChoice: VisibilityChoice;
@@ -56,6 +66,10 @@ export default function AccountMenu({
   openRequestKey?: number;
   discoverMode?: DiscoverMode | null;
   onDiscoverModeChange?: (mode: DiscoverMode) => void;
+  acceptsMessagesWithoutMatch?: boolean;
+  messagesWithoutMatchNoticeSeen?: boolean;
+  onAcceptMessagesWithoutMatch?: (value: boolean) => void;
+  onMessagesWithoutMatchNoticeSeen?: () => void;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -74,6 +88,54 @@ export default function AccountMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const visibilityHint = visibilityMenuHint(visibilityChoice);
+  const [noticeVisible, setNoticeVisible] = useState(false);
+  const [acceptsMessages, setAcceptsMessages] = useState(
+    acceptsMessagesWithoutMatch
+  );
+  const [acceptBusy, setAcceptBusy] = useState(false);
+  const handledNoticeOpen = useRef(false);
+
+  useEffect(() => {
+    setAcceptsMessages(acceptsMessagesWithoutMatch);
+  }, [acceptsMessagesWithoutMatch]);
+
+  useEffect(() => {
+    if (!open) {
+      handledNoticeOpen.current = false;
+      return;
+    }
+    if (handledNoticeOpen.current) return;
+    handledNoticeOpen.current = true;
+    if (messagesWithoutMatchNoticeSeen || !user?.id) {
+      setNoticeVisible(false);
+      return;
+    }
+    setNoticeVisible(true);
+    onMessagesWithoutMatchNoticeSeen?.();
+    void supabase
+      .from('profiles')
+      .update({ messages_without_match_notice_seen: true })
+      .eq('id', user.id)
+      .select(PROFILE_WRITE_RETURN);
+  }, [open, messagesWithoutMatchNoticeSeen, onMessagesWithoutMatchNoticeSeen, user?.id]);
+
+  const toggleAcceptMessages = async () => {
+    if (!user?.id || acceptBusy) return;
+    const next = !acceptsMessages;
+    setAcceptsMessages(next);
+    setAcceptBusy(true);
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ accepts_messages_without_match: next })
+      .eq('id', user.id)
+      .select(PROFILE_WRITE_RETURN);
+    setAcceptBusy(false);
+    if (updateError) {
+      setAcceptsMessages(!next);
+      return;
+    }
+    onAcceptMessagesWithoutMatch?.(next);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -162,6 +224,16 @@ export default function AccountMenu({
     setOpen(true);
     setVisibilityOpen(true);
   }, [openRequestKey]);
+
+  useEffect(
+    () =>
+      subscribeOpenAccountMenu(() => {
+        setError(null);
+        setVisibilityOpen(false);
+        setOpen(true);
+      }),
+    []
+  );
 
   const close = () => {
     setOpen(false);
@@ -288,6 +360,11 @@ export default function AccountMenu({
           aria-label={t('profile.menuTitle')}
           className="absolute right-0 top-full mt-1.5 z-50 isolate w-[min(100vw-2rem,22rem)] max-lg:rounded-r-none rounded-2xl border border-gray-100 bg-white py-1.5 shadow-lg animate-fadeIn"
         >
+          {noticeVisible ? (
+            <p className="mx-3 mb-1.5 rounded-lg bg-sky-50 px-2.5 py-1.5 text-[12px] leading-snug text-sky-950">
+              {t('profile.messagesWithoutMatchNotice')}
+            </p>
+          ) : null}
           <MenuItem
             icon={<UserRound className="w-4 h-4" />}
             label={t('profile.menuMyProfile')}
@@ -341,6 +418,37 @@ export default function AccountMenu({
                 value={discoverMode}
                 onChange={onDiscoverModeChange}
               />
+            </div>
+          </div>
+          <div role="none" className="flex items-start gap-2.5 px-3 py-2">
+            <span className="shrink-0 opacity-80 mt-0.5">
+              <MessageCircle className="w-4 h-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[13px] font-medium text-gray-800">
+                  {t('profile.messagesWithoutMatch')}
+                </p>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={acceptsMessages}
+                  disabled={acceptBusy}
+                  onClick={() => void toggleAcceptMessages()}
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                    acceptsMessages ? 'bg-sky-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                      acceptsMessages ? 'left-4' : 'left-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] leading-snug text-gray-500">
+                {t('profile.messagesWithoutMatchHint')}
+              </p>
             </div>
           </div>
           <MenuItem

@@ -58,6 +58,49 @@ export function openHighlightOffer(offer: HighlightOffer) {
   );
 }
 
+const COLD_MESSAGE_EVENT = 'aypik:messages-without-match-offer';
+
+/** Ouvre Mon profil sur les offres, y compris pendant le lancement. */
+export function openMessagesWithoutMatchOffers() {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('open', 'profile');
+  url.searchParams.set('coldMessage', '1');
+  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  window.dispatchEvent(new CustomEvent(COLD_MESSAGE_EVENT));
+}
+
+export function consumeColdMessageOfferFromUrl(): boolean {
+  if (typeof window === 'undefined') return false;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('coldMessage') !== '1') return false;
+  url.searchParams.delete('coldMessage');
+  if (url.searchParams.get('open') === 'profile') {
+    url.searchParams.delete('open');
+  }
+  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  return true;
+}
+
+const OPEN_ACCOUNT_MENU_EVENT = 'aypik:open-account-menu';
+
+export function openAccountMenu() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(OPEN_ACCOUNT_MENU_EVENT));
+}
+
+export function subscribeOpenAccountMenu(handler: () => void): () => void {
+  const onEvent = () => handler();
+  window.addEventListener(OPEN_ACCOUNT_MENU_EVENT, onEvent);
+  return () => window.removeEventListener(OPEN_ACCOUNT_MENU_EVENT, onEvent);
+}
+
+export function subscribeColdMessageOffer(handler: () => void): () => void {
+  const onEvent = () => handler();
+  window.addEventListener(COLD_MESSAGE_EVENT, onEvent);
+  return () => window.removeEventListener(COLD_MESSAGE_EVENT, onEvent);
+}
+
 export function subscribeHighlightOffer(
   handler: (offer: HighlightOffer) => void
 ): () => void {

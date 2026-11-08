@@ -98,6 +98,10 @@ export default function HomeDashboard({
   onAccountStatusClick,
   discoverMode,
   onDiscoverModeChange,
+  acceptsMessagesWithoutMatch = false,
+  messagesWithoutMatchNoticeSeen = false,
+  onAcceptMessagesWithoutMatch,
+  onMessagesWithoutMatchNoticeSeen,
 }: {
   displayName: string;
   greetingNameColor?: string | null;
@@ -123,6 +127,10 @@ export default function HomeDashboard({
   onAccountStatusClick?: (id: AccountStatusId) => void;
   discoverMode?: DiscoverMode | null;
   onDiscoverModeChange?: (mode: DiscoverMode) => void;
+  acceptsMessagesWithoutMatch?: boolean;
+  messagesWithoutMatchNoticeSeen?: boolean;
+  onAcceptMessagesWithoutMatch?: (value: boolean) => void;
+  onMessagesWithoutMatchNoticeSeen?: () => void;
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -392,6 +400,10 @@ export default function HomeDashboard({
         onSignOut={onSignOut}
         discoverMode={discoverMode}
         onDiscoverModeChange={onDiscoverModeChange}
+        acceptsMessagesWithoutMatch={acceptsMessagesWithoutMatch}
+        messagesWithoutMatchNoticeSeen={messagesWithoutMatchNoticeSeen}
+        onAcceptMessagesWithoutMatch={onAcceptMessagesWithoutMatch}
+        onMessagesWithoutMatchNoticeSeen={onMessagesWithoutMatchNoticeSeen}
       />
     ) : (
       <span className="hidden sm:inline-flex items-center gap-1.5 max-w-[9rem] truncate text-sm font-semibold text-gray-800 ml-1">

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Heart,
   MapPin,
+  Lock,
   MessageCircle,
   Sparkles,
   AlertCircle,
@@ -29,12 +30,16 @@ import { SoftPremiumBanner } from '@/components/membership/SoftPremium';
 import { SITE_FREE_MODE, offerLabel } from '@/lib/founderCopy';
 import { canPersonalizeSearch, dailyFlashQuota, effectiveSuggestionPrefs } from '@/lib/offerAccess';
 import {
+  canWriteFirstMessageWithoutMatch,
   formatPremiumPriceLabel,
   isFounderPeriodActive,
   isFrancophoneLocked,
   isInternationalLocked,
 } from '@/lib/membership';
-import { openHighlightOffer } from '@/lib/conversionNav';
+import {
+  openHighlightOffer,
+  openMessagesWithoutMatchOffers,
+} from '@/lib/conversionNav';
 import { effectiveDiscoverMode } from '@/lib/discoverMode';
 import { rememberFirstWordRepliedThisSession } from '@/lib/firstWordSession';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
@@ -1807,10 +1812,20 @@ export default function DiscoveryPage({
     [onOpenUnreadChat, openCandidate]
   );
 
-  const openDialogue = useCallback((candidate: Candidate) => {
-    setOpenProfile(null);
-    setChatPeer(candidate);
-  }, []);
+  const dialogueLocked =
+    !membershipLoading && !canWriteFirstMessageWithoutMatch(status);
+
+  const openDialogue = useCallback(
+    (candidate: Candidate) => {
+      if (dialogueLocked) {
+        openMessagesWithoutMatchOffers();
+        return;
+      }
+      setOpenProfile(null);
+      setChatPeer(candidate);
+    },
+    [dialogueLocked]
+  );
 
   const handleFlash = useCallback(
     async (candidate: Candidate) => {
@@ -2315,6 +2330,7 @@ export default function DiscoveryPage({
                   onFlash={handleFlash}
                   onLike={handleLike}
                   onDialogue={openDialogue}
+                  dialogueLocked={dialogueLocked}
                 />
             ))}
           </ul>
@@ -2450,6 +2466,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onFlash,
   onLike,
   onDialogue,
+  dialogueLocked,
 }: {
   candidate: Candidate;
   geoPerimeter: GeoPerimeterFilter;
@@ -2466,6 +2483,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   onFlash: (c: Candidate) => void;
   onLike: (c: Candidate) => void;
   onDialogue: (c: Candidate) => void;
+  dialogueLocked: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -2612,7 +2630,11 @@ const DiscoveryCard = memo(function DiscoveryCard({
             </DiscoveryActionButton>
             {c.open_messaging ? (
               <DiscoveryActionButton
-                tooltip={t('discover.dialogueTooltip')}
+                tooltip={
+                  dialogueLocked
+                    ? t('discover.dialogueLockedTooltip')
+                    : t('discover.dialogueTooltip')
+                }
                 tooltipClassName="border border-sky-200 bg-white/95 text-sky-500"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -2625,6 +2647,12 @@ const DiscoveryCard = memo(function DiscoveryCard({
                 })}
               >
                 <MessageCircle className="w-4 h-4 text-white" />
+                {dialogueLocked ? (
+                  <Lock
+                    className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-white p-0.5 text-sky-600"
+                    aria-hidden
+                  />
+                ) : null}
               </DiscoveryActionButton>
             ) : null}
             <DiscoveryActionButton

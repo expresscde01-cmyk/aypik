@@ -422,6 +422,24 @@ export function canOptOutMessagingProtection(status: MembershipStatus): boolean 
 }
 
 /**
+ * Premier message sans Match : Basique, Essentiel, Confort, Premium encore
+ * actifs, ou Fondateur dans ses 6 mois. La semaine Gratuit ne suffit pas.
+ */
+export function canWriteFirstMessageWithoutMatch(
+  status: MembershipStatus
+): boolean {
+  if (isFounderPeriodActive(status)) return true;
+  const paid =
+    status.plan === 'basique' ||
+    status.plan === 'essentiel' ||
+    status.plan === 'confort' ||
+    status.plan === 'premium';
+  if (!paid) return false;
+  if (!status.premium_until) return true;
+  return new Date(status.premium_until).getTime() > Date.now();
+}
+
+/**
  * Abonnement Premium payant encore actif (hors période Fondateur gratuite).
  * Seul ce statut ouvre le formulaire et la collecte de témoignages.
  */

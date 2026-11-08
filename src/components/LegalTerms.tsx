@@ -197,13 +197,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 création de profil, découverte de membres, expressions
                 d&apos;intérêt (Like, Flash), constitution de Matchs,
                 accès à la messagerie (mode Dialogue) selon l&apos;offre
-                souscrite par l&apos;expéditeur et, le cas échéant, sous
-                réserve de l&apos;existence d&apos;un Match lorsque le
-                profil du destinataire relève d&apos;une offre garantissant
-                sa non-sollicitation sans réciprocité (Confort, Premium,
-                ou Membre Fondateur pendant sa Période d&apos;essai), sauf
-                si ce destinataire a lui-même activé le mode Simplifié
-                (annexe « Messagerie et consentement »), à
+                de l&apos;expéditeur et selon le choix du destinataire
+                d&apos;accepter ou non les messages sans Match (annexe
+                « Messagerie et consentement »), à
                 l&apos;issue de sa Période d&apos;essai (article 4)
                 {!SITE_FREE_MODE && (
                   <>, à la souscription d&apos;une offre payante active</>
@@ -245,12 +241,16 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               {SITE_FREE_MODE ? (
               <p>
-                L&apos;envoi de messages (mode Dialogue) est inclus
+                L&apos;envoi de messages dans un Match est inclus
                 pendant la Période d&apos;essai définie à l&apos;article 4
                 (six mois pour un Membre Fondateur, à compter du premier
                 enregistrement de son profil ; une semaine pour tout
                 autre utilisateur, à compter de la création de son compte).
-                Aucune
+                Le premier message sans Match est inclus pendant les six
+                mois du Membre Fondateur, dans la limite de 10 nouvelles
+                personnes par jour. Il n&apos;est pas inclus dans la semaine
+                des autres utilisateurs. La réponse à un message reçu sans
+                Match reste possible sans offre payante. Aucune
                 souscription payante n&apos;est proposée tant que le Service
                 est en phase de lancement. À l&apos;issue de cette phase, des
                 offres payantes optionnelles pourront être proposées ;
@@ -263,30 +263,28 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               ) : (
               <>
               <p>
-                L&apos;envoi de messages (mode Dialogue) est inclus
+                L&apos;envoi de messages dans un Match est inclus
                 gratuitement pendant la Période d&apos;essai définie à
                 l&apos;article 4 (six mois pour un Membre Fondateur, à compter
                 du premier enregistrement de son profil ; une semaine pour
                 tout autre utilisateur, à compter de la création de son
                 compte). Cette fenêtre n&apos;est pas
-                renouvelable. Au-delà, l&apos;envoi de nouveaux messages
-                est réservé aux utilisateurs disposant d&apos;un
-                abonnement actif (Basique, Essentiel, Confort ou Premium),
-                dans les conditions et selon les tarifs précisés par les
-                Conditions Générales de Vente (CGV) visées à l&apos;article
-                2.4. L&apos;ouverture d&apos;un Dialogue sans Match dépend
-                du destinataire (profil ouvert ou protégé), selon
-                l&apos;article 2.1.
+                renouvelable. Au-delà, l&apos;envoi de messages dans un
+                Match, y compris une réponse, est réservé à un abonnement
+                actif (Basique, Essentiel, Confort ou Premium), dans les
+                conditions des CGV visées à l&apos;article 2.4. Le premier
+                message sans Match suit l&apos;article 2.1. La réponse à un
+                message reçu sans Match reste possible sans abonnement.
               </p>
               <p>
                 La consultation des Matchs déjà formés et des messages déjà
                 reçus demeure accessible sans paiement. L&apos;utilisateur
-                qui ne souhaite pas souscrire d&apos;abonnement conserve un
-                accès complet à la création de profil, à la découverte, au
-                Like, au Flash et à la constitution de Matchs ; seul
-                l&apos;envoi de nouveaux messages, à l&apos;issue de sa
-                Période d&apos;essai (article 4), est concerné par cette
-                condition.
+                qui ne souhaite pas souscrire conserve la création de profil,
+                Découvrir, le Like, le Flash et la constitution de Matchs.
+                À l&apos;issue de sa Période d&apos;essai, l&apos;envoi de
+                messages dans un Match, y compris une réponse, reste soumis
+                à un abonnement actif. La réponse à un message reçu sans
+                Match reste possible.
               </p>
               </>
               )}
@@ -472,10 +470,13 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 L&apos;ouverture d&apos;un Dialogue sans Match n&apos;est
-                possible que lorsque le profil du destinataire est ouvert,
-                dans les conditions de l&apos;article 2.1 et de l&apos;annexe
-                « Messagerie et consentement ». Un Match, lorsqu&apos;il
-                existe, ouvre toujours le Dialogue. Le Like demeure discret
+                possible que lorsque le destinataire a choisi d&apos;accepter
+                ces messages, dans les conditions de l&apos;article 2.1 et
+                de l&apos;annexe « Messagerie et consentement ». Elle est
+                refusée si l&apos;un des deux membres a refusé l&apos;autre
+                ou l&apos;a passé, ou si le compte du destinataire est masqué
+                de Découvrir, en pause ou en cours de suppression. Un Match,
+                lorsqu&apos;il existe, ouvre toujours le Dialogue. Le Like demeure discret
                 jusqu&apos;à réciprocité. Les délais et libellés liés aux
                 profils mis en attente, ainsi qu&apos;aux statuts « 1er mot »
                 et « Discussion en cours », sont précisés à l&apos;Annexe A
@@ -753,7 +754,9 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 premier enregistrement de son profil, le Membre Fondateur bénéficie, à
                 titre gracieux, sans engagement de durée, sans tacite
                 reconduction et sans aucune demande de carte bancaire : de
-                l&apos;envoi de messages, ainsi que de likes et Flash illimités.
+                l&apos;envoi de messages, y compris le premier message
+                sans Match, dans la limite de 10 nouvelles personnes par
+                jour, ainsi que de likes et Flash illimités.
                 Il reçoit en outre 2 Boosts de 24 h, crédités au lancement des
                 offres payantes, ou à l&apos;enregistrement du profil s&apos;il a lieu après,
                 et à utiliser dans les 6 mois qui suivent ce crédit, quelle que
@@ -798,8 +801,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Fondateur n&apos;est disponible (les {FOUNDER_MAX_SLOTS}{' '}
                 numéros ont été attribués) bénéficie d&apos;une Période
                 d&apos;essai d&apos;une (1) semaine à compter de la création de
-                son compte, pendant laquelle l&apos;envoi de messages est
-                inclus gratuitement, sans carte bancaire ni engagement. Cette
+                son compte, pendant laquelle l&apos;envoi de messages dans
+                un Match est inclus gratuitement, sans carte bancaire ni
+                engagement. Le premier message sans Match n&apos;est pas
+                inclus dans cette semaine. La réponse à un message reçu
+                sans Match reste possible, y compris après cette semaine.
+                Cette
                 Période d&apos;essai n&apos;inclut pas les avantages
                 complémentaires (likes et Flash illimités, 2 Boosts de 24 h) réservés aux Membres Fondateurs à l&apos;article
                 4.1.
@@ -829,9 +836,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 conserve un accès gratuit à la création et la gestion de son
                 profil, à Découvrir, au Like, au Flash, à la constitution de
                 Matchs et à la lecture des messages déjà reçus. Seul
-                l&apos;envoi de nouveaux messages est alors soumis à la
-                souscription d&apos;une offre payante active, dans les
-                conditions de l&apos;article 2.4.
+                l&apos;envoi de messages dans un Match, y compris une
+                réponse, est alors soumis à la souscription d&apos;une
+                offre payante active, dans les conditions de
+                l&apos;article 2.4. La réponse à un message reçu sans
+                Match reste possible. Le premier message sans Match suit
+                l&apos;article 2.1.
               </p>
               )}
             </div>
@@ -1173,25 +1183,28 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Messagerie et consentement
               </p>
               <p>
-                Par mesure de sécurité et de prévention des contacts non
-                sollicités, l&apos;ouverture d&apos;un Dialogue sans Match
-                n&apos;est possible que lorsque le profil du destinataire
-                est ouvert (Gratuit, Basique, Essentiel). Un destinataire
-                Confort, Premium ou Membre Fondateur pendant sa Période
-                d&apos;essai n&apos;est joignable qu&apos;après un Match
-                (Like ou Flash réciproque), sauf s&apos;il a activé le mode
-                Simplifié : il devient alors joignable sans Match, comme un
-                profil Essentiel. Ce choix ne joue qu&apos;en réception : il
-                ne permet jamais d&apos;écrire à un autre profil resté
-                protégé sans Match. Un Match, lorsqu&apos;il
-                existe, ouvre toujours le Dialogue.
+                Chaque membre choisit, dans le menu de son compte, s&apos;il
+                accepte les messages sans Match. Ce choix est proposé quelle
+                que soit l&apos;offre, y compris Gratuit, et il est désactivé
+                par défaut. Il ne dépend pas du mode Simplifié ou Détaillé,
+                qui règle seulement l&apos;affichage de Mes Matchs. Écrire le
+                premier de ces messages est réservé à une offre payante active
+                (Basique, Essentiel, Confort, Premium) ou au Membre Fondateur
+                pendant ses six mois, dans la limite de 10 nouvelles personnes
+                par jour calendaire, à l&apos;heure de Paris. Répondre à un
+                message reçu sans Match reste possible sans offre payante,
+                y compris si un Match se forme ensuite. Une conversation
+                née d&apos;un Match suit l&apos;article 2.3 : l&apos;envoi,
+                y compris une réponse, n&apos;y est pas gratuit après la
+                Période d&apos;essai. Une conversation déjà ouverte, et un
+                Match, ne sont pas fermés par ce réglage. Un Match ouvre
+                toujours le Dialogue.
                 {!SITE_FREE_MODE && (
                   <>
                     {' '}
-                    En complément,
-                    l&apos;expéditeur doit disposer de la capacité d&apos;envoi
-                    (semaine d&apos;essai Gratuit, ou palier payant actif)
-                    à l&apos;issue de sa Période d&apos;essai (article 4),
+                    En complément, l&apos;envoi dans un Match reste soumis
+                    à la capacité d&apos;envoi de l&apos;expéditeur à
+                    l&apos;issue de sa Période d&apos;essai (article 4),
                     selon les articles 2.3 et 2.4.
                   </>
                 )}
@@ -1460,9 +1473,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 Non pour le moment. Le Service est en phase de lancement :
                 aucune offre payante n&apos;est commercialisée, aucun
                 paiement n&apos;est demandé. La création de profil, la
-                découverte de membres, le Like, le Flash, la constitution de
-                Matchs et l&apos;envoi de messages sont inclus dans les
-                conditions de la Période d&apos;essai (article 4). Même à
+                découverte de membres, le Like, le Flash et la constitution de
+                Matchs sont inclus. L&apos;envoi de messages dans un Match
+                l&apos;est aussi, pendant la Période d&apos;essai (article 4).
+                Le premier message sans Match, et la réponse à un message
+                reçu sans Match, suivent l&apos;annexe « Messagerie et
+                consentement ». Même à
                 l&apos;issue de cette phase de lancement, une souscription
                 payante pourra éventuellement être proposée, mais elle ne
                 sera jamais obligatoire : à défaut de souscription, le
@@ -1473,12 +1489,14 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
               <p>
                 La création de profil, la découverte de membres, le Like, le
                 Flash et la constitution de Matchs restent gratuits.
-                L&apos;envoi de messages est offert pendant la Période
-                d&apos;essai définie à l&apos;article 4 (six mois pour les
-                Membres Fondateurs, une semaine pour les autres utilisateurs) ;
-                au-delà, il nécessite un abonnement actif, dont les
-                conditions et tarifs sont précisés par des CGV distinctes,
-                communiquées avant toute souscription et tout paiement.
+                L&apos;envoi de messages dans un Match est offert pendant
+                la Période d&apos;essai (article 4). Au-delà, il nécessite
+                un abonnement actif, y compris pour répondre dans un Match.
+                La réponse à un message reçu sans Match reste possible sans
+                abonnement. Le premier message sans Match suit l&apos;annexe
+                « Messagerie et consentement ». Les conditions et tarifs
+                sont précisés par des CGV distinctes, communiquées avant
+                toute souscription et tout paiement.
               </p>
               )}
             </div>
@@ -1489,10 +1507,12 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 sans abonnement&nbsp;?
               </p>
               <p>
-                Oui. À l&apos;issue de sa Période d&apos;essai (article 4),
-                seul l&apos;envoi de nouveaux messages est réservé aux
-                abonnés ; la consultation des Matchs et des messages déjà
-                reçus reste accessible sans paiement (article 2.3).
+                Oui. À l&apos;issue de la Période d&apos;essai (article 4),
+                la consultation des Matchs et des messages déjà reçus reste
+                accessible sans paiement. L&apos;envoi de messages dans un
+                Match, y compris une réponse, suit l&apos;article 2.3. La
+                réponse à un message reçu sans Match reste possible. Le
+                premier message sans Match suit l&apos;article 2.1.
               </p>
             </div>
             )}

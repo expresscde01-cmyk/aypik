@@ -46,6 +46,10 @@ type AppTabHeaderProps = {
   accountMenuRequestKey?: number;
   discoverMode?: DiscoverMode | null;
   onDiscoverModeChange?: (mode: DiscoverMode) => void;
+  acceptsMessagesWithoutMatch?: boolean;
+  messagesWithoutMatchNoticeSeen?: boolean;
+  onAcceptMessagesWithoutMatch?: (value: boolean) => void;
+  onMessagesWithoutMatchNoticeSeen?: () => void;
 };
 
 /** Même bascule que le header PC d’Accueil (HomeDashboard). */
@@ -85,6 +89,10 @@ export default function AppTabHeader({
   accountMenuRequestKey = 0,
   discoverMode,
   onDiscoverModeChange,
+  acceptsMessagesWithoutMatch = false,
+  messagesWithoutMatchNoticeSeen = false,
+  onAcceptMessagesWithoutMatch,
+  onMessagesWithoutMatchNoticeSeen,
 }: AppTabHeaderProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -113,6 +121,10 @@ export default function AppTabHeader({
         onSignOut={onSignOut}
         discoverMode={discoverMode}
         onDiscoverModeChange={onDiscoverModeChange}
+        acceptsMessagesWithoutMatch={acceptsMessagesWithoutMatch}
+        messagesWithoutMatchNoticeSeen={messagesWithoutMatchNoticeSeen}
+        onAcceptMessagesWithoutMatch={onAcceptMessagesWithoutMatch}
+        onMessagesWithoutMatchNoticeSeen={onMessagesWithoutMatchNoticeSeen}
       />
     ) : null;
 
