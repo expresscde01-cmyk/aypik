@@ -47,3 +47,5 @@ JOIN public.likes l2
 
 REVOKE ALL ON TABLE public.matches FROM PUBLIC, anon, authenticated;
 GRANT ALL ON TABLE public.matches TO service_role;
+
+GRANT ALL ON TABLE public.payment_subscriptions TO anon;

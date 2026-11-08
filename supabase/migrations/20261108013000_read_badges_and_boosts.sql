@@ -121,3 +121,7 @@ REVOKE ALL ON TABLE public.email_dispatch_settings FROM PUBLIC, anon, authentica
 
 -- Vue matches : aucun fonction, trigger ni edge function n'en dépend.
 DROP VIEW IF EXISTS public.matches;
+
+-- Aucune page publique ni edge function ne lit cette table avec la clé anon.
+-- Les paiements passent par service_role. Un visiteur sans compte n'a plus aucun droit.
+REVOKE ALL ON TABLE public.payment_subscriptions FROM anon;

@@ -19,4 +19,6 @@ L’outil de debug (`src/lib/debugPaymentSubscriptions.ts`, `select('*')`) ne do
 
 La table ne doit laisser chaque compte lire que ses propres lignes (`payment_subs_select_own` : `auth.uid() = user_id`).
 
+`anon` n'a aucun droit sur `payment_subscriptions` (`REVOKE ALL` dans `20261108013000_read_badges_and_boosts.sql`).
+
 À revérifier à chaque modification de l’outil de debug ou de cette table.
