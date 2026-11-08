@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   build: {
+    sourcemap: false,
     // Pas de polyfill inline ni de <link modulepreload> (CSP script-src 'self').
     modulePreload: false,
     assetsInlineLimit: 0,
