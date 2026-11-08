@@ -98,6 +98,13 @@ body {
   z-index: 2;
 }
 
+.btn-primary-aypik > .absolute,
+.btn-join > .absolute,
+.btn-primary > .absolute {
+  position: absolute;
+  z-index: 30;
+}
+
 .btn-primary-aypik::before,
 .btn-primary-aypik::after,
 .btn-join::before,
@@ -899,7 +906,17 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   color: #10b981;
 }
 
-/* Tooltips like/flash — mêmes tons que le chip « Nouveaux » / « like ou flash — à étudier ». */
+/* Tooltip flash — jaune-200, texte noir. Ne pas éclaircir sous #FEF08A (trop proche du crème Hors découverte). */
+.flash-tooltip-text {
+  color: #000000;
+  background-color: #FEF08A;
+  border: none;
+  -webkit-text-stroke: 0;
+  paint-order: normal;
+  text-shadow: none;
+}
+
+/* Tooltip du bouton Dialogue sur la carte. */
 .profile-action-tooltip {
   color: #5d4037;
   background-color: var(--match-stage-new-bg);

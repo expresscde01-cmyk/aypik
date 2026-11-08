@@ -2398,7 +2398,7 @@ function DiscoveryActionButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tooltip: string;
-  /** Classes additionnelles pour l'infobulle (ex. !bg-white !text-gray-600 pour dévier de l'ambré par défaut). */
+  /** Classe de couleur de l’infobulle. Sans classe, le fond du bouton Dialogue. */
   tooltipClassName?: string;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -2569,6 +2569,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             {showFlashCta && (
               <DiscoveryActionButton
                 tooltip={alreadyFlashed ? t('discover.alreadyFlashedTooltip') : t('discover.sendFlashTooltip')}
+                tooltipClassName="flash-tooltip-text"
                 onClick={(e) => {
                   e.stopPropagation();
                   onFlash(c);
@@ -2594,6 +2595,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
                         emoji: LIKE_NOTIFICATION_EMOJI,
                       })
               }
+              tooltipClassName="border border-amber-100 bg-white/95 text-rose-700"
               onClick={(e) => {
                 e.stopPropagation();
                 onLike(c);
@@ -2626,7 +2628,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             ) : null}
             <DiscoveryActionButton
               tooltip={t('matches.hide')}
-              tooltipClassName="!bg-white/95 !text-gray-600 !border-gray-100"
+              tooltipClassName="border !bg-white/95 !text-gray-600 !border-gray-100"
               onClick={(e) => {
                 e.stopPropagation();
                 onSkip(c.id);
