@@ -916,16 +916,6 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   text-shadow: none;
 }
 
-/* Tooltip du bouton Dialogue sur la carte. */
-.profile-action-tooltip {
-  color: #5d4037;
-  background-color: var(--match-stage-new-bg);
-  border: 1px solid #c4a482;
-  -webkit-text-stroke: 0;
-  paint-order: normal;
-  text-shadow: none;
-}
-
 .discovery-sort-pills {
   overflow: visible;
 }

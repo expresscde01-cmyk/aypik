@@ -2398,7 +2398,7 @@ function DiscoveryActionButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tooltip: string;
-  /** Classe de couleur de l’infobulle. Sans classe, le fond du bouton Dialogue. */
+  /** Classe de couleur de l’infobulle. */
   tooltipClassName?: string;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -2613,6 +2613,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
             {c.open_messaging ? (
               <DiscoveryActionButton
                 tooltip={t('discover.dialogueTooltip')}
+                tooltipClassName="border border-sky-200 bg-white/95 text-sky-500"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDialogue(c);
