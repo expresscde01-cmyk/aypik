@@ -30,7 +30,6 @@ export async function fetchProfileBundle(ids: string[]): Promise<{
   if (ids.length === 0) {
     return { byId: new Map(), founderMap: new Map(), boostSet: new Set() };
   }
-  const nowIso = new Date().toISOString();
   const [profiles, memberships, boosts] = await Promise.all([
     fetchByIdChunks<Profile>(ids, async (chunk) => {
       const rpc = await supabase.rpc('card_profiles', { p_ids: chunk });
@@ -66,20 +65,20 @@ export async function fetchProfileBundle(ids: string[]): Promise<{
       user_id: string;
       is_founder: boolean | null;
       founder_number: number | null;
-    }>(ids, (chunk) =>
-      supabase
-        .from('memberships')
-        .select('user_id, is_founder, founder_number')
-        .in('user_id', chunk)
-    ),
-    fetchByIdChunks<{ user_id: string }>(ids, (chunk) =>
-      supabase
-        .from('profile_boosts')
-        .select('user_id')
-        .in('user_id', chunk)
-        .in('payment_status', ['paid', 'simulated'])
-        .gt('ends_at', nowIso)
-    ),
+    }>(ids, async (chunk) => {
+      const rpc = await supabase.rpc('founder_public_badges', { p_ids: chunk });
+      return {
+        data: (rpc.data as { user_id: string; is_founder: boolean | null; founder_number: number | null }[] | null) ?? null,
+        error: rpc.error,
+      };
+    }),
+    fetchByIdChunks<{ user_id: string }>(ids, async (chunk) => {
+      const rpc = await supabase.rpc('active_boost_user_ids', { p_ids: chunk });
+      return {
+        data: (rpc.data as { user_id: string }[] | null) ?? null,
+        error: rpc.error,
+      };
+    }),
   ]);
   const founderMap = new Map<string, number | null>();
   memberships.forEach((m) => {

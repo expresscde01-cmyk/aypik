@@ -1,0 +1,22 @@
+---
+description: Lectures memberships et payment_subscriptions — colonnes de paiement et outil de debug
+alwaysApply: true
+---
+
+# Lectures abonnement et paiement
+
+## memberships
+
+La lecture par le site se fait colonne par colonne (`GRANT SELECT (…)` dans `20261108013000_read_badges_and_boosts.sql`).
+
+Toute nouvelle colonne ajoutée à `memberships` reste illisible côté navigateur tant qu’elle n’est pas ajoutée à cette liste dans une nouvelle migration.
+
+Ne jamais y ajouter `stripe_customer_id`, `paypal_subscriber_id`, ni aucune autre donnée de paiement.
+
+## payment_subscriptions
+
+L’outil de debug (`src/lib/debugPaymentSubscriptions.ts`, `select('*')`) ne doit jamais faire partie de la version de production. Il n’est chargé que si `import.meta.env.DEV` (`src/main.tsx`). À chaque build de production, vérifier que `__testPaymentSubs` est absent du zip.
+
+La table ne doit laisser chaque compte lire que ses propres lignes (`payment_subs_select_own` : `auth.uid() = user_id`).
+
+À revérifier à chaque modification de l’outil de debug ou de cette table.
