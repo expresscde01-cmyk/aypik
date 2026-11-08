@@ -36,6 +36,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     lock: noOpLock,
   },
   global: {
-    fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+    fetch: async (input, init) => {
+      const res = await fetch(input, { ...init, cache: 'no-store' });
+      if (res.headers.get('x-aypik-profile-read') === 'profile_read_rate_limited') {
+        return new Response(
+          JSON.stringify({
+            message: 'profile_read_rate_limited',
+            code: 'P0001',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return res;
+    },
   },
 });

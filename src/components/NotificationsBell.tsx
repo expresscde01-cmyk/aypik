@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, typ
 import { createPortal } from 'react-dom';
 import { Bell, CheckCheck, ChevronDown, Clock, Heart, MessageCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { loadCardProfiles } from '@/lib/profileBundle';
 import { supabase } from '@/lib/supabase';
 import {
   fetchPeerDialogueFlags,
@@ -730,15 +731,9 @@ export default function NotificationsBell({
     }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', id)
-        .maybeSingle();
+      const rows = await loadCardProfiles<{ display_name?: string | null }>([id]);
       if (cancelled) return;
-      const name = String(
-        (data as { display_name?: string | null } | null)?.display_name || ''
-      ).trim();
+      const name = String(rows[0]?.display_name || '').trim();
       setWaitSoleFetchedName(name || known || null);
     })();
     return () => {
@@ -793,11 +788,12 @@ export default function NotificationsBell({
     for (const id of toFetch) digestFetchedRef.current.add(id);
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, display_name, photo_url')
-        .in('id', toFetch);
-      if (cancelled || !data) return;
+      const data = await loadCardProfiles<{
+        id: string;
+        display_name?: string | null;
+        photo_url?: string | null;
+      }>(toFetch);
+      if (cancelled || data.length === 0) return;
       const names: Record<string, string> = {};
       const photos: Record<string, string> = {};
       for (const row of data) {
@@ -1252,10 +1248,10 @@ export default function NotificationsBell({
         ),
       ];
       if (actorIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, display_name')
-          .in('id', actorIds);
+        const profiles = await loadCardProfiles<{
+          id: string;
+          display_name?: string | null;
+        }>(actorIds);
         if (dialogueGateRef.current.accountId !== accountId) return;
         const map: Record<string, string> = {};
         for (const p of profiles || []) {

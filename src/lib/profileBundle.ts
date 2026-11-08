@@ -1,4 +1,4 @@
-import { PROFILE_CARD_COLUMNS, type Profile } from '@/components/ProfileSetup';
+import { type Profile } from '@/components/ProfileSetup';
 import { profileCardAge } from '@/lib/dating';
 import { parseDiscoverMode } from '@/lib/discoverMode';
 import { supabase } from '@/lib/supabase';
@@ -22,6 +22,17 @@ async function fetchByIdChunks<T>(
   return rows;
 }
 
+export async function loadCardProfiles<T = Profile>(ids: string[]): Promise<T[]> {
+  if (ids.length === 0) return [];
+  return fetchByIdChunks<T>(ids, async (chunk) => {
+    const rpc = await supabase.rpc('card_profiles', { p_ids: chunk });
+    return {
+      data: (rpc.data as T[] | null) ?? null,
+      error: rpc.error,
+    };
+  });
+}
+
 export async function fetchProfileBundle(ids: string[]): Promise<{
   byId: Map<string, Profile>;
   founderMap: Map<string, number | null>;
@@ -33,33 +44,18 @@ export async function fetchProfileBundle(ids: string[]): Promise<{
   const [profiles, memberships, boosts] = await Promise.all([
     fetchByIdChunks<Profile>(ids, async (chunk) => {
       const rpc = await supabase.rpc('card_profiles', { p_ids: chunk });
-      if (!rpc.error && rpc.data) {
-        const rows = (rpc.data as Profile[]).map((row) => ({
-          ...row,
-          bio: row.bio || '',
-          location: row.location || '',
-          interests: row.interests || [],
-          photo_url: row.photo_url || '',
-          is_online: Boolean(row.is_online),
-          age: profileCardAge(row),
-          discover_mode: parseDiscoverMode(row.discover_mode),
-        }));
-        return { data: rows, error: null };
-      }
-      const fb = await supabase
-        .from('profiles')
-        .select(PROFILE_CARD_COLUMNS)
-        .in('id', chunk);
-      return {
-        data:
-          (fb.data as Profile[] | null)?.map((p) => ({
-            ...p,
-            is_online: false,
-            age: profileCardAge(p),
-            discover_mode: parseDiscoverMode(p.discover_mode),
-          })) ?? null,
-        error: fb.error,
-      };
+      if (rpc.error) return { data: null, error: rpc.error };
+      const rows = ((rpc.data ?? []) as Profile[]).map((row) => ({
+        ...row,
+        bio: row.bio || '',
+        location: row.location || '',
+        interests: row.interests || [],
+        photo_url: row.photo_url || '',
+        is_online: Boolean(row.is_online),
+        age: profileCardAge(row),
+        discover_mode: parseDiscoverMode(row.discover_mode),
+      }));
+      return { data: rows, error: null };
     }),
     fetchByIdChunks<{
       user_id: string;

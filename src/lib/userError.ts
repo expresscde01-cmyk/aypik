@@ -25,6 +25,7 @@ export function memberUnavailableMessage(): string {
 }
 
 function friendlyDbMessage(msg: string, fallback: string): string {
+  if (msg.includes('profile_read_rate_limited')) return t('errors.profileReadRate');
   if (msg.includes('member_unavailable')) return t('common.memberUnavailable');
   if (msg.includes('active_match_required')) return fallback;
   if (/\bnot_matched\b/.test(msg)) {

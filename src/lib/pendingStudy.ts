@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { loadCardProfiles } from '@/lib/profileBundle';
 import { fetchInboxResponses } from '@/lib/inboxResponses';
 import { queryLikeFlashEdges } from '@/lib/likeFlashEdges';
 
@@ -102,14 +102,8 @@ export async function countInboxCategories(
     id: string
   ): Promise<SoleNewProfile> => {
     const origin: InteractionOriginLabel = flashSet.has(id) ? 'flash' : 'like';
-    const { data } = await supabase
-      .from('profiles')
-      .select('display_name')
-      .eq('id', id)
-      .maybeSingle();
-    const displayName = String(
-      (data as { display_name?: string | null } | null)?.display_name || ''
-    ).trim();
+    const rows = await loadCardProfiles<{ display_name?: string | null }>([id]);
+    const displayName = String(rows[0]?.display_name || '').trim();
     return {
       id,
       displayName: displayName || 'Quelqu’un',
