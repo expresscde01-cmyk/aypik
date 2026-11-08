@@ -235,7 +235,7 @@ export function LikesQuotaHint({ status }: { status: MembershipStatus }) {
     return (
       <p className="text-center text-xs text-amber-600">
         {t('membership.likesLeftToday', { count: remaining })}{' '}
-        <Heart className="w-3 h-3 inline" />
+        <Heart className="w-3 h-3 inline text-[#C2185B]" />
       </p>
     );
   }

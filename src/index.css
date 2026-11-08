@@ -4451,6 +4451,25 @@ button.group[data-matched='true'] {
   }
 }
 
+@media (max-width: 640px) {
+  .member-home-banner {
+    border-radius: 0;
+    margin-top: -2rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 248, 246, 0.3),
+        rgba(255, 248, 246, 0.45) 70%,
+        #fff8f6
+      ),
+      url('/images/aypik-fond-ciel.jpg');
+  }
+}
+
 @media (max-width: 767px) {
   .member-home-banner-top {
     flex-direction: column;

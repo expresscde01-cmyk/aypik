@@ -333,7 +333,7 @@ export default function ChatScreen({
                 {peer.display_name}
               </h2>
               <p className="text-[11px] text-aypik-navy font-medium flex items-center gap-1">
-                <Heart className="w-3 h-3" fill="currentColor" />
+                <Heart className="w-3 h-3 text-[#C2185B]" fill="currentColor" />
                 {loading
                   ? t('matches.conversation')
                   : matchDialogueChipLabel(
