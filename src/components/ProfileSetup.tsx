@@ -22,6 +22,7 @@ import {
   validateProfilePhoto,
 } from '@/lib/profilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
+import { OffersComparisonTable } from '@/components/membership/OffersComparisonTable';
 import TemperamentProfileCard, {
   toggleTemperamentKey,
 } from '@/components/TemperamentProfileCard';
@@ -52,6 +53,9 @@ import { isPaidPremiumActive } from '@/lib/membership';
 import {
   consumeHighlightOfferFromUrl,
   offerCardDomId,
+  consumeColdMessageOfferFromUrl,
+  openAccountMenu,
+  subscribeColdMessageOffer,
   subscribeHighlightOffer,
   type HighlightOffer,
 } from '@/lib/conversionNav';
@@ -123,6 +127,8 @@ export interface Profile {
   geoname_id?: number | null;
   world_zone?: string | null;
   discover_mode?: 'detaille' | 'simplifie';
+  accepts_messages_without_match?: boolean;
+  messages_without_match_notice_seen?: boolean;
   temperament?: string[] | null;
   languages?: SpokenLanguage[] | null;
   greeting_name_color?: GreetingNameColor | null;
@@ -297,6 +303,7 @@ export default function ProfileSetup({
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
+  const [coldMessageOffer, setColdMessageOffer] = useState(false);
   const [highlightedOffer, setHighlightedOffer] = useState<HighlightOffer | null>(
     null
   );
@@ -498,6 +505,31 @@ export default function ProfileSetup({
     }, 150);
     return () => window.clearTimeout(t);
   }, [loading]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!consumeColdMessageOfferFromUrl()) return;
+    setColdMessageOffer(true);
+    const timer = window.setTimeout(() => {
+      document.getElementById('messages-without-match-offer')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+
+  useEffect(() => {
+    return subscribeColdMessageOffer(() => {
+      setColdMessageOffer(true);
+      window.setTimeout(() => {
+        document.getElementById('messages-without-match-offer')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 150);
+    });
+  }, []);
 
   useEffect(() => {
     return subscribeHighlightOffer((offer) => {
@@ -1116,6 +1148,18 @@ export default function ProfileSetup({
           </div>
         )}
 
+        {coldMessageOffer && (
+          <div id="messages-without-match-offer" className="mb-6 space-y-3">
+            <p className="rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800">
+              {t('errors.senderPlanRequired')}
+            </p>
+            <OffersComparisonTable
+              founder={status.is_founder === true}
+              showDuringLaunch
+            />
+          </div>
+        )}
+
         <div className="mb-6">
           <MembershipPanel
             status={status}
@@ -1160,6 +1204,18 @@ export default function ProfileSetup({
           <p className="text-gray-500 text-sm mt-1">
             {t('profile.subtitle')}
           </p>
+          {!isSignup && (
+            <p className="text-sm text-gray-600 mt-3">
+              {t('profile.messagesWithoutMatchBefore')}{' '}
+              <button
+                type="button"
+                onClick={() => openAccountMenu()}
+                className="font-semibold text-aypik-navy underline underline-offset-2 hover:text-aypik-magenta"
+              >
+                {t('profile.messagesWithoutMatchLink')}
+              </button>.
+            </p>
+          )}
           {status.is_founder && (
             <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
               <FounderBadge number={status.founder_number} />

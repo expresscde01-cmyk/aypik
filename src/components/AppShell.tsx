@@ -32,7 +32,10 @@ import { setProfileDeactivated } from '@/lib/profileDeactivated';
 import { usePresenceHeartbeat } from '@/lib/presence';
 import { userErrorMessage } from '@/lib/userError';
 import { confirmLeaveUnsavedProfile } from '@/lib/unsavedProfileGuard';
-import { subscribeHighlightOffer } from '@/lib/conversionNav';
+import {
+  subscribeColdMessageOffer,
+  subscribeHighlightOffer,
+} from '@/lib/conversionNav';
 import {
   fetchMyAccountFlags,
   loadVisibilityUiMode,
@@ -187,6 +190,10 @@ function AppShellView() {
   }, [mountTab, persistDiscoverPrefs, tab]);
 
   useEffect(() => subscribeHighlightOffer(openProfileForOffer), [
+    openProfileForOffer,
+  ]);
+
+  useEffect(() => subscribeColdMessageOffer(openProfileForOffer), [
     openProfileForOffer,
   ]);
 
@@ -593,6 +600,26 @@ function AppShellView() {
               onAccountStatusClick={openAccountStatusManager}
               discoverMode={viewerDiscoverMode}
               onDiscoverModeChange={applyDiscoverMode}
+              acceptsMessagesWithoutMatch={
+                profile?.accepts_messages_without_match === true
+              }
+              messagesWithoutMatchNoticeSeen={
+                profile?.messages_without_match_notice_seen === true
+              }
+              onAcceptMessagesWithoutMatch={(value) => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, accepts_messages_without_match: value }
+                    : prev
+                );
+              }}
+              onMessagesWithoutMatchNoticeSeen={() => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, messages_without_match_notice_seen: true }
+                    : prev
+                );
+              }}
             />
           </div>
         )}
@@ -620,6 +647,26 @@ function AppShellView() {
               accountMenuRequestKey={accountMenuRequestKey}
               discoverMode={viewerDiscoverMode}
               onDiscoverModeChange={applyDiscoverMode}
+              acceptsMessagesWithoutMatch={
+                profile?.accepts_messages_without_match === true
+              }
+              messagesWithoutMatchNoticeSeen={
+                profile?.messages_without_match_notice_seen === true
+              }
+              onAcceptMessagesWithoutMatch={(value) => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, accepts_messages_without_match: value }
+                    : prev
+                );
+              }}
+              onMessagesWithoutMatchNoticeSeen={() => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, messages_without_match_notice_seen: true }
+                    : prev
+                );
+              }}
             >
               <div
                 className={`discover-intro${
@@ -682,6 +729,26 @@ function AppShellView() {
               accountMenuRequestKey={accountMenuRequestKey}
               discoverMode={viewerDiscoverMode}
               onDiscoverModeChange={applyDiscoverMode}
+              acceptsMessagesWithoutMatch={
+                profile?.accepts_messages_without_match === true
+              }
+              messagesWithoutMatchNoticeSeen={
+                profile?.messages_without_match_notice_seen === true
+              }
+              onAcceptMessagesWithoutMatch={(value) => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, accepts_messages_without_match: value }
+                    : prev
+                );
+              }}
+              onMessagesWithoutMatchNoticeSeen={() => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, messages_without_match_notice_seen: true }
+                    : prev
+                );
+              }}
             />
             <Suspense fallback={<TabLoadingFallback />}>
               <MatchesPage
@@ -733,6 +800,26 @@ function AppShellView() {
               accountMenuRequestKey={accountMenuRequestKey}
               discoverMode={viewerDiscoverMode}
               onDiscoverModeChange={applyDiscoverMode}
+              acceptsMessagesWithoutMatch={
+                profile?.accepts_messages_without_match === true
+              }
+              messagesWithoutMatchNoticeSeen={
+                profile?.messages_without_match_notice_seen === true
+              }
+              onAcceptMessagesWithoutMatch={(value) => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, accepts_messages_without_match: value }
+                    : prev
+                );
+              }}
+              onMessagesWithoutMatchNoticeSeen={() => {
+                setProfile((prev) =>
+                  prev
+                    ? { ...prev, messages_without_match_notice_seen: true }
+                    : prev
+                );
+              }}
             />
             <ProfileSetup
               allowAccountDeletion

@@ -205,9 +205,6 @@ export function OfferSummaryCards({
           );
         })}
       </div>
-      <p className="text-[11px] leading-snug text-gray-500 px-0.5">
-        {t('offersCards.confortNote')}
-      </p>
       <div className="text-center">
         <button
           type="button"

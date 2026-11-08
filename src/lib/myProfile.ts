@@ -34,6 +34,8 @@ export type MyProfile = {
   languages: SpokenLanguage[] | null;
   /** null = défaut selon le genre. undefined = colonne pas encore renvoyée. */
   greeting_name_color?: GreetingNameColor | null;
+  accepts_messages_without_match?: boolean;
+  messages_without_match_notice_seen?: boolean;
   paused_at: string | null;
   deactivated_at: string | null;
   incognito_at: string | null;
@@ -99,6 +101,19 @@ export function parseMyProfile(raw: unknown): MyProfile | null {
   };
   if (Object.prototype.hasOwnProperty.call(row, 'greeting_name_color')) {
     profile.greeting_name_color = parseGreetingNameColor(row.greeting_name_color);
+  }
+  if (Object.prototype.hasOwnProperty.call(row, 'accepts_messages_without_match')) {
+    profile.accepts_messages_without_match =
+      row.accepts_messages_without_match === true;
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(
+      row,
+      'messages_without_match_notice_seen'
+    )
+  ) {
+    profile.messages_without_match_notice_seen =
+      row.messages_without_match_notice_seen === true;
   }
   return profile;
 }

@@ -31,12 +31,20 @@ const TOP_ROWS = [
     'offersGrid.included',
   ],
   [
+    'offersGrid.firstWithoutMatch',
+    'offersGrid.firstWithoutMatchNone',
+    'offersGrid.firstWithoutMatchPaid',
+    'offersGrid.firstWithoutMatchPaid',
+    'offersGrid.firstWithoutMatchPaid',
+    'offersGrid.firstWithoutMatchPaid',
+  ],
+  [
     'offersGrid.openProfile',
-    'offersGrid.included',
-    'offersGrid.included',
-    'offersGrid.included',
-    'offersGrid.openProtected',
-    'offersGrid.openProtected',
+    'offersGrid.memberChoice',
+    'offersGrid.memberChoice',
+    'offersGrid.memberChoice',
+    'offersGrid.memberChoice',
+    'offersGrid.memberChoice',
   ],
   [
     'offersGrid.whoLiked',
@@ -174,9 +182,16 @@ const GRID_CENTS: Record<string, number> = {
   'offersGrid.priceIntlUpgrade': 299,
 };
 
-export function OffersComparisonTable({ founder = false }: { founder?: boolean }) {
+export function OffersComparisonTable({
+  founder = false,
+  showDuringLaunch = false,
+}: {
+  founder?: boolean;
+  /** Arrivée depuis le cadenas : le comparatif s'affiche même pendant le lancement. */
+  showDuringLaunch?: boolean;
+}) {
   const { t } = useTranslation();
-  if (SITE_FREE_MODE) return null;
+  if (SITE_FREE_MODE && !showDuringLaunch) return null;
 
   const cellText = (key: string, suffixKey?: string) => {
     const cents = GRID_CENTS[key];

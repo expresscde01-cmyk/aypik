@@ -27,6 +27,15 @@ export function memberUnavailableMessage(): string {
 function friendlyDbMessage(msg: string, fallback: string): string {
   if (msg.includes('profile_read_rate_limited')) return t('errors.profileReadRate');
   if (msg.includes('member_unavailable')) return t('common.memberUnavailable');
+  if (msg.includes('recipient_declines_messages_without_match')) {
+    return t('errors.recipientDeclinesMessagesWithoutMatch');
+  }
+  if (msg.includes('sender_plan_required')) {
+    return t('errors.senderPlanRequired');
+  }
+  if (msg.includes('messages_without_match_daily_limit')) {
+    return t('errors.messagesWithoutMatchDailyLimit');
+  }
   if (msg.includes('active_match_required')) return fallback;
   if (/\bnot_matched\b/.test(msg)) {
     return chatNotMatchedMessage();
