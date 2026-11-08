@@ -76,4 +76,5 @@ TO authenticated
 USING ((deletion_requested_at IS NULL) OR ((SELECT auth.uid()) = id));
 
 DROP FUNCTION IF EXISTS public.consume_profile_read(integer);
+DROP TABLE IF EXISTS public.profile_read_limit_hits;
 DROP TABLE IF EXISTS public.profile_read_windows;

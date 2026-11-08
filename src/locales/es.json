@@ -1101,7 +1101,7 @@
     "phoneInvalid": "Número de teléfono no válido.",
     "phoneDisabled": "La verificación por teléfono no está disponible en este momento.",
     "chatNotMatched": "Solo puedes escribir a un miembro con el que hayas hecho match.",
-    "profileReadRate": "Demasiadas fichas a la vez. Vuelve a intentarlo un poco más tarde.",
+    "profileReadRate": "Demasiadas fichas a la vez. Vuelve a intentarlo en un minuto.",
     "alreadyRefused": "Ya has rechazado este perfil.",
     "alreadyMatched": "Este match ya está confirmado.",
     "alreadyWaiting": "Este perfil ya está en espera.",

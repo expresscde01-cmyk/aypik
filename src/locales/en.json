@@ -1101,7 +1101,7 @@
     "phoneInvalid": "Invalid phone number.",
     "phoneDisabled": "Phone verification isn't available right now.",
     "chatNotMatched": "You can only message a member you've matched with.",
-    "profileReadRate": "Too many profiles at once. Try again a little later.",
+    "profileReadRate": "Too many profiles at once. Try again in a minute.",
     "alreadyRefused": "You already declined this profile.",
     "alreadyMatched": "This match is already confirmed.",
     "alreadyWaiting": "This profile is already on hold.",

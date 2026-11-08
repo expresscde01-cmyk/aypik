@@ -25,4 +25,4 @@ La table ne doit laisser chaque compte lire que ses propres lignes (`payment_sub
 
 ## profiles
 
-Chaque compte ne lit sa ligne complète que pour lui-même (`profiles_select_own`). Les fiches des autres passent par `card_profiles` et `suggest_profiles`. Le compteur est en fiches : 15 000 par minute, 80 000 par jour (`20261108021500_profile_reads.sql`). `suggest_profiles_core` n'est pas appelable par le site. `anon` et `authenticated` n'ont aucun droit sur `profile_read_windows`.
+Chaque compte ne lit sa ligne complète que pour lui-même (`profiles_select_own`). Les fiches des autres passent par `card_profiles` et `suggest_profiles`. Le compteur est en fiches : 5 000 par minute, 25 000 par jour (`20261108021500_profile_reads.sql`). `suggest_profiles_core` n'est pas appelable par le site. `anon` et `authenticated` n'ont aucun droit sur `profile_read_windows` ni sur `profile_read_limit_hits`.
