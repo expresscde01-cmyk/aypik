@@ -27,7 +27,7 @@ import {
   sanitizeTemperament,
 } from '@/lib/temperament';
 import { parseProfileGender } from '@/lib/dating';
-import { supabase } from '@/lib/supabase';
+import { loadCardProfiles } from '@/lib/profileBundle';
 import {
   languageDisplayName,
   orderSpokenLanguagesForDisplay,
@@ -137,11 +137,12 @@ export default function ProfileDetailModal({
     setTemperamentGender(null);
     setSpokenLanguages([]);
     void (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('temperament, gender, languages')
-        .eq('id', candidate.id)
-        .maybeSingle();
+      const rows = await loadCardProfiles<{
+        temperament?: string[] | null;
+        gender?: string | null;
+        languages?: unknown;
+      }>([candidate.id]);
+      const data = rows[0];
       if (cancelled) return;
       setTemperamentKeys(
         orderTemperamentKeys(sanitizeTemperament(data?.temperament))

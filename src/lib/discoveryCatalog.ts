@@ -324,8 +324,5 @@ export async function fetchPlatformSignupCount(): Promise<number> {
   if (!error && typeof data === 'number' && Number.isFinite(data)) {
     return data;
   }
-  const { count } = await supabase
-    .from('profiles')
-    .select('id', { count: 'exact', head: true });
-  return typeof count === 'number' ? count : 0;
+  return 0;
 }
