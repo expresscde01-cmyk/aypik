@@ -73,24 +73,20 @@ Deno.serve(async (req) => {
   const signable = (allowed as string[]).filter((path) => typeof path === "string");
   if (signable.length === 0) return json({ urls: {}, limited: false }, 200);
 
-  const { data: signed, error: signError } = await admin.storage
-    .from("profile-photos")
-    .createSignedUrls(signable, SIGN_SECONDS, {
-      transform: { width: 400, resize: "cover", quality: 70 },
-    });
-  if (signError || !signed) return json({ error: "Signature indisponible" }, 503);
-
   const urls: Record<string, string> = {};
-  for (const item of signed) {
-    const url = item.signedUrl || "";
-    if (
-      item.path &&
-      url.includes("/storage/v1/render/image/sign/") &&
-      url.includes("width=400")
-    ) {
-      urls[item.path] = url;
-    }
-  }
+  await Promise.all(
+    signable.map(async (path) => {
+      const { data, error } = await admin.storage
+        .from("profile-photos")
+        .createSignedUrl(path, SIGN_SECONDS, {
+          transform: { width: 400, resize: "cover", quality: 70 },
+        });
+      const url = data?.signedUrl || "";
+      if (!error && url.includes("/storage/v1/render/image/sign/")) {
+        urls[path] = url;
+      }
+    }),
+  );
 
   return json({ urls, limited: false }, 200);
 });
