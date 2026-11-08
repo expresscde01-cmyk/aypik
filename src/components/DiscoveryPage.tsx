@@ -2512,6 +2512,8 @@ const DiscoveryCard = memo(function DiscoveryCard({
           {c.photo_url ? (
             <ProfilePhoto
               src={c.photo_url}
+              initial={c.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-3xl font-bold text-white/80"
               eager={eager}
               className="w-full h-full object-cover"
             />

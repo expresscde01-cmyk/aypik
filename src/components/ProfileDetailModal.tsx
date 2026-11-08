@@ -233,8 +233,10 @@ export default function ProfileDetailModal({
             <ProfilePhoto
               src={candidate.photo_url}
               alt={candidate.display_name}
+              initial={candidate.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-5xl font-bold text-white/80"
               eager
-              width={640}
+              width={400}
               className="w-full h-full object-cover"
             />
           ) : (
