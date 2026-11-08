@@ -1,5 +1,4 @@
-/** Ancrage d’origine des infobulles Flash/Like (bas-droite du bouton). */
-export const ACTION_TOOLTIP_OVERLAP_X = 4;
+/** Écart entre le bouton et l’infobulle (mb-1.5 de la fiche). */
 export const ACTION_TOOLTIP_OVERLAP_Y = 6;
 export const ACTION_TOOLTIP_VIEW_MARGIN = 8;
 
@@ -22,27 +21,28 @@ export type TooltipViewport = {
   height: number;
 };
 
-/** Place l’infobulle en bas-droite du bouton, puis la ramène dans le viewport. */
+/** Place l’infobulle centrée au-dessus du bouton, puis la ramène dans le viewport. */
 export function placePortaledActionTooltip(
   anchor: TooltipAnchorRect,
   tip: TooltipSize,
   viewport: TooltipViewport,
   margin = ACTION_TOOLTIP_VIEW_MARGIN
 ): { top: number; left: number } {
-  let top = anchor.bottom - ACTION_TOOLTIP_OVERLAP_Y;
-  let left = anchor.right - ACTION_TOOLTIP_OVERLAP_X;
+  const anchorWidth = anchor.right - anchor.left;
+  let top = anchor.top - tip.height - ACTION_TOOLTIP_OVERLAP_Y;
+  let left = anchor.left + anchorWidth / 2 - tip.width / 2;
 
   const maxLeft = viewport.left + viewport.width - margin - tip.width;
   const minLeft = viewport.left + margin;
   if (left > maxLeft) left = maxLeft;
   if (left < minLeft) left = minLeft;
 
-  const maxTop = viewport.top + viewport.height - margin - tip.height;
-  if (top > maxTop) {
-    top = anchor.top - tip.height - ACTION_TOOLTIP_OVERLAP_Y;
-  }
   const minTop = viewport.top + margin;
-  if (top < minTop) top = minTop;
+  if (top < minTop) {
+    top = anchor.bottom + ACTION_TOOLTIP_OVERLAP_Y;
+  }
+  const maxTop = viewport.top + viewport.height - margin - tip.height;
+  if (top > maxTop) top = maxTop;
 
   return { top, left };
 }

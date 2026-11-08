@@ -16,7 +16,7 @@ export default function PortaledActionTooltip({
   open: boolean;
   anchorRef: RefObject<HTMLElement | null>;
   children: ReactNode;
-  /** Classes additionnelles (ex. !bg-white !text-gray-600) pour dévier du style ambré par défaut. */
+  /** Classe de couleur. Sans classe, le fond du bouton Dialogue. */
   tooltipClassName?: string;
 }) {
   const tipRef = useRef<HTMLSpanElement>(null);
@@ -78,7 +78,7 @@ export default function PortaledActionTooltip({
     <span
       ref={tipRef}
       role="tooltip"
-      className={`profile-action-tooltip pointer-events-none fixed z-[60] max-w-[calc(100vw-16px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm${tooltipClassName ? ` ${tooltipClassName}` : ''}`}
+      className={`${tooltipClassName ?? 'profile-action-tooltip'} pointer-events-none fixed z-[60] max-w-[calc(100vw-16px)] whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide shadow-sm`}
       style={{
         top: pos?.top ?? 0,
         left: pos?.left ?? 0,

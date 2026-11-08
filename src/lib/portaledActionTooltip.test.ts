@@ -14,10 +14,10 @@ const button = {
   left: 160,
 };
 
-test('ancrage bas-droite du bouton au milieu de l’écran', () => {
+test('ancrage centré au-dessus du bouton', () => {
   assert.deepEqual(placePortaledActionTooltip(button, tip, viewport), {
-    top: 434,
-    left: 196,
+    top: 372,
+    left: 110,
   });
 });
 
@@ -25,14 +25,14 @@ test('dernière carte d’une rangée : ramène l’infobulle dans le viewport',
   const rightCol = { top: 400, right: 388, bottom: 440, left: 348 };
   const pos = placePortaledActionTooltip(rightCol, tip, viewport);
   assert.equal(pos.left, 390 - 8 - 140);
+  assert.equal(pos.top, 372);
   assert.ok(pos.left + tip.width <= 390 - 8);
 });
 
-test('carte en bas d’écran : bascule au-dessus du bouton (au-dessus de la nav)', () => {
-  const low = { top: 760, right: 200, bottom: 800, left: 160 };
-  const pos = placePortaledActionTooltip(low, tip, viewport);
-  assert.equal(pos.top, 760 - 22 - 6);
-  assert.ok(pos.top + tip.height <= 760);
+test('bouton trop haut : bascule sous le bouton', () => {
+  const high = { top: 4, right: 200, bottom: 44, left: 160 };
+  const pos = placePortaledActionTooltip(high, tip, viewport);
+  assert.equal(pos.top, 44 + 6);
 });
 
 test('cloche Accueil (pas tout à droite) : le panneau reste dans l’écran', () => {
