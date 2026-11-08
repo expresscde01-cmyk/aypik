@@ -21,13 +21,13 @@ Le fichier SQL ne contient pas `BEGIN` ni `ROLLBACK` : le script les ajoute. Pou
 
 ## Comptes
 
-Choisir les profils par prénom dans `profiles` :
+Choisir les profils par numéro de Fondateur :
 
-- A = test2
-- B = Suzanne
-- C = Sandrine
+- A = test2 n° 64
+- B = Suzanne n° 32
+- C = Sandrine n° 43
 
-Si l'un n'existe plus, prendre un autre profil existant et dire lequel. Si plusieurs profils portent le même prénom, en choisir un, le dire (numéro Fondateur), et ne pas mélanger les deux.
+Si l'un de ces numéros n'existe plus, prendre un autre profil existant et dire lequel.
 
 ## Se mettre à la place d'un compte
 
