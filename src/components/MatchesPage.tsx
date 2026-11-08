@@ -613,8 +613,8 @@ function MatchesGlossary({
           title={t('matches.glossaryAvant')}
           titleIcons={
             <>
-              <Heart className="w-3.5 h-3.5" fill="currentColor" />
-              <Zap className="w-3.5 h-3.5" fill="currentColor" />
+              <Heart className="w-3.5 h-3.5 text-[#C2185B]" fill="currentColor" />
+              <Zap className="w-3.5 h-3.5 text-[#F2611C]" fill="currentColor" />
             </>
           }
           legend={<IntroLegendAvant />}
@@ -2695,7 +2695,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={match.profile.is_online} size="avatar" />
           {isFlash && isPending && (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           )}
           {!isFlash && isPending && (
@@ -2918,7 +2918,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           ) : (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
@@ -3026,7 +3026,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           ) : (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
@@ -3189,7 +3189,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           ) : (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
@@ -3308,7 +3308,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           ) : (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">
@@ -3414,7 +3414,7 @@ export default function MatchesPage({
           <OnlinePresenceDot online={card.profile.is_online} size="avatar" />
           {isFlash ? (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center shadow-sm">
-              <Zap className="w-3 h-3" fill="currentColor" aria-hidden />
+              <Zap className="w-3 h-3 text-[#1C2340]" fill="currentColor" aria-hidden />
             </span>
           ) : (
             <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aypik-navy text-white flex items-center justify-center shadow-sm">

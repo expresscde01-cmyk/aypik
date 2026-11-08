@@ -9,6 +9,8 @@ Méthode par défaut. Pas de navigateur, pas de mot de passe, pas de `.env.test`
 
 Ne pas se connecter au site. Ne pas contourner Cloudflare. Ne pas demander d'identifiants.
 
+Pas de connexion au site, ni en ligne ni en local. Les tests se font en base (méthode ci-dessus). Pour une capture d’écran, rends le composant avec des données d’exemple.
+
 ## Connexion
 
 Supabase CLI déjà configurée, depuis la racine du dépôt. Tout tient dans `BEGIN` … `ROLLBACK` : rien ne reste en base.

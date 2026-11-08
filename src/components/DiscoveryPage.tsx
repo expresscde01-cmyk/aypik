@@ -2340,12 +2340,12 @@ export default function DiscoveryPage({
             {showFlashCta && (
               <p className="flex items-center justify-center flex-wrap gap-x-1 gap-y-0.5 text-center text-xs text-amber-700/80">
                 <span className="inline-flex items-center gap-0.5">
-                  <Zap className="w-3 h-3" aria-hidden />
+                  <Zap className="w-3 h-3 text-[#F2611C]" aria-hidden />
                   Flash
                 </span>
                 <span aria-hidden>&amp;</span>
                 <span className="inline-flex items-center gap-0.5">
-                  <Heart className="w-3 h-3" fill="currentColor" aria-hidden />
+                  <Heart className="w-3 h-3 text-[#C2185B]" fill="currentColor" aria-hidden />
                   Like
                 </span>
                 <span>
