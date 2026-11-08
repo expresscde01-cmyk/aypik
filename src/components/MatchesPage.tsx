@@ -112,6 +112,7 @@ import {
 } from '@/lib/scrollUnderSticky';
 import { type MatchPulseCategory } from '@/lib/pendingStudy';
 import { firstWordBellOpenActorId } from '@/lib/matchesNav';
+import { markMatchesSeen } from '@/lib/seenMatches';
 import {
   fetchDeclinedArchives,
   fetchPendingDeclinedNotices,
@@ -1762,6 +1763,7 @@ export default function MatchesPage({
         }
         pendingFocusRef.current = null;
         onFocusActorConsumed?.();
+        if (foundCard.kind === 'match') void markMatchesSeen([foundCard.profile.id]);
         setOpenProfile(foundCard);
         return;
       }
@@ -1789,6 +1791,7 @@ export default function MatchesPage({
         pendingFocusRef.current = null;
         onFocusActorConsumed?.();
         interactWithMatchCard(foundCard.profile.id);
+        if (foundCard.kind === 'match') void markMatchesSeen([foundCard.profile.id]);
         setOpenProfile(foundCard);
         return;
       }
@@ -1840,6 +1843,7 @@ export default function MatchesPage({
       (found.kind === 'match' || found.alreadyLiked)
     ) {
       interactWithMatchCard(found.profile.id);
+      if (found.kind === 'match') void markMatchesSeen([found.profile.id]);
       setChatPeer(found.profile);
       return;
     }
@@ -1848,6 +1852,7 @@ export default function MatchesPage({
       setPulseCategory(null);
       scrollMatchCardIntoView(`match-card-${found.profile.id}`);
       interactWithMatchCard(found.profile.id);
+      if (found.kind === 'match') void markMatchesSeen([found.profile.id]);
       setOpenProfile(found);
       return;
     }
@@ -1855,6 +1860,7 @@ export default function MatchesPage({
     setPulseCategory(null);
     scrollMatchCardIntoView(`match-card-${found.profile.id}`);
     interactWithMatchCard(found.profile.id);
+    if (found.kind === 'match') void markMatchesSeen([found.profile.id]);
     setOpenProfile(found);
   }, [
     loading,
@@ -2575,6 +2581,17 @@ export default function MatchesPage({
   );
   const viewerSimplified =
     parseDiscoverMode(viewerDiscoverMode) === 'simplifie';
+  const shownMatchKey = useMemo(() => {
+    const cards = viewerSimplified
+      ? floors.matchedChat
+      : [...floors.matchedQuiet, ...floors.matchedChat];
+    return cards.map((match) => match.profile.id).sort().join('\n');
+  }, [viewerSimplified, floors.matchedQuiet, floors.matchedChat]);
+
+  useEffect(() => {
+    if (loading || !shownMatchKey) return;
+    void markMatchesSeen(shownMatchKey.split('\n'));
+  }, [loading, shownMatchKey]);
   const boardMatchCount = countReciprocalMatches(matches, brokenPeerIds);
   const liveMatchCount = useLiveMatchCount(
     loading ? undefined : boardMatchCount
@@ -2668,6 +2685,7 @@ export default function MatchesPage({
         )}
         onClick={() => {
           interactWithMatchCard(match.profile.id);
+          if (match.kind === 'match') void markMatchesSeen([match.profile.id]);
           setOpenProfile(match);
         }}
       >
@@ -2676,6 +2694,7 @@ export default function MatchesPage({
           onClick={(e) => {
             e.stopPropagation();
             interactWithMatchCard(match.profile.id);
+            if (match.kind === 'match') void markMatchesSeen([match.profile.id]);
             setOpenProfile(match);
           }}
           className="match-card-photo relative w-14 h-14 rounded-full overflow-hidden bg-aypik-border flex-shrink-0"
@@ -2835,6 +2854,7 @@ export default function MatchesPage({
               unreadCount={unreadCount}
               onClick={() => {
                 interactWithMatchCard(match.profile.id);
+                if (match.kind === 'match') void markMatchesSeen([match.profile.id]);
                 setChatPeer(match.profile);
               }}
             />
@@ -3805,6 +3825,9 @@ export default function MatchesPage({
             (unread.bySender[openProfile.profile.id] || 0) > 0
               ? () => {
                   visitMatchIfDigestAllows(openProfile.profile.id);
+                  if (openProfile.kind === 'match') {
+                    void markMatchesSeen([openProfile.profile.id]);
+                  }
                   setChatPeer(openProfile.profile);
                   setOpenProfile(null);
                 }

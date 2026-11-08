@@ -53,7 +53,8 @@ import { useMembership } from '@/lib/useMembership';
 import { formatDateFr, isFounderPeriodActive } from '@/lib/membership';
 import { useMatchesBoard } from '@/lib/matchesBoard';
 import { useLiveMatchCount } from '@/lib/liveMatchCount';
-import { countFirstWordMatches } from '@/lib/matchHistoryDisplay';
+import { countUnseenMatches } from '@/lib/matchHistoryDisplay';
+import { useSeenMatchPeers } from '@/lib/seenMatches';
 import { profileCompletionPercent } from '@/lib/profileCompletion';
 import { requestDiscoverFilters } from '@/lib/discoverEntry';
 import { flashErrorMessage, isFlashCtaVisible, sendFlash } from '@/lib/flashes';
@@ -175,10 +176,15 @@ export default function HomeDashboard({
     [viewerProfile]
   );
   const liveMatchCount = useLiveMatchCount();
+  const seenMatches = useSeenMatchPeers();
   const firstWordCount = useMemo(() => {
-    if (!board.loaded) return null;
-    return countFirstWordMatches(board.matches, board.peersWithChat);
-  }, [board.loaded, board.matches, board.peersWithChat]);
+    if (!board.loaded || !seenMatches.ready) return null;
+    return countUnseenMatches(
+      board.matches,
+      seenMatches.ids,
+      board.brokenPeerIds
+    );
+  }, [board.loaded, board.matches, board.brokenPeerIds, seenMatches.ready, seenMatches.ids]);
   const founderKnown = !membershipLoading && !membershipError;
   const premiumUntilTime = status.founder_premium_until
     ? new Date(status.founder_premium_until).getTime()

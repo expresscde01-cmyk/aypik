@@ -174,6 +174,29 @@ export function countReciprocalMatches<
   return count;
 }
 
+/** Matchs actifs pas encore vus par le membre. La pastille, elle, compte aussi les vus. */
+export function countUnseenMatches<
+  T extends {
+    profile: { id: string };
+    kind?: string;
+    alreadyLiked?: boolean;
+    waiting?: boolean;
+  },
+>(
+  matches: T[],
+  seenPeerIds: ReadonlySet<string>,
+  brokenPeerIds: ReadonlySet<string> = new Set()
+): number {
+  let count = 0;
+  for (const match of dedupePeersByCanonicalStatus(matches)) {
+    if (brokenPeerIds.has(match.profile.id)) continue;
+    if (!isLiveReciprocalMatch(match)) continue;
+    if (seenPeerIds.has(match.profile.id)) continue;
+    count += 1;
+  }
+  return count;
+}
+
 /** Matchs encore dans la rubrique « 1er mot » : pas d’échange des deux côtés. */
 export function countFirstWordMatches(
   matches: { kind?: string; profile: { id: string } }[],

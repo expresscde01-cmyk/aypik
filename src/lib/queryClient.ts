@@ -51,4 +51,5 @@ export const queryKeys = {
     ['like-flash-edges', userId] as const,
   liveMatchCount: (userId: string) =>
     ['live-match-count', userId] as const,
+  seenMatches: (userId: string) => ['match-seen', userId] as const,
 };
