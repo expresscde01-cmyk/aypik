@@ -419,9 +419,15 @@ export default function ProfileDetailModal({
                   }`}
                 >
                   {inboxHistory.origin === 'flash' ? (
-                    <Zap className="w-4 h-4 shrink-0" fill="currentColor" />
+                    <Zap
+                      className="w-4 h-4 shrink-0 text-[#F2611C]"
+                      fill="currentColor"
+                    />
                   ) : (
-                    <Heart className="w-4 h-4 shrink-0" fill="currentColor" />
+                    <Heart
+                      className="w-4 h-4 shrink-0 text-[#C2185B]"
+                      fill="currentColor"
+                    />
                   )}
                   {inboxHistory.originLabel}
                 </p>

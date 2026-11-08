@@ -2741,7 +2741,22 @@ export default function MatchesPage({
               {statusLabel}
             </p>
           ) : (
-            <p className="text-xs text-stone-700 mt-1">{statusLabel}</p>
+            <p className="text-xs text-stone-700 mt-1 flex items-center gap-1.5">
+              {isFlash ? (
+                <Zap
+                  className="w-4 h-4 shrink-0 text-[#F2611C]"
+                  fill="currentColor"
+                  aria-hidden
+                />
+              ) : (
+                <Heart
+                  className="w-4 h-4 shrink-0 text-[#C2185B]"
+                  fill="currentColor"
+                  aria-hidden
+                />
+              )}
+              <span>{statusLabel}</span>
+            </p>
           )}
         </div>
 
