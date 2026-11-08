@@ -14,6 +14,7 @@ import {
   withoutOccupiedPeers,
   dedupePeersByCanonicalStatus,
   countReciprocalMatches,
+  countUnseenMatches,
   collectLiveReciprocalMatchIds,
   removeActorFromCategoryDigest,
   splitPendingByOthers,
@@ -211,6 +212,28 @@ test('Mes Matchs : un 1er mot compte comme un match, une discussion n’est pas 
   );
   assert.equal(
     countReciprocalMatches([suzanne], new Set(['suzanne'])),
+    0
+  );
+});
+
+test('Nouveaux matchs : seulement les matchs pas encore vus, la pastille garde les vus', () => {
+  const suzanne = {
+    profile: { id: 'suzanne' },
+    kind: 'match' as const,
+    alreadyLiked: true,
+    waiting: false,
+  };
+  const chatting = {
+    profile: { id: 'lea' },
+    kind: 'match' as const,
+    alreadyLiked: true,
+    waiting: false,
+  };
+  assert.equal(countReciprocalMatches([suzanne, chatting]), 2);
+  assert.equal(countUnseenMatches([suzanne, chatting], new Set(['suzanne'])), 1);
+  assert.equal(countUnseenMatches([suzanne], new Set(['suzanne'])), 0);
+  assert.equal(
+    countUnseenMatches([suzanne], new Set(), new Set(['suzanne'])),
     0
   );
 });

@@ -44,6 +44,7 @@ type MatchesBoardValue = {
   restoredWaitActorsRef: MutableRefObject<Set<string>>;
   departingIdsRef: MutableRefObject<Set<string>>;
   setPageBrokenIds: (ids: Set<string>) => void;
+  brokenPeerIds: Set<string>;
   bindWaitPrune: (fn: WaitPruneSetter | null) => void;
   noteDeparting: (ref: MutableRefObject<Set<string>> | null) => void;
 };
@@ -298,6 +299,7 @@ export function MatchesBoardProvider({
     restoredWaitActorsRef,
     departingIdsRef,
     setPageBrokenIds,
+    brokenPeerIds: new Set([...serverBrokenIds, ...pageBrokenIds]),
     bindWaitPrune,
     noteDeparting,
   };
