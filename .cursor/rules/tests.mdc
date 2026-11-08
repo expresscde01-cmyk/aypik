@@ -1,0 +1,58 @@
+---
+description: Les tests Aypik se font en base, dans une transaction annulée, sans navigateur ni mot de passe.
+alwaysApply: true
+---
+
+# Tests en base
+
+Méthode par défaut. Pas de navigateur, pas de mot de passe, pas de `.env.test`. L'affichage, c'est la personne qui le vérifie.
+
+Ne pas se connecter au site. Ne pas contourner Cloudflare. Ne pas demander d'identifiants.
+
+## Connexion
+
+Supabase CLI déjà configurée, depuis la racine du dépôt. Tout tient dans `BEGIN` … `ROLLBACK` : rien ne reste en base.
+
+```sh
+sh supabase/tests/run_rollback_test.sh chemin/vers/test.sql
+```
+
+Le fichier SQL ne contient pas `BEGIN` ni `ROLLBACK` : le script les ajoute. Pour rendre le tableau, le SQL termine par `RAISE EXCEPTION 'AYPIK_RESULTS %', resultat`. Cette erreur annule la transaction.
+
+## Comptes
+
+Choisir les profils par prénom dans `profiles` :
+
+- A = test2
+- B = Suzanne
+- C = Sandrine
+
+Si l'un n'existe plus, prendre un autre profil existant et dire lequel. Si plusieurs profils portent le même prénom, en choisir un, le dire (numéro Fondateur), et ne pas mélanger les deux.
+
+## Se mettre à la place d'un compte
+
+`auth.uid()` lit d'abord `request.jwt.claim.sub`, puis `request.jwt.claims`. Poser les deux sur le même id.
+
+```sql
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', id_du_compte::text, true);
+SELECT set_config(
+  'request.jwt.claims',
+  json_build_object('sub', id_du_compte, 'role', 'authenticated')::text,
+  true
+);
+```
+
+Visiteur sans compte : `SET LOCAL ROLE anon`.
+
+Pour préparer un cas (offre, essai fini, réglage, Match à écarter), modifier les lignes dans la transaction. Elles reviennent à la fin. Ne rien committer.
+
+## E-mails
+
+Un like, un flash ou `finalize_reciprocal_match` peut envoyer un e-mail par `pg_net`. Cet envoi ne s'annule pas avec la transaction.
+
+Si le chemin du test passe par un de ces triggers : `SET LOCAL session_replication_role = replica` avant l'écriture. Si le rôle lié n'a pas ce droit, ne pas prendre ce chemin. Insérer le Match directement dans `match_bonds` n'envoie pas d'e-mail. Le dire dans le résultat.
+
+## Résultat
+
+Un tableau, une ligne par cas. Ensuite la preuve que la base est inchangée : relire l'offre, le statut Fondateur, les dates, `discover_mode`, `accepts_messages_without_match`, l'annonce, et les messages ou Matchs qui existaient déjà. Pas d'e-mail, pas d'id, pas de mot de passe dans la réponse.
