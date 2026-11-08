@@ -21,6 +21,7 @@ import {
   uploadProfilePhoto,
   validateProfilePhoto,
 } from '@/lib/profilePhoto';
+import { useSignedProfilePhoto } from '@/components/ProfilePhoto';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { OffersComparisonTable } from '@/components/membership/OffersComparisonTable';
 import TemperamentProfileCard, {
@@ -286,6 +287,7 @@ export default function ProfileSetup({
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const signedPhoto = useSignedProfilePhoto(photoPreview ? '' : photoUrl);
   const [photoFileName, setPhotoFileName] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -1251,12 +1253,14 @@ export default function ProfileSetup({
           <div className="flex items-center gap-4">
             <div className="profile-photo-frame w-20 h-20 rounded-2xl bg-aypik-border flex items-center justify-center flex-shrink-0 border-2 border-aypik-border">
               <div className="profile-photo-media">
-                {photoPreview || photoUrl ? (
+                {photoPreview || signedPhoto ? (
                   <img
-                    src={photoPreview || photoUrl}
+                    src={photoPreview || signedPhoto || ''}
                     alt={t('profile.photoPreview')}
                     className="w-full h-full object-cover"
                   />
+                ) : photoUrl && signedPhoto === undefined ? (
+                  <span className="w-full h-full" aria-hidden="true" />
                 ) : (
                   <Camera className="w-7 h-7 text-aypik-text-muted" />
                 )}

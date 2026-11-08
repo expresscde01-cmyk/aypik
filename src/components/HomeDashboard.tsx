@@ -19,7 +19,7 @@ import { FounderBadge, ProfileCardCornerBadges } from '@/components/membership/B
 import type { Profile } from '@/components/ProfileSetup';
 import NotificationsBell from '@/components/NotificationsBell';
 import ProfileDetailModal from '@/components/ProfileDetailModal';
-import ProfilePhoto from '@/components/ProfilePhoto';
+import ProfilePhoto, { useSignedProfilePhoto } from '@/components/ProfilePhoto';
 import { OnlinePresenceDot } from '@/components/OnlinePresenceDot';
 import UnreadBadge, { unreadMessagesLabel } from '@/components/UnreadBadge';
 import HomeActionShape from '@/components/HomeActionShape';
@@ -198,6 +198,7 @@ export default function HomeDashboard({
   const showCompleteAction =
     completionPercent !== null && completionPercent < 100;
   const photoUrl = viewerProfile?.photo_url?.trim() || '';
+  const signedAvatar = useSignedProfilePhoto(photoUrl);
   const avatarInitial = displayName.trim().charAt(0).toUpperCase();
   const likesUnlimited = status.unlimited_likes || founderActive;
   const likesExhausted =
@@ -509,12 +510,14 @@ export default function HomeDashboard({
             <div className="member-home-banner-main">
           <div className="member-home-banner-top">
             <div className="member-home-avatar">
-              {photoUrl ? (
+              {signedAvatar ? (
                 <img
-                  src={photoUrl}
+                  src={signedAvatar}
                   alt=""
                   className="member-home-avatar-photo"
                 />
+              ) : photoUrl && signedAvatar === undefined ? (
+                <span className="member-home-avatar-photo" aria-hidden />
               ) : (
                 <span className="member-home-avatar-initial" aria-hidden>
                   {avatarInitial}
@@ -762,6 +765,8 @@ export default function HomeDashboard({
                       {p.photo_url ? (
                         <ProfilePhoto
                           src={p.photo_url}
+                          initial={p.display_name.charAt(0).toUpperCase()}
+                          initialClassName="w-full h-full flex items-center justify-center text-3xl font-bold text-white/80"
                           eager
                           className="w-full h-full object-cover pointer-events-none"
                         />

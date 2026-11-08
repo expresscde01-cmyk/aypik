@@ -452,3 +452,7 @@ verify_jwt = false
 # Envoi SMS OTP téléphone (Turnstile + allowlist pays + quotas). JWT obligatoire.
 [functions.send-phone-verification]
 verify_jwt = true
+
+# Signature des photos de profil. JWT obligatoire. 100 chemins maximum.
+[functions.sign-profile-photos]
+verify_jwt = true

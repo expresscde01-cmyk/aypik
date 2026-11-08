@@ -318,6 +318,8 @@ export default function ChatScreen({
               {peer.photo_url ? (
                 <ProfilePhoto
                   src={peer.photo_url}
+                  initial={peer.display_name.charAt(0).toUpperCase()}
+                  initialClassName="w-full h-full flex items-center justify-center text-sm font-bold text-aypik-navy"
                   eager
                   width={96}
                   className="w-full h-full object-cover"

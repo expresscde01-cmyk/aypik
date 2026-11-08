@@ -11,6 +11,7 @@ import {
 } from '@/lib/messaging';
 import type { InboxUpdatedDetail } from '@/lib/messaging';
 import UnreadBadge, { unreadMessagesRecapCopy } from '@/components/UnreadBadge';
+import ProfilePhoto from '@/components/ProfilePhoto';
 import {
   displaySocialNotification,
   fetchSocialNotifications,
@@ -322,10 +323,12 @@ function DigestNamedRow({
                   }}
                 >
                   {photo ? (
-                    <img
+                    <ProfilePhoto
                       src={photo}
-                      alt=""
+                      initial={initial}
+                      initialClassName={`digest-person-chip-initial ${initialClass}`}
                       className="digest-person-chip-photo"
+                      width={64}
                     />
                   ) : (
                     <span

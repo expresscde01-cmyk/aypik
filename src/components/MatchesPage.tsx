@@ -2684,6 +2684,8 @@ export default function MatchesPage({
           {match.profile.photo_url ? (
             <ProfilePhoto
               src={match.profile.photo_url}
+              initial={match.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-lg font-bold text-aypik-navy"
               width={112}
               className="w-full h-full object-cover"
             />
@@ -2903,6 +2905,10 @@ export default function MatchesPage({
           {card.profile.photo_url ? (
             <ProfilePhoto
               src={card.profile.photo_url}
+              initial={card.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName={`w-full h-full flex items-center justify-center text-lg font-bold ${
+                theirs ? 'text-amber-600/50' : 'text-amber-700/70'
+              }`}
               width={112}
               className="w-full h-full object-cover"
             />
@@ -3015,6 +3021,8 @@ export default function MatchesPage({
           {card.profile.photo_url ? (
             <ProfilePhoto
               src={card.profile.photo_url}
+              initial={card.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-lg font-bold text-amber-700/60"
               width={112}
               className="w-full h-full object-cover"
             />
@@ -3178,6 +3186,8 @@ export default function MatchesPage({
           {card.profile.photo_url ? (
             <ProfilePhoto
               src={card.profile.photo_url}
+              initial={card.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400"
               width={112}
               className="w-full h-full object-cover"
             />
@@ -3297,6 +3307,8 @@ export default function MatchesPage({
           {card.profile.photo_url ? (
             <ProfilePhoto
               src={card.profile.photo_url}
+              initial={card.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-lg font-bold text-purple-400"
               width={112}
               className="w-full h-full object-cover"
             />
@@ -3403,6 +3415,8 @@ export default function MatchesPage({
           {card.profile.photo_url ? (
             <ProfilePhoto
               src={card.profile.photo_url}
+              initial={card.profile.display_name.charAt(0).toUpperCase()}
+              initialClassName="w-full h-full flex items-center justify-center text-lg font-bold text-slate-400"
               width={112}
               className="w-full h-full object-cover"
             />
