@@ -26,7 +26,7 @@ export function FounderBadge({
     >
       <Award className={icon} />
       {compact ? t('common.offer.shortFondateur') : t('common.offer.memberFondateur')}
-      {compact ? null : numberLabel}
+      {numberLabel}
     </span>
   );
 }
@@ -53,7 +53,7 @@ export function ProfileCardCornerBadges({
             <FounderBadge number={founderNumber} size="sm" />
           </span>
           <span className="lg:hidden">
-            <FounderBadge size="sm" compact />
+            <FounderBadge number={founderNumber} size="sm" compact />
           </span>
         </div>
       ) : null}

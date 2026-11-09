@@ -522,7 +522,7 @@ export default function ProfileDetailModal({
                       }}
                       className="w-full py-2.5 btn-primary text-sm disabled:opacity-40 cursor-pointer"
                     >
-                      <span>{busy ? '…' : <MatcherWord />}</span>
+                      <span>{busy ? '…' : <MatcherWord tone="white" />}</span>
                     </button>
                   ) : null}
                   <button
@@ -584,7 +584,7 @@ export default function ProfileDetailModal({
                     onClick={() => requestInboxDecision('match')}
                     className="w-full py-2.5 btn-primary text-sm disabled:opacity-40"
                   >
-                    <span><MatcherWord /></span>
+                    <span><MatcherWord tone="white" /></span>
                   </button>
                   <button
                     type="button"
