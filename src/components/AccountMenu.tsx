@@ -440,7 +440,7 @@ export default function AccountMenu({
                   disabled={acceptBusy}
                   onClick={() => void toggleAcceptMessages()}
                   className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                    acceptsMessages ? 'bg-sky-500' : 'bg-gray-300'
+                    acceptsMessages ? 'bg-emerald-600' : 'bg-gray-300'
                   }`}
                 >
                   <span
