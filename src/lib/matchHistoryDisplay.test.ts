@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  exchangeForMatchCard,
   isLiveWaitByOther,
   matchSheetUsesCrown,
+  peerGestureAt,
+  resolveInterestExchange,
   matchSheetViaWait,
   originHistoryIso,
   firstWordEventIso,
@@ -357,4 +360,64 @@ test('collectLiveReciprocalMatchIds : like/flash croisés comptent, refus exclus
     inboxRows: [{ actor_id: 'refused', decision: 'refuse' }],
   });
   assert.deepEqual(ids, ['flash-back']);
+});
+
+const sent = '2026-08-12T09:00:00.000Z';
+const accepted = '2026-08-14T18:00:00.000Z';
+
+test('échange daté : le plus tôt a envoyé, le plus tard a accepté', () => {
+  assert.deepEqual(
+    resolveInterestExchange({
+      myFlashAt: sent,
+      theirLikeAt: accepted,
+    }),
+    {
+      sender: 'me',
+      origin: 'flash',
+      sentAt: sent,
+      acceptedAt: accepted,
+    }
+  );
+  assert.deepEqual(
+    resolveInterestExchange({
+      myLikeAt: accepted,
+      theirFlashAt: sent,
+    }).sender,
+    'them'
+  );
+});
+
+test('dates identiques ou un seul côté : personne n’est inventé sur un match', () => {
+  assert.equal(
+    resolveInterestExchange({ myLikeAt: sent, theirFlashAt: sent }).sender,
+    'unknown'
+  );
+  assert.equal(
+    exchangeForMatchCard('match', { theirLikeAt: sent }, accepted).sender,
+    'unknown'
+  );
+  assert.equal(
+    exchangeForMatchCard('match', { theirLikeAt: sent }, accepted).acceptedAt,
+    accepted
+  );
+  assert.equal(
+    exchangeForMatchCard('like', { theirFlashAt: sent }).sender,
+    'them'
+  );
+  assert.equal(
+    exchangeForMatchCard('like', { myLikeAt: sent }).sender,
+    'unknown'
+  );
+});
+
+test('date d’envoi refusée : seulement le geste encore en base', () => {
+  const edges = {
+    sentLikes: [{ to_user: 'camille', created_at: sent }],
+    sentFlashes: [],
+    receivedLikes: [],
+    receivedFlashes: [{ from_user: 'camille', created_at: accepted }],
+  };
+  assert.equal(peerGestureAt(edges, 'camille', 'like', 'sent'), sent);
+  assert.equal(peerGestureAt(edges, 'camille', 'flash', 'sent'), null);
+  assert.equal(peerGestureAt(edges, 'camille', 'flash', 'received'), accepted);
 });

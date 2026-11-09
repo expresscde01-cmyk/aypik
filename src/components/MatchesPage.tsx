@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Zap,
   X,
+  XCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -40,15 +41,13 @@ import {
 } from '@/lib/suggestions';
 import { fetchPeerDialogueFlags } from '@/lib/messaging';
 import {
-  formatInteractionDate,
   matchRoleFromDates,
-  matchedHistoryLabel,
-  matchedNoDialogueLabel,
-  matchedWithDialogueLabel,
-  pendingToDecideLabel,
-  originHistoryLabel,
+  sentInterestLabel,
+  acceptedInterestLabel,
+  uncertainMatchLabel,
+  declinedOnLabel,
   waitingMatchReminder,
-  declinedArchiveStatusLabel,
+  pendingToDecideLabel,
   waitArchiveStatusLabel,
   waitingByOtherStatusLabel,
   brokenMatchStatusLabel,
@@ -83,7 +82,7 @@ import {
   matchIdsIncludingInboxDecisions,
   inboxMatchAtByActor,
   firstWordEventIso,
-  originHistoryIso,
+  peerGestureAt,
   pinIdsFirst,
   splitPendingByOthers,
   collectMatchedPeerIds,
@@ -157,6 +156,8 @@ type DeclinedArchiveCard = {
   founder_number?: number | null;
   is_boosted?: boolean;
   source?: 'theirs' | 'mine';
+  /** Date du geste encore en base. Absente si la ligne a disparu. */
+  sentAt?: string | null;
 };
 
 type PendingDeclinedCard = {
@@ -168,6 +169,7 @@ type PendingDeclinedCard = {
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
+  sentAt?: string | null;
 };
 
 type WaitArchiveCard = {
@@ -193,6 +195,7 @@ type PendingWaitingCard = {
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
+  sentAt?: string | null;
 };
 
 type WaitingByOtherCard = {
@@ -204,6 +207,7 @@ type WaitingByOtherCard = {
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
+  sentAt?: string | null;
 };
 
 type BrokenMatchCard = {
@@ -233,6 +237,86 @@ function firstWordIsoOf(match: Match): string {
     matchedAt: match.matched_at,
     matchedBackAt: match.matchedBackAt,
   });
+}
+
+function sheetCopy(match: Match): {
+  origin: ReceivedOrigin;
+  originLabel: string;
+  matchedLabel: string | null;
+} {
+  const name = match.profile.display_name;
+  const sender = match.interestSender;
+  const origin = match.interestOrigin;
+  const sentAt = match.interestSentAt;
+  const known = sender !== 'unknown' && origin != null && sentAt != null;
+  const originLabel = known
+    ? sentInterestLabel({ sender, origin, iso: sentAt, name })
+    : '';
+  const matched = match.kind === 'match' || match.alreadyLiked;
+  let matchedLabel: string | null = null;
+  if (matched) {
+    if (known && match.interestAcceptedAt) {
+      matchedLabel = acceptedInterestLabel({
+        who: sender === 'me' ? 'them' : 'me',
+        iso: match.interestAcceptedAt,
+        name,
+      });
+    } else {
+      matchedLabel = uncertainMatchLabel(
+        match.interestAcceptedAt || firstWordIsoOf(match)
+      );
+    }
+  }
+  return {
+    origin:
+      known && match.interestOrigin ? match.interestOrigin : match.origin,
+    originLabel,
+    matchedLabel,
+  };
+}
+
+function declinedLines(opts: {
+  name: string;
+  origin: ReceivedOrigin;
+  sentAt?: string | null;
+  declinedAt: string;
+  who: 'me' | 'them';
+  short?: boolean;
+}): { send: string; decline: string } {
+  const send = opts.sentAt
+    ? sentInterestLabel({
+        sender: opts.who === 'me' ? 'them' : 'me',
+        origin: opts.origin,
+        iso: opts.sentAt,
+        name: opts.name,
+        short: opts.short,
+      })
+    : '';
+  return {
+    send,
+    decline: declinedOnLabel(opts.who, opts.declinedAt, opts.name),
+  };
+}
+
+function DeclinedCardText(props: {
+  name: string;
+  origin: ReceivedOrigin;
+  sentAt?: string | null;
+  declinedAt: string;
+  who: 'me' | 'them';
+}) {
+  const lines = declinedLines({ ...props, short: true });
+  return (
+    <>
+      {lines.send ? (
+        <p className="text-xs text-purple-900/80 mt-1">{lines.send}</p>
+      ) : null}
+      <p className="text-xs text-purple-900/80 mt-1 flex items-center gap-1.5">
+        <XCircle className="w-4 h-4 shrink-0 text-gray-500" strokeWidth={2.5} aria-hidden />
+        {lines.decline}
+      </p>
+    </>
+  );
 }
 
 /** « 1er mot » : date d’entrée dans la rubrique (match), pas le like reçu. */
@@ -1135,12 +1219,16 @@ export default function MatchesPage({
         return;
       }
       const ids = [...new Set(rows.map((r) => r.actor_id))];
-      const { byId, founderMap, boostSet } = await fetchProfileBundle(ids);
+      const [{ byId, founderMap, boostSet }, edges] = await Promise.all([
+        fetchProfileBundle(ids),
+        queryLikeFlashEdges(user.id).catch(() => null),
+      ]);
 
       const list: DeclinedArchiveCard[] = [];
       for (const row of rows) {
         const profile = byId.get(row.actor_id);
         if (!profile) continue;
+        const source = row.source === 'mine' ? 'mine' : 'theirs';
         list.push({
           archiveId: row.id,
           archivedAt: row.archived_at,
@@ -1151,7 +1239,15 @@ export default function MatchesPage({
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
-          source: row.source === 'mine' ? 'mine' : 'theirs',
+          source,
+          sentAt: edges
+            ? peerGestureAt(
+                edges,
+                profile.id,
+                row.origin,
+                source === 'mine' ? 'received' : 'sent'
+              )
+            : null,
         });
       }
       // Plus récents en premier (haut/gauche), quel que soit l'étage
@@ -1180,7 +1276,10 @@ export default function MatchesPage({
         return;
       }
       const ids = [...new Set(notices.map((n) => n.actorId))];
-      const { byId, founderMap, boostSet } = await fetchProfileBundle(ids);
+      const [{ byId, founderMap, boostSet }, edges] = await Promise.all([
+        fetchProfileBundle(ids),
+        queryLikeFlashEdges(user.id).catch(() => null),
+      ]);
 
       const list: PendingDeclinedCard[] = [];
       for (const notice of notices) {
@@ -1200,6 +1299,9 @@ export default function MatchesPage({
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
+          sentAt: edges
+            ? peerGestureAt(edges, profile.id, notice.origin, 'sent')
+            : null,
         });
       }
       // Plus récents en premier (haut/gauche), quel que soit l'étage
@@ -1304,9 +1406,10 @@ export default function MatchesPage({
         setPendingWaiting([]);
         return;
       }
-      const { byId, founderMap, boostSet } = await fetchProfileBundle(
-        [...new Set(notices.map((n) => n.actorId))]
-      );
+      const [{ byId, founderMap, boostSet }, edges] = await Promise.all([
+        fetchProfileBundle([...new Set(notices.map((n) => n.actorId))]),
+        queryLikeFlashEdges(user.id).catch(() => null),
+      ]);
       const list: PendingWaitingCard[] = [];
       for (const notice of notices) {
         const profile = byId.get(notice.actorId);
@@ -1320,6 +1423,9 @@ export default function MatchesPage({
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
+          sentAt: edges
+            ? peerGestureAt(edges, profile.id, notice.origin, 'sent')
+            : null,
         });
       }
       setPendingWaiting(list);
@@ -1367,9 +1473,10 @@ export default function MatchesPage({
         );
         return;
       }
-      const { byId, founderMap, boostSet } = await fetchProfileBundle(
-        [...new Set(liveWaits.map((r) => r.peer_id))]
-      );
+      const [{ byId, founderMap, boostSet }, edges] = await Promise.all([
+        fetchProfileBundle([...new Set(liveWaits.map((r) => r.peer_id))]),
+        queryLikeFlashEdges(user.id).catch(() => null),
+      ]);
       const list: WaitingByOtherCard[] = [];
       for (const row of liveWaits) {
         const profile = byId.get(row.peer_id);
@@ -1383,6 +1490,9 @@ export default function MatchesPage({
           is_founder: founderMap.has(profile.id),
           founder_number: founderMap.get(profile.id) ?? null,
           is_boosted: boostSet.has(profile.id),
+          sentAt: edges
+            ? peerGestureAt(edges, profile.id, row.origin, 'sent')
+            : null,
         });
       }
       list.sort(
@@ -1923,6 +2033,12 @@ export default function MatchesPage({
           matchRole: 'accepted',
           matchedBackAt: matchedAt,
           matchedViaWait: Boolean(item.waiting),
+          interestSender: item.interestSentAt ? 'them' : 'unknown',
+          interestOrigin: item.interestSentAt
+            ? item.interestOrigin || item.origin
+            : null,
+          interestSentAt: item.interestSentAt,
+          interestAcceptedAt: matchedAt,
         };
         setOpenProfile(null);
         await playDepart(item.profile.id, () => {
@@ -2085,6 +2201,7 @@ export default function MatchesPage({
               founder_number: card.founder_number,
               is_boosted: card.is_boosted,
               source: 'theirs' as const,
+              sentAt: card.sentAt,
             },
             ...prev.filter((c) => c.profile.id !== card.profile.id),
           ]);
@@ -2328,6 +2445,10 @@ export default function MatchesPage({
             waitingAt: restoredAt,
             refused: false,
             matchedViaWait: false,
+            interestSender: card.receivedAt ? 'them' : 'unknown',
+            interestOrigin: card.origin,
+            interestSentAt: card.receivedAt || null,
+            interestAcceptedAt: null,
             is_founder: card.is_founder,
             founder_number: card.founder_number,
             is_boosted: card.is_boosted,
@@ -2623,15 +2744,42 @@ export default function MatchesPage({
     const unreadCount = unread.bySender[match.profile.id] || 0;
     const hasDialogue = peersWithChat.has(match.profile.id);
     const matchDateIso = firstWordIsoOf(match);
+    const cardName = match.profile.display_name;
+    const knownSend =
+      match.interestSender !== 'unknown' &&
+      match.interestOrigin &&
+      match.interestSentAt
+        ? sentInterestLabel({
+            sender: match.interestSender,
+            origin: match.interestOrigin,
+            iso: match.interestSentAt,
+            name: cardName,
+            short: true,
+          })
+        : '';
+    const acceptLine = !isMatched
+      ? ''
+      : knownSend &&
+          match.interestAcceptedAt &&
+          match.interestSender !== 'unknown'
+        ? acceptedInterestLabel({
+            who: match.interestSender === 'me' ? 'them' : 'me',
+            iso: match.interestAcceptedAt,
+            name: cardName,
+          })
+        : uncertainMatchLabel(match.interestAcceptedAt || matchDateIso);
     const statusLabel = match.waiting
       ? waitingMatchReminder(match.origin, myGender)
       : isMatched
-        ? hasDialogue
-          ? matchedWithDialogueLabel(matchDateIso, match.matchRole)
-          : matchedNoDialogueLabel(matchDateIso, match.matchRole)
-        : pendingToDecideLabel(match.origin, match.date_received);
-
-    const receivedLabel = formatInteractionDate(match.date_received);
+        ? t(
+            hasDialogue
+              ? 'matches.matchedWithDialogue'
+              : 'matches.matchedNoDialogue',
+            { history: acceptLine }
+          )
+        : knownSend
+          ? t('matches.pendingToDecide', { history: knownSend })
+          : pendingToDecideLabel(match.origin, match.date_received);
     const isToStudy = isPending && !match.waiting && !match.alreadyLiked;
     const cardActing = actingId === match.profile.id;
     const isQuietMatch = isMatched && !hasDialogue && !match.waiting;
@@ -2746,24 +2894,23 @@ export default function MatchesPage({
           )}
           {match.waiting ? (
             <>
-              {receivedLabel ? (
-                <p className="text-[11px] text-amber-900/70 mt-1">
-                  Reçu le {receivedLabel}
-                </p>
+              {knownSend ? (
+                <p className="text-[11px] text-amber-900/70 mt-1">{knownSend}</p>
               ) : null}
               <p className="text-xs text-amber-950/80 mt-0.5">{statusLabel}</p>
             </>
           ) : isMatched ? (
-            <p
+            <div
               className={`text-xs mt-1 ${
                 hasDialogue ? 'text-gray-600' : 'text-emerald-800'
               }`}
             >
-              {statusLabel}
-            </p>
+              {knownSend ? <p>{knownSend}</p> : null}
+              <p>{statusLabel}</p>
+            </div>
           ) : (
             <p className="text-xs text-stone-700 mt-1 flex items-center gap-1.5">
-              {isFlash ? (
+              {(match.interestOrigin || match.origin) === 'flash' ? (
                 <Zap
                   className="w-4 h-4 shrink-0 text-[#F2611C]"
                   fill="currentColor"
@@ -3078,7 +3225,15 @@ export default function MatchesPage({
             </p>
           )}
           <p className="text-xs mt-1 text-amber-950/80">
-            {waitingByOtherStatusLabel(card.origin, card.createdAt)}
+            {card.sentAt
+              ? sentInterestLabel({
+                  sender: 'me',
+                  origin: card.origin,
+                  iso: card.sentAt,
+                  name: card.profile.display_name,
+                  short: true,
+                })
+              : waitingByOtherStatusLabel(card.origin)}
           </p>
         </div>
       </div>
@@ -3243,9 +3398,13 @@ export default function MatchesPage({
               {card.profile.location}
             </p>
           )}
-          <p className="text-xs text-purple-900/80 mt-1">
-            {declinedArchiveStatusLabel(card.origin, card.declinedAt)}
-          </p>
+          <DeclinedCardText
+            name={card.profile.display_name}
+            origin={card.origin}
+            sentAt={card.sentAt}
+            declinedAt={card.declinedAt}
+            who="them"
+          />
         </div>
 
         <MatchCardActions>
@@ -3364,13 +3523,13 @@ export default function MatchesPage({
               {card.profile.location}
             </p>
           )}
-          <p className="text-xs text-purple-900/80 mt-1">
-            {declinedArchiveStatusLabel(
-              card.origin,
-              card.declinedAt,
-              card.source
-            )}
-          </p>
+          <DeclinedCardText
+            name={card.profile.display_name}
+            origin={card.origin}
+            sentAt={card.sentAt}
+            declinedAt={card.declinedAt}
+            who={card.source === 'mine' ? 'me' : 'them'}
+          />
         </div>
 
         <MatchCardActions>
@@ -3747,28 +3906,7 @@ export default function MatchesPage({
           likesExhausted={likesExhausted}
           showFlashCta={false}
           inboxHistory={{
-            origin: openProfile.origin,
-            originLabel: originHistoryLabel(
-              openProfile.origin,
-              originHistoryIso({
-                matchRole: openProfile.matchRole,
-                dateReceived: openProfile.date_received,
-                matchedAt: openProfile.matched_at,
-                matchedBackAt: openProfile.matchedBackAt,
-              })
-            ),
-            matchedLabel:
-              openProfile.kind === 'match' || openProfile.alreadyLiked
-                ? matchedHistoryLabel(
-                    firstWordEventIso({
-                      matchRole: openProfile.matchRole,
-                      dateReceived: openProfile.date_received,
-                      matchedAt: openProfile.matched_at,
-                      matchedBackAt: openProfile.matchedBackAt,
-                    }),
-                    openProfile.matchRole
-                  )
-                : null,
+            ...sheetCopy(openProfile),
             matchedViaWait: matchSheetUsesCrown(
               openProfile.kind === 'match' || openProfile.alreadyLiked,
               openProfile.matchedViaWait
@@ -3857,18 +3995,23 @@ export default function MatchesPage({
           showFlashCta={false}
           inboxHistory={{
             origin: openArchive.origin,
-            originLabel: originHistoryLabel(
-              openArchive.origin,
-              openArchive.declinedAt
-            ),
+            originLabel: declinedLines({
+              name: openArchive.profile.display_name,
+              origin: openArchive.origin,
+              sentAt: openArchive.sentAt,
+              declinedAt: openArchive.declinedAt,
+              who: openArchive.source === 'mine' ? 'me' : 'them',
+            }).send,
             waiting: false,
             refused: false,
             declinedByThem: true,
-            declinedByThemLabel: declinedArchiveStatusLabel(
-              openArchive.origin,
-              openArchive.declinedAt,
-              openArchive.source
-            ),
+            declinedByThemLabel: declinedLines({
+              name: openArchive.profile.display_name,
+              origin: openArchive.origin,
+              sentAt: openArchive.sentAt,
+              declinedAt: openArchive.declinedAt,
+              who: openArchive.source === 'mine' ? 'me' : 'them',
+            }).decline,
             viewerGender: myGender,
           }}
           onClose={() => setOpenArchive(null)}
@@ -3900,17 +4043,23 @@ export default function MatchesPage({
           showFlashCta={false}
           inboxHistory={{
             origin: openPendingDeclined.origin,
-            originLabel: originHistoryLabel(
-              openPendingDeclined.origin,
-              openPendingDeclined.declinedAt
-            ),
+            originLabel: declinedLines({
+              name: openPendingDeclined.profile.display_name,
+              origin: openPendingDeclined.origin,
+              sentAt: openPendingDeclined.sentAt,
+              declinedAt: openPendingDeclined.declinedAt,
+              who: 'them',
+            }).send,
             waiting: false,
             refused: false,
             declinedByThem: true,
-            declinedByThemLabel: declinedArchiveStatusLabel(
-              openPendingDeclined.origin,
-              openPendingDeclined.declinedAt
-            ),
+            declinedByThemLabel: declinedLines({
+              name: openPendingDeclined.profile.display_name,
+              origin: openPendingDeclined.origin,
+              sentAt: openPendingDeclined.sentAt,
+              declinedAt: openPendingDeclined.declinedAt,
+              who: 'them',
+            }).decline,
             viewerGender: myGender,
           }}
           onClose={() => setOpenPendingDeclined(null)}
@@ -3947,10 +4096,14 @@ export default function MatchesPage({
           showFlashCta={false}
           inboxHistory={{
             origin: openPendingWaiting.origin,
-            originLabel: originHistoryLabel(
-              openPendingWaiting.origin,
-              openPendingWaiting.receivedAt
-            ),
+            originLabel: openPendingWaiting.sentAt
+              ? sentInterestLabel({
+                  sender: 'me',
+                  origin: openPendingWaiting.origin,
+                  iso: openPendingWaiting.sentAt,
+                  name: openPendingWaiting.profile.display_name,
+                })
+              : '',
             waitingIncoming: true,
             refused: false,
             viewerGender: myGender,
@@ -3989,10 +4142,14 @@ export default function MatchesPage({
           showFlashCta={false}
           inboxHistory={{
             origin: openWaitingByOther.origin,
-            originLabel: originHistoryLabel(
-              openWaitingByOther.origin,
-              openWaitingByOther.createdAt
-            ),
+            originLabel: openWaitingByOther.sentAt
+              ? sentInterestLabel({
+                  sender: 'me',
+                  origin: openWaitingByOther.origin,
+                  iso: openWaitingByOther.sentAt,
+                  name: openWaitingByOther.profile.display_name,
+                })
+              : '',
             waitingIncoming: true,
             refused: false,
             viewerGender: myGender,

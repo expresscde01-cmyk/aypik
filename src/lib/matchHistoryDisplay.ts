@@ -102,6 +102,163 @@ export function matchSheetUsesCrown(
   return Boolean(showMatched && viaWait);
 }
 
+export type InterestSender = 'me' | 'them' | 'unknown';
+export type InterestOrigin = 'like' | 'flash';
+
+/** Qui a envoyé le premier geste daté, et quand l’autre a répondu. */
+export type InterestExchange = {
+  sender: InterestSender;
+  origin: InterestOrigin | null;
+  sentAt: string | null;
+  acceptedAt: string | null;
+};
+
+function parsedTime(iso?: string | null): number | null {
+  if (!iso) return null;
+  const time = Date.parse(iso);
+  return Number.isFinite(time) ? time : null;
+}
+
+function earlierGesture(
+  likeAt?: string | null,
+  flashAt?: string | null
+): { origin: InterestOrigin; at: string; time: number } | null {
+  const like = parsedTime(likeAt);
+  const flash = parsedTime(flashAt);
+  if (like == null && flash == null) return null;
+  if (flash == null || (like != null && like <= flash)) {
+    return { origin: 'like', at: likeAt as string, time: like as number };
+  }
+  return { origin: 'flash', at: flashAt as string, time: flash };
+}
+
+/**
+ * Deux dates strictement ordonnées : le plus tôt a envoyé, le plus tard a accepté.
+ * Dates absentes ou identiques : personne n’est désigné.
+ */
+export function resolveInterestExchange(input: {
+  myLikeAt?: string | null;
+  myFlashAt?: string | null;
+  theirLikeAt?: string | null;
+  theirFlashAt?: string | null;
+}): InterestExchange {
+  const mine = earlierGesture(input.myLikeAt, input.myFlashAt);
+  const theirs = earlierGesture(input.theirLikeAt, input.theirFlashAt);
+  if (mine && theirs) {
+    if (mine.time === theirs.time) {
+      return {
+        sender: 'unknown',
+        origin: null,
+        sentAt: null,
+        acceptedAt: mine.at,
+      };
+    }
+    if (mine.time < theirs.time) {
+      return {
+        sender: 'me',
+        origin: mine.origin,
+        sentAt: mine.at,
+        acceptedAt: theirs.at,
+      };
+    }
+    return {
+      sender: 'them',
+      origin: theirs.origin,
+      sentAt: theirs.at,
+      acceptedAt: mine.at,
+    };
+  }
+  if (theirs) {
+    return {
+      sender: 'them',
+      origin: theirs.origin,
+      sentAt: theirs.at,
+      acceptedAt: null,
+    };
+  }
+  if (mine) {
+    return {
+      sender: 'me',
+      origin: mine.origin,
+      sentAt: mine.at,
+      acceptedAt: null,
+    };
+  }
+  return { sender: 'unknown', origin: null, sentAt: null, acceptedAt: null };
+}
+
+/**
+ * Match : les deux côtés datés sont requis, sinon une seule date de match.
+ * À étudier / attente : seul leur geste daté compte.
+ */
+export function exchangeForMatchCard(
+  kind: 'match' | 'like' | 'flash',
+  raw: {
+    myLikeAt?: string | null;
+    myFlashAt?: string | null;
+    theirLikeAt?: string | null;
+    theirFlashAt?: string | null;
+  },
+  fallbackMatchIso?: string | null
+): InterestExchange {
+  const ex = resolveInterestExchange(raw);
+  const hasMine = Boolean(earlierGesture(raw.myLikeAt, raw.myFlashAt));
+  const hasTheirs = Boolean(earlierGesture(raw.theirLikeAt, raw.theirFlashAt));
+  if (kind === 'match') {
+    if (hasMine && hasTheirs) return ex;
+    return {
+      sender: 'unknown',
+      origin: null,
+      sentAt: null,
+      acceptedAt: fallbackMatchIso || ex.acceptedAt || ex.sentAt,
+    };
+  }
+  if (hasTheirs) {
+    return {
+      sender: 'them',
+      origin: ex.origin,
+      sentAt: ex.sentAt,
+      acceptedAt: null,
+    };
+  }
+  return { sender: 'unknown', origin: null, sentAt: null, acceptedAt: null };
+}
+
+type GestureRow = { created_at: string; to_user?: string; from_user?: string };
+
+function earliestGestureAt(rows: GestureRow[], peerId: string, key: 'to_user' | 'from_user'): string | null {
+  let best: string | null = null;
+  let bestTime = Infinity;
+  for (const row of rows) {
+    if (row[key] !== peerId) continue;
+    const time = parsedTime(row.created_at);
+    if (time == null || time >= bestTime) continue;
+    bestTime = time;
+    best = row.created_at;
+  }
+  return best;
+}
+
+/** Date réelle du Like ou du Flash encore en base. Absente : null, sans date de remplacement. */
+export function peerGestureAt(
+  edges: {
+    sentLikes: GestureRow[];
+    receivedLikes: GestureRow[];
+    receivedFlashes: GestureRow[];
+    sentFlashes: GestureRow[];
+  },
+  peerId: string,
+  origin: InterestOrigin,
+  direction: 'sent' | 'received'
+): string | null {
+  if (direction === 'sent') {
+    const rows = origin === 'flash' ? edges.sentFlashes : edges.sentLikes;
+    return earliestGestureAt(rows, peerId, 'to_user');
+  }
+  const rows = origin === 'flash' ? edges.receivedFlashes : edges.receivedLikes;
+  return earliestGestureAt(rows, peerId, 'from_user');
+}
+
 /** Les identifiants épinglés passent en tête, dans l’ordre du digest cloche. */
 export function pinIdsFirst<T>(
   items: T[],

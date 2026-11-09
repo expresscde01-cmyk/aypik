@@ -11,10 +11,12 @@ import {
   mergeConfirmedInboxDecisions,
 } from '@/lib/inboxDecisionOverlay';
 import {
+  exchangeForMatchCard,
   inboxMatchAtByActor,
   isMatchedViaWait,
   matchIdsIncludingInboxDecisions,
   splitPendingByOthers,
+  type InterestExchange,
 } from '@/lib/matchHistoryDisplay';
 import { matchRoleFromDates, type MatchRole } from '@/lib/interactionCopy';
 import { fetchProfileBundle } from '@/lib/profileBundle';
@@ -41,6 +43,10 @@ export interface Match {
   waitingAt: string | null;
   refused: boolean;
   matchedViaWait: boolean;
+  interestSender: InterestExchange['sender'];
+  interestOrigin: InterestExchange['origin'];
+  interestSentAt: string | null;
+  interestAcceptedAt: string | null;
   is_founder?: boolean;
   founder_number?: number | null;
   is_boosted?: boolean;
@@ -60,6 +66,18 @@ export type MatchesBoardLoad = {
   myGender: ProfileGender | null;
   waitPrune: WaitPrune | null;
 };
+
+function earliestMap(pairs: Array<[string, string]>): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const [id, at] of pairs) {
+    if (!id || !at) continue;
+    const prev = map.get(id);
+    if (!prev || (Date.parse(at) || Infinity) < (Date.parse(prev) || Infinity)) {
+      map.set(id, at);
+    }
+  }
+  return map;
+}
 
 function earliestIso(...values: (string | null | undefined)[]): string | null {
   let best: string | null = null;
@@ -111,6 +129,16 @@ export async function loadMatchesBoard(input: {
   );
   const sentSet = new Set(sentLikes.map((l) => l.to_user));
   const sentMap = new Map(sentLikes.map((l) => [l.to_user, l.created_at]));
+  const edgeMyLikeAt = earliestMap(sentLikes.map((l) => [l.to_user, l.created_at]));
+  const edgeMyFlashAt = earliestMap(
+    (edges.sentFlashes || []).map((f) => [f.to_user, f.created_at])
+  );
+  const edgeTheirLikeAt = earliestMap(
+    (edges.receivedLikes || []).map((l) => [l.from_user, l.created_at])
+  );
+  const edgeTheirFlashAt = earliestMap(
+    (edges.receivedFlashes || []).map((f) => [f.from_user, f.created_at])
+  );
 
   try {
     const notifs = await fetchSocialNotifications(50);
@@ -321,6 +349,16 @@ export async function loadMatchesBoard(input: {
           (waitingActors.has(p.id) && !isWaitCleared(userId, p.id)));
       const inboxMatchAt = inboxMatchAtMap.get(p.id) || null;
       const outgoingAt = matchBackAt.get(p.id) || mine || null;
+      const interest = exchangeForMatchCard(
+        kind,
+        {
+          myLikeAt: edgeMyLikeAt.get(p.id),
+          myFlashAt: edgeMyFlashAt.get(p.id),
+          theirLikeAt: edgeTheirLikeAt.get(p.id),
+          theirFlashAt: edgeTheirFlashAt.get(p.id),
+        },
+        inboxMatchAt || at || null
+      );
       return {
         profile: p,
         age: profileCardAge(p),
@@ -337,6 +375,10 @@ export async function loadMatchesBoard(input: {
         refused: false,
         matchedViaWait:
           isMatched && (viaWaitOwn.has(p.id) || matchedViaWaitPeerIds.has(p.id)),
+        interestSender: interest.sender,
+        interestOrigin: interest.origin,
+        interestSentAt: interest.sentAt,
+        interestAcceptedAt: interest.acceptedAt,
         is_founder: founderMap.has(p.id),
         founder_number: founderMap.get(p.id) ?? null,
         is_boosted: boostSet.has(p.id),
