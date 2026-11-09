@@ -331,20 +331,36 @@ export default function ChatScreen({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="font-semibold text-gray-900 text-sm truncate">
-                {peer.display_name}
+              <h2 className="min-w-0 font-semibold text-gray-900 text-sm flex items-center gap-1">
+                <span className="truncate">{peer.display_name}</span>
+                <Heart
+                  className="w-[15px] h-[15px] shrink-0 text-[#C2185B]"
+                  fill="currentColor"
+                  aria-hidden
+                />
               </h2>
-              <p className="text-[11px] text-aypik-navy font-medium flex items-center gap-1">
-                <Heart className="w-3 h-3 text-[#C2185B]" fill="currentColor" />
-                {loading
-                  ? t('matches.conversation')
-                  : matchDialogueChipLabel(
+              {loading ? (
+                <p className="text-[11px] leading-tight text-gray-400">
+                  {t('matches.conversation')}
+                </p>
+              ) : (
+                <p className="mt-0.5 leading-none">
+                  <span
+                    className={`match-intro-chip text-[11px] leading-tight ${
+                      user && hasTwoWayDialogue(messages, user.id, peer.id)
+                        ? 'match-chip-matched-chat'
+                        : 'match-chip-matched-quiet'
+                    }`}
+                  >
+                    {matchDialogueChipLabel(
                       Boolean(
                         user &&
                           hasTwoWayDialogue(messages, user.id, peer.id)
                       )
                     )}
-              </p>
+                  </span>
+                </p>
+              )}
             </div>
           </div>
         </header>
