@@ -78,39 +78,37 @@ function FounderActiveBanner({
 
   return (
     <div className="founder-member-card relative overflow-hidden rounded-3xl">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 12% 20%, rgba(255,255,255,0.85) 0%, transparent 45%), radial-gradient(circle at 88% 10%, rgba(255,255,255,0.55) 0%, transparent 40%)',
-        }}
-      />
-      <div className="relative p-5 sm:p-6 space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-aypik-raspberry border border-aypik-border shadow-sm">
-            <Gift className="w-3.5 h-3.5" />
-            {t('landing.founderBadge')}
-          </span>
-          {status.is_founder && (
-            <FounderBadge number={status.founder_number} />
-          )}
-          {status.has_premium && <PremiumBadge />}
-        </div>
-        {status.has_premium ? (
-          <p className="text-xs font-medium text-aypik-navy/80 leading-snug">
-            {t('membership.founderPremiumMonths')}
-          </p>
-        ) : null}
+      <div className="founder-member-card-sky">
+        <div className="founder-member-card-veil" aria-hidden />
+        <div className="relative p-5 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-aypik-raspberry border border-aypik-border shadow-sm">
+              <Gift className="w-3.5 h-3.5" />
+              {t('landing.founderBadge')}
+            </span>
+            {status.is_founder && (
+              <FounderBadge number={status.founder_number} />
+            )}
+            {status.has_premium && <PremiumBadge />}
+          </div>
+          {status.has_premium ? (
+            <p className="founder-member-card-note text-xs font-medium leading-snug">
+              {t('membership.founderPremiumMonths')}
+            </p>
+          ) : null}
 
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-aypik-navy tracking-tight leading-tight">
-            {t('common.offer.memberFondateur')}
-          </h2>
-          <p className="mt-2 text-base sm:text-lg font-semibold text-aypik-navy/90 leading-snug">
-            {founderSlotsSubtitle()}
-          </p>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-aypik-navy tracking-tight leading-tight">
+              {t('common.offer.memberFondateur')}
+            </h2>
+            <p className="mt-2 text-base sm:text-lg font-semibold text-aypik-navy/90 leading-snug">
+              {founderSlotsSubtitle()}
+            </p>
+          </div>
         </div>
+      </div>
 
+      <div className="bg-white px-5 sm:px-6 pt-4 pb-5 sm:pb-6 space-y-4">
         <ul className="space-y-2">
           {[
             founderBenefitNoCard(),
