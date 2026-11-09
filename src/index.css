@@ -674,7 +674,7 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
 }
 
 .discovery-sort-toggle--on .discovery-sort-toggle-track {
-  background: #8b5cf6;
+  background: #059669;
 }
 
 .discovery-sort-toggle-thumb {
@@ -756,7 +756,7 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
 }
 
 .geo-exclusive-toggle--on .geo-exclusive-toggle-track {
-  background: var(--aypik-navy);
+  background: #059669;
 }
 
 .geo-exclusive-toggle-thumb {
