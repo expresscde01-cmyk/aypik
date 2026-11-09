@@ -79,7 +79,7 @@ export default function MatcherButton({
           })}
         </span>
         <span className="relative z-[1] flex h-8 w-8 items-center justify-center rounded-full btn-primary text-white">
-          <CrownIcon size="1.15rem" />
+          <CrownIcon size="1.15rem" tone="white" />
         </span>
       </span>
       <span

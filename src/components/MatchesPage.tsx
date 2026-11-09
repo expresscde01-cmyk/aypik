@@ -972,7 +972,7 @@ function CardIdentity({
             <FounderBadge number={founderNumber} size="sm" />
           </span>
           <span className="lg:hidden">
-            <FounderBadge size="sm" compact />
+            <FounderBadge number={founderNumber} size="sm" compact />
           </span>
         </div>
       ) : null}

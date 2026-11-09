@@ -1,19 +1,26 @@
 import { useTranslation } from 'react-i18next';
 
-/** Couronne rose unie — trois pointes, sans halo ni cercle. */
+/** Couronne or — trois pointes, sans halo ni cercle. */
 export function CrownIcon({
   className = '',
   size = '1.05em',
+  tone = 'gold',
 }: {
   className?: string;
   size?: string;
+  tone?: 'gold' | 'white';
 }) {
+  const white = tone === 'white';
   return (
     <svg
       viewBox="0 0 24 24"
       className={`matcher-crown-mark ${className}`.trim()}
       style={{ width: size, height: size }}
-      fill="currentColor"
+      fill={white ? '#ffffff' : '#D4A017'}
+      stroke={white ? 'none' : '#9A7400'}
+      strokeWidth={white ? 0 : 1.6}
+      strokeLinejoin="round"
+      strokeLinecap="round"
       aria-hidden
     >
       <circle cx="3.65" cy="8.35" r="2.05" />
