@@ -1,4 +1,4 @@
-import { Check, Heart, MapPin, MessageCircle, X, Zap } from 'lucide-react';
+import { Check, Heart, MapPin, MessageCircle, X, XCircle, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FounderBadge } from '@/components/membership/Badges';
@@ -63,7 +63,7 @@ export type InboxHistory = {
   origin: 'flash' | 'like';
   originLabel: string;
   matchedLabel?: string | null;
-  /** Match conclu après un wait : première ligne = couronne, sans texte d’attente. */
+  /** Match conclu après un wait : la couronne précède la ligne d’envoi, si on sait qui a envoyé. */
   matchedViaWait?: boolean;
   waiting?: boolean;
   waitingIncoming?: boolean;
@@ -405,14 +405,7 @@ export default function ProfileDetailModal({
                   : 'bg-aypik-banner-bg border border-aypik-border'
               }`}
             >
-              {inboxHistory.matchedViaWait && inboxHistory.matchedLabel ? (
-                <p
-                  className="flex items-center text-aypik-navy"
-                  aria-label="Match"
-                >
-                  <CrownIcon size="1.15rem" />
-                </p>
-              ) : (
+              {inboxHistory.originLabel ? (
                 <p
                   className={`text-sm font-medium flex items-center gap-2 ${
                     inboxHistory.origin === 'flash'
@@ -420,6 +413,9 @@ export default function ProfileDetailModal({
                       : 'text-aypik-navy'
                   }`}
                 >
+                  {inboxHistory.matchedViaWait ? (
+                    <CrownIcon size="1.15rem" />
+                  ) : null}
                   {inboxHistory.origin === 'flash' ? (
                     <Zap
                       className="w-4 h-4 shrink-0 text-[#F2611C]"
@@ -433,7 +429,7 @@ export default function ProfileDetailModal({
                   )}
                   {inboxHistory.originLabel}
                 </p>
-              )}
+              ) : null}
               {inboxHistory.matchedLabel ? (
                 <p className="text-sm font-medium text-emerald-700 flex items-center gap-2">
                   <Check className="w-4 h-4 shrink-0" strokeWidth={2.5} />
@@ -448,7 +444,8 @@ export default function ProfileDetailModal({
                 </p>
               ) : null}
               {inboxHistory.declinedByThem ? (
-                <p className="text-sm text-purple-800">
+                <p className="text-sm text-purple-800 flex items-center gap-2">
+                  <XCircle className="w-4 h-4 shrink-0 text-gray-500" strokeWidth={2.5} aria-hidden />
                   {inboxHistory.declinedByThemLabel ||
                     t('matches.declinedThemGeneric')}
                 </p>

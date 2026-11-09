@@ -26,6 +26,74 @@ export function formatMatchCalendarDate(iso: string): string {
   return formatDateWeekdayLong(iso);
 }
 
+function shownName(name: string): string {
+  return name.trim() || someone();
+}
+
+/** Phrase d’envoi, fiche ouverte. */
+export function sentInterestLabel(opts: {
+  sender: 'me' | 'them';
+  origin: InteractionOrigin;
+  iso: string;
+  name: string;
+  short?: boolean;
+}): string {
+  const date = formatInteractionDate(opts.iso);
+  if (!date) return '';
+  const name = shownName(opts.name);
+  if (opts.short) {
+    if (opts.sender === 'me') {
+      return opts.origin === 'flash'
+        ? t('matches.cardYouFlash', { date })
+        : t('matches.cardYouLike', { date });
+    }
+    return opts.origin === 'flash'
+      ? t('matches.cardTheyFlash', { name, date })
+      : t('matches.cardTheyLike', { name, date });
+  }
+  if (opts.sender === 'me') {
+    return opts.origin === 'flash'
+      ? t('matches.youSentFlash', { date })
+      : t('matches.youSentLike', { date });
+  }
+  return opts.origin === 'flash'
+    ? t('matches.sentYouFlash', { name, date })
+    : t('matches.sentYouLike', { name, date });
+}
+
+/** Phrase d’acceptation. La forme courte est la même : elle tient déjà sur une carte. */
+export function acceptedInterestLabel(opts: {
+  who: 'me' | 'them';
+  iso: string;
+  name: string;
+}): string {
+  const date = formatInteractionDate(opts.iso);
+  if (!date) return '';
+  if (opts.who === 'me') return t('matches.youAccepted', { date });
+  return t('matches.theyAccepted', { name: shownName(opts.name), date });
+}
+
+/** Cas incertain : une seule ligne, sans inventer l’expéditeur. */
+export function uncertainMatchLabel(iso: string): string {
+  const date = formatInteractionDate(iso);
+  return date ? t('matches.matchLe', { date }) : 'Match';
+}
+
+export function declinedOnLabel(
+  who: 'me' | 'them',
+  iso: string,
+  name: string
+): string {
+  const date = formatInteractionDate(iso);
+  if (!date) {
+    return who === 'me'
+      ? t('matches.declinedYou')
+      : t('matches.declinedThemGeneric');
+  }
+  if (who === 'me') return t('matches.youDeclinedOn', { date });
+  return t('matches.theyDeclinedOn', { name: shownName(name), date });
+}
+
 export function originHistoryLabel(
   origin: InteractionOrigin,
   iso: string
