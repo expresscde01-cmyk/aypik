@@ -103,11 +103,16 @@ function stripAuthKeysFromUrl(keys: readonly string[]): void {
   }
   if (url.hash) {
     const hash = new URLSearchParams(url.hash.replace(/^#/, ''));
+    let removed = false;
     for (const key of keys) {
+      if (!hash.has(key)) continue;
       hash.delete(key);
+      removed = true;
     }
-    const nextHash = hash.toString();
-    url.hash = nextHash ? nextHash : '';
+    if (removed) {
+      const nextHash = hash.toString();
+      url.hash = nextHash ? nextHash : '';
+    }
   }
   const next = `${url.pathname}${url.search}${url.hash}`;
   if (

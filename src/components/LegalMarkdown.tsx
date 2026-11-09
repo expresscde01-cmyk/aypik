@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { AppLocale } from '@/i18n/locales';
 import { withLocalePrefix } from '@/i18n/path';
 import { SITE_FREE_MODE } from '@/lib/founderCopy';
+import { MESSAGING_CONSENT_ANCHOR } from '@/components/LegalChrome';
 
 const PAID_BLOCK_RE =
   /<!--\s*paid:start\s*-->[\s\S]*?<!--\s*paid:end\s*-->/gi;
@@ -200,7 +201,16 @@ function renderBlock(block: string, locale: AppLocale, key: number): ReactNode {
       </p>
     );
   }
-  return <p key={key}>{renderParagraphLines(block, locale)}</p>;
+  const consentAnchor =
+    block.startsWith('**Messaging and Consent.**') ||
+    block.startsWith('**Mensajería y Consentimiento.**')
+      ? MESSAGING_CONSENT_ANCHOR
+      : undefined;
+  return (
+    <p key={key} id={consentAnchor}>
+      {renderParagraphLines(block, locale)}
+    </p>
+  );
 }
 
 export default function LegalMarkdown({

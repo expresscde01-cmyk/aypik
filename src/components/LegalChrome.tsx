@@ -7,10 +7,14 @@ import { isLocalizedContactPath, withLocalePrefix } from '@/i18n/path';
 import { useMembership } from '@/lib/useMembership';
 import { confirmLeaveUnsavedProfile } from '@/lib/unsavedProfileGuard';
 
-export function openLegalTerms() {
+/** Annexe « Messagerie et consentement » des CGU. */
+export const MESSAGING_CONSENT_ANCHOR = 'messagerie-et-consentement';
+
+export function openLegalTerms(anchor?: string) {
   if (!confirmLeaveUnsavedProfile()) return;
   const url = new URL(window.location.href);
   url.searchParams.set('legal', 'cgu');
+  url.hash = typeof anchor === 'string' ? anchor : '';
   window.history.pushState({}, '', url.toString());
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
