@@ -35,13 +35,15 @@ export function CrownIcon({
 /** Mot Matcher / Match / Matchear : couronne à la place du M. */
 export default function MatcherWord({
   className = '',
+  tone = 'gold',
 }: {
   className?: string;
+  tone?: 'gold' | 'white';
 }) {
   const { t } = useTranslation();
   return (
     <span className={`matcher-word ${className}`.trim()}>
-      <CrownIcon />
+      <CrownIcon tone={tone} />
       <span>{t('matches.matcherWordRest')}</span>
     </span>
   );
