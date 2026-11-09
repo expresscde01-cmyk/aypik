@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BRAND_BASELINE, BRAND_NAME, BrandNameImg } from '@/components/BrandLockup';
@@ -5,9 +6,14 @@ import { FOUNDER_MAX_SLOTS, SITE_FREE_MODE } from '@/lib/founderCopy';
 import { useFounderSlots } from '@/lib/useFounderSlots';
 import {
   ContactLink,
+  MESSAGING_CONSENT_ANCHOR,
   SUPPORT_EMAIL,
   legalDocLabel,
 } from '@/components/LegalChrome';
+import {
+  measureStickyHeaderHeight,
+  scrollYUnderStickyHeader,
+} from '@/lib/scrollUnderSticky';
 import LegalMarkdown from '@/components/LegalMarkdown';
 import LaunchTicker from '@/components/LaunchTicker';
 import LegalTranslationBanner from '@/components/LegalTranslationBanner';
@@ -34,6 +40,23 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
   const locale = currentLocale();
   const docLabel = legalDocLabel();
   const { closed: founderOfferClosed } = useFounderSlots();
+
+  useEffect(() => {
+    if (window.location.hash.replace(/^#/, '') !== MESSAGING_CONSENT_ANCHOR) return;
+    const frame = window.setTimeout(() => {
+      const el = document.getElementById(MESSAGING_CONSENT_ANCHOR);
+      if (!el) return;
+      const sticky = document.querySelector<HTMLElement>('.sticky.top-0');
+      const top = scrollYUnderStickyHeader(
+        el.getBoundingClientRect().top,
+        window.scrollY,
+        measureStickyHeaderHeight(sticky, 56)
+      );
+      window.scrollTo({ top, behavior: 'auto' });
+    }, 0);
+    return () => window.clearTimeout(frame);
+  }, [locale]);
+
   return (
     <div className="min-h-screen bg-aypik-banner-bg">
       <div className="sticky top-0 z-20">
@@ -1178,7 +1201,7 @@ export default function LegalTermsPage({ onClose }: { onClose: () => void }) {
                 )}
               </p>
             </div>
-            <div>
+            <div id={MESSAGING_CONSENT_ANCHOR}>
               <p className="font-semibold text-gray-900">
                 Messagerie et consentement
               </p>

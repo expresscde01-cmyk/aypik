@@ -38,6 +38,10 @@ import {
 } from '@/lib/conversionNav';
 import { supabase } from '@/lib/supabase';
 import { PROFILE_WRITE_RETURN } from '@/lib/profileSaveError';
+import {
+  MESSAGING_CONSENT_ANCHOR,
+  openLegalTerms,
+} from '@/components/LegalChrome';
 
 export default function AccountMenu({
   displayName,
@@ -447,7 +451,17 @@ export default function AccountMenu({
                 </button>
               </div>
               <p className="mt-1 text-[11px] leading-snug text-gray-500">
-                {t('profile.messagesWithoutMatchHint')}
+                {t('profile.messagesWithoutMatchHint')}{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    openLegalTerms(MESSAGING_CONSENT_ANCHOR);
+                  }}
+                  className="underline underline-offset-2 decoration-gray-300 hover:text-gray-700"
+                >
+                  {t('profile.messagesWithoutMatchMore')}
+                </button>
               </p>
             </div>
           </div>
