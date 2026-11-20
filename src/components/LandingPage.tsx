@@ -401,6 +401,39 @@ export default function LandingPage({
   const showTitleTrail = SHOW_TITLE_TRAIL && currentLocale() === 'fr';
 
   useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let frame = 0;
+    const tick = () => {
+      const ray = document.querySelector<HTMLElement>('.hero-headline-ray');
+      const accent = document.querySelector<HTMLElement>('.hero-headline-accent');
+      if (ray && accent) {
+        const rayBox = ray.getBoundingClientRect();
+        const accentBox = accent.getBoundingClientRect();
+        const center = rayBox.left + rayBox.width / 2 - accentBox.left;
+        const band = accentBox.width * 0.42;
+        const room = accentBox.width - band;
+        const percent = room > 0 ? ((center - band / 2) / room) * 100 : 0;
+        accent.style.backgroundPosition = `${percent}% 0px, 0px 0px`;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    const start = () => {
+      cancelAnimationFrame(frame);
+      if (reduce.matches) {
+        document.querySelector<HTMLElement>('.hero-headline-accent')?.style.removeProperty('background-position');
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    start();
+    reduce.addEventListener('change', start);
+    return () => {
+      reduce.removeEventListener('change', start);
+      cancelAnimationFrame(frame);
+    };
+  }, [i18n.language]);
+
+  useEffect(() => {
     let alive = true;
     const applyHomeMeta = () => {
       window.setTimeout(() => {
@@ -502,6 +535,7 @@ export default function LandingPage({
         />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-3 sm:pt-10 md:pt-20 sm:pb-4 text-center">
           <div className="hero-headline-stack">
+            <div className="hero-headline-ray" aria-hidden="true" />
             <h1 className="hero-headline font-extrabold tracking-tight pb-1 animate-pop">
               <span className="hero-headline-line1">
                 {showTitleTrail ? (

@@ -1455,13 +1455,38 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
 }
 
 .hero-headline-stack {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
 }
 
+.hero-headline-ray {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  height: 140%;
+  width: 45%;
+  left: -45%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 252, 245, 0.98) 0%,
+    rgba(255, 246, 220, 0.7) 34%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  filter: blur(6px);
+  animation:
+    hero-headline-ray-move 6s ease-in-out infinite,
+    hero-headline-ray-fade 6s linear infinite;
+}
+
 .hero-headline {
+  position: relative;
+  z-index: 1;
   width: 100%;
   margin: 0;
   color: #1b1f3b;
@@ -1480,6 +1505,13 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   line-height: 1.25;
   letter-spacing: -1px;
   color: var(--aypik-navy);
+}
+
+.hero-headline-line1,
+.hero-headline-line1 .whitespace-nowrap,
+.hero-title-trail-copy,
+.hero-title-trail-unit-text {
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.75);
 }
 
 .hero-headline-line2 {
@@ -1519,6 +1551,58 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   font-weight: 700;
   font-style: italic;
   letter-spacing: -0.5px;
+  text-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(194, 24, 91, 0.2));
+}
+
+.hero-headline-accent.accent-logo {
+  background-image:
+    linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.92) 50%, transparent 62%),
+    var(--aypik-logo-gradient);
+  background-size: 42% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: -80% 0, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@keyframes hero-headline-ray-move {
+  0% {
+    left: -45%;
+  }
+  55%,
+  100% {
+    left: 105%;
+  }
+}
+
+@keyframes hero-headline-ray-fade {
+  0% {
+    opacity: 0;
+  }
+  5.5% {
+    opacity: 1;
+  }
+  49.5% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-headline-ray {
+    animation: none;
+    opacity: 0;
+  }
+
+  .hero-headline-accent.accent-logo {
+    background-image: var(--aypik-logo-gradient);
+    background-size: 100% 100%;
+    background-position: 0 0;
+  }
 }
 
 .hero-title-trail-host {
@@ -1557,6 +1641,20 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   top: -1.053em;
   width: 8.684em;
   height: 2.895em;
+}
+
+.hero-title-trail-mobile-extend {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .hero-title-trail-mobile-now {
+    display: none;
+  }
+
+  .hero-title-trail-mobile-extend {
+    display: inline;
+  }
 }
 
 @media (max-width: 767px) {
