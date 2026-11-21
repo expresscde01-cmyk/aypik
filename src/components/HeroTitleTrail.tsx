@@ -15,17 +15,18 @@ export function HeroTitleTrailMobile() {
   return (
     <svg className="hero-title-trail hero-title-trail--mobile" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -40 330 110" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <defs>
-        <linearGradient id="hero-trail-fade" gradientUnits="userSpaceOnUse" x1="128" y1="56" x2="163" y2="56.5">
+        <linearGradient id="hero-trail-fade" gradientUnits="userSpaceOnUse" x1="150" y1="57" x2="185" y2="57.6">
           <stop offset="0" stopColor="#1B1F3B" stopOpacity="0" />
           <stop offset="1" stopColor="#1B1F3B" stopOpacity="1" />
         </linearGradient>
       </defs>
-      <path className="hero-title-trail-mobile-now" d="M 238 46 C 240 45, 249 42, 252 40 C 255 38, 259 36, 258 33 C 257 30, 246 26, 244 22 C 241 17, 240 11, 241 7 C 241 3, 245 -1, 248 -1 C 251 -2, 255 4, 258 4 C 261 4, 265 -2, 268 -1 C 271 -1, 275 3, 275 7 C 276 11, 275 17, 272 22 C 270 26, 259 36, 258 33 C 257 31, 264 12, 266 6 C 268 0, 270 2, 273 0 C 276 -2, 280 -3, 281 -4" fill="none" stroke="#1B1F3B" strokeOpacity="0.6" strokeWidth="1.3" strokeDasharray="3 4" strokeLinecap="round" strokeLinejoin="round" />
-      <path className="hero-title-trail-mobile-extend" d="M 128 56 C 170 59, 220 56.5, 238 46 C 240 45, 249 42, 252 40 C 255 38, 259 36, 258 33 C 257 30, 246 26, 244 22 C 241 17, 240 11, 241 7 C 241 3, 245 -1, 248 -1 C 251 -2, 255 4, 258 4 C 261 4, 265 -2, 268 -1 C 271 -1, 275 3, 275 7 C 276 11, 275 17, 272 22 C 270 26, 259 36, 258 33 C 257 31, 264 12, 266 6 C 268 0, 270 2, 273 0 C 276 -2, 280 -3, 281 -4" fill="none" stroke="url(#hero-trail-fade)" strokeOpacity="0.6" strokeWidth="1.3" strokeDasharray="3 4" strokeLinecap="round" strokeLinejoin="round" />
-      <g transform="translate(281 -4) rotate(-22.6) scale(0.5)">
-        <path d="M0 -12 L48 0 L17 4 Z" fill="#6A70A0" />
-        <path d="M17 4 L48 0 L9 17 Z" fill="#1B1F3B" />
-        <path d="M17 4 L23 9 L9 17 Z" fill="#0E1124" />
+      <g transform="translate(16 0)">
+        <path d="M 150 57 C 190 58, 226 52, 246 38 C 256 31, 262 22, 262 13 C 262 4, 254 -3, 247 1 C 243 3, 242 7, 242 9 C 242 7, 241 3, 237 1 C 230 -3, 222 4, 222 13 C 222 24, 234 32, 242 36 C 252 41, 266 36, 270 24 C 274 12, 270 -6, 276 -18 C 279 -24, 283 -28, 288 -31" fill="none" stroke="url(#hero-trail-fade)" strokeOpacity="0.6" strokeWidth="1.3" strokeDasharray="3 4" strokeLinecap="round" strokeLinejoin="round" />
+        <g transform="translate(288 -31) rotate(-30.96) scale(0.5)">
+          <path d="M0 -12 L48 0 L17 4 Z" fill="#6A70A0" />
+          <path d="M17 4 L48 0 L9 17 Z" fill="#1B1F3B" />
+          <path d="M17 4 L23 9 L9 17 Z" fill="#0E1124" />
+        </g>
       </g>
     </svg>
   );

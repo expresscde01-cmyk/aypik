@@ -1657,20 +1657,6 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   height: 2.895em;
 }
 
-.hero-title-trail-mobile-extend {
-  display: none;
-}
-
-@media (max-width: 640px) {
-  .hero-title-trail-mobile-now {
-    display: none;
-  }
-
-  .hero-title-trail-mobile-extend {
-    display: inline;
-  }
-}
-
 @media (max-width: 767px) {
   .hero-title-trail--desktop {
     display: none;
