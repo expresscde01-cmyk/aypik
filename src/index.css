@@ -1511,7 +1511,7 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
 .hero-headline-line1 .whitespace-nowrap,
 .hero-title-trail-copy,
 .hero-title-trail-unit-text {
-  text-shadow: 0 0 16px rgba(255, 255, 255, 0.75);
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.55);
 }
 
 .hero-headline-line2 {
@@ -1552,7 +1552,7 @@ body:has(.app-bottom-nav--hidden) .profile-save-bar {
   font-style: italic;
   letter-spacing: -0.5px;
   text-shadow: none;
-  filter: drop-shadow(0 4px 8px rgba(194, 24, 91, 0.2));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.55)) drop-shadow(0 4px 8px rgba(194, 24, 91, 0.2));
 }
 
 .hero-headline-accent.accent-logo {
