@@ -20,13 +20,11 @@ export function HeroTitleTrailMobile() {
           <stop offset="1" stopColor="#1B1F3B" stopOpacity="1" />
         </linearGradient>
       </defs>
-      <g transform="translate(16 0)">
-        <path d="M 150 57 C 190 58, 226 52, 246 38 C 256 31, 262 22, 262 13 C 262 4, 254 -3, 247 1 C 243 3, 242 7, 242 9 C 242 7, 241 3, 237 1 C 230 -3, 222 4, 222 13 C 222 24, 234 32, 242 36 C 252 41, 266 36, 270 24 C 274 12, 270 -6, 276 -18 C 279 -24, 283 -28, 288 -31" fill="none" stroke="url(#hero-trail-fade)" strokeOpacity="0.6" strokeWidth="1.3" strokeDasharray="3 4" strokeLinecap="round" strokeLinejoin="round" />
-        <g transform="translate(288 -31) rotate(-30.96) scale(0.5)">
-          <path d="M0 -12 L48 0 L17 4 Z" fill="#6A70A0" />
-          <path d="M17 4 L48 0 L9 17 Z" fill="#1B1F3B" />
-          <path d="M17 4 L23 9 L9 17 Z" fill="#0E1124" />
-        </g>
+      <path d="M 150 57 C 195 58, 245.84 55.76, 265.5 42 C 275.5 35, 281.5 26, 281.5 17 C 281.5 8, 273.5 1, 266.5 5 C 262.5 7, 261.5 11, 261.5 13 C 261.5 11, 260.5 7, 256.5 5 C 249.5 1, 241.5 8, 241.5 17 C 241.5 28, 253.5 36, 261.5 40 C 265.91 42.21, 271.75 44, 276 43 C 280.25 42, 284.67 38, 287 34 C 289.33 30, 290.17 24, 290 19 C 289.83 14, 288.17 8.5, 286 4 C 283.83 -0.5, 280.83 -4.5, 277 -8 C 273.17 -11.5, 266.33 -13.67, 263 -17 C 259.67 -20.33, 257.5 -24.33, 257 -28 C 256.5 -31.67, 258.17 -36, 260 -39 C 261.83 -42, 265.33 -43.67, 268 -46" fill="none" stroke="url(#hero-trail-fade)" strokeOpacity="0.6" strokeWidth="1.3" strokeDasharray="3 4" strokeLinecap="round" strokeLinejoin="round" />
+      <g transform="translate(268 -46) rotate(-41.19) scale(0.5)">
+        <path d="M0 -12 L48 0 L17 4 Z" fill="#6A70A0" />
+        <path d="M17 4 L48 0 L9 17 Z" fill="#1B1F3B" />
+        <path d="M17 4 L23 9 L9 17 Z" fill="#0E1124" />
       </g>
     </svg>
   );
