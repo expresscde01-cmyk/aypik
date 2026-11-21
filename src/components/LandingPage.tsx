@@ -327,7 +327,7 @@ function OfferCard({
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {badge && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-aypik-raspberry px-3 py-1 text-xs font-bold uppercase tracking-wide text-white border border-aypik-raspberry">
+            <span className="founder-offer-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide">
               <Gift className="w-3.5 h-3.5" />
               {badge}
             </span>
