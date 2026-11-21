@@ -82,7 +82,7 @@ function FounderActiveBanner({
         <div className="founder-member-card-veil" aria-hidden />
         <div className="relative p-5 sm:p-6 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-aypik-raspberry border border-aypik-border shadow-sm">
+            <span className="founder-offer-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide">
               <Gift className="w-3.5 h-3.5" />
               {t('landing.founderBadge')}
             </span>

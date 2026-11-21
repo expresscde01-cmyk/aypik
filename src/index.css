@@ -4050,6 +4050,13 @@ button.group[data-matched='true'] {
   }
 }
 
+.founder-offer-badge {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  box-shadow: 0 4px 10px -3px rgba(220, 38, 38, 0.55);
+}
+
 .founder-member-card {
   background: #ffffff;
   border: none;
