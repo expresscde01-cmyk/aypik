@@ -16,22 +16,37 @@ body {
   position: relative;
   overflow: hidden;
   color: var(--aypik-white);
-  font-weight: 700;
-  border: none;
-  border-radius: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
   cursor: pointer;
-  background: linear-gradient(
-    180deg,
-    var(--aypik-magenta-light) 0%,
-    var(--aypik-magenta) 55%,
-    var(--aypik-magenta-dark) 100%
-  );
+  background:
+    radial-gradient(
+      110% 120% at 50% -20%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(255, 255, 255, 0) 60%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 55%, rgba(120, 0, 40, 0.12) 100%),
+    linear-gradient(90deg, #c2185b, #e8395f 50%, #f2611c);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -3px 6px rgba(100, 0, 40, 0.35),
-    0 8px 18px rgba(214, 36, 110, 0.35);
-  text-shadow: 0 1px 2px rgba(90, 0, 35, 0.45);
-  transition: transform 0.15s ease, filter 0.15s ease;
+    inset 0 -1px 0 rgba(140, 10, 50, 0.35),
+    0 2px 0 rgba(160, 20, 60, 0.35),
+    0 8px 18px -6px rgba(232, 57, 95, 0.5);
+  text-shadow: 0 1px 1px rgba(120, 0, 30, 0.3);
+  transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+}
+
+/* La bordure de 1 px est prise sur le padding : la taille du bouton ne change pas. */
+.btn-header.btn-header {
+  padding: 5px 9px;
+}
+
+@media (min-width: 640px) {
+  .btn-header.btn-header {
+    padding: 7px 13px;
+  }
 }
 
 .btn-header > * {
@@ -39,32 +54,24 @@ body {
   z-index: 2;
 }
 
-.btn-header::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  left: 4px;
-  right: 4px;
-  top: 2px;
-  height: 40%;
-  border-radius: 10px 10px 40% 40% / 10px 10px 10px 10px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.12));
-  pointer-events: none;
-}
-
-.btn-header:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .btn-header:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
 }
 
 .btn-header:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(100, 0, 40, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(140, 10, 50, 0.35),
+    0 1px 0 rgba(160, 20, 60, 0.35),
+    0 8px 18px -6px rgba(232, 57, 95, 0.5);
 }
 
 .btn-header:focus-visible {
-  outline: 3px solid rgba(214, 36, 110, 0.4);
-  outline-offset: 3px;
+  outline: 2px solid #1c2340;
+  outline-offset: 2px;
 }
 
 .btn-header:disabled {
