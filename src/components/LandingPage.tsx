@@ -29,6 +29,7 @@ import { FounderPrivilegeHighlight } from '@/components/FounderPrivilegeHighligh
 
 /** Sillage décoratif du titre hero, calé sur le français. false le retire. */
 const SHOW_TITLE_TRAIL = true;
+const HERO_SHEEN_WIDTH_PX = 120;
 
 const VALUE_ICONS = {
   confiance: ShieldCheck,
@@ -410,10 +411,7 @@ export default function LandingPage({
         const rayBox = ray.getBoundingClientRect();
         const accentBox = accent.getBoundingClientRect();
         const center = rayBox.left + rayBox.width / 2 - accentBox.left;
-        const band = accentBox.width * 0.42;
-        const room = accentBox.width - band;
-        const percent = room > 0 ? ((center - band / 2) / room) * 100 : 0;
-        accent.style.backgroundPosition = `${percent}% 0px, 0px 0px`;
+        accent.style.backgroundPosition = `${center - HERO_SHEEN_WIDTH_PX / 2}px 0px, 0px 0px`;
       }
       frame = requestAnimationFrame(tick);
     };
